@@ -1,2 +1,0 @@
-ALTER TABLE patient
-  ADD COLUMN IF NOT EXISTS ma_number VARCHAR(64);
