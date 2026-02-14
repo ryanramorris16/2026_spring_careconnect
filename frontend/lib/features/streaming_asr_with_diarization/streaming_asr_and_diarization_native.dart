@@ -396,7 +396,7 @@ class _StreamingAsrAndDiarizationScreenState
       "assets/sherpa-onnx-pyannote-segmentation-3-0/model.onnx",
     );
     final embeddingModel = await copyAssetFile(
-      "assets/3dspeaker.onnx",
+      "assets/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx",
     );
 
     final segmentationConfig =
