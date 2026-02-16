@@ -1,5 +1,3 @@
-// api_service.dart exists in both lib/core/services/ and lib/services/.  
-
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
