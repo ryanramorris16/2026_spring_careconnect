@@ -1,3 +1,12 @@
+// api_service.dart exists in both lib/core/services/ and lib/services/.  
+// 
+// this file is being used by
+// sign_up_screen.dart
+// invoice_file_service.dart
+// email_verification_dialog.dart
+// menu_page.dart
+// @TODO 2/15/2026 - more investigation required
+
 import 'dart:convert';
 import 'dart:io';
 
