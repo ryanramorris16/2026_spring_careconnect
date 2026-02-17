@@ -5,6 +5,7 @@ import com.careconnect.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -50,35 +51,28 @@ public class SecurityConfig {
                                 "/configuration/security"
                         ).permitAll()
 
-                /* ---------- public API endpoints ------------------------ */
-                .requestMatchers(
-                        "/v1/api/auth/**",
-                        "/api/v1/auth/**",  // Support both URL patterns
-                        "/api/auth/**",     // Support auth endpoints under /api/auth/
-                        "/v1/api/users/reset-password",  // Allow password reset (current)
-                        "/v1/api/users/setup-password",
-                        "/v1/api/email-test/**",  // Allow email testing endpoints
-                        "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
-                        "/oauth/**"// Permit OAuth paths
-                ).permitAll()
+                        /* ---------- public API endpoints ------------------------ */
+                        .requestMatchers(
+                                "/v1/api/auth/**",
+                                "/api/v1/auth/**",  // Support both URL patterns
+                                "/api/auth/**",     // Support auth endpoints under /api/auth/
+                                "/v1/api/users/reset-password",  // Allow password reset (current)
+                                "/v1/api/users/setup-password",
+                                "/v1/api/email-test/**",  // Allow email testing endpoints
+                                "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
+                                "/oauth/**" // Permit OAuth paths
+                        ).permitAll()
 
-                /* ---------- public static assets ------------------------ */
-                .requestMatchers(
-                        "/", "/index.html", "/favicon.ico", "/static/**"
-                ).permitAll()
+                        /* ---------- public static assets ------------------------ */
+                        .requestMatchers(
+                                "/", "/index.html", "/favicon.ico", "/static/**"
+                        ).permitAll()
 
-                        /* ---------- Static assets ------------------------------------- */
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
+                        /* ---------- CORS preflight ------------------------------ */
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        /* ---------- Require JWT for these APIs ------------------------ */
-                        .requestMatchers("/v1/api/patients/**").authenticated()
-                        .requestMatchers("/v1/api/caregivers/**").authenticated()
-                        .requestMatchers("/v1/api/allergies/**").authenticated()
-                        .requestMatchers("/v1/api/symptoms/**").authenticated()
-                        .requestMatchers("/v1/api/ai/**", "/api/ai/**").authenticated()
-                        .requestMatchers("/v1/api/ai/deepseek/**").authenticated()
-                        .requestMatchers("/v1/api/family-members/**").authenticated()
-                        .requestMatchers("/v1/api/ai-chat/**").authenticated()
+                        /* ---------- Require JWT for versioned APIs ------------- */
+                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()
