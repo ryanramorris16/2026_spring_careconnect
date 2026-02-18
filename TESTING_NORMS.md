@@ -1,7 +1,7 @@
 # Testing Norms: Mock Data Framework
 
 ## Purpose
-Define the shared conventions for mock-data-driven tests so multiple contributors can add tests without introducing inconsistent patterns or unintentional scope changes.
+1Define the shared conventions for mock-data-driven tests so multiple contributors can add tests without introducing inconsistent patterns or unintentional scope changes.
 
 ## Scope
 - Backend unit tests under `/backend/core/src/test/java`.
