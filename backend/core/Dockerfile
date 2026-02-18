@@ -12,10 +12,11 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 
-# Export environment variables from .env file
 RUN apt-get update && apt-get install -y curl
 
-COPY .env /app/.env
 COPY env-entry.sh /app/env-entry.sh
 RUN chmod +x /app/env-entry.sh
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 CMD curl -fsS http://localhost:8080/v1/api/test/health || exit 1
+RUN chmod +x /app/env-entry.sh && sed -i 's/\r$//' /app/env-entry.sh
 ENTRYPOINT ["/app/env-entry.sh"]

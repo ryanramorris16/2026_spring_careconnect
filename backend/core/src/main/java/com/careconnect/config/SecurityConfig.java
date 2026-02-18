@@ -58,8 +58,7 @@ public class SecurityConfig {
                                 "/api/auth/**",     // Support auth endpoints under /api/auth/
                                 "/v1/api/users/reset-password",  // Allow password reset (current)
                                 "/v1/api/users/setup-password",
-                                "/v1/api/email-test/**",  // Allow email testing endpoints
-                                "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
+                                "/v1/api/test/health", // Keep a single public health endpoint for ALB/ECS checks
                                 "/oauth/**" // Permit OAuth paths
                         ).permitAll()
 
