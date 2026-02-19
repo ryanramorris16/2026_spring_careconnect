@@ -37,13 +37,23 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Unit tests for {@link AllergyController}.
+ * Unit tests for {@link AllergyController}, covering the HTTP layer of all
+ * allergy-management endpoints exposed under {@code /v1/api/allergies}.
  *
- * <p>
- * Uses {@link WebMvcTest} to test the controller layer in isolation with
- * mocked dependencies. Security filters are disabled so that the
- * {@link SecurityContextHolder} can be configured directly per test.
- * </p>
+ * <p><b>Why @WebMvcTest + MockMvc?</b><br>
+ * {@code @WebMvcTest} spins up only the Spring MVC slice (controllers, filters,
+ * argument resolvers) without loading a full application context or a real
+ * database.  This makes the tests fast and focused: they verify that the
+ * controller routes requests correctly, enforces access-control rules, applies
+ * the right HTTP status codes, and serialises/deserialises JSON properly —
+ * without caring about the actual business logic inside the services.
+ *
+ * <p>All service and repository collaborators are replaced with Mockito mocks
+ * via {@code @MockBean}.  Security filters are disabled with
+ * {@code @AutoConfigureMockMvc(addFilters = false)} so that the
+ * {@link SecurityContextHolder} can be configured directly per test, allowing
+ * precise control over which user identity is active without running the full
+ * Spring Security filter chain.
  */
 @WebMvcTest(AllergyController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -51,6 +61,10 @@ class AllergyControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // --- Mocked collaborators ---
+    // Each bean below is replaced with a Mockito stub so the controller can be
+    // instantiated without real allergy storage, user lookup, or caregiver logic.
 
     @MockBean
     private AllergyService allergyService;
@@ -66,6 +80,9 @@ class AllergyControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // --- Test fixtures ---
+    // Pre-built objects reused across tests to avoid repetitive construction.
 
     private AllergyDTO sampleAllergy;
     private User adminUser;
@@ -110,19 +127,31 @@ class AllergyControllerTest {
     // Security context helpers
     // -----------------------------------------------------------------------
 
-    /** Admin user — always passes hasAccessToPatient(). */
+    /**
+     * Configures the {@link SecurityContextHolder} so that the current
+     * principal is the admin user.  An admin always passes the
+     * {@code hasAccessToPatient()} check inside the controller.
+     */
     private void mockAdminSecurityContext() {
         mockSecurityContext("admin@test.com", adminUser);
         when(patientRepository.findById(10L)).thenReturn(Optional.of(patient));
     }
 
-    /** Patient user whose ID matches the patient's linked user — self-access allowed. */
+    /**
+     * Configures the {@link SecurityContextHolder} so that the current
+     * principal is the patient user whose ID matches the patient's linked
+     * user — self-access is allowed.
+     */
     private void mockPatientSelfAccessContext() {
         mockSecurityContext("patient@test.com", patientUser);
         when(patientRepository.findById(10L)).thenReturn(Optional.of(patient));
     }
 
-    /** Patient user whose ID does NOT match the patient — access denied (403). */
+    /**
+     * Configures the {@link SecurityContextHolder} so that the current
+     * principal is a different patient user whose ID does NOT match the
+     * patient — the controller should deny access with a 403.
+     */
     private void mockForbiddenSecurityContext() {
         User other = new User();
         other.setId(99L);
@@ -146,6 +175,15 @@ class AllergyControllerTest {
     // POST /v1/api/allergies
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that POST /v1/api/allergies returns HTTP 201 Created and the
+     * new allergy's details when an admin user submits a valid allergy DTO.
+     *
+     * <p>{@link AllergyService#createAllergy} is stubbed to return
+     * {@code sampleAllergy}.  The test asserts the success message and spot-
+     * checks {@code allergen} and {@code severity} in the nested {@code data}
+     * object to confirm correct serialisation.
+     */
     @Test
     @DisplayName("POST /v1/api/allergies - admin creates allergy, returns 201")
     void createAllergy_success() throws Exception {
@@ -163,6 +201,14 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).createAllergy(any(AllergyDTO.class));
     }
 
+    /**
+     * Verifies that POST /v1/api/allergies returns HTTP 201 Created when a
+     * patient creates an allergy for their own record (self-access).
+     *
+     * <p>A patient whose user ID matches the patient entity's linked user
+     * should be allowed to manage their own allergy data.  The test confirms
+     * that the controller's access check passes for this case.
+     */
     @Test
     @DisplayName("POST /v1/api/allergies - patient creates own allergy, returns 201")
     void createAllergy_patientSelfAccess_success() throws Exception {
@@ -176,6 +222,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.message", is("Allergy created successfully")));
     }
 
+    /**
+     * Verifies that POST /v1/api/allergies returns HTTP 403 Forbidden when a
+     * patient attempts to create an allergy for a different patient's record.
+     *
+     * <p>The security context is set to a patient whose ID does not match the
+     * target patient.  The test confirms that the controller's access-control
+     * check rejects the request before delegating to the service.
+     */
     @Test
     @DisplayName("POST /v1/api/allergies - unauthorized patient returns 403")
     void createAllergy_forbidden() throws Exception {
@@ -188,6 +242,15 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to manage allergies for this patient")));
     }
 
+    /**
+     * Verifies that POST /v1/api/allergies returns HTTP 400 Bad Request when
+     * the service rejects the allergy due to a duplicate active entry.
+     *
+     * <p>The service is stubbed to throw an {@link IllegalArgumentException}
+     * indicating that an active allergy for the same allergen already exists.
+     * The test confirms that the controller translates this exception to a 400
+     * response with an error body rather than a raw 500.
+     */
     @Test
     @DisplayName("POST /v1/api/allergies - duplicate allergy returns 400")
     void createAllergy_duplicateAllergy_badRequest() throws Exception {
@@ -203,6 +266,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
+    /**
+     * Verifies that POST /v1/api/allergies returns HTTP 500 Internal Server
+     * Error when the service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw a generic runtime exception simulating
+     * an infrastructure failure.  The test confirms that the controller maps
+     * this to a 500 with a user-friendly error message.
+     */
     @Test
     @DisplayName("POST /v1/api/allergies - unexpected exception returns 500")
     void createAllergy_unexpectedError_returns500() throws Exception {
@@ -221,6 +292,15 @@ class AllergyControllerTest {
     // PUT /v1/api/allergies/{id}
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that PUT /v1/api/allergies/{id} returns HTTP 200 and the
+     * updated allergy DTO when an admin submits valid changes.
+     *
+     * <p>{@link AllergyService#getAllergy} is stubbed to confirm the allergy
+     * exists, and {@link AllergyService#updateAllergy} is stubbed to return an
+     * updated DTO with {@code severity=MODERATE}.  The test asserts the
+     * response message and the changed severity field.
+     */
     @Test
     @DisplayName("PUT /v1/api/allergies/{id} - updates allergy, returns 200")
     void updateAllergy_success() throws Exception {
@@ -248,6 +328,15 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).updateAllergy(eq(1L), any(AllergyDTO.class));
     }
 
+    /**
+     * Verifies that PUT /v1/api/allergies/{id} returns HTTP 404 Not Found when
+     * the specified allergy ID does not exist.
+     *
+     * <p>{@link AllergyService#getAllergy} is stubbed to return
+     * {@link Optional#empty()} for ID {@code 99L}.  The test confirms that the
+     * controller detects the missing resource and returns a 404 with an
+     * {@code error} field rather than proceeding with the update.
+     */
     @Test
     @DisplayName("PUT /v1/api/allergies/{id} - allergy not found returns 404")
     void updateAllergy_notFound() throws Exception {
@@ -261,6 +350,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Allergy not found")));
     }
 
+    /**
+     * Verifies that PUT /v1/api/allergies/{id} returns HTTP 403 Forbidden when
+     * the current user does not have access to the target patient's records.
+     *
+     * <p>The security context is configured for a user who is not associated
+     * with patient ID 10.  The test confirms that the access-control check
+     * prevents the update from reaching the service.
+     */
     @Test
     @DisplayName("PUT /v1/api/allergies/{id} - unauthorized user returns 403")
     void updateAllergy_forbidden() throws Exception {
@@ -274,6 +371,15 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to manage allergies for this patient")));
     }
 
+    /**
+     * Verifies that PUT /v1/api/allergies/{id} returns HTTP 400 Bad Request
+     * when the service throws an {@link IllegalArgumentException} due to
+     * invalid allergy data.
+     *
+     * <p>The service is stubbed to throw after the allergy existence check
+     * passes.  The test confirms that business-rule violations during update
+     * are surfaced as 400 errors.
+     */
     @Test
     @DisplayName("PUT /v1/api/allergies/{id} - invalid data returns 400")
     void updateAllergy_badRequest() throws Exception {
@@ -289,6 +395,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
+    /**
+     * Verifies that PUT /v1/api/allergies/{id} returns HTTP 500 when the
+     * service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw a generic runtime exception after the
+     * existence check.  The test confirms that infrastructure failures are
+     * mapped to a 500 with a user-friendly error message.
+     */
     @Test
     @DisplayName("PUT /v1/api/allergies/{id} - unexpected exception returns 500")
     void updateAllergy_unexpectedError_returns500() throws Exception {
@@ -308,6 +422,15 @@ class AllergyControllerTest {
     // GET /v1/api/allergies/patient/{patientId}
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId} returns HTTP 200
+     * and all allergies for the patient when the caller is authorised.
+     *
+     * <p>{@link AllergyService#getAllergiesForPatient} is stubbed to return a
+     * list containing {@code sampleAllergy}.  The test spot-checks
+     * {@code allergen} and {@code isActive} inside the nested {@code data}
+     * array to confirm correct serialisation.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId} - returns all allergies with 200")
     void getAllergiesForPatient_success() throws Exception {
@@ -323,6 +446,15 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).getAllergiesForPatient(10L);
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId} returns HTTP 200
+     * with an empty {@code data} array when the patient has no recorded
+     * allergies.
+     *
+     * <p>An empty result is a valid, non-error state.  The test confirms that
+     * the controller returns a properly structured response rather than a 404
+     * or an error when no allergies are found.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId} - returns empty list when none exist")
     void getAllergiesForPatient_emptyList() throws Exception {
@@ -335,6 +467,15 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.data").isEmpty());
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId} returns HTTP 403
+     * Forbidden when the current user is not authorised to view the patient's
+     * allergies.
+     *
+     * <p>The security context is set to a different patient user.  The test
+     * confirms that the controller's access check prevents the service call
+     * and returns an appropriate error message.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId} - unauthorized user returns 403")
     void getAllergiesForPatient_forbidden() throws Exception {
@@ -345,6 +486,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to view allergies for this patient")));
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId} returns HTTP 500
+     * when the service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw, simulating a database failure.  The
+     * test confirms that the controller maps the exception to a 500 with a
+     * user-friendly error message.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId} - unexpected exception returns 500")
     void getAllergiesForPatient_unexpectedError_returns500() throws Exception {
@@ -361,6 +510,14 @@ class AllergyControllerTest {
     // GET /v1/api/allergies/patient/{patientId}/active
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId}/active returns
+     * HTTP 200 and only the active allergies for the patient.
+     *
+     * <p>{@link AllergyService#getActiveAllergiesForPatient} is stubbed to
+     * return a list containing {@code sampleAllergy} (which is active).  The
+     * test confirms the response message and the {@code allergen} field.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId}/active - returns active allergies with 200")
     void getActiveAllergiesForPatient_success() throws Exception {
@@ -375,6 +532,14 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).getActiveAllergiesForPatient(10L);
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId}/active returns
+     * HTTP 200 when a patient accesses their own active allergies (self-access).
+     *
+     * <p>A patient should always be able to view their own active allergy list.
+     * The test confirms that the controller's access check passes for self-access
+     * and that the response includes the correct success message.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId}/active - patient self-access succeeds")
     void getActiveAllergiesForPatient_patientSelfAccess() throws Exception {
@@ -386,6 +551,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.message", is("Active allergies retrieved successfully")));
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId}/active returns
+     * HTTP 403 Forbidden when the current user is not authorised to view the
+     * patient's active allergies.
+     *
+     * <p>The security context is set to an unrelated patient user.  The test
+     * confirms that the access check prevents the service call.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId}/active - unauthorized user returns 403")
     void getActiveAllergiesForPatient_forbidden() throws Exception {
@@ -396,6 +569,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to view allergies for this patient")));
     }
 
+    /**
+     * Verifies that GET /v1/api/allergies/patient/{patientId}/active returns
+     * HTTP 500 when the service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw, simulating a database failure.  The
+     * test confirms that the controller maps the exception to a 500 with a
+     * descriptive error message.
+     */
     @Test
     @DisplayName("GET /v1/api/allergies/patient/{patientId}/active - unexpected exception returns 500")
     void getActiveAllergiesForPatient_unexpectedError_returns500() throws Exception {
@@ -412,6 +593,14 @@ class AllergyControllerTest {
     // PATCH /v1/api/allergies/{id}/deactivate
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that PATCH /v1/api/allergies/{id}/deactivate returns HTTP 200
+     * and a success message when an admin deactivates an existing allergy.
+     *
+     * <p>The allergy's existence is confirmed via {@link AllergyService#getAllergy},
+     * and {@link AllergyService#deactivateAllergy} is stubbed as a no-op.
+     * The test asserts the success message and confirms the service was called.
+     */
     @Test
     @DisplayName("PATCH /v1/api/allergies/{id}/deactivate - deactivates allergy, returns 200")
     void deactivateAllergy_success() throws Exception {
@@ -426,6 +615,15 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).deactivateAllergy(1L);
     }
 
+    /**
+     * Verifies that PATCH /v1/api/allergies/{id}/deactivate returns HTTP 404
+     * Not Found when the specified allergy ID does not exist.
+     *
+     * <p>{@link AllergyService#getAllergy} is stubbed to return
+     * {@link Optional#empty()} for ID {@code 99L}.  The test confirms that the
+     * controller detects the missing resource and returns 404 before attempting
+     * to deactivate it.
+     */
     @Test
     @DisplayName("PATCH /v1/api/allergies/{id}/deactivate - allergy not found returns 404")
     void deactivateAllergy_notFound() throws Exception {
@@ -437,6 +635,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Allergy not found")));
     }
 
+    /**
+     * Verifies that PATCH /v1/api/allergies/{id}/deactivate returns HTTP 403
+     * Forbidden when the current user does not have access to the patient's
+     * allergy records.
+     *
+     * <p>The security context is set to an unrelated patient user.  The test
+     * confirms that the access-control check prevents deactivation.
+     */
     @Test
     @DisplayName("PATCH /v1/api/allergies/{id}/deactivate - unauthorized user returns 403")
     void deactivateAllergy_forbidden() throws Exception {
@@ -448,6 +654,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to manage allergies for this patient")));
     }
 
+    /**
+     * Verifies that PATCH /v1/api/allergies/{id}/deactivate returns HTTP 400
+     * when the service throws an {@link IllegalArgumentException} (e.g., the
+     * allergy was not found during deactivation despite passing the guard).
+     *
+     * <p>The service is stubbed to throw after the existence check.  The test
+     * confirms that business-rule violations are surfaced as 400 errors.
+     */
     @Test
     @DisplayName("PATCH /v1/api/allergies/{id}/deactivate - service throws IllegalArgumentException returns 400")
     void deactivateAllergy_badRequest() throws Exception {
@@ -461,6 +675,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
+    /**
+     * Verifies that PATCH /v1/api/allergies/{id}/deactivate returns HTTP 500
+     * when the service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw a generic runtime exception.  The
+     * test confirms that infrastructure failures are mapped to a 500 with a
+     * user-friendly error message.
+     */
     @Test
     @DisplayName("PATCH /v1/api/allergies/{id}/deactivate - unexpected exception returns 500")
     void deactivateAllergy_unexpectedError_returns500() throws Exception {
@@ -478,6 +700,14 @@ class AllergyControllerTest {
     // DELETE /v1/api/allergies/{id}
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that DELETE /v1/api/allergies/{id} returns HTTP 200 and a
+     * success message when an admin permanently deletes an existing allergy.
+     *
+     * <p>The allergy's existence is confirmed via {@link AllergyService#getAllergy},
+     * and {@link AllergyService#deleteAllergy} is stubbed as a no-op.  The
+     * test asserts the success message and confirms the service was called.
+     */
     @Test
     @DisplayName("DELETE /v1/api/allergies/{id} - deletes allergy, returns 200")
     void deleteAllergy_success() throws Exception {
@@ -492,6 +722,14 @@ class AllergyControllerTest {
         Mockito.verify(allergyService).deleteAllergy(1L);
     }
 
+    /**
+     * Verifies that DELETE /v1/api/allergies/{id} returns HTTP 404 Not Found
+     * when the specified allergy ID does not exist.
+     *
+     * <p>{@link AllergyService#getAllergy} is stubbed to return
+     * {@link Optional#empty()} for ID {@code 99L}.  The test confirms that
+     * the controller returns 404 before attempting the deletion.
+     */
     @Test
     @DisplayName("DELETE /v1/api/allergies/{id} - allergy not found returns 404")
     void deleteAllergy_notFound() throws Exception {
@@ -503,6 +741,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Allergy not found")));
     }
 
+    /**
+     * Verifies that DELETE /v1/api/allergies/{id} returns HTTP 403 Forbidden
+     * when the current user does not have access to the patient's allergy
+     * records.
+     *
+     * <p>The security context is set to an unrelated patient user.  The test
+     * confirms that the access-control check prevents deletion.
+     */
     @Test
     @DisplayName("DELETE /v1/api/allergies/{id} - unauthorized user returns 403")
     void deleteAllergy_forbidden() throws Exception {
@@ -514,6 +760,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error", is("Not authorized to manage allergies for this patient")));
     }
 
+    /**
+     * Verifies that DELETE /v1/api/allergies/{id} returns HTTP 400 when the
+     * service throws an {@link IllegalArgumentException} during deletion.
+     *
+     * <p>The service is stubbed to throw after the existence check passes.
+     * The test confirms that business-rule violations during deletion are
+     * surfaced as 400 errors.
+     */
     @Test
     @DisplayName("DELETE /v1/api/allergies/{id} - service throws IllegalArgumentException returns 400")
     void deleteAllergy_badRequest() throws Exception {
@@ -527,6 +781,14 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
+    /**
+     * Verifies that DELETE /v1/api/allergies/{id} returns HTTP 500 when the
+     * service throws an unexpected {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw a generic runtime exception.  The
+     * test confirms that infrastructure failures are mapped to a 500 with a
+     * user-friendly error message.
+     */
     @Test
     @DisplayName("DELETE /v1/api/allergies/{id} - unexpected exception returns 500")
     void deleteAllergy_unexpectedError_returns500() throws Exception {

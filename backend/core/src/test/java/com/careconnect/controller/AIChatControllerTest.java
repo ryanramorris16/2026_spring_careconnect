@@ -41,10 +41,22 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * Unit tests for {@link AIChatController}.
+ * Unit tests for {@link AIChatController}, covering the HTTP layer of all
+ * AI-chat, conversation management, and user-config endpoints.
  *
- * <p>Uses {@link WebMvcTest} to test the controller layer in isolation
- * with all service/repository dependencies mocked.</p>
+ * <p><b>Why @WebMvcTest + MockMvc?</b><br>
+ * {@code @WebMvcTest} spins up only the Spring MVC slice (controllers, filters,
+ * argument resolvers) without loading a full application context or a real
+ * database.  This makes the tests fast and focused: they verify that the
+ * controller routes requests to the correct service methods, applies the right
+ * HTTP status codes, and serialises/deserialises JSON correctly — without caring
+ * about the actual AI or persistence logic inside the services.
+ *
+ * <p>All service and repository collaborators are replaced with Mockito mocks
+ * via {@code @MockitoBean} so that each test exercises only the controller layer
+ * in isolation.  Security filters are disabled with
+ * {@code @AutoConfigureMockMvc(addFilters = false)} to keep tests focused on
+ * request routing and response shaping rather than authentication concerns.
  */
 @WebMvcTest(AIChatController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -52,6 +64,10 @@ class AIChatControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    // --- Mocked collaborators ---
+    // Each bean below is replaced with a Mockito stub so the controller can be
+    // instantiated without real AI providers, databases, or cleanup schedulers.
 
     @MockitoBean
     private AIChatService aiChatService;
@@ -67,6 +83,9 @@ class AIChatControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    // --- Test fixtures ---
+    // Pre-built objects reused across tests to avoid repetitive construction.
 
     private ChatRequest sampleRequest;
     private ChatResponse successResponse;
@@ -120,6 +139,16 @@ class AIChatControllerTest {
     // POST /v1/api/ai-chat/chat
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/chat returns HTTP 200 and includes
+     * the conversation ID and success flag in the response body when the AI
+     * service processes the message successfully.
+     *
+     * <p>{@link AIChatService#processChat} is stubbed to return
+     * {@code successResponse} containing {@code success=true}.  The test
+     * confirms that the controller serialises the response object correctly
+     * and maps a successful result to a 200 status.
+     */
     @Test
     @DisplayName("POST /chat - success returns 200 with AI response body")
     void sendMessage_success_returns200() throws Exception {
@@ -135,6 +164,16 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).processChat(any(ChatRequest.class));
     }
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/chat returns HTTP 400 when the AI
+     * service indicates a failure in its response (i.e., {@code success=false}).
+     *
+     * <p>The service is stubbed to return a failure {@link ChatResponse} with
+     * {@code errorCode="AI_ERROR"}.  The test confirms that the controller maps
+     * a service-reported failure to a 400 Bad Request and includes the error
+     * details in the JSON body, allowing the client to surface a meaningful
+     * error message.
+     */
     @Test
     @DisplayName("POST /chat - service returns failure returns 400 with error details")
     void sendMessage_serviceReturnsFailure_returns400() throws Exception {
@@ -153,6 +192,16 @@ class AIChatControllerTest {
                 .andExpect(jsonPath("$.errorCode", is("AI_ERROR")));
     }
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/chat returns HTTP 500 with an
+     * {@code INTERNAL_ERROR} code when the AI service throws an unexpected
+     * exception.
+     *
+     * <p>The service is stubbed to throw a {@link RuntimeException}.  The test
+     * confirms that the controller catches the exception and responds with a
+     * standardised 500 error body rather than propagating the exception as an
+     * unhandled server error, protecting the client from raw stack traces.
+     */
     @Test
     @DisplayName("POST /chat - service throws exception returns 500 with INTERNAL_ERROR code")
     void sendMessage_serviceThrows_returns500() throws Exception {
@@ -171,6 +220,15 @@ class AIChatControllerTest {
     // GET /v1/api/ai-chat/conversations/{patientId}
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/conversations/{patientId} returns HTTP
+     * 200 and a JSON array containing the patient's conversation summaries.
+     *
+     * <p>{@link AIChatService#getPatientConversations} is stubbed with patient
+     * ID {@code 2L} to return a list containing {@code sampleConversation}.
+     * The test spot-checks {@code conversationId} and {@code title} to confirm
+     * correct serialisation.
+     */
     @Test
     @DisplayName("GET /conversations/{patientId} - success returns 200 with conversation list")
     void getPatientConversations_success_returns200() throws Exception {
@@ -185,6 +243,15 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).getPatientConversations(2L);
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/conversations/{patientId} returns HTTP
+     * 200 with an empty JSON array when the patient has no conversations.
+     *
+     * <p>An empty result is a valid, non-error state — the endpoint should
+     * always return 200 for a known patient, even if they have not started any
+     * conversations yet.  This test confirms that the controller does not
+     * conflate "no data" with "error".
+     */
     @Test
     @DisplayName("GET /conversations/{patientId} - empty list returns 200 with empty array")
     void getPatientConversations_empty_returns200() throws Exception {
@@ -195,6 +262,15 @@ class AIChatControllerTest {
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/conversations/{patientId} returns HTTP
+     * 400 when the service throws a {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw a runtime exception simulating a
+     * downstream error (e.g., a database failure).  The test confirms that the
+     * controller maps the exception to a 400 Bad Request response rather than
+     * letting it propagate as an unhandled 500.
+     */
     @Test
     @DisplayName("GET /conversations/{patientId} - service throws returns 400")
     void getPatientConversations_serviceThrows_returns400() throws Exception {
@@ -209,6 +285,16 @@ class AIChatControllerTest {
     // GET /v1/api/ai-chat/conversation/{conversationId}/messages
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/conversation/{conversationId}/messages
+     * returns HTTP 200 and the list of message summaries for the specified
+     * conversation.
+     *
+     * <p>{@link AIChatService#getConversationMessages} is stubbed with
+     * {@code "conv-123"} to return a list containing {@code sampleMessage}.
+     * The test asserts the {@code messageId} and {@code content} fields to
+     * confirm that the response is correctly serialised.
+     */
     @Test
     @DisplayName("GET /conversation/{conversationId}/messages - success returns 200 with messages")
     void getConversationMessages_success_returns200() throws Exception {
@@ -224,6 +310,15 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).getConversationMessages("conv-123");
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/conversation/{conversationId}/messages
+     * returns HTTP 400 when the service throws a {@link RuntimeException}
+     * (e.g., because the conversation ID does not exist).
+     *
+     * <p>The service is stubbed to throw for any string argument.  The test
+     * confirms that an unknown conversation ID results in a 400 rather than a
+     * raw 500 server error.
+     */
     @Test
     @DisplayName("GET /conversation/{conversationId}/messages - service throws returns 400")
     void getConversationMessages_serviceThrows_returns400() throws Exception {
@@ -238,6 +333,16 @@ class AIChatControllerTest {
     // GET /v1/api/ai-chat/history
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/history returns HTTP 200 with the
+     * messages for a specific conversation when {@code conversationId} is
+     * supplied as a query parameter.
+     *
+     * <p>When {@code conversationId} is present, the controller delegates to
+     * {@link AIChatService#getConversationMessages} rather than the
+     * recent-messages variant.  The test confirms this routing decision by
+     * stubbing the correct service method and asserting the response body.
+     */
     @Test
     @DisplayName("GET /history - with conversationId fetches messages for that conversation")
     void getConversationHistory_withConversationId_returns200() throws Exception {
@@ -254,6 +359,16 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).getConversationMessages("conv-123");
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/history calls
+     * {@link AIChatService#getRecentMessagesForUser} with the default limit of
+     * 50 when no {@code conversationId} is provided.
+     *
+     * <p>Omitting {@code conversationId} signals that the caller wants a
+     * general history view rather than a specific conversation thread.  The
+     * test confirms that the controller falls back to the recent-messages path
+     * and uses the expected default limit.
+     */
     @Test
     @DisplayName("GET /history - without conversationId calls getRecentMessagesForUser with default limit")
     void getConversationHistory_withoutConversationId_callsRecentMessages() throws Exception {
@@ -271,6 +386,15 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).getRecentMessagesForUser(1L, 50);
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/history forwards a custom {@code limit}
+     * query parameter to {@link AIChatService#getRecentMessagesForUser}.
+     *
+     * <p>Clients may request a smaller or larger history window by passing
+     * {@code limit}.  The test confirms that the controller reads the parameter
+     * and passes it through to the service unchanged rather than always using
+     * the default.
+     */
     @Test
     @DisplayName("GET /history - custom limit is forwarded to service")
     void getConversationHistory_customLimit_passedToService() throws Exception {
@@ -288,6 +412,14 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).getRecentMessagesForUser(1L, 10);
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/history returns HTTP 400 when the
+     * service throws a {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw for any user ID and limit combination,
+     * simulating a downstream failure.  The test confirms that the controller
+     * translates the exception to a client-facing 400 error.
+     */
     @Test
     @DisplayName("GET /history - service throws returns 400")
     void getConversationHistory_serviceThrows_returns400() throws Exception {
@@ -303,6 +435,15 @@ class AIChatControllerTest {
     // POST /v1/api/ai-chat/conversation/{conversationId}/deactivate
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/conversation/{conversationId}/deactivate
+     * returns HTTP 200 when the conversation is successfully deactivated.
+     *
+     * <p>{@link AIChatService#deactivateConversation} is stubbed as a no-op
+     * for {@code "conv-123"}.  The test confirms that the controller delegates
+     * to the service and returns 200, indicating that the deactivation was
+     * processed without error.
+     */
     @Test
     @DisplayName("POST /conversation/{conversationId}/deactivate - success returns 200")
     void deactivateConversation_success_returns200() throws Exception {
@@ -314,6 +455,15 @@ class AIChatControllerTest {
         Mockito.verify(aiChatService).deactivateConversation("conv-123");
     }
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/conversation/{conversationId}/deactivate
+     * returns HTTP 400 when the service throws a {@link RuntimeException}
+     * (e.g., because the conversation ID is invalid or already inactive).
+     *
+     * <p>The service is stubbed to throw for any string argument.  The test
+     * confirms that an error during deactivation results in a 400 Bad Request
+     * rather than an unhandled 500.
+     */
     @Test
     @DisplayName("POST /conversation/{conversationId}/deactivate - service throws returns 400")
     void deactivateConversation_serviceThrows_returns400() throws Exception {
@@ -328,6 +478,16 @@ class AIChatControllerTest {
     // GET /v1/api/ai-chat/config
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/config returns HTTP 200 and the user's
+     * AI configuration when both {@code userId} and {@code patientId} are
+     * provided.
+     *
+     * <p>{@link UserAIConfigService#getUserAIConfig} is stubbed for user ID
+     * {@code 1L} and patient ID {@code 2L} to return {@code sampleConfig}.
+     * The test confirms that the controller extracts both query parameters and
+     * forwards them to the service correctly.
+     */
     @Test
     @DisplayName("GET /config - with patientId returns 200 with AI config")
     void getUserAIConfig_withPatientId_returns200() throws Exception {
@@ -343,6 +503,16 @@ class AIChatControllerTest {
         Mockito.verify(userAIConfigService).getUserAIConfig(1L, 2L);
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/config passes {@code null} as the
+     * patient ID to the service when the {@code patientId} query parameter is
+     * omitted.
+     *
+     * <p>Not all callers are associated with a specific patient; omitting the
+     * parameter is a valid use case.  The test confirms that the controller
+     * defaults to {@code null} rather than throwing or substituting a default
+     * value, and that the service is invoked with the correct signature.
+     */
     @Test
     @DisplayName("GET /config - without patientId passes null to service")
     void getUserAIConfig_withoutPatientId_passesNullToService() throws Exception {
@@ -356,6 +526,14 @@ class AIChatControllerTest {
         Mockito.verify(userAIConfigService).getUserAIConfig(eq(1L), isNull());
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/config returns HTTP 400 when the
+     * service throws a {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw for any combination of user ID and
+     * patient ID.  The test confirms that a downstream failure during config
+     * retrieval is surfaced as a 400 Bad Request.
+     */
     @Test
     @DisplayName("GET /config - service throws returns 400")
     void getUserAIConfig_serviceThrows_returns400() throws Exception {
@@ -371,6 +549,15 @@ class AIChatControllerTest {
     // POST /v1/api/ai-chat/config
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/config returns HTTP 201 Created when
+     * the request body does not include an {@code id}, indicating a new config.
+     *
+     * <p>The absence of an {@code id} field signals that the caller wants to
+     * create a fresh configuration.  The service is stubbed to return
+     * {@code sampleConfig} and the test confirms that the controller correctly
+     * maps this case to a 201 response.
+     */
     @Test
     @DisplayName("POST /config - new config (no id) returns 201 Created")
     void saveUserAIConfig_newConfig_returns201() throws Exception {
@@ -390,6 +577,15 @@ class AIChatControllerTest {
                 .andExpect(jsonPath("$.id", is(1)));
     }
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/config returns HTTP 200 OK when the
+     * request body includes an existing {@code id}, indicating an update.
+     *
+     * <p>The presence of an {@code id} field signals that the caller is
+     * updating an existing configuration.  The test confirms that the
+     * controller maps this case to a 200 response rather than 201, correctly
+     * distinguishing creation from update.
+     */
     @Test
     @DisplayName("POST /config - existing config (with id) returns 200 OK")
     void saveUserAIConfig_existingConfig_returns200() throws Exception {
@@ -403,6 +599,14 @@ class AIChatControllerTest {
                 .andExpect(jsonPath("$.id", is(1)));
     }
 
+    /**
+     * Verifies that POST /v1/api/ai-chat/config returns HTTP 400 when the
+     * service throws a {@link RuntimeException} (e.g., a validation failure).
+     *
+     * <p>The service is stubbed to throw for any config DTO.  The test
+     * confirms that a service-level error during save is surfaced as a 400
+     * Bad Request, allowing the client to identify and correct invalid input.
+     */
     @Test
     @DisplayName("POST /config - service throws returns 400")
     void saveUserAIConfig_serviceThrows_returns400() throws Exception {
@@ -419,6 +623,15 @@ class AIChatControllerTest {
     // DELETE /v1/api/ai-chat/config
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that DELETE /v1/api/ai-chat/config returns HTTP 200 when both
+     * {@code userId} and {@code patientId} are provided and the service
+     * deactivates the config without error.
+     *
+     * <p>{@link UserAIConfigService#deactivateUserAIConfig} is stubbed as a
+     * no-op for the given IDs.  The test confirms that the controller delegates
+     * to the service with the correct arguments and returns 200 on success.
+     */
     @Test
     @DisplayName("DELETE /config - with patientId returns 200")
     void deactivateUserAIConfig_withPatientId_returns200() throws Exception {
@@ -432,6 +645,15 @@ class AIChatControllerTest {
         Mockito.verify(userAIConfigService).deactivateUserAIConfig(1L, 2L);
     }
 
+    /**
+     * Verifies that DELETE /v1/api/ai-chat/config passes {@code null} as the
+     * patient ID to the service when the {@code patientId} query parameter is
+     * omitted.
+     *
+     * <p>Analogous to the GET /config test, omitting {@code patientId} is a
+     * valid call and should be forwarded to the service as {@code null} rather
+     * than causing a binding error.
+     */
     @Test
     @DisplayName("DELETE /config - without patientId passes null to service")
     void deactivateUserAIConfig_withoutPatientId_passesNullToService() throws Exception {
@@ -444,6 +666,14 @@ class AIChatControllerTest {
         Mockito.verify(userAIConfigService).deactivateUserAIConfig(eq(1L), isNull());
     }
 
+    /**
+     * Verifies that DELETE /v1/api/ai-chat/config returns HTTP 400 when the
+     * service throws a {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw for any user ID and patient ID
+     * combination.  The test confirms that a downstream failure during config
+     * deactivation is surfaced as a 400 Bad Request.
+     */
     @Test
     @DisplayName("DELETE /config - service throws returns 400")
     void deactivateUserAIConfig_serviceThrows_returns400() throws Exception {
@@ -459,6 +689,16 @@ class AIChatControllerTest {
     // GET /v1/api/ai-chat/retention-policy
     // -----------------------------------------------------------------------
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/retention-policy returns HTTP 200 and
+     * a JSON body containing the {@code retentionPolicy} field when the cleanup
+     * service is available.
+     *
+     * <p>{@link ChatCleanupService#getRetentionPolicyInfo} is stubbed to return
+     * a known policy string.  The test asserts that the controller wraps the
+     * string in a JSON object under the key {@code retentionPolicy}, giving
+     * clients a structured response.
+     */
     @Test
     @DisplayName("GET /retention-policy - success returns 200 with policy info")
     void getRetentionPolicy_success_returns200() throws Exception {
@@ -471,6 +711,16 @@ class AIChatControllerTest {
                         is("Conversations are retained for 90 days.")));
     }
 
+    /**
+     * Verifies that GET /v1/api/ai-chat/retention-policy returns HTTP 500 and
+     * a JSON body containing an {@code error} field when the cleanup service
+     * throws a {@link RuntimeException}.
+     *
+     * <p>The service is stubbed to throw, simulating an infrastructure failure.
+     * The test confirms that the controller catches the exception and responds
+     * with a 500 Internal Server Error and a user-friendly error message rather
+     * than an unhandled exception response.
+     */
     @Test
     @DisplayName("GET /retention-policy - service throws returns 500 with error message")
     void getRetentionPolicy_serviceThrows_returns500() throws Exception {
