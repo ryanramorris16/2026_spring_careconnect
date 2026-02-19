@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../privacy/telemetry_settings.dart';
+import 'telemetry_settings.dart';
 import 'telemetry_guardrails.dart';
 
 class Telemetry {
