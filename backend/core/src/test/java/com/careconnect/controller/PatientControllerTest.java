@@ -1,6 +1,7 @@
 package com.careconnect.controller;
 
 import com.careconnect.dto.*;
+import com.careconnect.exception.AppException;
 import com.careconnect.model.Caregiver;
 import com.careconnect.model.Medication.MedicationType;
 import com.careconnect.model.Patient;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -26,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -157,6 +160,40 @@ class PatientControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("getCurrentUser() — via GET /me")
+    class GetCurrentUser {
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Returns user when email exists in repository")
+        void returnsUser_whenEmailFound() throws Exception {
+            when(userRepository.findByEmail("patient@test.com"))
+                    .thenReturn(Optional.of(patientUser));
+            when(patientService.getPatientByUserId(patientUser.getId()))
+                    .thenReturn(patient);
+
+            mockMvc.perform(get("/v1/api/patients/me"))
+                    .andExpect(status().isOk());
+
+            verify(userRepository).findByEmail("patient@test.com");
+        }
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Throws UNAUTHORIZED when email is not found in repository")
+        void throwsUnauthorized_whenEmailNotFound() throws Exception {
+            when(userRepository.findByEmail("patient@test.com"))
+                    .thenReturn(Optional.empty());
+
+            mockMvc.perform(get("/v1/api/patients/me"))
+                    .andExpect(status().isUnauthorized());
+
+            verify(userRepository).findByEmail("patient@test.com");
+            verifyNoInteractions(patientService);
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════════════
     //  GET /v1/api/patients/{patientId}
     // ════════════════════════════════════════════════════════════════════════════
@@ -284,6 +321,60 @@ class PatientControllerTest {
 
             mockMvc.perform(get("/v1/api/patients/10/caregivers"))
                     .andExpect(status().isOk());
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════════
+    //  GET /v1/api/patients/{patientId}/provider
+    // ════════════════════════════════════════════════════════════════════════════
+    @Nested
+    @DisplayName("GET /{patientId}/provider")
+    class GetPrimaryCareProvider {
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Returns primary care provider for a valid patient")
+        void returnsPrimaryProvider() throws Exception {
+            mockCurrentUser(patientUser);
+
+            Map<String, Object> providerData = Map.of(
+                    "name", "Dr. Jane Smith",
+                    "specialty", "General Practice",
+                    "phone", "555-9876"
+            );
+            when(patientService.getPrimaryProvider(10L)).thenReturn(providerData);
+
+            mockMvc.perform(get("/v1/api/patients/10/provider"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Dr. Jane Smith"))
+                    .andExpect(jsonPath("$.specialty").value("General Practice"))
+                    .andExpect(jsonPath("$.phone").value("555-9876"));
+
+            verify(patientService).getPrimaryProvider(10L);
+        }
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Returns empty map when no provider is assigned")
+        void returnsEmptyMap_whenNoProvider() throws Exception {
+            mockCurrentUser(patientUser);
+            when(patientService.getPrimaryProvider(10L)).thenReturn(Map.of());
+
+            mockMvc.perform(get("/v1/api/patients/10/provider"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().json("{}"));
+        }
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Returns 404 when patient does not exist")
+        void returns404_whenPatientNotFound() throws Exception {
+            mockCurrentUser(patientUser);
+            when(patientService.getPrimaryProvider(99L))
+                    .thenThrow(new AppException(HttpStatus.NOT_FOUND, "Patient not found"));
+
+            mockMvc.perform(get("/v1/api/patients/99/provider"))
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -846,6 +937,122 @@ class PatientControllerTest {
 
             mockMvc.perform(get("/v1/api/patients/10/profile/enhanced"))
                     .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("hasAccessToPatient() — via GET /{patientId}/profile")
+    class HasAccessToPatient {
+
+        // ── PATIENT role ─────────────────────────────────────────────────────────
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("PATIENT accessing another patient's record — returns false")
+        void patient_otherRecord_denied() throws Exception {
+            User otherPatientUser = buildUser(99L, "other@test.com", Role.PATIENT);
+            Patient otherPatient = new Patient();
+            otherPatient.setId(20L);
+            otherPatient.setUser(otherPatientUser);
+
+            when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
+            when(patientService.getPatientById(20L)).thenReturn(otherPatient);
+
+            mockMvc.perform(get("/v1/api/patients/20/profile"))
+                    .andExpect(status().isForbidden());
+        }
+
+        // ── CAREGIVER role ───────────────────────────────────────────────────────
+
+        @Test
+        @WithMockUser(username = "caregiver@test.com")
+        @DisplayName("CAREGIVER found in patient's caregiver list — returns true")
+        void caregiver_inList_granted() throws Exception {
+            Caregiver caregiver = new Caregiver();
+            caregiver.setUser(caregiverUser); // caregiverUser.getId() == 2L
+
+            when(userRepository.findByEmail("caregiver@test.com")).thenReturn(Optional.of(caregiverUser));
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(patientService.getCaregiversByPatient(10L)).thenReturn(List.of(caregiver));
+            when(patientService.getPatientProfile(10L)).thenReturn(Optional.of(mock(PatientProfileDTO.class)));
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "caregiver@test.com")
+        @DisplayName("CAREGIVER not in patient's caregiver list — returns false")
+        void caregiver_notInList_denied() throws Exception {
+            User otherCaregiverUser = buildUser(99L, "other-caregiver@test.com", Role.CAREGIVER);
+            Caregiver unrelatedCaregiver = new Caregiver();
+            unrelatedCaregiver.setUser(otherCaregiverUser);
+
+            when(userRepository.findByEmail("caregiver@test.com")).thenReturn(Optional.of(caregiverUser));
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(patientService.getCaregiversByPatient(10L)).thenReturn(List.of(unrelatedCaregiver));
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isForbidden());
+        }
+
+        // ── FAMILY_MEMBER role ───────────────────────────────────────────────────
+
+        @Test
+        @WithMockUser(username = "family@test.com")
+        @DisplayName("FAMILY_MEMBER found in patient's family member list — returns true")
+        void familyMember_inList_granted() throws Exception {
+            FamilyMemberLinkResponse link = mock(FamilyMemberLinkResponse.class);
+            when(link.familyUserId()).thenReturn(3L); // matches familyUser.getId()
+
+            when(userRepository.findByEmail("family@test.com")).thenReturn(Optional.of(familyUser));
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(familyMemberService.getFamilyMembersByPatient(10L)).thenReturn(List.of(link));
+            when(patientService.getPatientProfile(10L)).thenReturn(Optional.of(mock(PatientProfileDTO.class)));
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isOk());
+        }
+
+        // ── ADMIN role ───────────────────────────────────────────────────────────
+
+        @Test
+        @WithMockUser(username = "admin@test.com")
+        @DisplayName("ADMIN always gets access — returns true")
+        void admin_alwaysGranted() throws Exception {
+            when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(patientService.getPatientProfile(10L)).thenReturn(Optional.of(mock(PatientProfileDTO.class)));
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isOk());
+        }
+
+        // ── Patient not found ────────────────────────────────────────────────────
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("getPatientById returns null — patientOpt.isEmpty() branch — returns false")
+        void patientNotFound_denied() throws Exception {
+            when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
+            when(patientService.getPatientById(10L)).thenReturn(null);
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isForbidden());
+        }
+
+        // ── catch(Exception) block ───────────────────────────────────────────────
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Unexpected exception in access check — catch block returns false")
+        void unexpectedException_caught_returnsFalse() throws Exception {
+            when(userRepository.findByEmail("patient@test.com"))
+                    .thenThrow(new RuntimeException("DB connection lost"));
+
+            mockMvc.perform(get("/v1/api/patients/10/profile"))
+                    .andExpect(status().isForbidden());
+
+            verifyNoInteractions(patientService);
         }
     }
 }
