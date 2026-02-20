@@ -12,20 +12,38 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link OpenApiConfig}.
+ *
+ * OpenApiConfig is a pure-annotation Spring configuration class: it carries no runtime
+ * bean factory methods, only Springdoc/Swagger annotations ({@code @OpenAPIDefinition},
+ * {@code @SecurityScheme}) that Springdoc reads at startup to generate the OpenAPI spec.
+ *
+ * Because the contract is expressed entirely in annotations, these tests use the Java
+ * Reflection API ({@code Class.getAnnotation}, {@code Class.getAnnotationsByType}) to
+ * inspect the annotations at compile time without starting a Spring context. This is the
+ * appropriate technique when there are no runtime beans to instantiate or mock.
+ */
 class OpenApiConfigTest {
 
     @Test
     void classHasConfigurationAnnotation() {
+        // Confirms that Spring recognises OpenApiConfig as a configuration class so that
+        // the Springdoc library picks it up during component scanning.
         assertTrue(OpenApiConfig.class.isAnnotationPresent(Configuration.class));
     }
 
     @Test
     void openApiDefinitionAnnotationExists() {
+        // Confirms the @OpenAPIDefinition annotation is present, which is what tells
+        // Springdoc to populate the OpenAPI document with the metadata defined below.
         assertTrue(OpenApiConfig.class.isAnnotationPresent(OpenAPIDefinition.class));
     }
 
     @Test
     void openApiDefinitionContainsCorrectMetadata() {
+        // Verifies the API title, version, description snippet, contact details, and
+        // license information shown in the generated Swagger UI / OpenAPI JSON.
         OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
@@ -45,6 +63,8 @@ class OpenApiConfigTest {
 
     @Test
     void openApiDefinitionContainsServers() {
+        // Verifies that both the local development server and the production API server
+        // are listed so that developers can target either from Swagger UI.
         OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
@@ -61,6 +81,9 @@ class OpenApiConfigTest {
 
     @Test
     void openApiDefinitionContainsSecurityRequirements() {
+        // Verifies that the three authentication methods used by the API (JWT bearer token,
+        // HTTP Basic, and cookie-based) are declared as global security requirements so
+        // every endpoint in the spec is marked as requiring authentication by default.
         OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
@@ -80,6 +103,9 @@ class OpenApiConfigTest {
 
     @Test
     void securitySchemesAreDefined() {
+        // Verifies that the three @SecurityScheme annotations are present, which define
+        // how each authentication type works (e.g. Bearer token in Authorization header,
+        // Basic credentials, or a session cookie) so Swagger UI can send real auth requests.
         SecurityScheme[] schemes =
                 OpenApiConfig.class.getAnnotationsByType(SecurityScheme.class);
 
