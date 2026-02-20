@@ -23,16 +23,31 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   NotificationSettings? _notificationSettings;
   bool _loadingSettings = true;
+  // BNS 7 Obesrvability
   bool _telemetryEnabled = true;
   bool _loadingTelemetry = true;
   bool _telemetryDialogShownThisSession = false;
+  
+  // BNS 5: Offline persistence state
+  bool _offlinePersistenceEnabled = true; // Enabled by default
+  bool _loadingPersistence = true;
 
   @override
   void initState() {
     super.initState();
     _loadNotificationSettings();
     _loadTelemetrySettings();
+    _loadPersistenceSettings();// BNS 5
   }
+
+  // BNS 5: Simulated loading of offline persistence setting
+  Future<void> _loadPersistenceSettings() async {
+      // Logic to fetch saved preference goes here. 
+      // For now, we default to true per BNS 5.
+      setState(() {
+        _loadingPersistence = false;
+      });
+    }
 
   Widget _buildLanguageCard(BuildContext context) {
     final t = AppLocalizations.of(context)!;
@@ -507,6 +522,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    
     final t = AppLocalizations.of(context)!;
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
@@ -720,6 +736,26 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     );
                   }
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // User-Controlled Persistence Toggle (BNS 5)
+              _buildSectionHeader(context, 'Data Preferences'),
+              _buildToggleCard(
+                context,
+                icon: Icons.cloud_off,
+                title: 'Offline Persistence',
+                subtitle: _offlinePersistenceEnabled
+                    ? 'Save data locally and sync when reconnected'
+                    : 'New data will not be stored locally for offline use.',
+                value: _offlinePersistenceEnabled,
+                loading: _loadingPersistence,
+                onChanged: (enabled) async {
+                  setState(() => _offlinePersistenceEnabled = enabled);
+                  // Link to your persistence logic here
+                  await Telemetry.event('persistence_toggle', {'enabled': enabled});
                 },
               ),
 
