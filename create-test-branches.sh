@@ -89,3 +89,77 @@ class CleanService {
   const CleanService({required this.name});
   String greet() => '"'"'Hello from $name'"'"';
 }'
+
+# =============================================================================
+# BRANCH 1: test/all-passing
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 1: test/all-passing ════${NC}"
+create_branch "test/all-passing"
+cleanup
+make_dirs
+echo "$CLEAN_JAVA" > "$BACKEND_DIR/CleanService.java"
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+commit_and_push "test/all-passing" "test: all-passing — clean code, no violations"
+open_pr "test/all-passing" \
+  "[CI TEST] All Tools Passing" \
+  "## CI/CD Test — All Passing
+All tools should pass. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 2: test/all-failing
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 2: test/all-failing ════${NC}"
+create_branch "test/all-failing"
+cleanup
+make_dirs
+
+cat > "$BACKEND_DIR/BadService.java" << 'JAVA'
+package com.careconnect.test;
+import java.io.*;
+import java.sql.*;
+public class BadService {
+    public static String AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
+    public String x;
+    public void doEverything(String input) {
+        String unused = "never used";
+        String result = null;
+        System.out.println(result.length());
+        try {
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/db", "root", "password123");
+            Statement stmt = conn.createStatement();
+            stmt.execute("SELECT * FROM users WHERE id = " + input);
+        } catch (Exception e) {
+        }
+        try {
+            FileInputStream fis = new FileInputStream("file.txt");
+            int data = fis.read();
+        } catch (IOException e) { e.printStackTrace(); }
+        if (input != null) { if (input.length() > 0) { if (input.startsWith("a")) {
+            if (input.endsWith("z")) { if (input.contains("m")) {
+                System.out.println("deep nesting");
+            } } } } }
+    }
+}
+JAVA
+
+cat > "$FRONTEND_DIR/bad_widget.dart" << 'DART'
+import 'dart:io';
+class BadService {
+  final String apiKey = 'hardcoded-secret-key-12345';
+  final String password = 'supersecretpassword';
+  void doSomething() {
+    var unused1 = 'never used';
+    dynamic anything = 'value';
+    print(anything.nonExistentMethod());
+    var serverUrl = 'http://192.168.1.100:8080/api';
+    var userId = Platform.environment['USER_INPUT'];
+    var query = 'SELECT * FROM users WHERE id = $userId';
+  }
+}
+DART
+
+commit_and_push "test/all-failing" "test: all-failing — violations in every tool"
+open_pr "test/all-failing" \
+  "[CI TEST] All Tools Failing" \
+  "## CI/CD Test — All Failing
+All tools should fail. Merge should be BLOCKED. Do not merge — test branch only."
