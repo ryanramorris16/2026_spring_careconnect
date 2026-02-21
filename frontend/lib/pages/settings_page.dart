@@ -741,26 +741,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
               const SizedBox(height: 24),
 
-              // User-Controlled Persistence Toggle (BNS 5)
-              _buildSectionHeader(context, 'Data Preferences'),
-              _buildToggleCard(
-                context,
-                icon: Icons.cloud_off,
-                title: 'Offline Persistence',
-                subtitle: _offlinePersistenceEnabled
-                    ? 'Save data locally and sync when reconnected'
-                    : 'New data will not be stored locally for offline use.',
-                value: _offlinePersistenceEnabled,
-                loading: _loadingPersistence,
-                onChanged: (enabled) async {
-                  setState(() => _offlinePersistenceEnabled = enabled);
-                  // Link to your persistence logic here
-                  await Telemetry.event('persistence_toggle', {'enabled': enabled});
-                },
-              ),
-
-              const SizedBox(height: 24),
-
               // Subscription (hide for patient/family member)
               if (!shouldHideSubscription) ...[
                 _buildSectionHeader(context, t.settingsSubscription),
@@ -788,6 +768,25 @@ class _SettingsPageState extends State<SettingsPage> {
 
               // General
               _buildSectionHeader(context, t.settingsGeneral),
+              // User-Controlled Persistence Toggle (BNS 5)
+              _buildToggleCard(
+                context,
+                icon: Icons.cloud_off,
+                title: 'Offline Persistence',
+                subtitle: _offlinePersistenceEnabled
+                    ? 'Save data locally and sync when reconnected'
+                    : 'New data will not be stored locally for offline use.',
+                value: _offlinePersistenceEnabled,
+                loading: _loadingPersistence,
+                onChanged: (enabled) async {
+                  setState(() => _offlinePersistenceEnabled = enabled);
+                  // Link to your persistence logic here
+                  await Telemetry.event('persistence_toggle', {'enabled': enabled});
+                },
+              ),
+
+
+
               _buildSettingsCard(
                 context,
                 icon: Icons.cleaning_services,
