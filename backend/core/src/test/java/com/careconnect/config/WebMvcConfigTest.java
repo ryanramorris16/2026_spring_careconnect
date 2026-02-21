@@ -16,6 +16,25 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Unit tests for {@link WebMvcConfig}.
+ *
+ * WebMvcConfig is a Spring {@link org.springframework.web.servlet.config.annotation.WebMvcConfigurer}
+ * that configures two concerns:
+ * <ol>
+ *   <li><b>CORS mappings</b> — allows specific origins (local dev ports and deployed
+ *       Amplify/GitHub Pages frontends) to make credentialed cross-origin requests.</li>
+ *   <li><b>Static resource handler</b> — serves uploaded files from a local filesystem
+ *       path under the {@code /uploads/**} URL pattern.</li>
+ * </ol>
+ *
+ * CORS configuration is extracted from a real {@link CorsRegistry} via
+ * {@link ReflectionTestUtils#invokeMethod} (the map is not public API).
+ * Resource handler registrations are similarly extracted from a {@link ResourceHandlerRegistry}
+ * via {@link ReflectionTestUtils#getField} because the registry does not expose a
+ * public accessor — both are Spring-internal details that reflection safely reaches
+ * in a test context.
+ */
 class WebMvcConfigTest {
 
     private WebMvcConfig webMvcConfig;
@@ -24,6 +43,9 @@ class WebMvcConfigTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        // Instantiate the config and drive addCorsMappings() against a real CorsRegistry.
+        // Extract the resulting CorsConfiguration for "/**" using reflection since
+        // getCorsConfigurations() is package-private on CorsRegistry.
         webMvcConfig = new WebMvcConfig();
 
         CorsRegistry corsRegistry = new CorsRegistry();
@@ -38,11 +60,16 @@ class WebMvcConfigTest {
 
     @Test
     void addCorsMappings_MapsAllPaths() {
+        // Verifies that the CORS configuration is registered under "/**" so every
+        // endpoint is covered by the policy.
         assertNotNull(corsConfig, "Expected CORS configuration for '/**' path mapping");
     }
 
     @Test
     void addCorsMappings_HasCorrectAllowedOriginPatterns() {
+        // Verifies that exactly the four expected origins are allowed:
+        // the local dev server (port 50030 and 3000), the Amplify staging URL, and
+        // the GitHub Pages URL for the deployed demo site.
         List<String> patterns = corsConfig.getAllowedOriginPatterns();
         assertNotNull(patterns);
         assertTrue(patterns.contains("http://localhost:50030"));
@@ -54,6 +81,7 @@ class WebMvcConfigTest {
 
     @Test
     void addCorsMappings_AllowsCorrectMethods() {
+        // Verifies the five HTTP methods (including OPTIONS for CORS preflight) are permitted.
         List<String> methods = corsConfig.getAllowedMethods();
         assertNotNull(methods);
         assertTrue(methods.containsAll(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")));
@@ -62,16 +90,26 @@ class WebMvcConfigTest {
 
     @Test
     void addCorsMappings_AllowsAllHeaders() {
+        // Verifies that any request header is accepted ("*"), so clients can send
+        // custom headers (e.g. Authorization, Content-Type) without being rejected.
         assertEquals(List.of("*"), corsConfig.getAllowedHeaders());
     }
 
     @Test
     void addCorsMappings_AllowsCredentials() {
+        // Verifies that credentialed cross-origin requests (cookies, auth headers) are
+        // permitted, which is required for session-based and JWT cookie authentication.
         assertTrue(corsConfig.getAllowCredentials());
     }
 
     // --- Resource Handler Tests ---
 
+    /**
+     * Helper that drives {@link WebMvcConfig#addResourceHandlers} against a real
+     * {@link ResourceHandlerRegistry} and returns the internal list of registrations.
+     * Mocked {@link ApplicationContext} and {@link ServletContext} are supplied because
+     * the registry constructor requires them but does not use them in this code path.
+     */
     @SuppressWarnings("unchecked")
     private List<ResourceHandlerRegistration> getRegistrations() {
         ResourceHandlerRegistry registry = new ResourceHandlerRegistry(
@@ -82,6 +120,8 @@ class WebMvcConfigTest {
 
     @Test
     void addResourceHandlers_RegistersOneHandler() {
+        // Verifies that exactly one resource handler is registered, preventing
+        // accidental duplication or omission of the uploads handler.
         List<ResourceHandlerRegistration> registrations = getRegistrations();
         assertNotNull(registrations);
         assertEquals(1, registrations.size());
@@ -89,6 +129,8 @@ class WebMvcConfigTest {
 
     @Test
     void addResourceHandlers_RegistersUploadsPattern() {
+        // Verifies that the handler is mapped to "/uploads/**", the URL prefix under
+        // which uploaded user files (images, documents) are served.
         List<ResourceHandlerRegistration> registrations = getRegistrations();
         String[] patterns = (String[]) ReflectionTestUtils.getField(registrations.get(0), "pathPatterns");
         assertNotNull(patterns);
@@ -99,6 +141,9 @@ class WebMvcConfigTest {
     @Test
     @SuppressWarnings("unchecked")
     void addResourceHandlers_RegistersCorrectLocation() {
+        // Verifies that the handler serves files from the expected local filesystem path.
+        // The "file:" prefix tells Spring to read from an absolute filesystem location
+        // rather than the classpath.
         List<ResourceHandlerRegistration> registrations = getRegistrations();
         List<String> locationValues =
                 (List<String>) ReflectionTestUtils.getField(registrations.get(0), "locationValues");

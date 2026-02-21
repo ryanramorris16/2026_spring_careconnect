@@ -15,6 +15,18 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link QuestionInitializer}.
+ *
+ * QuestionInitializer is a Spring {@code @Component} that seeds the database with
+ * a fixed set of health-check questions on application startup. It is idempotent:
+ * if questions already exist ({@code repository.count() > 0}), it does nothing.
+ *
+ * Mockito is used here via {@code @Mock} and {@code @InjectMocks} annotations so that
+ * the real {@link QuestionRepository} is replaced with a mock, avoiding the need for a
+ * database. {@link ArgumentCaptor} is used in several tests to capture the {@link Question}
+ * objects passed to {@code save()}, allowing assertions on their field values.
+ */
 class QuestionInitializerTest {
 
     @Mock
@@ -25,11 +37,14 @@ class QuestionInitializerTest {
 
     @BeforeEach
     void setUp() {
+        // Initialize @Mock and @InjectMocks fields so Mockito wires them before each test.
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void initQuestions_DoesNothingIfQuestionsExist() {
+        // Verifies the idempotency guard: when the repository already holds questions
+        // (count > 0), no save calls are made and the count is checked exactly once.
         when(questionRepository.count()).thenReturn(5L);
 
         questionInitializer.initQuestions();
@@ -40,6 +55,8 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_CreatesAllQuestionsWhenEmpty() {
+        // Verifies that exactly 15 questions are persisted when the table is empty.
+        // The count is expected to be called at least twice (before and after seeding).
         when(questionRepository.count()).thenReturn(0L);
         when(questionRepository.save(any(Question.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -52,6 +69,9 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_SavesCorrectFirstQuestion() {
+        // Uses ArgumentCaptor to capture all saved Question objects so the first one
+        // can be inspected for correct prompt text, type, required/active flags, and
+        // ordinal (display order). This pins the first seed question's exact definition.
         when(questionRepository.count()).thenReturn(0L);
 
         ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
@@ -73,6 +93,8 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_AllOrdinalsAreSequential() {
+        // Verifies that all 15 questions are assigned sequential ordinals starting at 1,
+        // which controls the display order presented to the user in the health-check form.
         when(questionRepository.count()).thenReturn(0L);
 
         ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
@@ -92,6 +114,9 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_ContinuesIfSaveThrows() {
+        // Verifies that a database error on save does not abort the initializer: all 15
+        // save attempts are still made even if each one throws, and no exception escapes
+        // to the caller (which would prevent the application from starting).
         when(questionRepository.count()).thenReturn(0L);
 
         when(questionRepository.save(any(Question.class)))
@@ -104,6 +129,9 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_HandlesCountExceptionGracefully() {
+        // Verifies that if the count query itself fails (e.g. Flyway has not yet run),
+        // the initializer catches the exception, skips seeding entirely, and does not
+        // propagate an exception that would crash the application context startup.
         when(questionRepository.count())
                 .thenThrow(new RuntimeException("Database unavailable"));
 
@@ -115,6 +143,9 @@ class QuestionInitializerTest {
 
     @Test
     void initQuestions_CreatesAllExpectedQuestionTypes() {
+        // Verifies that the seed data includes at least one question of each expected
+        // QuestionType (YES_NO, TRUE_FALSE, NUMBER, TEXT), confirming the initializer
+        // covers all answer formats used by the health-check questionnaire.
         when(questionRepository.count()).thenReturn(0L);
 
         ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
