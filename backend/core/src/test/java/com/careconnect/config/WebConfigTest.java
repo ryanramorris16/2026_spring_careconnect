@@ -12,6 +12,20 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link WebConfig}.
+ *
+ * WebConfig is a Spring {@code @Configuration} class that exposes a
+ * {@link WebMvcConfigurer} bean responsible for registering MVC-level CORS mappings.
+ * These mappings allow the frontend (running on localhost development ports) to make
+ * credentialed cross-origin requests to the backend.
+ *
+ * In {@code setUp}, the configurer is exercised by invoking
+ * {@code addCorsMappings(CorsRegistry)} on a real {@link CorsRegistry} instance.
+ * The resulting {@link CorsConfiguration} is extracted from the registry via
+ * {@link ReflectionTestUtils#invokeMethod} (the internal map is not publicly exposed),
+ * then individual assertions are made per test for clarity and isolation.
+ */
 class WebConfigTest {
 
     private WebMvcConfigurer corsConfigurer;
@@ -20,6 +34,9 @@ class WebConfigTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
+        // Build the configurer bean and drive addCorsMappings() to populate a real
+        // CorsRegistry, then extract the resulting CorsConfiguration for "/**"
+        // using ReflectionTestUtils because getCorsConfigurations() is package-private.
         WebConfig webConfig = new WebConfig();
         corsConfigurer = webConfig.corsConfigurer();
 
@@ -33,16 +50,21 @@ class WebConfigTest {
 
     @Test
     void corsConfigurer_IsNotNull() {
+        // Verifies that corsConfigurer() returns a non-null WebMvcConfigurer bean.
         assertNotNull(corsConfigurer);
     }
 
     @Test
     void corsConfigurer_MapsAllPaths() {
+        // Verifies that a CORS configuration is registered under the "/**" wildcard,
+        // meaning all application paths are subject to the CORS policy.
         assertNotNull(config, "Expected CORS configuration for '/**' path mapping");
     }
 
     @Test
     void corsConfigurer_HasCorrectAllowedOrigins() {
+        // Verifies that the five explicit localhost origins (covering common dev ports
+        // and both hostname variants) are all present in the allowed-origins list.
         List<String> expected = List.of(
                 "http://localhost:8080",
                 "http://127.0.0.1:8080",
@@ -55,6 +77,9 @@ class WebConfigTest {
 
     @Test
     void corsConfigurer_HasCorrectAllowedOriginPatterns() {
+        // Verifies that wildcard port patterns are registered in addition to the
+        // explicit origins, allowing any port on localhost or 127.0.0.1 (e.g. for
+        // dev servers that pick a random port).
         List<String> patterns = config.getAllowedOriginPatterns();
         assertNotNull(patterns);
         assertTrue(patterns.contains("http://localhost:*"));
@@ -64,6 +89,8 @@ class WebConfigTest {
 
     @Test
     void corsConfigurer_AllowsCorrectMethods() {
+        // Verifies that the standard RESTful HTTP methods plus OPTIONS (for browser
+        // preflight requests) are all permitted by the CORS policy.
         List<String> methods = config.getAllowedMethods();
         assertNotNull(methods);
         assertTrue(methods.containsAll(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")));
@@ -72,6 +99,8 @@ class WebConfigTest {
 
     @Test
     void corsConfigurer_AllowsCredentials() {
+        // Verifies that credentialed requests (carrying cookies or Authorization headers)
+        // are permitted, which is required for JWT cookie-based authentication.
         assertTrue(config.getAllowCredentials());
     }
 }

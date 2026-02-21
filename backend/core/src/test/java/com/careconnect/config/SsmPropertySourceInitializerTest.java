@@ -18,6 +18,24 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
+/**
+ * Unit tests for {@link SsmPropertySourceInitializer}.
+ *
+ * SsmPropertySourceInitializer is a Spring {@code ApplicationContextInitializer} that
+ * runs very early in startup (before beans are created) to load secrets from AWS SSM
+ * Parameter Store into a custom {@code PropertySource}. It only activates when:
+ * <ol>
+ *   <li>The active Spring profile is {@code prod}.</li>
+ *   <li>The property {@code careconnect.aws.enabled} is not {@code false}.</li>
+ * </ol>
+ *
+ * Profile-gating tests use {@link MockEnvironment} to control active profiles without
+ * starting a full Spring context. The private {@code loadParametersFromSsm} method is
+ * accessed via Java Reflection ({@link Method#setAccessible}) to test the SSM-fetching
+ * logic in isolation — this is justified because the method encapsulates complex I/O
+ * behaviour that is impractical to exercise indirectly through the public {@code initialize}
+ * method without a real AWS connection.
+ */
 class SsmPropertySourceInitializerTest {
 
     private SsmPropertySourceInitializer initializer;
@@ -26,6 +44,8 @@ class SsmPropertySourceInitializerTest {
 
     @BeforeEach
     void setup() {
+        // Use a GenericApplicationContext so we can set a MockEnvironment on it.
+        // MockEnvironment allows programmatic control of active profiles and properties.
         initializer = new SsmPropertySourceInitializer();
         context = new GenericApplicationContext();
         environment = new MockEnvironment();
@@ -35,8 +55,12 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
     // Should NOT initialize if not prod
     // ==========================================
+
     @Test
     void shouldNotInitializeIfNotProdProfile() {
+        // Verifies the profile guard: when the active profile is "dev" (not "prod"),
+        // the initializer does not add the "ssmPropertySource" to the environment,
+        // keeping local development free of AWS dependencies.
         environment.setActiveProfiles("dev");
 
         initializer.initialize(context);
@@ -47,8 +71,12 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
     // Should NOT initialize if AWS disabled
     // ==========================================
+
     @Test
     void shouldNotInitializeIfAwsDisabled() {
+        // Verifies the AWS-enabled guard: even on the "prod" profile, the initializer
+        // skips SSM loading when careconnect.aws.enabled=false, supporting deployments
+        // that run in production-like environments without AWS (e.g. Docker Compose).
         environment.setActiveProfiles("prod");
         environment.setProperty("careconnect.aws.enabled", "false");
 
@@ -60,10 +88,16 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
     // Test loadParametersFromSsm (via reflection)
     // ==========================================
+
     @Test
     void shouldLoadParametersFromSsm() throws Exception {
+        // Verifies that loadParametersFromSsm() correctly maps an SSM parameter name
+        // (e.g. "/careconnect/prod/stripe-secret-key") to a Spring-friendly property
+        // key (e.g. "stripe.secret-key") and stores its value in the returned map.
+        // Reflection is used because the method is private — it cannot be tested via
+        // the public API without a full AWS-connected prod environment.
 
-        // Mock SSM Client
+        // Mock SSM Client to return a controlled parameter value
         SsmClient ssmClient = Mockito.mock(SsmClient.class);
 
         Parameter mockParameter = Parameter.builder()
@@ -93,10 +127,14 @@ class SsmPropertySourceInitializerTest {
     }
 
     // ==========================================
-    //  Should Handle Missing Parameter 
+    // Should Handle Missing Parameter
     // ==========================================
+
     @Test
     void shouldHandleMissingParameterGracefully() throws Exception {
+        // Verifies that when SSM throws (e.g. the parameter does not exist or access is
+        // denied), loadParametersFromSsm() returns an empty map rather than propagating
+        // the exception — preventing a single missing secret from crashing startup.
 
         SsmClient ssmClient = Mockito.mock(SsmClient.class);
 

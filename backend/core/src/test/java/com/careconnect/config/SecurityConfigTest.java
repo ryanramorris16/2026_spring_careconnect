@@ -5,6 +5,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for {@link SecurityConfig}.
+ *
+ * SecurityConfig is a Spring {@code @Configuration} class whose primary responsibility
+ * tested here is producing a {@code PasswordEncoder} bean backed by BCrypt. BCrypt is
+ * the industry-standard adaptive hashing algorithm for passwords: it incorporates a
+ * random salt per hash, making rainbow-table and precomputed-hash attacks infeasible.
+ *
+ * No Spring context is needed — the config class is instantiated directly, and the
+ * real BCrypt implementation is exercised (not mocked) to verify both correctness and
+ * security properties of the encoder.
+ */
 class SecurityConfigTest {
 
     private SecurityConfig securityConfig;
@@ -16,11 +28,15 @@ class SecurityConfigTest {
 
     @Test
     void passwordEncoder_IsCreated() {
+        // Sanity check that passwordEncoder() returns a non-null bean.
         assertNotNull(securityConfig.passwordEncoder());
     }
 
     @Test
     void passwordEncoder_ReturnsBCrypt() {
+        // Verifies that the returned encoder is specifically a BCryptPasswordEncoder,
+        // confirming the algorithm choice rather than accepting any PasswordEncoder
+        // implementation (e.g. NoOpPasswordEncoder used only for legacy/dev scenarios).
         var encoder = securityConfig.passwordEncoder();
         assertInstanceOf(
                 org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.class,
@@ -30,6 +46,9 @@ class SecurityConfigTest {
 
     @Test
     void passwordEncoder_CanEncodeAndMatch() {
+        // Verifies the core encode/match round-trip: a raw password is hashed, the hash
+        // differs from the plaintext (i.e. it is actually encoded), and matches() confirms
+        // the original password against the stored hash — the critical login-time check.
         var encoder = securityConfig.passwordEncoder();
         String raw = "testPassword123";
         String encoded = encoder.encode(raw);
@@ -40,6 +59,8 @@ class SecurityConfigTest {
 
     @Test
     void passwordEncoder_RejectsMismatch() {
+        // Verifies that matches() returns false for a wrong password, ensuring that
+        // incorrect credentials are rejected during authentication.
         var encoder = securityConfig.passwordEncoder();
         String encoded = encoder.encode("correctPassword");
 
@@ -48,12 +69,16 @@ class SecurityConfigTest {
 
     @Test
     void passwordEncoder_ProducesDifferentHashesForSameInput() {
+        // Verifies BCrypt's random-salt property: two calls to encode() with the same
+        // plaintext produce different hashes, yet both hashes still match the original.
+        // This prevents attackers from deducing which users share the same password.
+
+        // BCrypt uses random salt, so hashes should differ
         var encoder = securityConfig.passwordEncoder();
         String raw = "samePassword";
         String hash1 = encoder.encode(raw);
         String hash2 = encoder.encode(raw);
 
-        // BCrypt uses random salt, so hashes should differ
         assertNotEquals(hash1, hash2);
         // But both should still match the original
         assertTrue(encoder.matches(raw, hash1));
