@@ -163,3 +163,141 @@ open_pr "test/all-failing" \
   "[CI TEST] All Tools Failing" \
   "## CI/CD Test — All Failing
 All tools should fail. Merge should be BLOCKED. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 3: test/fail-checkstyle
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 3: test/fail-checkstyle ════${NC}"
+create_branch "test/fail-checkstyle"
+cleanup
+make_dirs
+
+cat > "$BACKEND_DIR/CheckstyleViolation.java" << 'JAVA'
+package com.careconnect.test;
+public class CheckstyleViolation {
+    public void BadMethodName() {
+        int x = 12345678;
+        System.out.println(x);
+    }
+    public void anotherBadMethodName() { int y = 99999999; System.out.println("This line is intentionally very long to trigger the line length checkstyle rule which is usually set to 100 or 120 characters"); }
+}
+JAVA
+
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+commit_and_push "test/fail-checkstyle" "test: only Checkstyle violations"
+open_pr "test/fail-checkstyle" \
+  "[CI TEST] Checkstyle Fails Only" \
+  "## CI/CD Test — Checkstyle Only
+Only Checkstyle should fail. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 4: test/fail-spotbugs
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 4: test/fail-spotbugs ════${NC}"
+create_branch "test/fail-spotbugs"
+cleanup
+make_dirs
+
+cat > "$BACKEND_DIR/SpotBugsViolation.java" << 'JAVA'
+package com.careconnect.test;
+import java.io.FileInputStream;
+import java.io.IOException;
+/**
+ * Demonstrates SpotBugs violations for CI/CD pipeline testing.
+ */
+public class SpotBugsViolation {
+    /**
+     * Triggers null dereference and resource leak.
+     * @param input input string
+     */
+    public void riskyMethod(final String input) {
+        String value = null;
+        if (input.equals("trigger")) { value = "set"; }
+        System.out.println(value.length());
+        try {
+            FileInputStream fis = new FileInputStream("test.txt");
+            int data = fis.read();
+            System.out.println(data);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed", e);
+        }
+    }
+    /**
+     * Triggers ignored return value.
+     * @param str the string
+     */
+    public void ignoredReturn(final String str) {
+        str.replace("old", "new");
+    }
+}
+JAVA
+
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+commit_and_push "test/fail-spotbugs" "test: only SpotBugs violations"
+open_pr "test/fail-spotbugs" \
+  "[CI TEST] SpotBugs Fails Only" \
+  "## CI/CD Test — SpotBugs Only
+Only SpotBugs should fail. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 5: test/fail-pmd
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 5: test/fail-pmd ════${NC}"
+create_branch "test/fail-pmd"
+cleanup
+make_dirs
+
+cat > "$BACKEND_DIR/PmdViolation.java" << 'JAVA'
+package com.careconnect.test;
+/**
+ * Demonstrates PMD violations for CI/CD pipeline testing.
+ */
+public class PmdViolation {
+    /**
+     * Triggers empty catch block.
+     * @param input input string
+     */
+    public void emptyCatch(final String input) {
+        try {
+            int value = Integer.parseInt(input);
+            System.out.println(value);
+        } catch (NumberFormatException e) {
+        }
+    }
+    /**
+     * Triggers unused variable and generic exception.
+     * @param data the data
+     */
+    public void unusedVariable(final String data) {
+        String unused = "never read";
+        int anotherUnused = 42;
+        try {
+            System.out.println(data.toUpperCase());
+        } catch (Exception e) {
+            System.out.println("error");
+        }
+    }
+    /**
+     * Triggers cyclomatic complexity.
+     * @param a first
+     * @param b second
+     * @param c third
+     * @param d fourth
+     * @return result
+     */
+    public int tooComplex(final int a, final int b, final int c, final int d) {
+        if (a > 0) { if (b > 0) { if (c > 0) { if (d > 0) { return 1;
+            } else if (d < -10) { return 2; } else { return 3; }
+            } else if (c < -10) { return 4; } else { return 5; }
+            } else if (b < -10) { return 6; } else { return 7; }
+        } else if (a < -10) { return 8; } else { return 9; }
+    }
+}
+JAVA
+
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+commit_and_push "test/fail-pmd" "test: only PMD violations"
+open_pr "test/fail-pmd" \
+  "[CI TEST] PMD Fails Only" \
+  "## CI/CD Test — PMD Only
+Only PMD should fail. Do not merge — test branch only."
