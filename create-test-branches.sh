@@ -427,3 +427,51 @@ open_pr "test/fail-trufflehog" \
   "[CI TEST] TruffleHog Fails Only" \
   "## CI/CD Test — TruffleHog Only
 TruffleHog should detect fake AWS key patterns. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 9: test/fail-owasp
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 9: test/fail-owasp ════${NC}"
+create_branch "test/fail-owasp"
+cleanup
+make_dirs
+
+echo "$CLEAN_JAVA" > "$BACKEND_DIR/CleanService.java"
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+
+if [ -f "backend/core/pom.xml" ]; then
+  cp backend/core/pom.xml backend/core/pom.xml.bak
+  sed -i '' 's|</dependencies>|        <!-- TEST ONLY: CVE-2021-44228 Log4Shell CVSS 10.0 REMOVE AFTER TESTING -->\n        <dependency>\n            <groupId>org.apache.logging.log4j</groupId>\n            <artifactId>log4j-core</artifactId>\n            <version>2.14.1</version>\n        </dependency>\n    </dependencies>|' backend/core/pom.xml
+fi
+
+commit_and_push "test/fail-owasp" "test: only OWASP failure — log4j 2.14.1 CVE-2021-44228"
+
+if [ -f "backend/core/pom.xml.bak" ]; then
+  mv backend/core/pom.xml.bak backend/core/pom.xml
+fi
+
+open_pr "test/fail-owasp" \
+  "[CI TEST] OWASP Dependency-Check Fails Only" \
+  "## CI/CD Test — OWASP Only
+OWASP should detect log4j 2.14.1 CVE-2021-44228 CVSS 10.0. Do not merge — test branch only."
+
+# =============================================================================
+# DONE
+# =============================================================================
+echo ""
+echo -e "${GREEN}════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}  All 9 test branches created and PRs opened!           ${NC}"
+echo -e "${GREEN}════════════════════════════════════════════════════════${NC}"
+echo ""
+echo -e "${BLUE}Next steps:${NC}"
+echo "  1. Go to github.com/umgc/2026_spring_careconnect/pulls"
+echo "  2. Open each PR and watch the workflow run"
+echo "  3. Check the report comment on each PR"
+echo ""
+echo -e "${YELLOW}To clean up when done:${NC}"
+echo "  git branch -D test/all-passing test/all-failing test/fail-checkstyle \\"
+echo "    test/fail-spotbugs test/fail-pmd test/fail-semgrep \\"
+echo "    test/fail-flutter-analyze test/fail-trufflehog test/fail-owasp"
+echo "  git push origin --delete test/all-passing test/all-failing test/fail-checkstyle \\"
+echo "    test/fail-spotbugs test/fail-pmd test/fail-semgrep \\"
+echo "    test/fail-flutter-analyze test/fail-trufflehog test/fail-owasp"
