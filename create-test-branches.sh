@@ -301,3 +301,129 @@ open_pr "test/fail-pmd" \
   "[CI TEST] PMD Fails Only" \
   "## CI/CD Test — PMD Only
 Only PMD should fail. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 6: test/fail-semgrep
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 6: test/fail-semgrep ════${NC}"
+create_branch "test/fail-semgrep"
+cleanup
+make_dirs
+
+cat > "$BACKEND_DIR/SemgrepViolation.java" << 'JAVA'
+package com.careconnect.test;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+/**
+ * Demonstrates Semgrep violations for CI/CD pipeline testing.
+ */
+public class SemgrepViolation {
+    /** Hardcoded password. */
+    private static final String DB_PASSWORD = "hardcoded_db_password_123";
+    /**
+     * Triggers SQL injection.
+     * @param userId raw user input
+     * @throws Exception on error
+     */
+    public void sqlInjection(final String userId) throws Exception {
+        Connection conn = DriverManager.getConnection(
+            "jdbc:mysql://localhost/careconnect", "root", DB_PASSWORD);
+        Statement stmt = conn.createStatement();
+        stmt.execute("SELECT * FROM patients WHERE id = " + userId);
+        conn.close();
+    }
+    /**
+     * Triggers weak hash.
+     * @param data data to hash
+     * @return hash bytes
+     * @throws Exception on error
+     */
+    public byte[] weakHash(final String data) throws Exception {
+        java.security.MessageDigest md =
+            java.security.MessageDigest.getInstance("MD5");
+        return md.digest(data.getBytes());
+    }
+}
+JAVA
+
+cat > "$FRONTEND_DIR/semgrep_violation.dart" << 'DART'
+/// Dart file with Semgrep violations for CI/CD testing.
+class SemgrepViolation {
+  final String apiSecret = 'hardcoded-api-secret-key-abc123';
+  String getEndpoint() {
+    return 'http://10.0.0.1:8080/api/patients';
+  }
+}
+DART
+
+commit_and_push "test/fail-semgrep" "test: only Semgrep violations"
+open_pr "test/fail-semgrep" \
+  "[CI TEST] Semgrep Fails Only" \
+  "## CI/CD Test — Semgrep Only
+Only Semgrep should fail. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 7: test/fail-flutter-analyze
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 7: test/fail-flutter-analyze ════${NC}"
+create_branch "test/fail-flutter-analyze"
+cleanup
+make_dirs
+
+echo "$CLEAN_JAVA" > "$BACKEND_DIR/CleanService.java"
+
+cat > "$FRONTEND_DIR/flutter_analyze_violation.dart" << 'DART'
+import 'dart:io';
+import 'dart:convert';
+class FlutterAnalyzeViolation {
+  String name;
+  FlutterAnalyzeViolation(this.name);
+  void doSomething() {
+    print('This triggers avoid_print lint rule');
+    String unused = 'never read';
+    if (name is String) { print(name); }
+    String doubleQuoted = "should use single quotes";
+    print(doubleQuoted);
+  }
+}
+DART
+
+commit_and_push "test/fail-flutter-analyze" "test: only flutter analyze violations"
+open_pr "test/fail-flutter-analyze" \
+  "[CI TEST] Flutter Analyze Fails Only" \
+  "## CI/CD Test — Flutter Analyze Only
+Only flutter analyze should fail. Do not merge — test branch only."
+
+# =============================================================================
+# BRANCH 8: test/fail-trufflehog
+# =============================================================================
+echo -e "\n${BLUE}════ BRANCH 8: test/fail-trufflehog ════${NC}"
+create_branch "test/fail-trufflehog"
+cleanup
+make_dirs
+
+echo "$CLEAN_DART" > "$FRONTEND_DIR/clean_widget.dart"
+
+cat > "$BACKEND_DIR/LegacyConfig.java" << 'JAVA'
+package com.careconnect.test;
+/**
+ * Legacy config with fake credentials for TruffleHog testing.
+ * DO NOT use in real code.
+ */
+public class LegacyConfig {
+    private static final String AWS_KEY = "AKIAIOSFODNN7EXAMPLE";
+    private static final String AWS_SECRET = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
+    /**
+     * Returns the AWS key.
+     * @return aws key string
+     */
+    public String getAwsKey() { return AWS_KEY; }
+}
+JAVA
+
+commit_and_push "test/fail-trufflehog" "test: TruffleHog detection — fake AWS key patterns"
+open_pr "test/fail-trufflehog" \
+  "[CI TEST] TruffleHog Fails Only" \
+  "## CI/CD Test — TruffleHog Only
+TruffleHog should detect fake AWS key patterns. Do not merge — test branch only."
