@@ -768,20 +768,25 @@ class _SettingsPageState extends State<SettingsPage> {
 
               // General
               _buildSectionHeader(context, t.settingsGeneral),
+
               // User-Controlled Persistence Toggle (BNS 5)
               _buildToggleCard(
                 context,
                 icon: Icons.cloud_off,
                 title: 'Offline Persistence',
-                subtitle: _offlinePersistenceEnabled
+                subtitle: userProvider.offlinePersistenceEnabled
                     ? 'Save data locally and sync when reconnected'
                     : 'New data will not be stored locally for offline use.',
-                value: _offlinePersistenceEnabled,
-                loading: _loadingPersistence,
-                onChanged: (enabled) async {
-                  setState(() => _offlinePersistenceEnabled = enabled);
-                  // Link to your persistence logic here
-                  await Telemetry.event('persistence_toggle', {'enabled': enabled});
+                value: userProvider.offlinePersistenceEnabled,
+                // loading: _loadingPersistence,
+                onChanged: (enabled) {
+                  userProvider.setOfflinePersistence(enabled);
+                  
+                  Telemetry.event('offline_toggled', {
+                    'enabled': enabled,
+                    'timestamp': DateTime.now().toIso8601String(),
+                  });
+                  
                 },
               ),
 

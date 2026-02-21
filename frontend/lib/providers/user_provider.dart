@@ -174,6 +174,23 @@ class UserProvider extends ChangeNotifier {
   /// Public getter for caregiver model
   CaregiverModel? get caregiverModel => _caregiverModel;
 
+
+
+// BNS 5: Offline persistence state
+  bool _offlinePersistenceEnabled = true; // Default to true per TDD
+  bool get offlinePersistenceEnabled => _offlinePersistenceEnabled;
+/// Updates the offline persistence setting and notifies listeners.
+  /// This will trigger the Dashboard banner to show/hide.
+  void setOfflinePersistence(bool enabled) {
+    if (_offlinePersistenceEnabled == enabled) return;
+    _offlinePersistenceEnabled = enabled;
+    
+    // Optional: You could save this to UserRoleStorageService or SharedPreferences here
+    notifyListeners();
+  }
+
+
+
   /// Initializes user authentication state from stored data on app start.
   ///
   /// This method is called when the app starts to restore any existing
@@ -472,6 +489,8 @@ class UserProvider extends ChangeNotifier {
           caregiverId: _user!.caregiverId,
         );
       } catch (e) {
+
+        print('Error syncing user data to storage: $e');
       }
     }
   }
@@ -539,4 +558,4 @@ class UserProvider extends ChangeNotifier {
   }
 
   bool get isPatient => _user?.role.toUpperCase() == 'PATIENT';
-}
+}// end UserProvider class

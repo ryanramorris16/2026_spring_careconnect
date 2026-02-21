@@ -174,21 +174,87 @@ class _MainScreenState extends State<MainScreen> {
             foregroundColor: Colors.white,
             actions: _config.appBarActions,
           ) : null,
-          body: PageView.builder(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            itemCount: _navItems.length,
-            itemBuilder: (context, index) {
-              final navItem = _navItems[index];
 
-              return _navItems[index].screen;
-            },
+
+
+          // body: PageView.builder(
+          //   controller: _pageController,
+          //   onPageChanged: _onPageChanged,
+          //   itemCount: _navItems.length,
+          //   itemBuilder: (context, index) {
+          //     final navItem = _navItems[index];
+
+          //     return _navItems[index].screen;
+          //   },
+
+body: Column(
+            children: [
+              // BNS 5 Global Banner
+              if (!userProvider.offlinePersistenceEnabled)
+                _buildGlobalOfflineBanner(context),
+
+              // The actual tab content
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _navItems.length,
+                  itemBuilder: (context, index) {
+                    return _navItems[index].screen;
+                  },
+                ),
+              ),
+            ],
+
+
+
           ),
           bottomNavigationBar: _buildBottomNavigationBar(),
         );
       },
     );
   }
+
+
+/// Build the global offline persistence warning banner
+  Widget _buildGlobalOfflineBanner(BuildContext context) {
+    final theme = Theme.of(context);
+    return MaterialBanner(
+      elevation: 0,
+      backgroundColor: theme.colorScheme.errorContainer,
+      leading: Icon(Icons.cloud_off, color: theme.colorScheme.error),
+      content: Text(
+        'Offline Mode Disabled: Data will only sync while online.',
+        style: TextStyle(
+          color: theme.colorScheme.onErrorContainer,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            // Find the index for the Profile/Settings tab
+            // Typically the last index in _navItems
+            _onItemTapped(_navItems.length - 1);
+          },
+          child: Text(
+            'SETTINGS',
+            style: TextStyle(
+              color: theme.colorScheme.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+
+
+
 
   /// Build the bottom navigation bar
   Widget _buildBottomNavigationBar() {
