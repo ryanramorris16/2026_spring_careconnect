@@ -497,12 +497,12 @@ jobs:
           except FileNotFoundError:
             pass
 
-          with open('/tmp/tool-results/flutter-analyze-findings.json', 'w') as f:
+          with open('/tmp/tool-results/flutter_analyze-findings.json', 'w') as f:
             json.dump(findings, f, indent=2)
           print(f"Parsed {len(findings)} flutter analyze findings")
           EOF
 
-          echo "OUTCOME=${{ steps.flutter_analyze.outcome }}" > /tmp/tool-results/flutter-analyze-meta.txt
+          echo "OUTCOME=${{ steps.flutter_analyze.outcome }}" > /tmp/tool-results/flutter_analyze-meta.txt
 
       # -----------------------------------------------------------------------
       # SEMGREP
@@ -581,9 +581,9 @@ jobs:
           retention-days: 90
           path: |
             semgrep.sarif
-            /tmp/tool-results/flutter-analyze-findings.json
+            /tmp/tool-results/flutter_analyze-findings.json
             /tmp/tool-results/semgrep-findings.json
-            /tmp/tool-results/flutter-analyze-meta.txt
+            /tmp/tool-results/flutter_analyze-meta.txt
             /tmp/tool-results/semgrep-meta.txt
 
 # =============================================================================
@@ -650,7 +650,7 @@ jobs:
             2>&1 | tee /tmp/owasp-dc-output.txt || true
 
           EXIT_CODE=${PIPESTATUS[0]}
-          echo "EXIT_CODE=$EXIT_CODE" > /tmp/tool-results/owasp-dc-meta.txt
+          echo "EXIT_CODE=$EXIT_CODE" > /tmp/tool-results/owasp_dc-meta.txt
 
           # Parse the JSON report to extract findings
           if [ -f target/dependency-check-report.json ]; then
@@ -690,7 +690,7 @@ jobs:
                 'references': [r.get('url','') for r in vuln.get('references', [])[:2]]
               })
 
-          with open('/tmp/tool-results/owasp-dc-findings.json', 'w') as f:
+          with open('/tmp/tool-results/owasp_dc-findings.json', 'w') as f:
             json.dump(findings, f, indent=2)
 
           blocked = [f for f in findings if f['blocked']]
@@ -698,24 +698,24 @@ jobs:
           print(f"OWASP DC: {len(blocked)} blocking findings, {len(warned)} warnings")
           PYEOF
           else
-            echo "[]" > /tmp/tool-results/owasp-dc-findings.json
+            echo "[]" > /tmp/tool-results/owasp_dc-findings.json
           fi
 
           # Now determine final outcome: fail if any blocking findings exist
           BLOCKING=$(python3 -c "
           import json
           try:
-            findings = json.load(open('/tmp/tool-results/owasp-dc-findings.json'))
+            findings = json.load(open('/tmp/tool-results/owasp_dc-findings.json'))
             print(len([f for f in findings if f.get('blocked', False)]))
           except: print(0)
           ")
 
           if [ "$BLOCKING" -gt "0" ]; then
-            echo "OUTCOME=failure" >> /tmp/tool-results/owasp-dc-meta.txt
+            echo "OUTCOME=failure" >> /tmp/tool-results/owasp_dc-meta.txt
             echo "::error::OWASP Dependency-Check found $BLOCKING Critical/High severity CVE(s). Merge blocked."
             exit 1
           else
-            echo "OUTCOME=success" >> /tmp/tool-results/owasp-dc-meta.txt
+            echo "OUTCOME=success" >> /tmp/tool-results/owasp_dc-meta.txt
           fi
         continue-on-error: true  # Report job reads the meta file to determine block/warn
 
@@ -727,8 +727,8 @@ jobs:
           retention-days: 90
           path: |
             backend/core/target/dependency-check-report.*
-            /tmp/tool-results/owasp-dc-findings.json
-            /tmp/tool-results/owasp-dc-meta.txt
+            /tmp/tool-results/owasp_dc-findings.json
+            /tmp/tool-results/owasp_dc-meta.txt
 
 # =============================================================================
 # JOB 5: REPORT AGGREGATION
