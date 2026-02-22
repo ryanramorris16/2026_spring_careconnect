@@ -777,6 +777,13 @@ jobs:
           path: /tmp/tool-results
         continue-on-error: true
 
+
+      - name: Flatten downloaded artifacts
+        if: always()
+        run: |
+          find /tmp/tool-results -mindepth 2 -type f -exec mv {} /tmp/tool-results/ \;
+          echo "Flattened artifact directories:"
+          ls /tmp/tool-results/
       # -----------------------------------------------------------------------
       # GENERATE UNIFIED REPORT
       # Produces both a Markdown report (for PR comment + human reading)
