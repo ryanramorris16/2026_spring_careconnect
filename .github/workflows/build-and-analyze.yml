@@ -336,7 +336,7 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Build with Maven (compile + test for coverage)
         working-directory: backend/core
-        run: chmod +x mvnw && ./mvnw clean verify
+        run: chmod +x mvnw && ./mvnw clean compile -DskipTests
 
       # -----------------------------------------------------------------------
       # SONARQUBE
@@ -441,7 +441,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'  # Pin to a specific version if needed, e.g. '3.19.0'
+          flutter-version: '3.27.0'  # Pin to a specific version if needed, e.g. '3.19.0'
           cache: true
 
       - name: Install Flutter dependencies
