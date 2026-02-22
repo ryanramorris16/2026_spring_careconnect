@@ -44,10 +44,12 @@ on:
     branches:
       - main
       - develop
+      - team_d
   pull_request:
     branches:
       - main
       - develop
+      - team_d
 
 # -----------------------------------------------------------------------------
 # PERMISSIONS: Required for posting PR comments
