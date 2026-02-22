@@ -438,11 +438,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      
+      
+
+      - name: Debug workflow + commit
+        run: |
+          echo "SHA: $GITHUB_SHA"
+          echo "REF: $GITHUB_REF"
+          git rev-parse HEAD
+          git log -1 --oneline
+          ls -la .github/workflows
+      
+      
+      
+      
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.1'  # Pin to a specific version if needed, e.g. '3.19.0'
           cache: true
+      
+     
+      
+      
+      
+      
+      
       
       - name: Debug Flutter/Dart versions
         run: |
