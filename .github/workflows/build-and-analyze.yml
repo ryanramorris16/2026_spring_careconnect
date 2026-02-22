@@ -441,7 +441,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.0'  # Pin to a specific version if needed, e.g. '3.19.0'
+          flutter-version: '3.32.0'  # Pin to a specific version if needed, e.g. '3.19.0'
           cache: true
 
       - name: Install Flutter dependencies
