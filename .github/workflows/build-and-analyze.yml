@@ -465,15 +465,19 @@ jobs:
       
       
       
-      - name: Debug Flutter/Dart versions
+      - name: Debug Flutter/Dart versions (CI)
         run: |
           which flutter
           flutter --version
+          flutter doctor -v
           which dart || true
           dart --version || true
-            - name: Install Flutter dependencies
-              working-directory: frontend
-              run: flutter pub get
+          echo "FLUTTER_ROOT=$(dirname "$(dirname "$(which flutter)")")"
+          ls -la "$(dirname "$(dirname "$(which flutter)")")/bin/cache/dart-sdk/bin/dart"
+
+
+
+          
 
       # -----------------------------------------------------------------------
       # FLUTTER ANALYZE
