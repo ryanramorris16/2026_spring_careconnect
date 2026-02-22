@@ -116,14 +116,18 @@ jobs:
       #                         or known false positives. See:
       #                         https://github.com/trufflesecurity/trufflehog#gitignore-style-exclusions
       # -----------------------------------------------------------------------
+        
       - name: Run TruffleHog
         if: env.RUN_TRUFFLEHOG == 'true'
+        id: trufflehog
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --only-verified
+          # IMPORTANT: make the tool exit non-zero when it finds secrets
+          extra_args: --only-verified --fail
+        continue-on-error: true
 
       - name: Record TruffleHog result
         if: always()
@@ -215,7 +219,8 @@ jobs:
             echo "[]" > /tmp/tool-results/checkstyle-findings.json
           fi
 
-          OUTCOME="${{ steps.checkstyle.outcome }}"
+          OUTCOME="success"
+          if [ "$VIOLATIONS" -gt "0" ]; then OUTCOME="failure"; fi
           echo "OUTCOME=$OUTCOME" >> /tmp/tool-results/checkstyle-meta.txt
 
       # -----------------------------------------------------------------------
@@ -272,7 +277,10 @@ jobs:
             echo "[]" > /tmp/tool-results/spotbugs-findings.json
           fi
 
-          echo "OUTCOME=${{ steps.spotbugs.outcome }}" > /tmp/tool-results/spotbugs-meta.txt
+          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/tool-results/spotbugs-findings.json'))))" 2>/dev/null || echo "0")
+          OUTCOME="success"
+          if [ "$COUNT" -gt "0" ]; then OUTCOME="failure"; fi
+          echo "OUTCOME=$OUTCOME" > /tmp/tool-results/spotbugs-meta.txt
 
       # -----------------------------------------------------------------------
       # PMD
@@ -323,7 +331,10 @@ jobs:
             echo "[]" > /tmp/tool-results/pmd-findings.json
           fi
 
-          echo "OUTCOME=${{ steps.pmd.outcome }}" > /tmp/tool-results/pmd-meta.txt
+          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/tool-results/pmd-findings.json'))))" 2>/dev/null || echo "0")
+          OUTCOME="success"
+          if [ "$COUNT" -gt "0" ]; then OUTCOME="failure"; fi
+          echo "OUTCOME=$OUTCOME" > /tmp/tool-results/pmd-meta.txt
 
       # -----------------------------------------------------------------------
       # BUILD (required before SonarQube scan)
@@ -436,48 +447,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      
-      
-
-      - name: Debug workflow + commit
-        run: |
-          echo "SHA: $GITHUB_SHA"
-          echo "REF: $GITHUB_REF"
-          git rev-parse HEAD
-          git log -1 --oneline
-          ls -la .github/workflows
-      
-      
-      
+          fetch-depth: 0   
       
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.1'  # Pin to a specific version if needed, e.g. '3.19.0'
           cache: true
-      
-     
-      
-      
-      
-      
-      
-      
-      - name: Debug Flutter/Dart versions (CI)
-        run: |
-          which flutter
-          flutter --version
-          flutter doctor -v
-          which dart || true
-          dart --version || true
-          echo "FLUTTER_ROOT=$(dirname "$(dirname "$(which flutter)")")"
-          ls -la "$(dirname "$(dirname "$(which flutter)")")/bin/cache/dart-sdk/bin/dart"
-
-
-
-          
+        
 
       # -----------------------------------------------------------------------
       # FLUTTER ANALYZE
@@ -532,8 +509,11 @@ jobs:
             json.dump(findings, f, indent=2)
           print(f"Parsed {len(findings)} flutter analyze findings")
           EOF
-
-          echo "OUTCOME=${{ steps.flutter_analyze.outcome }}" > /tmp/tool-results/flutter-analyze-meta.txt
+  
+          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/tool-results/flutter-analyze-findings.json'))))" 2>/dev/null || echo "0")
+          OUTCOME="success"
+          if [ "$COUNT" -gt "0" ]; then OUTCOME="failure"; fi
+          echo "OUTCOME=$OUTCOME" > /tmp/tool-results/flutter-analyze-meta.txt
 
       # -----------------------------------------------------------------------
       # SEMGREP
@@ -602,7 +582,10 @@ jobs:
             echo "[]" > /tmp/tool-results/semgrep-findings.json
           fi
 
-          echo "OUTCOME=${{ steps.semgrep.outcome }}" > /tmp/tool-results/semgrep-meta.txt
+          COUNT=$(python3 -c "import json; print(len(json.load(open('/tmp/tool-results/semgrep-findings.json'))))" 2>/dev/null || echo "0")
+          OUTCOME="success"
+          if [ "$COUNT" -gt "0" ]; then OUTCOME="failure"; fi
+          echo "OUTCOME=$OUTCOME" > /tmp/tool-results/semgrep-meta.txt
 
       - name: Upload Flutter/Semgrep artifacts
         if: always()
@@ -905,8 +888,37 @@ jobs:
 
           # ── Determine overall status ───────────────────────────────────────
           any_failure = False
+          
+          toggle_map = {
+            'trufflehog': 'RUN_TRUFFLEHOG',
+            'checkstyle': 'RUN_CHECKSTYLE',
+            'spotbugs': 'RUN_SPOTBUGS',
+            'pmd': 'RUN_PMD',
+            'semgrep': 'RUN_SEMGREP',
+            'flutter_analyze': 'RUN_FLUTTER_ANALYZE',
+            'owasp_dc': 'RUN_OWASP_DC',
+          }
+          
           for tool, info in tools.items():
-            if info['blocking'] and outcomes.get(tool) == 'failure':
+            if not info['blocking']:
+              continue
+          
+            # Was this tool intended to run?
+            toggle = toggle_map.get(tool)
+            should_run = True
+            if toggle and os.environ.get(toggle, 'true').lower() != 'true':
+              should_run = False
+          
+            tool_outcome = outcomes.get(tool, 'skipped')
+            tool_findings = findings.get(tool, [])
+          
+            # If it should have run but got skipped, treat as failure (prevents false greens)
+            #if should_run and tool_outcome == 'skipped':
+            #  any_failure = True
+            #  break
+          
+            # Core gating rule: any findings OR explicit failure blocks merge
+            if tool_outcome == 'failure' or (isinstance(tool_findings, list) and len(tool_findings) > 0):
               any_failure = True
               break
 
