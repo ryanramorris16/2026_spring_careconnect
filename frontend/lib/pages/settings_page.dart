@@ -774,23 +774,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 context,
                 icon: Icons.cloud_off,
                 title: 'Offline Persistence',
-                subtitle: userProvider.offlinePersistenceEnabled
+                subtitle: userProvider.offlineModeEnabled
                     ? 'Save data locally and sync when reconnected'
                     : 'New data will not be stored locally for offline use.',
-                value: userProvider.offlinePersistenceEnabled,
+                value: userProvider.offlineModeEnabled,
                 // loading: _loadingPersistence,
                 onChanged: (enabled) {
                   userProvider.setOfflinePersistence(enabled);
-                  
+                  // BNS 7: Privacy-Preserving Observability and Telemetry.
                   Telemetry.event('offline_toggled', {
                     'enabled': enabled,
                     'timestamp': DateTime.now().toIso8601String(),
                   });
-                  
                 },
               ),
-
-
 
               _buildSettingsCard(
                 context,

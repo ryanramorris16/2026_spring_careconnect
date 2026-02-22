@@ -139,6 +139,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         // Check if user data is missing or invalid
@@ -164,8 +165,6 @@ class _MainScreenState extends State<MainScreen> {
           });
         }
         
-
-
         return Scaffold(
           backgroundColor: _config.backgroundColor,
           appBar: _config.showAppBar ? AppBar(
@@ -174,23 +173,15 @@ class _MainScreenState extends State<MainScreen> {
             foregroundColor: Colors.white,
             actions: _config.appBarActions,
           ) : null,
-
-
-
-          // body: PageView.builder(
-          //   controller: _pageController,
-          //   onPageChanged: _onPageChanged,
-          //   itemCount: _navItems.length,
-          //   itemBuilder: (context, index) {
-          //     final navItem = _navItems[index];
-
-          //     return _navItems[index].screen;
-          //   },
-
-body: Column(
+          // BNS 5: Global Banners (No Internet & Offline Mode)
+          body: Column(
             children: [
-              // BNS 5 Global Banner
-              if (!userProvider.offlinePersistenceEnabled)
+              // Hardware Connection Lost
+              if (!userProvider.isDeviceOnline)
+                _buildGlobalNoInternetBanner(theme)
+
+              // BNS 5 offline mode Banner
+              else if (!userProvider.offlineModeEnabled)
                 _buildGlobalOfflineBanner(context),
 
               // The actual tab content
@@ -205,9 +196,6 @@ body: Column(
                 ),
               ),
             ],
-
-
-
           ),
           bottomNavigationBar: _buildBottomNavigationBar(),
         );
@@ -215,46 +203,53 @@ body: Column(
     );
   }
 
-
-/// Build the global offline persistence warning banner
+  Widget _buildGlobalNoInternetBanner(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.error, // Use a solid error color (usually Red)
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'No Internet Connection.',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  /// Build the global offline mode warning banner
   Widget _buildGlobalOfflineBanner(BuildContext context) {
     final theme = Theme.of(context);
     return MaterialBanner(
       elevation: 0,
-      backgroundColor: theme.colorScheme.errorContainer,
-      leading: Icon(Icons.cloud_off, color: theme.colorScheme.error),
+      backgroundColor: Colors.amber.shade50,
+      leading: Icon(Icons.cloud_off, color: Colors.amber.shade900),
       content: Text(
-        'Offline Mode Disabled: Data will only sync while online.',
+        'Offline Mode Disabled',
         style: TextStyle(
-          color: theme.colorScheme.onErrorContainer,
+          color: Colors.amber.shade900,
           fontSize: 13,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            // Find the index for the Profile/Settings tab
-            // Typically the last index in _navItems
-            _onItemTapped(_navItems.length - 1);
-          },
-          child: Text(
-            'SETTINGS',
-            style: TextStyle(
-              color: theme.colorScheme.error,
-              fontWeight: FontWeight.bold,
-            ),
+          onPressed: () => _onItemTapped(_navItems.length - 1),
+          child: Icon(
+            Icons.settings, 
+            color: Colors.amber.shade900,
+            size: 24, // Matches the standard emoji scale
           ),
         ),
       ],
+
     );
   }
-
-
-
-
-
-
 
   /// Build the bottom navigation bar
   Widget _buildBottomNavigationBar() {
