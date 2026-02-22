@@ -277,7 +277,7 @@ Per **BD1**, when critical or high vulnerabilities cannot be fixed immediately, 
 
 ## 8. BD3 — Native Payment Systems
 
-**Out of Team D scope for Spring 2026.**
+**In scope for Team D — Spring 2026.**
 
 ### Problem
 The application currently uses Stripe for payments, which may conflict with Apple App Store and Google Play Store policies depending on payment use cases, creating compliance risk and potential app rejection.
@@ -299,7 +299,7 @@ Stripe integration exists in the frontend codebase. No migration work has been s
 
 ## 9. BD4 — Centralized Notifications via AWS SNS and SES
 
-**Out of Team D scope for Spring 2026.**
+**In scope for Team D — Spring 2026.**
 
 ### Problem
 Notifications and reminders are currently implemented as hardcoded placeholders with no centralized delivery mechanism, making them unreliable and unscalable.
