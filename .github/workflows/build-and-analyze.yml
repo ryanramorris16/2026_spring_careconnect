@@ -857,20 +857,56 @@ jobs:
             'owasp_dc':         { 'label': 'OWASP Dependency-Check (SCA)',  'category': 'SCA',            'blocking': True  },
           }
 
+          # Map tool keys -> controlling env var (so "enabled but skipped" can BLOCK)
+          toggle_map = {
+            'trufflehog':      'RUN_TRUFFLEHOG',
+            'checkstyle':      'RUN_CHECKSTYLE',
+            'spotbugs':        'RUN_SPOTBUGS',
+            'pmd':             'RUN_PMD',
+            'sonarqube':       'RUN_SONARQUBE',
+            'semgrep':         'RUN_SEMGREP',
+            'flutter_analyze': 'RUN_FLUTTER_ANALYZE',
+            'owasp_dc':        'RUN_OWASP_DC',
+          }
+
+          def is_enabled(tool_key: str) -> bool:
+            env_key = toggle_map.get(tool_key)
+            if not env_key:
+              return False
+            return os.environ.get(env_key, 'false').lower() == 'true'
+
           outcomes = {}
           findings = {}
+          misconfigured = {}  # enabled, but no meta/outcome was produced
 
           for tool in tools:
-            meta = read_meta(results_dir / f'{tool}-meta.txt')
-            outcomes[tool] = meta.get('OUTCOME', 'skipped')
+            meta_path = results_dir / f'{tool}-meta.txt'
+            meta = read_meta(meta_path)
+
+            # Default: if enabled but meta missing, treat as skipped (for now) and fix below
+            outcome = meta.get('OUTCOME', 'skipped')
+            outcomes[tool] = outcome
             findings[tool] = read_json(results_dir / f'{tool}-findings.json', [])
 
+            if is_enabled(tool) and (not meta_path.exists()):
+              misconfigured[tool] = 'missing meta file'
+
           # Special handling: TruffleHog result is a plain text file
-          try:
-            with open(results_dir / 'trufflehog.txt') as f:
+          truf_path = results_dir / 'trufflehog.txt'
+          if truf_path.exists():
+            with open(truf_path) as f:
               outcomes['trufflehog'] = 'failure' if 'FAILED' in f.read() else 'success'
-          except:
-            outcomes['trufflehog'] = outcomes.get('trufflehog', 'skipped')
+          else:
+            if is_enabled('trufflehog'):
+              # enabled but no result file -> misconfigured -> block
+              outcomes['trufflehog'] = 'failure'
+              misconfigured['trufflehog'] = 'missing trufflehog.txt'
+
+          # If tool is enabled but outcome is skipped, treat as FAILURE (misconfigured)
+          for tool in tools:
+            if is_enabled(tool) and outcomes.get(tool) == 'skipped':
+              outcomes[tool] = 'failure'
+              misconfigured.setdefault(tool, 'enabled but reported skipped')
 
           # ── Determine overall status ───────────────────────────────────────
           any_failure = False
