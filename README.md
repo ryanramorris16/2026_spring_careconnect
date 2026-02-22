@@ -45,8 +45,8 @@ Team D is responsible for the following business requirements this semester:
 |----|-------------|--------|
 | BD1 | Static Analysis Tooling and Critical Finding Remediation | ✅ In Progress |
 | BD2 | DevOps Enforcement — Block Builds/Deployments on Failures | ✅ In Progress |
-| BD3 | Migrate Payments to Google and Apple Native Payment Systems | ⏳ Out of Team D Scope |
-| BD4 | Centralized Notifications via AWS SNS and SES | ⏳ Out of Team D Scope |
+| BD3 | Migrate Payments to Google and Apple Native Payment Systems | ✅ In Progress |
+| BD4 | Centralized Notifications via AWS SNS and SES | ✅ In Progress |
 
 BD3 and BD4 are included in this README for project continuity and future cohort reference. See Sections 8 and 9.
 
