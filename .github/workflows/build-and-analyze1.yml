@@ -1,0 +1,56 @@
+name: Build and Analyze (New Gate Engine)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - team_d
+      - team_d-*
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Create Analysis Directories
+        run: |
+          mkdir -p quality/analysis/raw
+          mkdir -p quality/analysis/normalized
+          mkdir -p quality/analysis/evaluated
+
+      # -------------------------------------------------------
+      # TEMPORARY: Create empty raw artifacts for testing
+      # Remove once real tools are wired
+      # -------------------------------------------------------
+
+      - name: Create Dummy Artifacts (Temporary)
+        run: |
+          echo '{"error_count":0,"warning_count":0}' > quality/analysis/raw/flutter_analyze.json
+          echo '<checkstyle></checkstyle>' > quality/analysis/raw/checkstyle.xml
+          echo '<pmd></pmd>' > quality/analysis/raw/pmd.xml
+          echo '<BugCollection></BugCollection>' > quality/analysis/raw/spotbugs.xml
+          echo '{"results":[]}' > quality/analysis/raw/semgrep.json
+          echo '{"dependencies":[]}' > quality/analysis/raw/dependency_check.json
+          echo '{"projectStatus":{"status":"OK"}}' > quality/analysis/raw/sonarqube.json
+
+      - name: Run Quality Gate
+        run: |
+          python quality/ci/gate/gate.py
+
+      - name: Upload Analysis Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-analysis-report
+          path: quality/analysis/

@@ -1,0 +1,66 @@
+# ==========================================================
+# CareConnect CI Quality & Security Enforcement Policy
+# ==========================================================
+# This file defines the blocking rules for all analysis tools.
+#
+# RULE:
+# Any tool marked `blocking: true` that violates its policy
+# will BLOCK the merge.
+#
+# Any tool runtime error, skipped execution, or misconfiguration
+# will also BLOCK the merge.
+#
+# Modify thresholds carefully and commit changes via PR.
+# ==========================================================
+
+tools:
+
+  flutter_analyze:
+    blocking: true
+    description: "Flutter/Dart static analysis"
+    fail_on:
+      error_count: ">0"   # Fail if ANY analyzer error is present
+
+  checkstyle:
+    blocking: true
+    description: "Java style enforcement"
+    fail_on:
+      violation_count: ">0"   # Fail if ANY violation is found
+
+  pmd:
+    blocking: true
+    description: "Java source static analysis"
+    fail_on:
+      severity: "medium_and_above"
+      # Options:
+      # low_and_above
+      # medium_and_above
+      # high_only
+
+  spotbugs:
+    blocking: true
+    description: "Java bytecode analysis"
+    fail_on:
+      severity: "medium_and_above"
+
+  semgrep:
+    blocking: true
+    description: "Multi-language security analysis"
+    fail_on:
+      severity: "high_and_above"
+      # Options:
+      # critical_only
+      # high_and_above
+      # medium_and_above
+
+  dependency_check:
+    blocking: true
+    description: "OWASP Dependency-Check (SCA)"
+    fail_on:
+      any_vulnerability: true
+
+  sonarqube:
+    blocking: false   # Set to true once quality gate is configured
+    description: "SonarQube Quality Gate"
+    fail_on:
+      quality_gate: "fail"
