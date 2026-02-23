@@ -37,3 +37,10 @@ doc/api/
 .flutter-plugins-dependencies
 **/.DS_Store
 .venv/
+
+# Quality gate outputs
+quality/analysis/
+
+# Python bytecode
+__pycache__/
+*.pyc
