@@ -1,0 +1,544 @@
+package com.careconnect.controller;
+
+import com.careconnect.dto.evv.*;
+import com.careconnect.model.evv.EvvCorrection;
+import com.careconnect.model.evv.EvvOfflineQueue;
+import com.careconnect.model.evv.EvvRecord;
+import com.careconnect.service.evv.EvvOfflineSyncService;
+import com.careconnect.service.evv.EvvService;
+import com.careconnect.service.evv.EvvSubmissionService;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class EvvControllerTest {
+
+    @Mock private EvvService evvService;
+    @Mock private EvvSubmissionService submitter;
+    @Mock private EvvOfflineSyncService offlineSyncService;
+
+    @InjectMocks
+    private EvvController controller;
+
+    // ── shared constants ──────────────────────────────────────────────────────
+
+    private static final Long   DEFAULT_USER_ID = 1L;
+    private static final Long   RECORD_ID       = 42L;
+    private static final Long   CORRECTION_ID   = 10L;
+    private static final String DEVICE_ID       = "device-abc-123";
+    private static final String COMMENT         = "looks good";
+
+    // ── POST /v1/api/evv/records ──────────────────────────────────────────────
+
+    @Nested
+    class Create {
+
+        @Test
+        void returns200() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.create(req);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
+            when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(record);
+
+            ResponseEntity<EvvRecord> response = controller.create(req);
+
+            assertThat(response.getBody()).isSameAs(record);
+        }
+
+        @Test
+        void callsServiceWithDefaultUserId() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            controller.create(req);
+
+            verify(evvService).createRecord(req, DEFAULT_USER_ID);
+        }
+    }
+
+    // ── POST /v1/api/evv/records/{id}/review ─────────────────────────────────
+
+    @Nested
+    class Review {
+
+        @Test
+        void returns200_whenApproveIsTrue() {
+            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returns200_whenApproveIsFalse() {
+            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
+            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
+
+            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+
+            assertThat(response.getBody()).isSameAs(record);
+        }
+
+        @Test
+        void queuesForSubmission_whenApproveIsTrue() {
+            EvvRecord record = new EvvRecord();
+            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
+
+            controller.review(RECORD_ID, action);
+
+            verify(submitter).queueForSubmission(record, DEFAULT_USER_ID);
+        }
+
+        @Test
+        void doesNotQueueForSubmission_whenApproveIsFalse() {
+            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
+
+            controller.review(RECORD_ID, action);
+
+            verifyNoInteractions(submitter);
+        }
+
+        @Test
+        void callsServiceWithAllArguments() {
+            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
+
+            controller.review(RECORD_ID, action);
+
+            verify(evvService).review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT);
+        }
+    }
+
+    // ── POST /v1/api/evv/records/offline ─────────────────────────────────────
+
+    @Nested
+    class CreateOfflineRecord {
+
+        @Test
+        void returns200() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            EvvRecord record = EvvRecord.builder().id(5L).build();
+            when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(record);
+
+            ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
+
+            assertThat(response.getBody()).isSameAs(record);
+        }
+
+        @Test
+        void callsServiceWithDeviceIdAndDefaultUserId() {
+            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
+
+            controller.createOfflineRecord(req, DEVICE_ID);
+
+            verify(evvService).createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID);
+        }
+    }
+
+    // ── POST /v1/api/evv/records/correct ─────────────────────────────────────
+
+    @Nested
+    class CorrectRecord {
+
+        @Test
+        void returns200() {
+            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.correctRecord(req);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            EvvRecord record = EvvRecord.builder().id(7L).build();
+            when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(record);
+
+            ResponseEntity<EvvRecord> response = controller.correctRecord(req);
+
+            assertThat(response.getBody()).isSameAs(record);
+        }
+
+        @Test
+        void callsServiceWithDefaultUserId() {
+            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            controller.correctRecord(req);
+
+            verify(evvService).correctRecord(req, DEFAULT_USER_ID);
+        }
+    }
+
+    // ── POST /v1/api/evv/records/eor-approve ─────────────────────────────────
+
+    @Nested
+    class ApproveEor {
+
+        @Test
+        void returns200() {
+            EorApprovalRequestDto req = new EorApprovalRequestDto();
+            when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            ResponseEntity<EvvRecord> response = controller.approveEor(req);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EorApprovalRequestDto req = new EorApprovalRequestDto();
+            EvvRecord record = EvvRecord.builder().id(9L).build();
+            when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(record);
+
+            ResponseEntity<EvvRecord> response = controller.approveEor(req);
+
+            assertThat(response.getBody()).isSameAs(record);
+        }
+
+        @Test
+        void callsServiceWithDefaultUserId() {
+            EorApprovalRequestDto req = new EorApprovalRequestDto();
+            when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
+
+            controller.approveEor(req);
+
+            verify(evvService).approveEor(req, DEFAULT_USER_ID);
+        }
+    }
+
+    // ── GET /v1/api/evv/records/search ───────────────────────────────────────
+
+    @Nested
+    class SearchRecords {
+
+        @Test
+        void returns200() {
+            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            @SuppressWarnings("unchecked")
+            Page<EvvRecord> page = mock(Page.class);
+            when(evvService.searchRecords(searchRequest)).thenReturn(page);
+
+            ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsPageFromService() {
+            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            @SuppressWarnings("unchecked")
+            Page<EvvRecord> page = mock(Page.class);
+            when(evvService.searchRecords(searchRequest)).thenReturn(page);
+
+            ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
+
+            assertThat(response.getBody()).isSameAs(page);
+        }
+
+        @Test
+        void callsServiceWithSearchRequest() {
+            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            @SuppressWarnings("unchecked")
+            Page<EvvRecord> page = mock(Page.class);
+            when(evvService.searchRecords(searchRequest)).thenReturn(page);
+
+            controller.searchRecords(searchRequest);
+
+            verify(evvService).searchRecords(searchRequest);
+        }
+    }
+
+    // ── GET /v1/api/evv/records/pending-eor-approvals ────────────────────────
+
+    @Nested
+    class GetPendingEorApprovals {
+
+        @Test
+        void returns200() {
+            when(evvService.getPendingEorApprovals()).thenReturn(List.of());
+
+            ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsListFromService() {
+            EvvRecord record = new EvvRecord();
+            when(evvService.getPendingEorApprovals()).thenReturn(List.of(record));
+
+            ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
+
+            assertThat(response.getBody()).containsExactly(record);
+        }
+
+        @Test
+        void callsGetPendingEorApprovals() {
+            when(evvService.getPendingEorApprovals()).thenReturn(List.of());
+
+            controller.getPendingEorApprovals();
+
+            verify(evvService).getPendingEorApprovals();
+        }
+    }
+
+    // ── GET /v1/api/evv/corrections/pending ──────────────────────────────────
+
+    @Nested
+    class GetPendingCorrections {
+
+        @Test
+        void returns200() {
+            when(evvService.getPendingCorrections()).thenReturn(List.of());
+
+            ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsListFromService() {
+            EvvCorrection correction = new EvvCorrection();
+            when(evvService.getPendingCorrections()).thenReturn(List.of(correction));
+
+            ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
+
+            assertThat(response.getBody()).containsExactly(correction);
+        }
+
+        @Test
+        void callsGetPendingCorrections() {
+            when(evvService.getPendingCorrections()).thenReturn(List.of());
+
+            controller.getPendingCorrections();
+
+            verify(evvService).getPendingCorrections();
+        }
+    }
+
+    // ── POST /v1/api/evv/corrections/{id}/approve ────────────────────────────
+
+    @Nested
+    class ApproveCorrection {
+
+        @Test
+        void returns200_withComment() {
+            when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
+                    .thenReturn(new EvvCorrection());
+
+            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returns200_withNullComment() {
+            // comment is @RequestParam(required = false) — null is a valid value
+            when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null))
+                    .thenReturn(new EvvCorrection());
+
+            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, null);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsServiceResult() {
+            EvvCorrection correction = EvvCorrection.builder().id(CORRECTION_ID).build();
+            when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
+                    .thenReturn(correction);
+
+            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
+
+            assertThat(response.getBody()).isSameAs(correction);
+        }
+
+        @Test
+        void callsServiceWithCorrectionIdDefaultUserIdAndComment() {
+            when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
+                    .thenReturn(new EvvCorrection());
+
+            controller.approveCorrection(CORRECTION_ID, COMMENT);
+
+            verify(evvService).approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT);
+        }
+
+        @Test
+        void callsServiceWithNullComment_whenCommentIsAbsent() {
+            when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null))
+                    .thenReturn(new EvvCorrection());
+
+            controller.approveCorrection(CORRECTION_ID, null);
+
+            verify(evvService).approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null);
+        }
+    }
+
+    // ── GET /v1/api/evv/offline/queue ────────────────────────────────────────
+
+    @Nested
+    class GetOfflineQueue {
+
+        @Test
+        void returns200() {
+            when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of());
+
+            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsListFromService() {
+            EvvOfflineQueue item = new EvvOfflineQueue();
+            when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of(item));
+
+            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
+
+            assertThat(response.getBody()).containsExactly(item);
+        }
+
+        @Test
+        void callsServiceWithDefaultUserId() {
+            when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of());
+
+            controller.getOfflineQueue();
+
+            verify(evvService).getOfflineQueue(DEFAULT_USER_ID);
+        }
+    }
+
+    // ── POST /v1/api/evv/offline/sync ────────────────────────────────────────
+
+    @Nested
+    class SyncOfflineData {
+
+        @Test
+        void returns200() {
+            ResponseEntity<String> response = controller.syncOfflineData();
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void bodyIsFixedConfirmationMessage() {
+            ResponseEntity<String> response = controller.syncOfflineData();
+
+            assertThat(response.getBody()).isEqualTo("Offline data sync initiated");
+        }
+
+        @Test
+        void callsOfflineSyncServiceWithDefaultUserId() {
+            controller.syncOfflineData();
+
+            verify(offlineSyncService).syncCaregiverOfflineData(DEFAULT_USER_ID);
+        }
+
+        @Test
+        void doesNotInteractWithEvvService() {
+            controller.syncOfflineData();
+
+            verifyNoInteractions(evvService);
+        }
+
+        @Test
+        void doesNotInteractWithSubmissionService() {
+            controller.syncOfflineData();
+
+            verifyNoInteractions(submitter);
+        }
+    }
+
+    // ── GET /v1/api/evv/offline/status ───────────────────────────────────────
+
+    @Nested
+    class GetOfflineStatus {
+
+        @Test
+        void returns200() {
+            when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
+
+            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void returnsListFromService() {
+            EvvOfflineQueue item = new EvvOfflineQueue();
+            when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of(item));
+
+            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
+
+            assertThat(response.getBody()).containsExactly(item);
+        }
+
+        @Test
+        void callsOfflineSyncServiceWithDefaultUserId() {
+            when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
+
+            controller.getOfflineStatus();
+
+            verify(offlineSyncService).getOfflineQueueStatus(DEFAULT_USER_ID);
+        }
+
+        @Test
+        void doesNotInteractWithEvvService() {
+            when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
+
+            controller.getOfflineStatus();
+
+            verifyNoInteractions(evvService);
+        }
+    }
+}
