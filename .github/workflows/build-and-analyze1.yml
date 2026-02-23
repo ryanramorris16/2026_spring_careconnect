@@ -300,15 +300,16 @@ jobs:
             lines.push('');
             lines.push('## 🔍 CareConnect — Security & Quality Analysis Report');
             lines.push('');
+
             lines.push('### 📋 Report Header');
             lines.push('| Field | Value |');
             lines.push('|-------|-------|');
             lines.push(`| **Generated (UTC)** | ${utc} |`);
-            lines.push('');
-            lines.push('_All timestamps are reported in Coordinated Universal Time (UTC)._');
-            lines.push('');
             lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
             lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
+            lines.push('');
+
+            lines.push('_All timestamps are reported in Coordinated Universal Time (UTC)._');
             lines.push('');
 
             const pr = context.payload.pull_request;
