@@ -24,12 +24,26 @@ name: Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
 # Trigger Conditions
 # ----------------------------------------------------------
-# Runs on:
-# - All Pull Requests
-# - Pushes to team_d and team_d-* branches
+# CURRENT STATE (Testing Phase):
+# - Enforces CI gating on:
+#     • Pull Requests targeting team_d
+#     • Pushes to team_d and team_d-* branches
+#
+# MIGRATION NOTE:
+# - When this workflow is promoted from team_d → main:
+#     1) Change pull_request target branch from team_d → main
+#     2) Change push branch from team_d/team_d-* → main
+#     3) Remove the temporary Job Guard (Branch Ownership Isolation)
+#     4) Delete the Dummy Artifacts step (must not exist in production)
+#
+# IMPORTANT:
+# - team_d is the controlled integration branch for testing.
+# - main will become the production enforcement branch.
 # ----------------------------------------------------------
 on:
   pull_request:
+    branches:
+      - team_d
   push:
     branches:
       - team_d
@@ -37,6 +51,28 @@ on:
 
 jobs:
   quality-gate:
+    # ------------------------------------------------------
+    # Job Guard (Temporary – Branch Ownership Isolation)
+    # ------------------------------------------------------
+    # PURPOSE (Testing Phase Only):
+    # - Allows this workflow to coexist with other classmate workflows
+    #   while testing on team_d.
+    # - Restricts execution to James-owned feature branches.
+    #
+    # BEHAVIOR:
+    # - On pull_request events:
+    #     Runs only if the source branch starts with "team_d-james-".
+    # - On push events:
+    #     Runs for pushes that match the workflow trigger
+    #     (team_d / team_d-*), since github.head_ref is empty.
+    #
+    # MIGRATION REQUIREMENT:
+    # - REMOVE this guard when promoting the workflow to main.
+    # - The production gate must enforce policy for ALL contributors,
+    #   not only a single branch owner.
+    # ------------------------------------------------------
+    if: github.event_name == 'push' || startsWith(github.head_ref, 'team_d-james-')
+
     # ------------------------------------------------------
     # Runner Environment
     # ------------------------------------------------------
@@ -112,6 +148,12 @@ jobs:
       # - We append `|| true` so that TruffleHog exit codes
       #   do NOT stop the workflow.
       # - The gate engine decides whether to block.
+      #
+      # PRODUCTION NOTE:
+      # - Replace 'trufflesecurity/trufflehog:latest' with a pinned
+      #   version tag before promoting this workflow to main.
+      # - Floating tags (like :latest) introduce nondeterministic
+      #   enforcement behavior over time.
       # ------------------------------------------------------
       - name: Run TruffleHog (Secrets Scan)
         run: |
@@ -132,7 +174,15 @@ jobs:
       # - Policy evaluation
       # - Reporting logic
       #
+      # WARNING:
+      # This step writes to the SAME filenames the real tools will produce.
+      # When you wire a real tool, you MUST delete the corresponding dummy line
+      # or the dummy output will overwrite the real report.
+      #
       # REMOVE these once real scanners are integrated.
+      # MIGRATION REQUIREMENT:
+      # - DELETE this entire step before merging into main.
+      # - This step overwrites real tool outputs and invalidates enforcement.
       # ------------------------------------------------------
       - name: Create Dummy Artifacts (Temporary)
         run: |
@@ -173,6 +223,7 @@ jobs:
       # Retention is controlled by GitHub repository settings.
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
+        if: always() # Always upload artifacts, even if gate.py blocks or crashes
         uses: actions/upload-artifact@v4
         with:
           name: quality-analysis-report

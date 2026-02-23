@@ -40,11 +40,35 @@
 #
 # Use report_only ONLY as a temporary "break glass" option.
 # All violations will still be recorded in evaluated.json and summary.md.
+#
+# MIGRATION NOTE:
+# - main must default to enforce mode.
+# - report_only is allowed only as a temporary "break glass" setting.
 # ----------------------------------------------------------
 gate:
   mode: enforce  # enforce | report_only
 
 tools:
+
+  # ----------------------------------------------------------
+  # TruffleHog (Secrets Scan)
+  # ----------------------------------------------------------
+  # Intent: Block on ANY secret finding.
+  # Notes:
+  # - TruffleHog produces JSONL output; normalization counts findings.
+  #
+  # Temporary disable (advisory mode):
+  # - To keep running but not block merges, set:
+  #     blocking: false
+  #
+  # Full disable:
+  # - Remove the TruffleHog step from the workflow (not recommended long-term).
+  # ----------------------------------------------------------
+  trufflehog:
+    blocking: true
+    description: "TruffleHog (Secrets Scan)"
+    fail_on:
+      any_finding: true   # Fail if ANY finding is present
 
   # ----------------------------------------------------------
   # Flutter Analyze (Dart Analyzer)
@@ -114,26 +138,6 @@ tools:
       severity: "medium_and_above"
 
   # ----------------------------------------------------------
-  # TruffleHog (Secrets Scan)
-  # ----------------------------------------------------------
-  # Intent: Block on ANY secret finding.
-  # Notes:
-  # - TruffleHog produces JSONL output; normalization counts findings.
-  #
-  # Temporary disable (advisory mode):
-  # - To keep running but not block merges, set:
-  #     blocking: false
-  #
-  # Full disable:
-  # - Remove the TruffleHog step from the workflow (not recommended long-term).
-  # ----------------------------------------------------------
-  trufflehog:
-    blocking: true
-    description: "TruffleHog (Secrets Scan)"
-    fail_on:
-      any_finding: true   # Fail if ANY finding is present
-
-  # ----------------------------------------------------------
   # Semgrep (Multi-language SAST)
   # ----------------------------------------------------------
   # Intent: Block on high severity and above.
@@ -178,6 +182,10 @@ tools:
   #     - quality gate is stable
   # - Once ready, set:
   #     blocking: true
+  #
+  # MIGRATION NOTE:
+  # - Consider setting blocking: true only after SonarQube is fully configured
+  #   (project onboarded, token available, and quality gate stable).
   # ----------------------------------------------------------
   sonarqube:
     blocking: false   # Set to true once quality gate is configured

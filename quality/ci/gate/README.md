@@ -17,6 +17,43 @@ It is a structured CI governance engine.
 
 ---
 
+## Migration Checklist (team_d → main)
+
+Before promoting this gate to **main**, you MUST update the following files:
+
+### 1. Workflow Definition
+File:
+- `.github/workflows/build-and-analyze1.yml`
+
+Required changes:
+- Update triggers from `team_d` to `main`
+- Remove the temporary Job Guard (branch ownership isolation)
+- Delete the "Create Dummy Artifacts (Temporary)" step
+- Ensure all real tools write raw artifacts to `quality/analysis/raw/`
+
+---
+
+### 2. Policy Configuration
+File:
+- `quality/ci/gate/policy.yaml`
+
+Required changes:
+- Ensure `gate.mode: enforce`
+- Confirm intended `blocking` settings (especially SonarQube)
+- Remove any temporary testing thresholds
+
+---
+
+### 3. (Optional but Recommended) Tool Version Pinning
+File:
+- `.github/workflows/build-and-analyze1.yml`
+
+Required change:
+- Replace floating tags (e.g., `:latest`) with pinned versions
+  for deterministic production enforcement.
+
+---  
+
 ## Architecture
 
 Pipeline Flow:
