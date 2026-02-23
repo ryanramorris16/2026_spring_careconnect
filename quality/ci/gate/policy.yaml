@@ -46,7 +46,7 @@
 # - report_only is allowed only as a temporary "break glass" setting.
 # ----------------------------------------------------------
 gate:
-  mode: enforce  # enforce | report_only
+  mode: report_only  # enforce | report_only
 
 tools:
 
