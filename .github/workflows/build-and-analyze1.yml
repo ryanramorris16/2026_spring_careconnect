@@ -278,20 +278,6 @@ jobs:
             // Canonical UTC (audit-safe)
             const utc = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
 
-            // Detect runner local timezone automatically
-            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-            // Format local time using detected timezone
-            const localFmt = new Intl.DateTimeFormat('en-US', {
-              year: 'numeric', month: '2-digit', day: '2-digit',
-              hour: '2-digit', minute: '2-digit', second: '2-digit',
-              hour12: false,
-              timeZone: localTz,
-              timeZoneName: 'short'
-            });
-
-            const local = localFmt.format(now);
-
             const statusLine = evaluated.overall_block
               ? '> **🚫 BLOCKED** — One or more required checks failed. Fix the issues below before merging.'
               : '> **✅ APPROVED** — All required checks passed.';
@@ -317,7 +303,10 @@ jobs:
             lines.push('### 📋 Report Header');
             lines.push('| Field | Value |');
             lines.push('|-------|-------|');
-            lines.push(`| **Generated** | ${utc} (${local}; ${localTz}) |`);
+            lines.push(`| **Generated (UTC)** | ${utc} |`);
+            lines.push('');
+            lines.push('_All timestamps are reported in Coordinated Universal Time (UTC)._');
+            lines.push('');
             lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
             lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
             lines.push('');
