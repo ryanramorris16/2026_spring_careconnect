@@ -191,7 +191,7 @@ class UserProvider extends ChangeNotifier {
 
   /// Updates the offline persistence setting and notifies listeners.
   /// This will trigger the Dashboard banner to show/hide.
-  void setOfflinePersistence(bool enabled) {
+  void setOfflineMode(bool enabled) {
     if (_offlineModeEnabled == enabled) return;
     _offlineModeEnabled = enabled;
     

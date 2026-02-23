@@ -780,7 +780,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: userProvider.offlineModeEnabled,
                 // loading: _loadingPersistence,
                 onChanged: (enabled) {
-                  userProvider.setOfflinePersistence(enabled);
+                  userProvider.setOfflineMode(enabled);
                   // BNS 7: Privacy-Preserving Observability and Telemetry.
                   Telemetry.event('offline_toggled', {
                     'enabled': enabled,
