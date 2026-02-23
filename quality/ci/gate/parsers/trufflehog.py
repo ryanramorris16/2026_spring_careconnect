@@ -45,7 +45,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from schemas import base_tool_result
+from ..schemas import base_tool_result
 
 
 def _repo_relpath(p: Optional[str]) -> Optional[str]:
