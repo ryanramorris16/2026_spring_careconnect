@@ -24,26 +24,49 @@ name: Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
 # Trigger Conditions
 # ----------------------------------------------------------
-# CURRENT STATE (Testing Phase):
-# - Enforces CI gating on:
-#     • Pull Requests targeting team_d
-#     • Pushes to team_d and team_d-* branches
 #
-# MIGRATION NOTE:
-# - When this workflow is promoted from team_d → main:
-#     1) Change pull_request target branch from team_d → main
-#     2) Change push branch from team_d/team_d-* → main
-#     3) Remove the temporary Job Guard (Branch Ownership Isolation)
-#     4) Delete the Dummy Artifacts step (must not exist in production)
+# PRESENT CONFIGURATION (team_d Integration Phase)
 #
-# IMPORTANT:
-# - team_d is the controlled integration branch for testing.
-# - main will become the production enforcement branch.
+# pull_request:
+#   - Currently UNscoped.
+#   - This ensures the workflow executes for all PR events
+#     while the workflow file itself is under active development.
+#
+# push:
+#   - Scoped to:
+#       • team_d
+#       • team_d-*
+#   - team_d serves as the controlled CI validation branch.
+#
+# Temporary Testing Controls:
+#   - A Job Guard limits execution to James-owned branches.
+#   - Dummy artifact generation is enabled to simulate tool outputs.
+#   - This configuration is experimental and NOT production-ready.
+#
+# ----------------------------------------------------------
+# FUTURE CONFIGURATION (Production Enforcement on main)
+#
+# pull_request:
+#   branches:
+#     - main
+#
+# push:
+#   branches:
+#     - main
+#
+# Required Production Changes:
+#   1) Scope pull_request to main only.
+#   2) Scope push to main only.
+#   3) Remove Job Guard (branch ownership isolation).
+#   4) Delete Dummy Artifact step.
+#   5) Ensure only real scanners produce raw artifacts.
+#
+# Production Intent:
+#   - main becomes the authoritative enforcement branch.
+#   - team_d remains integration/testing only.
 # ----------------------------------------------------------
 on:
-  pull_request:
-    branches:
-      - team_d
+  pull_request:   # Unscoped during integration phase
   push:
     branches:
       - team_d
