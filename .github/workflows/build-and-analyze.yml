@@ -40,16 +40,19 @@ name: Build and Static Analysis
 # TRIGGER: When this workflow runs
 # -----------------------------------------------------------------------------
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - team_d
-  pull_request:
-    branches:
-      - main
-      - develop
-      - team_d
+  workflow_dispatch:
+    
+# on:
+#  push:
+#    branches:
+#      - main
+#      - develop
+#      - team_d
+#  pull_request:
+#   branches:
+#      - main
+#      - develop
+#      - team_d
 
 # -----------------------------------------------------------------------------
 # PERMISSIONS: Required for posting PR comments
@@ -866,7 +869,7 @@ jobs:
             'checkstyle':      'RUN_CHECKSTYLE',
             'spotbugs':        'RUN_SPOTBUGS',
             'pmd':             'RUN_PMD',
-            'sonar':           'RUN_SONAR',
+            'sonar':       'RUN_SONAR',
             'semgrep':         'RUN_SEMGREP',
             'flutter_analyze': 'RUN_FLUTTER_ANALYZE',
             'owasp_dc':        'RUN_OWASP_DC',
