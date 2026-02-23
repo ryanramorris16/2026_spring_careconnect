@@ -235,7 +235,7 @@ jobs:
       # ------------------------------------------------------
       - name: Run Quality Gate
         run: |
-          python quality/ci/gate/gate.py
+          python -m quality.ci.gate.gate
 
       # ------------------------------------------------------
       # Step 7: Generate Rich Markdown Report (report.md)
