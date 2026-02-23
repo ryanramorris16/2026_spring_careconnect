@@ -1,6 +1,3 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive",
-    "java.project.sourcePaths": [
-        "quality/sandbox/passing/java-sandbox"
-    ]
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
