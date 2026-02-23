@@ -367,7 +367,29 @@ jobs:
             fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
 
       # ------------------------------------------------------
-      # Step 8: Post/Update PR Comment (Rich Report)
+      # Step 8: Publish Rich Report to Actions Job Summary (Web View)
+      # ------------------------------------------------------
+      # Purpose:
+      # - Renders the rich report as a "web page" inside the workflow run UI
+      #   (Run → Job → Summary tab), so reviewers don't need to download artifacts.
+      #
+      # Notes:
+      # - Uses the Markdown file generated in Step 7:
+      #     quality/analysis/report.md
+      # - Safe to run even if Step 7 fails (we guard file existence).
+      # ------------------------------------------------------
+      - name: Publish report to Actions Summary
+        if: always()
+        run: |
+          REPORT_PATH="quality/analysis/report.md"
+          if [ -f "$REPORT_PATH" ]; then
+            cat "$REPORT_PATH" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No $REPORT_PATH found to publish." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # ------------------------------------------------------
+      # Step 9: Post/Update PR Comment (Rich Report)
       # ------------------------------------------------------
       # Purpose:
       # - Recreates the behavior of build-and-analyze.yml
@@ -408,7 +430,7 @@ jobs:
             }
 
       # ------------------------------------------------------
-      # Step 9: Upload Analysis Artifacts
+      # Step 10: Upload Analysis Artifacts
       # ------------------------------------------------------
       # Uploads all raw, normalized, evaluated, and reporting outputs:
       #   quality/analysis/raw/
