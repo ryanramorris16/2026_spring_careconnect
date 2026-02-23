@@ -24,7 +24,7 @@
         <dependency-check.autoUpdate>true</dependency-check.autoUpdate>
         <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
         <dependency-check.failBuild>false</dependency-check.failBuild>
-        <!-- SonarQube Configuration -->
+        <!-- Sonar Configuration -->
         <sonar.projectKey>careconnect-backend</sonar.projectKey>
         <sonar.projectName>CareConnect Backend</sonar.projectName>
         <sonar.language>java</sonar.language>
@@ -462,7 +462,7 @@
                 </configuration>
             </plugin>
 
-            <!-- SonarQube Scanner Maven Plugin -->
+            <!-- Sonar Scanner Maven Plugin -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>

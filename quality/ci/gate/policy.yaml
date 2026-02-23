@@ -172,7 +172,7 @@ tools:
       any_vulnerability: true
 
   # ----------------------------------------------------------
-  # SonarQube (Quality Gate)
+  # Sonar (Quality Gate)
   # ----------------------------------------------------------
   # Intent: Ultimately blocking, but currently advisory until configured.
   # Notes:
@@ -184,11 +184,11 @@ tools:
   #     blocking: true
   #
   # MIGRATION NOTE:
-  # - Consider setting blocking: true only after SonarQube is fully configured
+  # - Consider setting blocking: true only after Sonar is fully configured
   #   (project onboarded, token available, and quality gate stable).
   # ----------------------------------------------------------
-  sonarqube:
+  sonar:
     blocking: false   # Set to true once quality gate is configured
-    description: "SonarQube Quality Gate"
+    description: "Sonar Quality Gate"
     fail_on:
       quality_gate: "fail"

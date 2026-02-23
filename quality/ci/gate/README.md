@@ -139,7 +139,7 @@ quality/
 | CI | PMD | SAST (Java) | Source complexity & misuse |
 | CI | Semgrep | SAST (Multi-language) | OWASP & pattern detection |
 | CI | OWASP Dependency-Check | SCA | CVE detection in dependencies |
-| CI | SonarQube | Quality Gate | Centralized quality scoring |
+| CI | Sonar | Quality Gate | Centralized quality scoring |
 | Post-Deploy | OWASP ZAP | DAST | Runtime vulnerability scanning |
 
 
@@ -158,7 +158,7 @@ Expected raw artifact filenames:
  - spotbugs.xml
  - semgrep.json
  - dependency_check.json
- - sonarqube.json
+ - sonar.json
 
 Generated outputs are written to:
 
@@ -348,7 +348,7 @@ There are two safe methods.
 In `policy.yaml`:
 
 ```
-sonarqube:
+sonar:
   blocking: false
 
 ```
@@ -360,8 +360,8 @@ Use this when:
  - Configuration is incomplete
  - Infrastructure dependency is unavailable
 
-To re-enable SonarQube as blocking:
- 1. Ensure the workflow generates quality/analysis/raw/sonarqube.json.
+To re-enable Sonar as blocking:
+ 1. Ensure the workflow generates quality/analysis/raw/sonar.json.
  2. Confirm the JSON contains:
   
 ```
@@ -374,7 +374,7 @@ To re-enable SonarQube as blocking:
 3. Update policy.yaml:
 
 ```
-sonarqube:
+sonar:
   blocking: true
 
 ```
@@ -460,8 +460,8 @@ Go to: **Settings → Secrets and Variables → Actions**
 | Secret         | Required        | Purpose |
 |----------------|-----------------|---------|
 | `NVD_API_KEY`  | Recommended     | Speeds up OWASP Dependency-Check CVE downloads. Without it, scanning is rate-limited and significantly slower. |
-| `SONAR_TOKEN`  | Optional (to enable Sonar) | Authentication token for SonarCloud/SonarQube. |
-| `SONAR_HOST_URL` | Optional (self-hosted only) | SonarQube server URL (not required for SonarCloud). |
+| `SONAR_TOKEN`  | Optional (to enable Sonar) | Authentication token for SonarCloud/Sonar. |
+| `SONAR_HOST_URL` | Optional (self-hosted only) | Sonar server URL (not required for SonarCloud). |
 | `STAGING_URL` | DAST only      | AWS staging ALB DNS name used by OWASP ZAP. |
 
 **Notes:**
@@ -549,7 +549,7 @@ The workflow must call Sonar during the CI build phase.
 The workflow must write the Sonar quality gate result to:
 
 ```
-quality/analysis/raw/sonarqube.json
+quality/analysis/raw/sonar.json
 
 ```
 
@@ -590,7 +590,7 @@ quality/ci/gate/policy.yaml
 Set:
 
 ```
-sonarqube:
+sonar:
   blocking: true
 
 ```
@@ -601,7 +601,7 @@ Commit via pull request.
 1. Open a test PR.
 2. Confirm Sonar analysis runs in:
 `.github/workflows/build-and-analyze.yml`
-3. Confirm `sonarqube.json` is generated in:
+3. Confirm `sonar.json` is generated in:
 `quality/analysis/raw/`
 4. Confirm the gate blocks the merge if Sonar returns ERROR.
 
