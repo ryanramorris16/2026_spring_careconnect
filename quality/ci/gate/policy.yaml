@@ -1,64 +1,184 @@
+# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/policy.yaml
 # ==========================================================
 # CareConnect CI Quality & Security Enforcement Policy
 # ==========================================================
-# This file defines the blocking rules for all analysis tools.
+# This file is the governance contract for the CI Quality Gate.
 #
-# RULE:
-# Any tool marked `blocking: true` that violates its policy
-# will BLOCK the merge.
+# It defines:
+# - Which tools are allowed to block merges (blocking: true/false)
+# - What conditions constitute a policy violation (fail_on rules)
 #
-# Any tool runtime error, skipped execution, or misconfiguration
-# will also BLOCK the merge.
+# How enforcement works (high-level):
+# 1) Tools run in CI and emit raw artifacts into:
+#      quality/analysis/raw/
+# 2) normalize.py parses raw artifacts into a unified schema:
+#      quality/analysis/normalized/normalized.json
+# 3) policy_engine.py reads normalized.json + this policy.yaml and decides:
+#      - policy_violation per tool
+#      - overall_block for the pipeline
 #
-# Modify thresholds carefully and commit changes via PR.
+# GLOBAL RULES (enforced by policy_engine.py):
+# - Any tool marked `blocking: true` that violates its policy will BLOCK the merge.
+# - Any runtime error, missing artifact, skipped execution, or misconfiguration
+#   is treated as a violation and will also BLOCK (if blocking is true).
+#
+# CHANGE CONTROL:
+# - Treat this file like production governance configuration.
+# - Modify thresholds carefully and commit changes via PR review.
 # ==========================================================
+
+# ----------------------------------------------------------
+# Global Gate Mode
+# ----------------------------------------------------------
+# Controls whether the gate enforces merge blocking or runs in
+# report-only mode.
+#
+# mode:
+#   - enforce     : Normal behavior. Gate blocks merge on violations.
+#   - report_only : Gate still runs, evaluates, and reports violations,
+#                   but NEVER blocks the merge (exit code forced to 0).
+#
+# Use report_only ONLY as a temporary "break glass" option.
+# All violations will still be recorded in evaluated.json and summary.md.
+# ----------------------------------------------------------
+gate:
+  mode: enforce  # enforce | report_only
 
 tools:
 
+  # ----------------------------------------------------------
+  # Flutter Analyze (Dart Analyzer)
+  # ----------------------------------------------------------
+  # Intent: Block on any analyzer ERROR.
+  # Notes:
+  # - Normalization maps analyzer errors → severity_counts.high
+  # - Warnings are allowed by default unless you explicitly add a rule.
+  # Customization examples:
+  #   - To also fail on warnings, add:
+  #       warning_count: ">0"
+  # ----------------------------------------------------------
   flutter_analyze:
     blocking: true
     description: "Flutter/Dart static analysis"
     fail_on:
       error_count: ">0"   # Fail if ANY analyzer error is present
 
+  # ----------------------------------------------------------
+  # Checkstyle (Java Style)
+  # ----------------------------------------------------------
+  # Intent: Any style violation blocks the merge.
+  # Customization examples:
+  #   - Allow minor baseline drift:
+  #       violation_count: ">10"
+  # ----------------------------------------------------------
   checkstyle:
     blocking: true
     description: "Java style enforcement"
     fail_on:
       violation_count: ">0"   # Fail if ANY violation is found
 
+  # ----------------------------------------------------------
+  # PMD (Java Source Analysis)
+  # ----------------------------------------------------------
+  # Intent: Block on medium severity and above.
+  # Notes:
+  # - Normalization maps PMD priority → severity:
+  #     priority 1-2 → high
+  #     priority 3   → medium
+  #     priority 4-5 → low
+  # ----------------------------------------------------------
   pmd:
     blocking: true
     description: "Java source static analysis"
     fail_on:
       severity: "medium_and_above"
       # Options:
-      # low_and_above
-      # medium_and_above
-      # high_only
+      #   low_and_above     (strictest; blocks on any finding)
+      #   medium_and_above  (current; blocks on medium/high)
+      #   high_only         (least strict; blocks only on high)
 
+  # ----------------------------------------------------------
+  # SpotBugs (Java Bytecode Analysis)
+  # ----------------------------------------------------------
+  # Intent: Block on medium severity and above.
+  # Notes:
+  # - Normalization maps SpotBugs priority → severity:
+  #     priority 1 → high
+  #     priority 2 → medium
+  #     priority 3 → low
+  # ----------------------------------------------------------
   spotbugs:
     blocking: true
     description: "Java bytecode analysis"
     fail_on:
       severity: "medium_and_above"
 
+  # ----------------------------------------------------------
+  # TruffleHog (Secrets Scan)
+  # ----------------------------------------------------------
+  # Intent: Block on ANY secret finding.
+  # Notes:
+  # - TruffleHog produces JSONL output; normalization counts findings.
+  #
+  # Temporary disable (advisory mode):
+  # - To keep running but not block merges, set:
+  #     blocking: false
+  #
+  # Full disable:
+  # - Remove the TruffleHog step from the workflow (not recommended long-term).
+  # ----------------------------------------------------------
+  trufflehog:
+    blocking: true
+    description: "TruffleHog (Secrets Scan)"
+    fail_on:
+      any_finding: true   # Fail if ANY finding is present
+
+  # ----------------------------------------------------------
+  # Semgrep (Multi-language SAST)
+  # ----------------------------------------------------------
+  # Intent: Block on high severity and above.
+  # Customization examples:
+  #   - Critical only:
+  #       severity: "critical_only"
+  #   - Medium and above:
+  #       severity: "medium_and_above"
+  # ----------------------------------------------------------
   semgrep:
     blocking: true
     description: "Multi-language security analysis"
     fail_on:
       severity: "high_and_above"
       # Options:
-      # critical_only
-      # high_and_above
-      # medium_and_above
+      #   critical_only
+      #   high_and_above     (current)
+      #   medium_and_above
 
+  # ----------------------------------------------------------
+  # OWASP Dependency-Check (SCA)
+  # ----------------------------------------------------------
+  # Intent: Block on ANY vulnerability (strict).
+  # Customization examples:
+  #   - Switch to CVSS threshold enforcement (future enhancement):
+  #       cvss_threshold: 7.0
+  # ----------------------------------------------------------
   dependency_check:
     blocking: true
     description: "OWASP Dependency-Check (SCA)"
     fail_on:
       any_vulnerability: true
 
+  # ----------------------------------------------------------
+  # SonarQube (Quality Gate)
+  # ----------------------------------------------------------
+  # Intent: Ultimately blocking, but currently advisory until configured.
+  # Notes:
+  # - Keep `blocking: false` until:
+  #     - project is onboarded
+  #     - token/access is available
+  #     - quality gate is stable
+  # - Once ready, set:
+  #     blocking: true
+  # ----------------------------------------------------------
   sonarqube:
     blocking: false   # Set to true once quality gate is configured
     description: "SonarQube Quality Gate"

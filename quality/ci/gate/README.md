@@ -24,7 +24,7 @@ Pipeline Flow:
     Tools → Raw Artifacts → Normalization → Policy Engine → Gate → Reports
 
 Directory Structure:
-
+```
 quality/
 └── ci/
     └── gate/
@@ -35,15 +35,38 @@ quality/
         ├── gate.py
         ├── parsers/
         └── README.md
+```
+
+Currently integrated tools:
+
+- trufflehog (Secrets scanning)
+- flutter_analyze (Dart static analysis)
+- checkstyle (Java style enforcement)
+- pmd (Java source SAST)
+- spotbugs (Java bytecode SAST)
+- semgrep (Multi-language SAST)
+- dependency_check (Software Composition Analysis)
+- sonarqube (Quality Gate — advisory until configured)
 
 Raw artifacts must be placed in:
-
+```
     quality/analysis/raw/
+```
+Expected raw artifact filenames:
+
+- trufflehog.jsonl
+- flutter_analyze.json
+- checkstyle.xml
+- pmd.xml
+- spotbugs.xml
+- semgrep.json
+- dependency_check.json
+- sonarqube.json
 
 Generated outputs are written to:
-
+```
     quality/analysis/
-
+```
 ---
 
 ## Enforcement Rules
@@ -52,7 +75,11 @@ Generated outputs are written to:
   will BLOCK the merge.
 - Any runtime error, skipped execution, or misconfiguration will BLOCK.
 - All tools run even if one fails.
+  Individual tool exit codes do NOT control the workflow.
+  Only gate.py exit code determines merge approval.
 - The final decision is made by `gate.py`.
+- Secrets findings (TruffleHog) are treated as high severity by default.
+  Any finding blocks the merge unless explicitly set to advisory.
 
 ---
 
@@ -66,10 +93,13 @@ Do NOT hardcode policy in Python files.
 
 Example rule:
 
+```
+style:
 checkstyle:
- - blocking: true
- - fail_on:
- - violation_count: “>0”
+  blocking: true
+  fail_on:
+    violation_count: ">0"
+```
 
  Modify thresholds via pull request only.
 
@@ -80,32 +110,36 @@ checkstyle:
 To add a new analysis tool:
 
 1. Create a new parser file in:
-   
+```
        parsers/<tool_name>.py
-
+```
    The parser must:
    - Read raw artifact from quality/analysis/raw/
    - Return the standardized structure defined in schemas.py
    - Never apply policy logic
 
 2. Register the parser in normalize.py:
-
+```
        ("tool_name", parse_tool_name),
+```
 
 3. Add the tool to policy.yaml:
-
+```
        tool_name:
          blocking: true
          fail_on:
            ...
+```
 
 4. Update the CI workflow to generate the raw artifact in:
-   
+```   
        quality/analysis/raw/
+```
 
 5. Test locally:
-
+```
        python quality/ci/gate/gate.py
+```
 
 ---
 
@@ -116,16 +150,32 @@ There are two safe ways to temporarily disable enforcement.
 ### Option 1 (Recommended): Make It Advisory
 
 In policy.yaml:
-
+```
 sonarqube:
  - blocking: false
+```
 
- This keeps the tool running but prevents it from blocking the merge.
+This keeps the tool running but prevents it from blocking the merge.
 
 This is ideal when:
 - Access is pending
 - Configuration is incomplete
 - Infrastructure dependency is unavailable
+
+To re-enable SonarQube as a blocking tool:
+
+1. Ensure the workflow generates quality/analysis/raw/sonarqube.json.
+2. Confirm the JSON contains:
+```
+     {
+       "projectStatus": { "status": "OK" | "ERROR" }
+     }
+```
+3. Update policy.yaml:
+```
+     sonarqube:
+       blocking: true
+```
 
 ### Option 2: Remove From Workflow
 
@@ -162,17 +212,33 @@ These are considered governance failures and block the merge.
 To run locally:
 
 1. Place tool reports into:
-
+```
        quality/analysis/raw/
+```
 
 2. Run:
-
+```
        python quality/ci/gate/gate.py
+```
 
 3. Review:
-
+```
        quality/analysis/summary.md
        quality/analysis/report.json
+```
+
+---
+
+## Report Outputs
+
+The gate engine produces:
+
+- quality/analysis/summary.md      (Human-readable PR summary)
+- quality/analysis/report.json     (Machine-readable evaluation)
+- quality/analysis/normalized/     (Layer 1 output)
+- quality/analysis/evaluated/      (Layer 2 output)
+
+The entire quality/analysis directory is uploaded as a CI artifact.
 
 ---
 
@@ -186,5 +252,9 @@ This subsystem exists to:
 - Support future extensibility
 
 All policy changes must go through pull request review.
+
+Do not bypass this system by editing workflow exit codes or
+removing the gate step from CI. All enforcement changes must
+be performed via policy.yaml or documented workflow modifications.
 
 This is governance, not convenience.

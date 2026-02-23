@@ -1,5 +1,33 @@
+# ==========================================================
+# Build and Analyze (New Gate Engine)
+# ----------------------------------------------------------
+# This workflow runs the new Quality & Security Enforcement
+# subsystem located under:
+#
+#   quality/ci/gate/
+#
+# It performs:
+#   1. Tool execution (currently TruffleHog wired)
+#   2. Raw artifact generation
+#   3. Normalization layer
+#   4. Policy evaluation
+#   5. Merge approval / block decision
+#
+# IMPORTANT:
+# - All tools run even if one fails.
+# - The Python gate engine is the single enforcement point.
+# - Exit code from gate.py controls merge status.
+# ==========================================================
+
 name: Build and Analyze (New Gate Engine)
 
+# ----------------------------------------------------------
+# Trigger Conditions
+# ----------------------------------------------------------
+# Runs on:
+# - All Pull Requests
+# - Pushes to team_d and team_d-* branches
+# ----------------------------------------------------------
 on:
   pull_request:
   push:
@@ -9,32 +37,103 @@ on:
 
 jobs:
   quality-gate:
+    # ------------------------------------------------------
+    # Runner Environment
+    # ------------------------------------------------------
+    # Ubuntu latest is sufficient for:
+    # - Python execution
+    # - Docker (for TruffleHog)
+    # ------------------------------------------------------
     runs-on: ubuntu-latest
 
     steps:
+
+      # ------------------------------------------------------
+      # Step 1: Checkout Repository
+      # ------------------------------------------------------
+      # Pulls the repository code into the runner so tools
+      # can scan the actual commit content.
+      # ------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # Step 2: Set Up Python Runtime
+      # ------------------------------------------------------
+      # Required to execute the quality gate engine.
+      # ------------------------------------------------------
       - name: Set Up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # ------------------------------------------------------
+      # Step 3: Install Python Dependencies
+      # ------------------------------------------------------
+      # pyyaml is required to load policy.yaml.
+      # Additional dependencies can be added here later.
+      # ------------------------------------------------------
       - name: Install Dependencies
         run: |
           pip install pyyaml
 
+      # ------------------------------------------------------
+      # Step 4: Create Analysis Directory Structure
+      # ------------------------------------------------------
+      # All tool artifacts must be written under:
+      #
+      #   quality/analysis/raw/
+      #
+      # Normalized and evaluated results will be written to:
+      #
+      #   quality/analysis/normalized/
+      #   quality/analysis/evaluated/
+      #
+      # The final report is written to:
+      #
+      #   quality/analysis/summary.md
+      #   quality/analysis/report.json
+      # ------------------------------------------------------
       - name: Create Analysis Directories
         run: |
           mkdir -p quality/analysis/raw
           mkdir -p quality/analysis/normalized
           mkdir -p quality/analysis/evaluated
 
-      # -------------------------------------------------------
-      # TEMPORARY: Create empty raw artifacts for testing
-      # Remove once real tools are wired
-      # -------------------------------------------------------
+      # ------------------------------------------------------
+      # Step 5: Run TruffleHog (Secrets Scan)
+      # ------------------------------------------------------
+      # Scans the entire repository filesystem for secrets.
+      #
+      # Output:
+      #   quality/analysis/raw/trufflehog.jsonl
+      #
+      # IMPORTANT:
+      # - We append `|| true` so that TruffleHog exit codes
+      #   do NOT stop the workflow.
+      # - The gate engine decides whether to block.
+      # ------------------------------------------------------
+      - name: Run TruffleHog (Secrets Scan)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            trufflesecurity/trufflehog:latest \
+            filesystem /repo --json \
+            > quality/analysis/raw/trufflehog.jsonl || true
 
+      # ------------------------------------------------------
+      # TEMPORARY SECTION
+      # ------------------------------------------------------
+      # The following artifacts are placeholder outputs
+      # until real tool integrations are wired.
+      #
+      # These allow validation of:
+      # - Normalization
+      # - Policy evaluation
+      # - Reporting logic
+      #
+      # REMOVE these once real scanners are integrated.
+      # ------------------------------------------------------
       - name: Create Dummy Artifacts (Temporary)
         run: |
           echo '{"error_count":0,"warning_count":0}' > quality/analysis/raw/flutter_analyze.json
@@ -45,10 +144,34 @@ jobs:
           echo '{"dependencies":[]}' > quality/analysis/raw/dependency_check.json
           echo '{"projectStatus":{"status":"OK"}}' > quality/analysis/raw/sonarqube.json
 
+      # ------------------------------------------------------
+      # Step 6: Run Quality Gate Engine
+      # ------------------------------------------------------
+      # Executes:
+      #
+      #   quality/ci/gate/gate.py
+      #
+      # This performs:
+      #   - Normalization
+      #   - Policy evaluation
+      #   - Summary generation
+      #
+      # Exit Code Behavior:
+      #   0 → Approved
+      #   1 → Blocked (fails job)
+      # ------------------------------------------------------
       - name: Run Quality Gate
         run: |
           python quality/ci/gate/gate.py
 
+      # ------------------------------------------------------
+      # Step 7: Upload Analysis Artifacts
+      # ------------------------------------------------------
+      # Uploads all raw, normalized, evaluated,
+      # and summary outputs for review.
+      #
+      # Retention is controlled by GitHub repository settings.
+      # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         uses: actions/upload-artifact@v4
         with:
