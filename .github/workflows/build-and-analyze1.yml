@@ -272,18 +272,24 @@ jobs:
               evaluated = { overall_block: true, results: [] };
             }
 
-            // ---- Timestamp (UTC + configurable local tz) ----
+            // ---- Timestamp (Always UTC + Always Local) ----
             const now = new Date();
+
+            // Canonical UTC (audit-safe)
             const utc = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
 
-            const tz = (process.env.REPORT_TZ || '').trim();
+            // Detect runner local timezone automatically
+            const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // Format local time using detected timezone
             const localFmt = new Intl.DateTimeFormat('en-US', {
               year: 'numeric', month: '2-digit', day: '2-digit',
               hour: '2-digit', minute: '2-digit', second: '2-digit',
               hour12: false,
-              timeZone: tz || undefined,
+              timeZone: localTz,
               timeZoneName: 'short'
             });
+
             const local = localFmt.format(now);
 
             const statusLine = evaluated.overall_block
@@ -311,7 +317,7 @@ jobs:
             lines.push('### 📋 Report Header');
             lines.push('| Field | Value |');
             lines.push('|-------|-------|');
-            lines.push(`| **Generated** | ${utc} (${local}${tz ? `; ${tz}` : ''}) |`);
+            lines.push(`| **Generated** | ${utc} (${local}; ${localTz}) |`);
             lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
             lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
             lines.push('');
