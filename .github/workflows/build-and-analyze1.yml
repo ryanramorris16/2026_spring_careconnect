@@ -1,3 +1,4 @@
+# File: /Volumes/DevDrive/code/2026_spring_careconnect/.github/workflows/build-and-analyze1.yml
 # ==========================================================
 # Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
@@ -12,11 +13,12 @@
 #   3. Normalization layer
 #   4. Policy evaluation
 #   5. Merge approval / block decision
+#   6. Rich reporting (report.md) + optional PR comment update
 #
 # IMPORTANT:
 # - All tools run even if one fails.
 # - The Python gate engine is the single enforcement point.
-# - Exit code from gate.py controls merge status.
+# - Exit code from gate.py controls merge status (unless policy gate.mode=report_only).
 # ==========================================================
 
 name: Build and Analyze (New Gate Engine)
@@ -39,7 +41,7 @@ name: Build and Analyze (New Gate Engine)
 #   - team_d serves as the controlled CI validation branch.
 #
 # Temporary Testing Controls:
-#   - A Job Guard limits execution to James-owned branches.
+#   - A Job Guard limits execution to James-owned feature branches.
 #   - Dummy artifact generation is enabled to simulate tool outputs.
 #   - This configuration is experimental and NOT production-ready.
 #
@@ -71,6 +73,38 @@ on:
     branches:
       - team_d
       - team_d-*
+
+# ----------------------------------------------------------
+# Optional Report Timezone
+# ----------------------------------------------------------
+# This workflow prints BOTH:
+# - UTC time (audit-friendly, consistent)
+# - A configurable "local" time using REPORT_TZ
+#
+# NOTE:
+# - GitHub Markdown cannot auto-render "each reader's" timezone.
+# - Instead, we show UTC + a chosen team timezone.
+# - Set REPORT_TZ as a GitHub repo Variable:
+#     Settings → Secrets and variables → Actions → Variables
+#
+# Examples:
+#   REPORT_TZ=America/New_York      (EST/EDT)
+#   REPORT_TZ=America/Chicago       (CST/CDT)
+#   REPORT_TZ=America/Los_Angeles   (PST/PDT)
+#   REPORT_TZ=Europe/Berlin         (Germany)
+# ----------------------------------------------------------
+env:
+  REPORT_TZ: ${{ vars.REPORT_TZ }}
+
+# ----------------------------------------------------------
+# Permissions
+# ----------------------------------------------------------
+# Needed only if you want the workflow to post/update PR comments.
+# Safe to keep enabled even if the PR comment step is skipped.
+# ----------------------------------------------------------
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   quality-gate:
@@ -110,16 +144,11 @@ jobs:
       # ------------------------------------------------------
       # Step 1: Checkout Repository
       # ------------------------------------------------------
-      # Pulls the repository code into the runner so tools
-      # can scan the actual commit content.
-      # ------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       # ------------------------------------------------------
       # Step 2: Set Up Python Runtime
-      # ------------------------------------------------------
-      # Required to execute the quality gate engine.
       # ------------------------------------------------------
       - name: Set Up Python
         uses: actions/setup-python@v5
@@ -129,29 +158,12 @@ jobs:
       # ------------------------------------------------------
       # Step 3: Install Python Dependencies
       # ------------------------------------------------------
-      # pyyaml is required to load policy.yaml.
-      # Additional dependencies can be added here later.
-      # ------------------------------------------------------
       - name: Install Dependencies
         run: |
           pip install pyyaml
 
       # ------------------------------------------------------
       # Step 4: Create Analysis Directory Structure
-      # ------------------------------------------------------
-      # All tool artifacts must be written under:
-      #
-      #   quality/analysis/raw/
-      #
-      # Normalized and evaluated results will be written to:
-      #
-      #   quality/analysis/normalized/
-      #   quality/analysis/evaluated/
-      #
-      # The final report is written to:
-      #
-      #   quality/analysis/summary.md
-      #   quality/analysis/report.json
       # ------------------------------------------------------
       - name: Create Analysis Directories
         run: |
@@ -162,8 +174,6 @@ jobs:
       # ------------------------------------------------------
       # Step 5: Run TruffleHog (Secrets Scan)
       # ------------------------------------------------------
-      # Scans the entire repository filesystem for secrets.
-      #
       # Output:
       #   quality/analysis/raw/trufflehog.jsonl
       #
@@ -192,17 +202,11 @@ jobs:
       # The following artifacts are placeholder outputs
       # until real tool integrations are wired.
       #
-      # These allow validation of:
-      # - Normalization
-      # - Policy evaluation
-      # - Reporting logic
-      #
       # WARNING:
       # This step writes to the SAME filenames the real tools will produce.
       # When you wire a real tool, you MUST delete the corresponding dummy line
       # or the dummy output will overwrite the real report.
       #
-      # REMOVE these once real scanners are integrated.
       # MIGRATION REQUIREMENT:
       # - DELETE this entire step before merging into main.
       # - This step overwrites real tool outputs and invalidates enforcement.
@@ -221,29 +225,198 @@ jobs:
       # Step 6: Run Quality Gate Engine
       # ------------------------------------------------------
       # Executes:
+      #   python quality/ci/gate/gate.py
       #
-      #   quality/ci/gate/gate.py
-      #
-      # This performs:
-      #   - Normalization
-      #   - Policy evaluation
-      #   - Summary generation
-      #
-      # Exit Code Behavior:
-      #   0 → Approved
-      #   1 → Blocked (fails job)
+      # Produces:
+      #   quality/analysis/normalized/normalized.json
+      #   quality/analysis/evaluated/evaluated.json
+      #   quality/analysis/summary.md
+      #   quality/analysis/report.json
       # ------------------------------------------------------
       - name: Run Quality Gate
         run: |
           python quality/ci/gate/gate.py
 
       # ------------------------------------------------------
-      # Step 7: Upload Analysis Artifacts
+      # Step 7: Generate Rich Markdown Report (report.md)
       # ------------------------------------------------------
-      # Uploads all raw, normalized, evaluated,
-      # and summary outputs for review.
+      # Produces:
+      #   quality/analysis/report.md
       #
-      # Retention is controlled by GitHub repository settings.
+      # Timestamp:
+      # - Always includes UTC
+      # - Also includes a configurable "local" time via REPORT_TZ
+      #   (useful for teams spread across EST/CST/PST/Germany/etc.)
+      #
+      # Notes:
+      # - Uses evaluated.json produced by gate.py
+      # - Uses GitHub context for run/branch metadata
+      # ------------------------------------------------------
+      - name: Generate Rich Report (report.md)
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          REPORT_TZ: ${{ env.REPORT_TZ }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const evaluatedPath = path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/evaluated/evaluated.json');
+            const outPath = path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/report.md');
+
+            let evaluated;
+            try {
+              evaluated = JSON.parse(fs.readFileSync(evaluatedPath, 'utf8'));
+            } catch (e) {
+              evaluated = { overall_block: true, results: [] };
+            }
+
+            // ---- Timestamp (UTC + configurable local tz) ----
+            const now = new Date();
+            const utc = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
+
+            const tz = (process.env.REPORT_TZ || '').trim();
+            const localFmt = new Intl.DateTimeFormat('en-US', {
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
+              hour12: false,
+              timeZone: tz || undefined,
+              timeZoneName: 'short'
+            });
+            const local = localFmt.format(now);
+
+            const statusLine = evaluated.overall_block
+              ? '> **🚫 BLOCKED** — One or more required checks failed. Fix the issues below before merging.'
+              : '> **✅ APPROVED** — All required checks passed.';
+
+            const categoryMap = {
+              trufflehog: 'Secrets Scan',
+              checkstyle: 'SAST — Java',
+              spotbugs: 'SAST — Java',
+              pmd: 'SAST — Java',
+              sonarqube: 'SAST — Java',
+              semgrep: 'SAST — Flutter',
+              flutter_analyze: 'SAST — Flutter',
+              dependency_check: 'SCA'
+            };
+
+            const lines = [];
+            lines.push('# CareConnect Quality Gate Report');
+            lines.push('');
+            lines.push(statusLine);
+            lines.push('');
+            lines.push('## 🔍 CareConnect — Security & Quality Analysis Report');
+            lines.push('');
+            lines.push('### 📋 Report Header');
+            lines.push('| Field | Value |');
+            lines.push('|-------|-------|');
+            lines.push(`| **Generated** | ${utc} (${local}${tz ? `; ${tz}` : ''}) |`);
+            lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
+            lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
+            lines.push('');
+
+            const pr = context.payload.pull_request;
+            lines.push('### 🔀 Pull Request');
+            lines.push('| Field | Value |');
+            lines.push('|-------|-------|');
+            lines.push(`| **PR Number** | ${pr ? `#${pr.number}` : '#N/A'} |`);
+            lines.push(`| **PR Title** | ${pr ? pr.title.replace(/\|/g, '\\|') : 'N/A'} |`);
+            lines.push(`| **PR Author** | @${process.env.GITHUB_ACTOR} |`);
+            lines.push(`| **Source Branch** | \`${process.env.GITHUB_HEAD_REF || context.ref.replace('refs/heads/','')}\` |`);
+            lines.push(`| **Target Branch** | \`${process.env.GITHUB_BASE_REF || 'N/A'}\` |`);
+            lines.push('');
+
+            const sha = process.env.GITHUB_SHA;
+            lines.push('### 📝 Commit Details');
+            lines.push('| Field | Value |');
+            lines.push('|-------|-------|');
+            lines.push(`| **Commit SHA** | \`${sha.substring(0,7)}\` ([full](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/commit/${sha})) |`);
+            lines.push('');
+
+            lines.push('### 🛡️ Tool Results Summary');
+            lines.push('| Tool | Category | Status | Blocking |');
+            lines.push('|------|----------|--------|----------|');
+
+            const results = evaluated.results || [];
+            for (const r of results) {
+              const tool = r.tool;
+              const cat = categoryMap[tool] || 'Analysis';
+              const ok = !r.policy_violation;
+              const status = ok ? '✅ SUCCESS' : '❌ FAILURE';
+              const blocking = r.blocking ? '🚫 Yes' : '⚠️ Advisory';
+              lines.push(`| ${tool} | ${cat} | ${status} | ${blocking} |`);
+            }
+
+            const failures = results.filter(r => r.policy_violation);
+            if (failures.length) {
+              lines.push('');
+              lines.push('### ❌ Failure Details');
+              lines.push('');
+              for (const f of failures) {
+                lines.push(`#### ${f.tool}`);
+                lines.push(`_${f.reason || 'policy_violation'} — see raw artifacts in \`quality/analysis/raw/\` and normalized/evaluated outputs._`);
+                lines.push('');
+              }
+            }
+
+            lines.push('---');
+            lines.push('_Full artifact bundle available in the workflow run artifacts._');
+            lines.push('');
+
+            fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
+
+      # ------------------------------------------------------
+      # Step 8: Post/Update PR Comment (Rich Report)
+      # ------------------------------------------------------
+      # Purpose:
+      # - Recreates the behavior of build-and-analyze.yml
+      # - Posts a single rich comment and updates it on re-runs
+      #
+      # Notes:
+      # - Only runs for pull_request events
+      # - Requires permissions.pull-requests: write
+      # ------------------------------------------------------
+      - name: Post Rich Report to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const marker = '## 🔍 CareConnect — Security & Quality Analysis Report';
+            const body = fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/report.md'), 'utf8');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100
+            });
+
+            const existing = comments.find(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number, body
+              });
+            }
+
+      # ------------------------------------------------------
+      # Step 9: Upload Analysis Artifacts
+      # ------------------------------------------------------
+      # Uploads all raw, normalized, evaluated, and reporting outputs:
+      #   quality/analysis/raw/
+      #   quality/analysis/normalized/normalized.json
+      #   quality/analysis/evaluated/evaluated.json
+      #   quality/analysis/summary.md
+      #   quality/analysis/report.json
+      #   quality/analysis/report.md
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         if: always() # Always upload artifacts, even if gate.py blocks or crashes
