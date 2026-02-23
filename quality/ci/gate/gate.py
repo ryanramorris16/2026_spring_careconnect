@@ -2,239 +2,187 @@
 # ==========================================================
 # gate.py
 # ----------------------------------------------------------
-# Quality Gate Orchestrator
+# Quality Gate Orchestrator (Single Enforcement Authority)
 #
-# This is the single entrypoint for the enforcement engine.
-# It coordinates the two-layer design:
+# This is the ONLY file that controls the final CI exit code.
 #
-#   Layer 1 (Normalization): normalize.py
+# Architecture Overview:
+#
+#   Layer 1 — Normalization (normalize.py)
 #     - Reads raw tool artifacts from quality/analysis/raw/
-#     - Produces normalized results in quality/analysis/normalized/
+#     - Produces normalized.json in quality/analysis/normalized/
 #
-#   Layer 2 (Policy Evaluation): policy_engine.py
+#   Layer 2 — Policy Evaluation (policy_engine.py)
 #     - Reads normalized.json + policy.yaml
 #     - Produces evaluated.json
-#     - Determines overall_block (merge approve vs block)
+#     - Determines overall_block (True/False)
 #
-# This file does NOT contain:
-# - Tool-specific parsing (that belongs in parsers/)
-# - Policy thresholds (that belongs in policy.yaml)
+#   Layer 3 — Human Readable Reporting (humanize.py)
+#     - Produces Markdown breakdowns in quality/analysis/human/
 #
 # Responsibilities of gate.py:
-#  1) Invoke normalization
-#  2) Invoke policy evaluation
-#  3) Generate human + machine readable outputs
-#  4) Exit with correct status code (controls merge gating)
+#   1) Invoke normalization
+#   2) Invoke policy evaluation
+#   3) Generate human + machine readable outputs
+#   4) Exit with correct status code (controls merge gating)
 #
-# Exit Codes (CI enforcement contract):
+# Exit Codes (CI Enforcement Contract):
 #   0 = Approved (job passes → merge allowed)
 #   1 = Blocked  (job fails  → merge blocked)
 #
 # Global Gate Mode:
-#   policy.yaml can set:
-#     gate.mode: enforce | report_only
+#   policy.yaml may define:
+#       gate.mode: enforce | report_only
 #
-#   - enforce     : violations block merges (exit code 1)
-#   - report_only : violations are reported but do NOT block (exit code 0)
+#   - enforce     : violations block merges
+#   - report_only : violations are reported but do NOT block
+#
+# DESIGN PRINCIPLES:
+# - Tool logic belongs in parsers/
+# - Policy thresholds belong in policy.yaml
+# - This file coordinates, but does NOT embed tool logic
+# - Fail-safe behavior always blocks in enforce mode
 # ==========================================================
+
+from __future__ import annotations
 
 import json
 import yaml
 from pathlib import Path
 
 # ----------------------------------------------------------
-# Engine imports
+# Engine Imports (Relative for Package Stability)
 # ----------------------------------------------------------
-# normalize(): Layer 1
-#   - Converts raw tool outputs into standardized structures
-#
-# evaluate(): Layer 2
-#   - Applies policy.yaml rules to normalized.json
-#   - Produces evaluated.json and returns overall_block boolean
+# Using relative imports ensures stability when executed via:
+#   python -m quality.ci.gate.gate
 # ----------------------------------------------------------
-from normalize import normalize
-from policy_engine import evaluate
+from .normalize import normalize
+from .policy_engine import evaluate
+from .humanize import generate_human_readable_outputs
 
 # ----------------------------------------------------------
-# Output locations (relative to repo root)
-# ----------------------------------------------------------
-# All generated artifacts are written under quality/analysis/
-# so that workflows can upload a single artifact folder.
+# Directory Configuration
 # ----------------------------------------------------------
 ANALYSIS_DIR = Path("quality/analysis")
-
-# Policy file is read here ONLY for global gate.mode.
-# Tool-specific policy evaluation remains inside policy_engine.py.
 POLICY_FILE = Path("quality/ci/gate/policy.yaml")
 
-# Machine-readable overall report (useful for downstream tooling)
-# Mirrors evaluated.json (plus later, richer metadata if desired).
 REPORT_FILE = ANALYSIS_DIR / "report.json"
-
-# Human-readable markdown summary (PR-friendly)
 SUMMARY_FILE = ANALYSIS_DIR / "summary.md"
 
-# Evaluated output is written by policy_engine.py (or fail-safe writer)
 EVALUATED_DIR = ANALYSIS_DIR / "evaluated"
 EVALUATED_FILE = EVALUATED_DIR / "evaluated.json"
 
+NORMALIZED_FILE = ANALYSIS_DIR / "normalized/normalized.json"
 
-def generate_summary():
+
+# ==========================================================
+# Reporting
+# ==========================================================
+
+def generate_summary() -> None:
     """
-    Generate a human-readable Markdown summary and a machine-readable JSON report.
+    Generate:
+      - summary.md (human-readable)
+      - report.json (machine-readable)
 
-    Inputs:
-      quality/analysis/evaluated/evaluated.json
-        - Produced by policy_engine.py (normal path)
-        - OR written by write_failsafe_evaluated() (failure path)
-        - Contains overall_block + per-tool evaluation results
-
-    Outputs:
-      quality/analysis/summary.md
-        - Markdown table summarizing each tool's enforcement status
-      quality/analysis/report.json
-        - JSON copy of evaluated.json for machine consumption / audit artifacts
-
-    IMPORTANT:
-      - This function should never decide policy.
-      - It should present what the policy engine decided.
+    Uses evaluated.json as single source of truth.
     """
-    # policy_engine.py (or the fail-safe writer) produces evaluated.json here
-    evaluated_file = EVALUATED_FILE
 
-    # If evaluated.json is missing, we cannot produce a reliable summary.
-    # This indicates an unexpected orchestration failure.
-    if not evaluated_file.exists():
-        print("No evaluated results found.")
+    if not EVALUATED_FILE.exists():
+        print("⚠️ No evaluated results found. Cannot generate summary.")
         return
 
-    # Load evaluated results produced by the policy engine (or fail-safe writer).
-    with open(evaluated_file) as f:
+    with open(EVALUATED_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # overall_block is the single gate decision for the workflow.
-    overall_block = data["overall_block"]
+    overall_block = bool(data.get("overall_block", True))
+    results = data.get("results", [])
 
-    # results is the per-tool list containing blocking/policy_violation/reason and normalized payload.
-    results = data["results"]
+    lines = [
+        "# CareConnect Quality Gate Report",
+        "",
+        "## ❌ MERGE BLOCKED" if overall_block else "## ✅ MERGE APPROVED",
+        "",
+        "| Tool | Blocking | Violation | Reason |",
+        "|------|----------|-----------|--------|",
+    ]
 
-    # Build a compact Markdown summary designed for PR-friendly viewing.
-    lines = []
-    lines.append("# CareConnect Quality Gate Report")
-    lines.append("")
-
-    # Top-level status header (single source of truth is overall_block).
-    if overall_block:
-        lines.append("## ❌ MERGE BLOCKED")
-    else:
-        lines.append("## ✅ MERGE APPROVED")
-
-    lines.append("")
-    lines.append("| Tool | Blocking | Violation | Reason |")
-    lines.append("|------|----------|-----------|--------|")
-
-    # Each row shows:
-    # - Tool key (matches policy.yaml / parser name)
-    # - Blocking: whether this tool can block merges
-    # - Violation: whether policy rules were violated
-    # - Reason: normalized reason code set by policy_engine (or '-' if clean)
     for r in results:
         lines.append(
-            f"| {r['tool']} | "
-            f"{'Yes' if r['blocking'] else 'No'} | "
-            f"{'Yes' if r['policy_violation'] else 'No'} | "
-            f"{r['reason'] or '-'} |"
+            f"| {r.get('tool')} | "
+            f"{'Yes' if r.get('blocking') else 'No'} | "
+            f"{'Yes' if r.get('policy_violation') else 'No'} | "
+            f"{r.get('reason') or '-'} |"
         )
 
-    # Ensure analysis directory exists before writing outputs.
     SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write markdown summary.
-    with open(SUMMARY_FILE, "w") as f:
-        f.write("\n".join(lines))
-
-    # Write machine-readable report (currently mirrors evaluated.json).
-    with open(REPORT_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    SUMMARY_FILE.write_text("\n".join(lines), encoding="utf-8")
+    REPORT_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     print(f"Summary written to {SUMMARY_FILE}")
     print(f"Report written to {REPORT_FILE}")
 
 
-def load_gate_mode():
+# ==========================================================
+# Gate Mode Handling
+# ==========================================================
+
+def load_gate_mode() -> str:
     """
     Read gate.mode from policy.yaml.
 
+    Defaults:
+      - enforce (fail-safe)
+
     Returns:
       "enforce" or "report_only"
-
-    Defaults:
-      - If gate.mode is missing, malformed, or policy.yaml cannot be read,
-        default to "enforce" (fail-safe).
     """
     try:
-        with open(POLICY_FILE) as f:
+        with open(POLICY_FILE, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
 
-        # gate section is optional; default to enforce behavior.
-        mode = (data.get("gate", {}) or {}).get("mode", "enforce")
-        mode = str(mode).strip().lower()
+        mode = str(
+            (data.get("gate", {}) or {}).get("mode", "enforce")
+        ).strip().lower()
 
-        # Only allow known modes; anything else is treated as enforce.
         return mode if mode in {"enforce", "report_only"} else "enforce"
 
     except Exception:
-        # If policy cannot be read, default to enforce (fail safe).
+        # Fail-safe default
         return "enforce"
 
 
-def write_failsafe_evaluated(stage: str, error: Exception):
+# ==========================================================
+# Fail-Safe Evaluated Writer
+# ==========================================================
+
+def write_failsafe_evaluated(stage: str, error: Exception) -> None:
     """
-    Write a minimal evaluated.json when normalization or policy evaluation fails.
+    Write minimal evaluated.json when normalization or policy fails.
 
-    Why this exists:
-      - CI governance requires determinism.
-      - If a toolchain fails (normalization/parsing, policy read, etc.),
-        we still need an auditable artifact explaining why the gate failed.
-      - This guarantees summary.md and report.json can still be generated,
-        even when upstream steps crash.
-
-    Behavior:
-      - Writes quality/analysis/evaluated/evaluated.json
-      - Sets overall_block=True (governance blocks on system failure)
-      - Creates a synthetic tool entry "gate_engine" describing the failure
-
-    Args:
-      stage: Where the failure occurred ("normalization" or "policy_evaluation")
-      error: The exception raised
+    Guarantees:
+      - evaluated.json always exists
+      - overall_block=True (fail-safe)
+      - Synthetic tool entry "gate_engine" records failure
     """
-    # Ensure evaluated folder exists.
+
     EVALUATED_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Minimal evaluated payload consistent with policy_engine output schema.
     data = {
-        # Fail-safe default: governance blocks on system failure
         "overall_block": True,
         "results": [
             {
-                # Synthetic tool name used to represent orchestration failures
                 "tool": "gate_engine",
                 "blocking": True,
                 "policy_violation": True,
-
-                # Stable reason code used in the markdown summary
                 "reason": f"{stage}_failed",
-
-                # A normalized-shaped payload so downstream consumers stay stable
                 "normalized": {
                     "tool": "gate_engine",
+                    "artifact_present": False,
                     "executed": False,
                     "runtime_error": True,
-
-                    # Non-zero count so it is unambiguously treated as "failure"
                     "violation_count": 1,
-
-                    # Treat orchestration failures as high severity by default
                     "severity_counts": {
                         "critical": 0,
                         "high": 1,
@@ -243,8 +191,7 @@ def write_failsafe_evaluated(stage: str, error: Exception):
                         "info": 0,
                     },
                     "max_severity": "high",
-
-                    # Store diagnostic context for debugging
+                    "findings": [],
                     "metadata": {
                         "stage": stage,
                         "error": str(error),
@@ -254,110 +201,102 @@ def write_failsafe_evaluated(stage: str, error: Exception):
         ],
     }
 
-    # Write fail-safe evaluated.json so generate_summary() can still run.
-    with open(EVALUATED_FILE, "w") as f:
-        json.dump(data, f, indent=2)
-
+    EVALUATED_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     print(f"⚠️ Wrote fail-safe evaluated results to {EVALUATED_FILE}")
 
 
-def main():
-    """
-    Main CI entrypoint.
+# ==========================================================
+# Main Entrypoint
+# ==========================================================
 
-    Production-grade guarantees:
-      - The gate attempts normalization and policy evaluation.
-      - If either fails, a fail-safe evaluated.json is written.
-      - summary.md and report.json are still generated for debugging/audit.
-      - Final exit code honors gate.mode (enforce vs report_only).
-
-    Enforcement contract:
-      - In enforce mode, failures or violations block the merge (exit 1).
-      - In report_only mode, failures or violations are reported but do not block (exit 0).
+def main() -> None:
     """
-    # Read global gate mode at the very beginning so failure paths still honor it.
+    Main CI Entry Point.
+
+    Guarantees:
+      - Always attempts normalization
+      - Always attempts policy evaluation
+      - Writes evaluated.json in all cases
+      - Generates summary/report artifacts
+      - Honors gate.mode
+    """
+
     mode = load_gate_mode()
+    blocked = True  # pessimistic default
 
-    # Pessimistic default; overwritten on successful evaluation.
-    blocked = True
-
-    # ----------------------------------------------------------
-    # Layer 1: Normalization
-    # ----------------------------------------------------------
-    # Converts raw artifacts into normalized.json.
-    # Any exception here results in a fail-safe evaluated.json.
+    # ------------------------------------------------------
+    # Layer 1 — Normalization
+    # ------------------------------------------------------
     try:
         print("Running normalization...")
         normalize()
     except Exception as e:
         print(f"❌ Normalization failed: {e}")
-        write_failsafe_evaluated(stage="normalization", error=e)
-
-        # Still generate outputs from the fail-safe evaluated.json.
-        print("Generating summary (fail-safe)...")
+        write_failsafe_evaluated("normalization", e)
         generate_summary()
 
-        # Honor global gate mode.
         if mode == "report_only":
-            print("⚠️ gate.mode=report_only → not blocking merge despite gate failure.")
-            exit(0)
+            print("⚠️ report_only mode → not blocking merge.")
+            raise SystemExit(0)
 
-        print("❌ Merge blocked due to normalization failure.")
-        exit(1)
+        raise SystemExit(1)
 
-    # ----------------------------------------------------------
-    # Layer 2: Policy Evaluation
-    # ----------------------------------------------------------
-    # Applies policy.yaml rules to normalized.json and returns overall block decision.
-    # Any exception here results in a fail-safe evaluated.json.
+    # ------------------------------------------------------
+    # Layer 2 — Policy Evaluation
+    # ------------------------------------------------------
     try:
         print("Applying policy rules...")
         blocked = evaluate()
     except Exception as e:
         print(f"❌ Policy evaluation failed: {e}")
-        write_failsafe_evaluated(stage="policy_evaluation", error=e)
-
-        # Still generate outputs from the fail-safe evaluated.json.
-        print("Generating summary (fail-safe)...")
+        write_failsafe_evaluated("policy_evaluation", e)
         generate_summary()
 
-        # Honor global gate mode.
         if mode == "report_only":
-            print("⚠️ gate.mode=report_only → not blocking merge despite gate failure.")
-            exit(0)
+            print("⚠️ report_only mode → not blocking merge.")
+            raise SystemExit(0)
 
-        print("❌ Merge blocked due to policy evaluation failure.")
-        exit(1)
+        raise SystemExit(1)
 
-    # ----------------------------------------------------------
-    # Reporting (normal path)
-    # ----------------------------------------------------------
-    # At this point evaluated.json should exist, so we generate summary/report outputs.
-    print("Generating summary...")
+    # ------------------------------------------------------
+    # Layer 3 — Human Readable Reports
+    # ------------------------------------------------------
+    try:
+        generate_human_readable_outputs(
+            repo_root=Path(".").resolve(),
+            analysis_dir=ANALYSIS_DIR.resolve(),
+            normalized_path=NORMALIZED_FILE.resolve(),
+            evaluated_path=EVALUATED_FILE.resolve(),
+        )
+    except Exception as e:
+        # Reporting should never block enforcement.
+        print(f"⚠️ Human-readable report generation failed: {e}")
+
+    # ------------------------------------------------------
+    # Summary + Machine Report
+    # ------------------------------------------------------
     generate_summary()
 
-    # ----------------------------------------------------------
-    # Final enforcement decision (normal path)
-    # ----------------------------------------------------------
-    # report_only:
-    #   - Always pass CI, but preserve visibility via report artifacts.
+    # ------------------------------------------------------
+    # Final Enforcement Decision
+    # ------------------------------------------------------
     if mode == "report_only":
         if blocked:
-            print("⚠️ Policy violations detected, but gate.mode=report_only so merge is NOT blocked.")
+            print("⚠️ Violations detected, but report_only mode enabled.")
         else:
-            print("✅ Merge approved (gate.mode=report_only).")
-        exit(0)
+            print("✅ Merge approved (report_only mode).")
+        raise SystemExit(0)
 
-    # enforce (default):
-    #   - Block merges when policy violations exist.
     if blocked:
         print("❌ Merge blocked due to policy violations.")
-        exit(1)
+        raise SystemExit(1)
 
     print("✅ Merge approved.")
-    exit(0)
+    raise SystemExit(0)
 
 
-# Allow local execution: python quality/ci/gate/gate.py
+# Allow local execution:
+#   python -m quality.ci.gate.gate
 if __name__ == "__main__":
     main()
+    

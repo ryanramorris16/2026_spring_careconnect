@@ -37,7 +37,7 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from schemas import base_tool_result
+from ..schemas import base_tool_result
 
 
 def parse_spotbugs(raw_dir: Path):

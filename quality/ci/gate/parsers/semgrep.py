@@ -40,7 +40,7 @@
 import json
 from pathlib import Path
 
-from schemas import base_tool_result
+from ..schemas import base_tool_result
 
 
 def parse_semgrep(raw_dir: Path):

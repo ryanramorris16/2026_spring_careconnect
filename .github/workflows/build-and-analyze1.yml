@@ -219,7 +219,7 @@ jobs:
           echo '<BugCollection></BugCollection>' > quality/analysis/raw/spotbugs.xml
           echo '{"results":[]}' > quality/analysis/raw/semgrep.json
           echo '{"dependencies":[]}' > quality/analysis/raw/dependency_check.json
-          echo '{"projectStatus":{"status":"OK"}}' > quality/analysis/raw/sonarqube.json
+          echo '{"projectStatus":{"status":"OK"}}' > quality/analysis/raw/sonar.json
 
       # ------------------------------------------------------
       # Step 6: Run Quality Gate Engine
@@ -235,7 +235,7 @@ jobs:
       # ------------------------------------------------------
       - name: Run Quality Gate
         run: |
-          python quality/ci/gate/gate.py
+          python -m quality.ci.gate.gate
 
       # ------------------------------------------------------
       # Step 7: Generate Rich Markdown Report (report.md)
@@ -287,7 +287,7 @@ jobs:
               checkstyle: 'SAST — Java',
               spotbugs: 'SAST — Java',
               pmd: 'SAST — Java',
-              sonarqube: 'SAST — Java',
+              sonar: 'SAST — Java',
               semgrep: 'SAST — Flutter',
               flutter_analyze: 'SAST — Flutter',
               dependency_check: 'SCA'

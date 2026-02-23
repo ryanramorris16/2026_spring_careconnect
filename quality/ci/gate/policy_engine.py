@@ -27,14 +27,23 @@
 #
 # Enforcement Contract:
 #   - If ANY tool that is marked "blocking: true" violates its policy,
-#     overall_block becomes True, and the workflow must fail.
+#     overall_block becomes True.
 #   - Additionally, runtime errors / missing artifacts / non-execution are
-#     treated as violations (governance requires deterministic enforcement).
+#     treated as violations for blocking tools (fail-safe governance).
+#
+# NOTE ON gate.mode:
+#   - policy.yaml may define gate.mode (enforce vs report_only).
+#   - This file evaluates violations consistently either way.
+#   - The final exit-code decision is enforced by gate.py (single authority).
 # ==========================================================
 
+from __future__ import annotations
+
 import json
-import yaml
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import yaml
 
 # ----------------------------------------------------------
 # Input / Output locations
@@ -49,7 +58,11 @@ EVALUATED_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_FILE = EVALUATED_DIR / "evaluated.json"
 
-def load_policy():
+# Shared normalized severity vocabulary (lowest → highest)
+SEVERITY_ORDER: List[str] = ["info", "low", "medium", "high", "critical"]
+
+
+def load_policy() -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Load policy.yaml and return both:
       - gate config (global controls)
@@ -57,7 +70,7 @@ def load_policy():
 
     This keeps policy.yaml as the single governance source of truth.
     """
-    with open(POLICY_FILE) as f:
+    with open(POLICY_FILE, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     # Gate config is optional; defaults to enforce mode.
@@ -66,16 +79,17 @@ def load_policy():
 
     return gate_cfg, tools_cfg
 
-def load_normalized():
+
+def load_normalized() -> List[Dict[str, Any]]:
     """
     Load the normalized tool results produced by normalize.py.
     Returns a list of tool result dicts (one per tool).
     """
-    with open(NORMALIZED_FILE) as f:
+    with open(NORMALIZED_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def severity_rank(level):
+def severity_rank(level: str | None) -> int:
     """
     Convert severity labels into an ordered integer ranking.
 
@@ -84,11 +98,15 @@ def severity_rank(level):
 
     Higher rank means more severe.
     """
-    order = ["info", "low", "medium", "high", "critical"]
-    return order.index(level) if level in order else -1
+    if not level:
+        return -1
+    try:
+        return SEVERITY_ORDER.index(level)
+    except ValueError:
+        return -1
 
 
-def evaluate():
+def evaluate() -> bool:
     """
     Evaluate normalized results against policy.yaml.
 
@@ -101,10 +119,11 @@ def evaluate():
     # gate_cfg is intentionally loaded here to validate policy.yaml structure,
     # but gate.mode enforcement is handled in gate.py (single exit-code authority).
     gate_cfg, tools_policy = load_policy()
+    _ = gate_cfg  # keep linting quiet; gate.py owns gate.mode enforcement
 
     normalized_results = load_normalized()
 
-    evaluated = []
+    evaluated: List[Dict[str, Any]] = []
     overall_block = False
 
     # ----------------------------------------------------------
@@ -114,17 +133,24 @@ def evaluate():
     # Tools missing from policy.yaml default to non-blocking and no rules.
     # ----------------------------------------------------------
     for tool_result in normalized_results:
-        tool_name = tool_result["tool"]
-        tool_policy = tools_policy.get(tool_name, {})
+        tool_name = tool_result.get("tool", "unknown_tool")
+        tool_policy = tools_policy.get(tool_name, {}) or {}
 
         # Whether this tool is allowed to block merges (on/off switch)
-        blocking = tool_policy.get("blocking", False)
+        blocking = bool(tool_policy.get("blocking", False))
 
         # Tool-specific fail conditions (defined in policy.yaml)
-        fail_rules = tool_policy.get("fail_on", {})
+        fail_rules: Dict[str, Any] = tool_policy.get("fail_on", {}) or {}
 
         policy_violation = False
-        reason = None  # "reason" is set to a stable code used in reporting
+        reason: str | None = None  # stable code used in reporting
+
+        def violate(code: str) -> None:
+            """Set violation + first reason (do not overwrite earlier root cause)."""
+            nonlocal policy_violation, reason
+            policy_violation = True
+            if reason is None:
+                reason = code
 
         # ----------------------------------------------------------
         # Governance: runtime failures are violations
@@ -132,9 +158,8 @@ def evaluate():
         # Missing artifacts, parser crashes, malformed outputs, etc.
         # MUST block the merge if the tool is blocking.
         # ----------------------------------------------------------
-        if tool_result["runtime_error"]:
-            policy_violation = True
-            reason = "runtime_error"
+        if bool(tool_result.get("runtime_error", False)):
+            violate("runtime_error")
 
         # ----------------------------------------------------------
         # Governance: tool not executed is a violation
@@ -142,85 +167,79 @@ def evaluate():
         # Even if runtime_error is not explicitly true, a tool that did not
         # execute is treated as non-compliant. This prevents silent skips.
         # ----------------------------------------------------------
-        if not tool_result["executed"]:
-            policy_violation = True
-            reason = "tool_not_executed"
+        if not bool(tool_result.get("executed", False)):
+            violate("tool_not_executed")
+
+        # Convenience locals from normalized schema (with safe defaults)
+        violation_count = int(tool_result.get("violation_count", 0) or 0)
+        severity_counts = tool_result.get("severity_counts", {}) or {}
+        max_sev = tool_result.get("max_severity")
 
         # ----------------------------------------------------------
         # Generic count-based rule
-        # ----------------------------------------------------------
-        # Example (checkstyle):
+        # Example:
         #   violation_count: ">0"
         # ----------------------------------------------------------
         if "violation_count" in fail_rules:
-            threshold = fail_rules["violation_count"]
-            if threshold == ">0" and tool_result["violation_count"] > 0:
-                policy_violation = True
-                reason = "violation_count_exceeded"
+            threshold = fail_rules.get("violation_count")
+            if threshold == ">0" and violation_count > 0:
+                violate("violation_count_exceeded")
 
         # ----------------------------------------------------------
         # Flutter-specific error rule
-        # ----------------------------------------------------------
         # For Flutter analyze we treat "high" severity count as error_count.
         # (Normalization layer maps analyzer errors -> high)
+        # Example:
+        #   error_count: ">0"
         # ----------------------------------------------------------
         if "error_count" in fail_rules:
-            threshold = fail_rules["error_count"]
+            threshold = fail_rules.get("error_count")
             if threshold == ">0":
-                if tool_result["severity_counts"]["high"] > 0:
-                    policy_violation = True
-                    reason = "flutter_errors_present"
+                flutter_errors = int(severity_counts.get("high", 0) or 0)
+                if flutter_errors > 0:
+                    violate("flutter_errors_present")
 
         # ----------------------------------------------------------
         # Severity-based rule
-        # ----------------------------------------------------------
         # Example:
         #   severity: "high_and_above"
         #   severity: "medium_and_above"
         #   severity: "critical_only"
         # ----------------------------------------------------------
-        if "severity" in fail_rules:
-            rule = fail_rules["severity"]
-            max_sev = tool_result["max_severity"]
+        if "severity" in fail_rules and max_sev:
+            rule = fail_rules.get("severity")
 
-            # If a tool found nothing, max_severity may be None.
-            if max_sev:
-                if rule == "high_and_above" and severity_rank(max_sev) >= severity_rank("high"):
-                    policy_violation = True
-                    reason = "severity_high_and_above"
-                elif rule == "medium_and_above" and severity_rank(max_sev) >= severity_rank("medium"):
-                    policy_violation = True
-                    reason = "severity_medium_and_above"
-                elif rule == "critical_only" and max_sev == "critical":
-                    policy_violation = True
-                    reason = "severity_critical"
+            if rule == "high_and_above" and severity_rank(max_sev) >= severity_rank("high"):
+                violate("severity_high_and_above")
+            elif rule == "medium_and_above" and severity_rank(max_sev) >= severity_rank("medium"):
+                violate("severity_medium_and_above")
+            elif rule == "critical_only" and max_sev == "critical":
+                violate("severity_critical")
 
         # ----------------------------------------------------------
         # Dependency-Check rule: any vulnerability triggers failure
+        # Example:
+        #   any_vulnerability: true
         # ----------------------------------------------------------
-        if fail_rules.get("any_vulnerability") is True:
-            if tool_result["violation_count"] > 0:
-                policy_violation = True
-                reason = "vulnerability_present"
+        if fail_rules.get("any_vulnerability") is True and violation_count > 0:
+            violate("vulnerability_present")
 
         # ----------------------------------------------------------
         # Generic "any finding" rule (e.g., TruffleHog)
+        # Example:
+        #   any_finding: true
         # ----------------------------------------------------------
-        if fail_rules.get("any_finding") is True:
-            if tool_result["violation_count"] > 0:
-                policy_violation = True
-                reason = "finding_present"
+        if fail_rules.get("any_finding") is True and violation_count > 0:
+            violate("finding_present")
 
         # ----------------------------------------------------------
-        # SonarQube Quality Gate rule
+        # Sonar Quality Gate rule (SonarQube or SonarCloud)
+        # Normalization maps "ERROR"/"FAILED" → violation_count = 1.
+        # Example:
+        #   quality_gate: true
         # ----------------------------------------------------------
-        # Normalization maps "ERROR" → violation_count = 1.
-        # This keeps policy logic simple.
-        # ----------------------------------------------------------
-        if "quality_gate" in fail_rules:
-            if tool_result["violation_count"] > 0:
-                policy_violation = True
-                reason = "quality_gate_failed"
+        if fail_rules.get("quality_gate") is True and violation_count > 0:
+            violate("quality_gate_failed")
 
         # ----------------------------------------------------------
         # Determine overall merge block decision
@@ -229,34 +248,39 @@ def evaluate():
             overall_block = True
 
         # Store evaluated result for reporting and audit artifacts
-        evaluated.append({
-            "tool": tool_name,
-            "blocking": blocking,
-            "policy_violation": policy_violation,
-            "reason": reason,
-            "normalized": tool_result
-        })
+        evaluated.append(
+            {
+                "tool": tool_name,
+                "blocking": blocking,
+                "policy_violation": policy_violation,
+                "reason": reason,
+                "normalized": tool_result,
+            }
+        )
 
     # ----------------------------------------------------------
     # Write evaluated.json (single source of truth for reporting)
     # ----------------------------------------------------------
-    with open(OUTPUT_FILE, "w") as f:
-        json.dump({
-            "overall_block": overall_block,
-            "results": evaluated
-        }, f, indent=2)
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "overall_block": overall_block,
+                "results": evaluated,
+            },
+            f,
+            indent=2,
+        )
 
     return overall_block
 
 
 # Allow standalone execution (useful for local debugging)
 # NOTE: gate.py is the preferred entrypoint in CI because it also
-# runs normalization + report generation.
+# runs normalization + report generation and applies gate.mode.
 if __name__ == "__main__":
     blocked = evaluate()
     if blocked:
         print("❌ Policy violation detected. Merge blocked.")
-        exit(1)
-    else:
-        print("✅ All policy checks passed.")
-        exit(0)
+        raise SystemExit(1)
+    print("✅ All policy checks passed.")
+    raise SystemExit(0)

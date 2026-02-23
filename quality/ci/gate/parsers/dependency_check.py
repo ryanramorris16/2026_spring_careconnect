@@ -27,7 +27,7 @@
 import json
 from pathlib import Path
 
-from schemas import base_tool_result
+from ..schemas import base_tool_result
 
 
 def parse_dependency_check(raw_dir: Path):
