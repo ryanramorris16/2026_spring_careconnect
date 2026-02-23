@@ -118,23 +118,13 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Run TruffleHog
         if: env.RUN_TRUFFLEHOG == 'true'
+        id: trufflehog
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --no-verification
-
-      - name: Record TruffleHog result
-        if: always()
-        run: |
-          # Write outcome to a file so the report job can read it
-          mkdir -p /tmp/tool-results
-          if [ "${{ steps.trufflehog.outcome }}" = "failure" ]; then
-            echo "FAILED" > /tmp/tool-results/trufflehog.txt
-          else
-            echo "PASSED" > /tmp/tool-results/trufflehog.txt
-          fi
 
       - name: Upload TruffleHog result
         if: always()
@@ -462,10 +452,12 @@ jobs:
         id: flutter_analyze
         working-directory: frontend
         run: |
-          flutter analyze --machine 2>&1 | tee /tmp/flutter-analyze-output.json || true
-          # Exit code reflects whether errors were found; capture it
-          flutter analyze
+          flutter analyze --machine 2>&1 | tee /tmp/flutter-analyze-output.json
+          ANALYZE_EXIT=${PIPESTATUS[0]}
+          echo "FLUTTER_EXIT=$ANALYZE_EXIT" >> $GITHUB_ENV
+          exit $ANALYZE_EXIT
         continue-on-error: true
+
 
       - name: Parse flutter analyze findings
         if: always() && env.RUN_FLUTTER_ANALYZE == 'true'
@@ -502,7 +494,11 @@ jobs:
           print(f"Parsed {len(findings)} flutter analyze findings")
           EOF
 
-          echo "OUTCOME=${{ steps.flutter_analyze.outcome }}" > /tmp/tool-results/flutter_analyze-meta.txt
+          if [ "${{ steps.flutter_analyze.outcome }}" = "failure" ] || [ "${FLUTTER_EXIT}" != "0" ]; then
+            echo "OUTCOME=failure" > /tmp/tool-results/flutter_analyze-meta.txt
+          else
+            echo "OUTCOME=success" > /tmp/tool-results/flutter_analyze-meta.txt
+          fi
 
       # -----------------------------------------------------------------------
       # SEMGREP
@@ -713,10 +709,10 @@ jobs:
           if [ "$BLOCKING" -gt "0" ]; then
             echo "OUTCOME=failure" >> /tmp/tool-results/owasp_dc-meta.txt
             echo "::error::OWASP Dependency-Check found $BLOCKING Critical/High severity CVE(s). Merge blocked."
-            exit 1
           else
             echo "OUTCOME=success" >> /tmp/tool-results/owasp_dc-meta.txt
           fi
+
         continue-on-error: true  # Report job reads the meta file to determine block/warn
 
       - name: Upload OWASP DC artifacts
