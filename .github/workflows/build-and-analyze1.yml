@@ -2,23 +2,26 @@
 # ==========================================================
 # Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
-# This workflow runs the new Quality & Security Enforcement
-# subsystem located under:
+# Qquality/security workflow for CareConnect.
 #
+# System of record:
 #   quality/ci/gate/
 #
-# It performs:
-#   1. Tool execution (currently TruffleHog wired)
-#   2. Raw artifact generation
-#   3. Normalization layer
-#   4. Policy evaluation
-#   5. Merge approval / block decision
-#   6. Rich reporting (report.md) + optional PR comment update
+# Pipeline responsibilities:
+#   1) Execute scanners (SAST/SCA/Secrets)
+#   2) Write raw artifacts to: quality/analysis/raw/
+#   3) Normalize results:        quality/analysis/normalized/normalized.json
+#   4) Evaluate policy:          quality/analysis/evaluated/evaluated.json
+#   5) Enforce merge outcome via gate engine exit code
+#   6) Publish rich report:
+#        - quality/analysis/report.md
+#        - Actions Job Summary
+#        - Optional PR comment (single updatable comment)
 #
 # IMPORTANT:
-# - All tools run even if one fails.
-# - The Python gate engine is the single enforcement point.
-# - Exit code from gate.py controls merge status (unless policy gate.mode=report_only).
+# - Every scanner step is "non-blocking" (|| true). The gate engine decides enforcement.
+# - The ONLY environment difference between sandbox and production is SCAN_ROOT via .env.
+# - Flip to production by setting SCAN_ROOT='.' in .env (no workflow edits required).
 # ==========================================================
 
 name: Build and Analyze (New Gate Engine)
@@ -26,81 +29,72 @@ name: Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
 # Trigger Conditions
 # ----------------------------------------------------------
+# Integration phase:
+# - PRs: unscoped (so this workflow can be iterated safely)
+# - Push: scoped to team_d integration branches
 #
-# PRESENT CONFIGURATION (team_d Integration Phase)
-#
-# pull_request:
-#   - Currently UNscoped.
-#   - This ensures the workflow executes for all PR events
-#     while the workflow file itself is under active development.
-#
-# push:
-#   - Scoped to:
-#       • team_d
-#       • team_d-*
-#   - team_d serves as the controlled CI validation branch.
-#
-# Temporary Testing Controls:
-#   - A Job Guard limits execution to James-owned feature branches.
-#   - Dummy artifact generation is enabled to simulate tool outputs.
-#   - This configuration is experimental and NOT production-ready.
-#
-# ----------------------------------------------------------
-# FUTURE CONFIGURATION (Production Enforcement on main)
-#
-# pull_request:
-#   branches:
-#     - main
-#
-# push:
-#   branches:
-#     - main
-#
-# Required Production Changes:
-#   1) Scope pull_request to main only.
-#   2) Scope push to main only.
-#   3) Remove Job Guard (branch ownership isolation).
-#   4) Delete Dummy Artifact step.
-#   5) Ensure only real scanners produce raw artifacts.
-#
-# Production Intent:
-#   - main becomes the authoritative enforcement branch.
-#   - team_d remains integration/testing only.
+# Production flip (when ready):
+# - Scope pull_request to main
+# - Scope push to main
 # ----------------------------------------------------------
 on:
-  pull_request:   # Unscoped during integration phase
+  pull_request:
   push:
     branches:
       - team_d
       - team_d-*
 
 # ----------------------------------------------------------
-# Optional Report Timezone
+# Global Environment Configuration
 # ----------------------------------------------------------
-# This workflow prints BOTH:
-# - UTC time (audit-friendly, consistent)
-# - A configurable "local" time using REPORT_TZ
+# SCAN_ROOT defines the directory that ALL security and
+# quality tools will analyze.
 #
-# NOTE:
-# - GitHub Markdown cannot auto-render "each reader's" timezone.
-# - Instead, we show UTC + a chosen team timezone.
-# - Set REPORT_TZ as a GitHub repo Variable:
-#     Settings → Secrets and variables → Actions → Variables
+# ==========================================================
+# TESTING MODE (Sandbox Fixtures)
+# ==========================================================
+# Purpose:
+#   Deterministic pass/fail validation of the gate engine.
 #
-# Examples:
-#   REPORT_TZ=America/New_York      (EST/EDT)
-#   REPORT_TZ=America/Chicago       (CST/CDT)
-#   REPORT_TZ=America/Los_Angeles   (PST/PDT)
-#   REPORT_TZ=Europe/Berlin         (Germany)
+# Usage (set in .env):
+#   SCAN_ROOT=quality/sandbox/passing
+#   SCAN_ROOT=quality/sandbox/failing
+#
+# Requirements:
+#   - quality/sandbox/passing must exist
+#   - quality/sandbox/failing must exist
+#
+# This mode is strictly for CI validation and must not be
+# enabled for production enforcement.
+#
+#
+# ==========================================================
+# PRODUCTION MODE (Authoritative Enforcement)
+# ==========================================================
+# Usage (set in .env):
+#   SCAN_ROOT=.
+#
+# BEFORE enabling production mode:
+#   1) Remove sandbox fixtures:
+#        git rm -r quality/sandbox/passing
+#        git rm -r quality/sandbox/failing
+#   2) Commit and push removal.
+#
+# Production Policy:
+#   - No test fixtures may exist in the repository.
+#   - All scanners operate on real application code only.
+#   - No special exclusions or conditional logic required.
+#
+# Switching environments requires changing ONLY the .env file.
+# No workflow modifications are necessary.
 # ----------------------------------------------------------
 env:
-  REPORT_TZ: ${{ vars.REPORT_TZ }}
+  SCAN_ROOT: quality/sandbox/passing
 
 # ----------------------------------------------------------
 # Permissions
 # ----------------------------------------------------------
-# Needed only if you want the workflow to post/update PR comments.
-# Safe to keep enabled even if the PR comment step is skipped.
+# pull-requests:write is required only for PR comment updates.
 # ----------------------------------------------------------
 permissions:
   contents: read
@@ -109,38 +103,11 @@ permissions:
 jobs:
   quality-gate:
     # ------------------------------------------------------
-    # Job Guard (Temporary – Branch Ownership Isolation)
-    # ------------------------------------------------------
-    # PURPOSE (Testing Phase Only):
-    # - Allows this workflow to coexist with other classmate workflows
-    #   while testing on team_d.
-    # - Restricts execution to James-owned feature branches.
-    #
-    # BEHAVIOR:
-    # - On pull_request events:
-    #     Runs only if the source branch starts with "team_d-james-".
-    # - On push events:
-    #     Runs for pushes that match the workflow trigger
-    #     (team_d / team_d-*), since github.head_ref is empty.
-    #
-    # MIGRATION REQUIREMENT:
-    # - REMOVE this guard when promoting the workflow to main.
-    # - The production gate must enforce policy for ALL contributors,
-    #   not only a single branch owner.
-    # ------------------------------------------------------
-    if: github.event_name == 'push' || startsWith(github.head_ref, 'team_d-james-')
-
-    # ------------------------------------------------------
     # Runner Environment
-    # ------------------------------------------------------
-    # Ubuntu latest is sufficient for:
-    # - Python execution
-    # - Docker (for TruffleHog)
     # ------------------------------------------------------
     runs-on: ubuntu-latest
 
     steps:
-
       # ------------------------------------------------------
       # Step 1: Checkout Repository
       # ------------------------------------------------------
@@ -148,7 +115,36 @@ jobs:
         uses: actions/checkout@v4
 
       # ------------------------------------------------------
-      # Step 2: Set Up Python Runtime
+      # Step 2: Load Environment Overrides (.env)
+      # ------------------------------------------------------
+      # If .env exists, SCAN_ROOT is overridden from it.
+      # This is the ONLY sandbox/production toggle.
+      # ------------------------------------------------------
+      - name: Load .env overrides
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ENV_FILE="${GITHUB_WORKSPACE}/.env"
+          if [[ -f "${ENV_FILE}" ]]; then
+            # Export only supported keys (keep tight to avoid surprises)
+            while IFS='=' read -r key value; do
+              [[ -z "${key}" ]] && continue
+              [[ "${key}" =~ ^# ]] && continue
+              key="$(echo "${key}" | xargs)"
+              value="$(echo "${value}" | xargs)"
+              case "${key}" in
+                SCAN_ROOT)
+                  echo "SCAN_ROOT=${value}" >> "$GITHUB_ENV"
+                  ;;
+                *)
+                  ;;
+              esac
+            done < "${ENV_FILE}"
+          fi
+
+      # ------------------------------------------------------
+      # Step 3: Set Up Python Runtime
       # ------------------------------------------------------
       - name: Set Up Python
         uses: actions/setup-python@v5
@@ -156,114 +152,307 @@ jobs:
           python-version: '3.11'
 
       # ------------------------------------------------------
-      # Step 3: Install Python Dependencies
+      # Step 4: Install Runtime Dependencies
+      # ------------------------------------------------------
+      # Note: semgrep is installed once here (not per-step).
       # ------------------------------------------------------
       - name: Install Dependencies
+        shell: bash
         run: |
-          pip install pyyaml
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml semgrep
 
       # ------------------------------------------------------
-      # Step 4: Create Analysis Directory Structure
+      # Step 5: Create Analysis Directory Structure
       # ------------------------------------------------------
       - name: Create Analysis Directories
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p quality/analysis/raw
           mkdir -p quality/analysis/normalized
           mkdir -p quality/analysis/evaluated
 
+
+      # ======================================================
+      # Step 6: TOOL EXECUTION (ALL SCOPED BY SCAN_ROOT)
+      # Raw artifacts are written to: quality/analysis/raw/
+      # ======================================================
+
       # ------------------------------------------------------
-      # Step 5: Run TruffleHog (Secrets Scan)
+      # Validate SCAN_ROOT (Hard Guardrail)
       # ------------------------------------------------------
+      - name: Validate SCAN_ROOT
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          if [[ ! -d "${ROOT}" ]]; then
+            echo "::error::SCAN_ROOT does not exist: ${ROOT}"
+            exit 1
+          fi
+          echo "SCAN_ROOT=${ROOT}"
+
+      # ------------------------------------------------------
+      # Tool: TruffleHog (Secrets)
+      #
+      # Version pinned for deterministic builds.
       # Output:
       #   quality/analysis/raw/trufflehog.jsonl
-      #
-      # IMPORTANT:
-      # - We append `|| true` so that TruffleHog exit codes
-      #   do NOT stop the workflow.
-      # - The gate engine decides whether to block.
-      #
-      # PRODUCTION NOTE:
-      # - Replace 'trufflesecurity/trufflehog:latest' with a pinned
-      #   version tag before promoting this workflow to main.
-      # - Floating tags (like :latest) introduce nondeterministic
-      #   enforcement behavior over time.
       # ------------------------------------------------------
-      - name: Run TruffleHog (Secrets Scan)
+      - name: Run TruffleHog (Secrets)
+        shell: bash
         run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT="quality/analysis/raw/trufflehog.jsonl"
+          mkdir -p quality/analysis/raw
+
           docker run --rm \
-            -v "${{ github.workspace }}:/repo" \
-            trufflesecurity/trufflehog:latest \
-            filesystem /repo --json \
-            > quality/analysis/raw/trufflehog.jsonl || true
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            trufflesecurity/trufflehog:3.82.6 \
+            filesystem "/repo/${SCAN_ROOT}" \
+            --json > "${OUT}" || true
+
+          test -s "${OUT}" || echo "" > "${OUT}"
 
       # ------------------------------------------------------
-      # TEMPORARY SECTION
-      # ------------------------------------------------------
-      # The following artifacts are placeholder outputs
-      # until real tool integrations are wired.
+      # Tool: Flutter Analyze (Dart/Flutter)
       #
-      # WARNING:
-      # This step writes to the SAME filenames the real tools will produce.
-      # When you wire a real tool, you MUST delete the corresponding dummy line
-      # or the dummy output will overwrite the real report.
+      # REQUIREMENT:
+      # SCAN_ROOT must point to a real Flutter project
+      # containing pubspec.yaml.
       #
-      # MIGRATION REQUIREMENT:
-      # - DELETE this entire step before merging into main.
-      # - This step overwrites real tool outputs and invalidates enforcement.
+      # Output:
+      #   quality/analysis/raw/flutter_analyze.json
       # ------------------------------------------------------
-      - name: Create Dummy Artifacts (Temporary)
+      - name: Run Flutter Analyze (Flutter Project Only)
+        shell: bash
         run: |
-          echo '{"error_count":0,"warning_count":0}' > quality/analysis/raw/flutter_analyze.json
-          echo '<checkstyle></checkstyle>' > quality/analysis/raw/checkstyle.xml
-          echo '<pmd></pmd>' > quality/analysis/raw/pmd.xml
-          echo '<BugCollection></BugCollection>' > quality/analysis/raw/spotbugs.xml
-          echo '{"results":[]}' > quality/analysis/raw/semgrep.json
-          echo '{"dependencies":[]}' > quality/analysis/raw/dependency_check.json
-          echo '{"projectStatus":{"status":"OK"}}' > quality/analysis/raw/sonar.json
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/flutter_analyze.json"
+          mkdir -p "$(dirname "${OUT}")"
+
+          if [[ ! -f "${ROOT}/pubspec.yaml" ]]; then
+            echo "::error::No pubspec.yaml found at ${ROOT}. SCAN_ROOT must point to a Flutter project."
+            exit 1
+          fi
+
+          sudo snap install flutter --classic
+          flutter --version
+
+          pushd "${ROOT}" >/dev/null
+          flutter pub get
+          flutter analyze --machine > "${OUT}" || true
+          popd >/dev/null
+
+          test -s "${OUT}" || echo "[]" > "${OUT}"
 
       # ------------------------------------------------------
-      # Step 6: Run Quality Gate Engine
+      # Toolchain: Setup Java (Required for Checkstyle/PMD/SpotBugs)
       # ------------------------------------------------------
-      # Executes:
-      #   python quality/ci/gate/gate.py
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ------------------------------------------------------
+      # Tool: Checkstyle (Java)
       #
-      # Produces:
-      #   quality/analysis/normalized/normalized.json
-      #   quality/analysis/evaluated/evaluated.json
-      #   quality/analysis/summary.md
-      #   quality/analysis/report.json
+      # Version pinned.
+      # Output:
+      #   quality/analysis/raw/checkstyle.xml
+      # ------------------------------------------------------
+      - name: Run Checkstyle (Java)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT="quality/analysis/raw/checkstyle.xml"
+          mkdir -p quality/analysis/raw
+
+          curl -sSL \
+            -o checkstyle.jar \
+            https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
+
+          java -jar checkstyle.jar \
+            -c /google_checks.xml \
+            "${ROOT}" \
+            -f xml \
+            -o "${OUT}" || true
+
+          test -s "${OUT}" || echo "<checkstyle></checkstyle>" > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: PMD (Java)
+      #
+      # Version pinned.
+      # Output:
+      #   quality/analysis/raw/pmd.xml
+      # ------------------------------------------------------
+      - name: Run PMD (Java)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT="quality/analysis/raw/pmd.xml"
+          mkdir -p quality/analysis/raw
+
+          curl -sSL \
+            -o pmd.zip \
+            https://github.com/pmd/pmd/releases/download/pmd_releases/6.55.0/pmd-bin-6.55.0.zip
+          unzip -q pmd.zip
+
+          ./pmd-bin-6.55.0/bin/run.sh pmd \
+            -d "${ROOT}" \
+            -R category/java/bestpractices.xml \
+            -f xml \
+            -r "${OUT}" || true
+
+          test -s "${OUT}" || echo "<pmd></pmd>" > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool Prep: Compile Java (Production-safe)
+      #
+      # Compiles Java sources under SCAN_ROOT into a temp
+      # directory for SpotBugs analysis.
+      # ------------------------------------------------------
+      - name: Compile Java Sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          CLASSES="$(mktemp -d)"
+
+          mapfile -t SOURCES < <(find "${ROOT}" -type f -name "*.java" || true)
+          if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+            javac -d "${CLASSES}" "${SOURCES[@]}" || true
+          fi
+
+          echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------
+      # Tool: SpotBugs (Java)
+      #
+      # Version pinned.
+      # Output:
+      #   quality/analysis/raw/spotbugs.xml
+      # ------------------------------------------------------
+      - name: Run SpotBugs (Java)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="quality/analysis/raw/spotbugs.xml"
+          mkdir -p quality/analysis/raw
+
+          curl -sSL \
+            -o spotbugs.tgz \
+            https://github.com/spotbugs/spotbugs/releases/download/4.8.3/spotbugs-4.8.3.tgz
+          tar -xzf spotbugs.tgz
+
+          if [[ -n "${JAVA_CLASSES_DIR:-}" && -d "${JAVA_CLASSES_DIR}" ]]; then
+            ./spotbugs-4.8.3/bin/spotbugs \
+              -textui \
+              -xml \
+              -output "${OUT}" \
+              "${JAVA_CLASSES_DIR}" || true
+          else
+            echo "<BugCollection></BugCollection>" > "${OUT}"
+          fi
+
+          test -s "${OUT}" || echo "<BugCollection></BugCollection>" > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: Semgrep (Multi-language SAST)
+      #
+      # Version pinned via pip.
+      # Output:
+      #   quality/analysis/raw/semgrep.json
+      # ------------------------------------------------------
+      - name: Run Semgrep (SAST)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT="quality/analysis/raw/semgrep.json"
+          mkdir -p quality/analysis/raw
+
+          python -m pip install --upgrade pip
+          python -m pip install semgrep==1.73.0
+
+          semgrep \
+            --config=auto \
+            "${ROOT}" \
+            --json > "${OUT}" || true
+
+          test -s "${OUT}" || echo '{"results":[]}' > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: OWASP Dependency-Check (SCA)
+      #
+      # Version pinned.
+      # Uses deterministic output path.
+      #
+      # Output:
+      #   quality/analysis/raw/dependency-check-report.json
+      # ------------------------------------------------------
+      - name: Run OWASP Dependency-Check (SCA)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
+          OUT_DIR="${GITHUB_WORKSPACE}/quality/analysis/raw"
+          mkdir -p "${OUT_DIR}"
+
+          curl -sSL \
+            -o dc.zip \
+            https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
+          unzip -q dc.zip
+
+          ./dependency-check/bin/dependency-check.sh \
+            --project "careconnect-scan" \
+            --scan "${ROOT}" \
+            --format JSON \
+            --out "${OUT_DIR}" \
+            --noupdate || true
+
+          if [[ ! -f "${OUT_DIR}/dependency-check-report.json" ]]; then
+            echo '{"dependencies":[],"vulnerabilities":[]}' > "${OUT_DIR}/dependency-check-report.json"
+          fi
+
+      # ======================================================
+      # GATE ENGINE + REPORTING
+      # ======================================================
+
+      # ------------------------------------------------------
+      # Step 7: Run Quality Gate Engine (single enforcement point)
       # ------------------------------------------------------
       - name: Run Quality Gate
+        shell: bash
         run: |
+          set -euo pipefail
           python -m quality.ci.gate.gate
 
       # ------------------------------------------------------
-      # Step 7: Generate Rich Markdown Report (report.md)
-      # ------------------------------------------------------
-      # Produces:
+      # Step 8: Generate report.md (+ PR comment on PR events)
+      #
+      # Output:
       #   quality/analysis/report.md
-      #
-      # Timestamp:
-      # - Always includes UTC
-      # - Also includes a configurable "local" time via REPORT_TZ
-      #   (useful for teams spread across EST/CST/PST/Germany/etc.)
-      #
-      # Notes:
-      # - Uses evaluated.json produced by gate.py
-      # - Uses GitHub context for run/branch metadata
       # ------------------------------------------------------
-      - name: Generate Rich Report (report.md)
+      - name: Generate report.md (+ PR comment on PR events)
         if: always()
         uses: actions/github-script@v7
-        env:
-          REPORT_TZ: ${{ env.REPORT_TZ }}
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            const evaluatedPath = path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/evaluated/evaluated.json');
-            const outPath = path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/report.md');
+            const workspace = process.env.GITHUB_WORKSPACE;
+            const evaluatedPath = path.join(workspace, 'quality/analysis/evaluated/evaluated.json');
+            const outPath = path.join(workspace, 'quality/analysis/report.md');
 
             let evaluated;
             try {
@@ -272,11 +461,7 @@ jobs:
               evaluated = { overall_block: true, results: [] };
             }
 
-            // ---- Timestamp (Always UTC + Always Local) ----
-            const now = new Date();
-
-            // Canonical UTC (audit-safe)
-            const utc = now.toISOString().replace('T', ' ').replace('Z', ' UTC');
+            const utc = new Date().toISOString().replace('T', ' ').replace('Z', ' UTC');
 
             const statusLine = evaluated.overall_block
               ? '> **🚫 BLOCKED** — One or more required checks failed. Fix the issues below before merging.'
@@ -288,7 +473,7 @@ jobs:
               spotbugs: 'SAST — Java',
               pmd: 'SAST — Java',
               sonar: 'SAST — Java',
-              semgrep: 'SAST — Flutter',
+              semgrep: 'SAST — Multi',
               flutter_analyze: 'SAST — Flutter',
               dependency_check: 'SCA'
             };
@@ -307,23 +492,25 @@ jobs:
             lines.push(`| **Generated (UTC)** | ${utc} |`);
             lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
             lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
+            lines.push(`| **Scan Root** | \`${process.env.SCAN_ROOT}\` |`);
             lines.push('');
-
             lines.push('_All timestamps are reported in Coordinated Universal Time (UTC)._');
             lines.push('');
 
             const pr = context.payload.pull_request;
-            lines.push('### 🔀 Pull Request');
-            lines.push('| Field | Value |');
-            lines.push('|-------|-------|');
-            lines.push(`| **PR Number** | ${pr ? `#${pr.number}` : '#N/A'} |`);
-            lines.push(`| **PR Title** | ${pr ? pr.title.replace(/\|/g, '\\|') : 'N/A'} |`);
-            lines.push(`| **PR Author** | @${process.env.GITHUB_ACTOR} |`);
-            lines.push(`| **Source Branch** | \`${process.env.GITHUB_HEAD_REF || context.ref.replace('refs/heads/','')}\` |`);
-            lines.push(`| **Target Branch** | \`${process.env.GITHUB_BASE_REF || 'N/A'}\` |`);
-            lines.push('');
+            if (pr) {
+              lines.push('### 🔀 Pull Request');
+              lines.push('| Field | Value |');
+              lines.push('|-------|-------|');
+              lines.push(`| **PR Number** | #${pr.number} |`);
+              lines.push(`| **PR Title** | ${pr.title.replace(/\|/g, '\\|')} |`);
+              lines.push(`| **PR Author** | @${process.env.GITHUB_ACTOR} |`);
+              lines.push(`| **Source Branch** | \`${process.env.GITHUB_HEAD_REF}\` |`);
+              lines.push(`| **Target Branch** | \`${process.env.GITHUB_BASE_REF}\` |`);
+              lines.push('');
+            }
 
-            const sha = process.env.GITHUB_SHA;
+            const sha = process.env.GITHUB_SHA || '';
             lines.push('### 📝 Commit Details');
             lines.push('| Field | Value |');
             lines.push('|-------|-------|');
@@ -331,113 +518,77 @@ jobs:
             lines.push('');
 
             lines.push('### 🛡️ Tool Results Summary');
-            lines.push('| Tool | Category | Status | Blocking |');
-            lines.push('|------|----------|--------|----------|');
+            lines.push('| Tool | Category | Status | Blocking | Findings (preview) |');
+            lines.push('|------|----------|--------|----------|--------------------|');
 
             const results = evaluated.results || [];
             for (const r of results) {
-              const tool = r.tool;
+              const tool = r.tool || 'unknown';
               const cat = categoryMap[tool] || 'Analysis';
               const ok = !r.policy_violation;
               const status = ok ? '✅ SUCCESS' : '❌ FAILURE';
               const blocking = r.blocking ? '🚫 Yes' : '⚠️ Advisory';
-              lines.push(`| ${tool} | ${cat} | ${status} | ${blocking} |`);
+
+              const findings = Array.isArray(r.findings) ? r.findings : [];
+              const preview = findings.slice(0, 2).map(f =>
+                `\`${f.file || 'unknown'}:${f.line || '?'}\` ${String(f.message || 'Issue').replace(/\|/g,'\\|')}`
+              ).join('<br/>') || '—';
+
+              lines.push(`| ${tool} | ${cat} | ${status} | ${blocking} | ${preview} |`);
             }
 
-            const failures = results.filter(r => r.policy_violation);
-            if (failures.length) {
-              lines.push('');
-              lines.push('### ❌ Failure Details');
-              lines.push('');
-              for (const f of failures) {
-                lines.push(`#### ${f.tool}`);
-                lines.push(`_${f.reason || 'policy_violation'} — see raw artifacts in \`quality/analysis/raw/\` and normalized/evaluated outputs._`);
-                lines.push('');
-              }
-            }
-
+            lines.push('');
             lines.push('---');
             lines.push('_Full artifact bundle available in the workflow run artifacts._');
             lines.push('');
 
-            fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
+            const body = lines.join('\n');
+            fs.writeFileSync(outPath, body, 'utf8');
+
+            if (context.eventName === 'pull_request' && pr) {
+              const marker = '## 🔍 CareConnect — Security & Quality Analysis Report';
+              const { owner, repo } = context.repo;
+              const issue_number = pr.number;
+
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner, repo, issue_number, per_page: 100
+              });
+
+              const existing = comments.find(c =>
+                c.user?.login === 'github-actions[bot]' && c.body?.includes(marker)
+              );
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id, body
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number, body
+                });
+              }
+            }
 
       # ------------------------------------------------------
-      # Step 8: Publish Rich Report to Actions Job Summary (Web View)
-      # ------------------------------------------------------
-      # Purpose:
-      # - Renders the rich report as a "web page" inside the workflow run UI
-      #   (Run → Job → Summary tab), so reviewers don't need to download artifacts.
-      #
-      # Notes:
-      # - Uses the Markdown file generated in Step 7:
-      #     quality/analysis/report.md
-      # - Safe to run even if Step 7 fails (we guard file existence).
+      # Step 9: Publish report.md to Actions Job Summary
       # ------------------------------------------------------
       - name: Publish report to Actions Summary
         if: always()
+        shell: bash
         run: |
+          set -euo pipefail
           REPORT_PATH="quality/analysis/report.md"
-          if [ -f "$REPORT_PATH" ]; then
+          if [[ -f "$REPORT_PATH" ]]; then
             cat "$REPORT_PATH" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "No $REPORT_PATH found to publish." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # ------------------------------------------------------
-      # Step 9: Post/Update PR Comment (Rich Report)
-      # ------------------------------------------------------
-      # Purpose:
-      # - Recreates the behavior of build-and-analyze.yml
-      # - Posts a single rich comment and updates it on re-runs
-      #
-      # Notes:
-      # - Only runs for pull_request events
-      # - Requires permissions.pull-requests: write
-      # ------------------------------------------------------
-      - name: Post Rich Report to PR
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const marker = '## 🔍 CareConnect — Security & Quality Analysis Report';
-            const body = fs.readFileSync(path.join(process.env.GITHUB_WORKSPACE, 'quality/analysis/report.md'), 'utf8');
-
-            const { owner, repo } = context.repo;
-            const issue_number = context.payload.pull_request.number;
-
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner, repo, issue_number, per_page: 100
-            });
-
-            const existing = comments.find(c => c.user?.login === 'github-actions[bot]' && c.body?.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner, repo, comment_id: existing.id, body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner, repo, issue_number, body
-              });
-            }
-
-      # ------------------------------------------------------
       # Step 10: Upload Analysis Artifacts
       # ------------------------------------------------------
-      # Uploads all raw, normalized, evaluated, and reporting outputs:
-      #   quality/analysis/raw/
-      #   quality/analysis/normalized/normalized.json
-      #   quality/analysis/evaluated/evaluated.json
-      #   quality/analysis/summary.md
-      #   quality/analysis/report.json
-      #   quality/analysis/report.md
-      # ------------------------------------------------------
       - name: Upload Analysis Artifacts
-        if: always() # Always upload artifacts, even if gate.py blocks or crashes
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: quality-analysis-report
