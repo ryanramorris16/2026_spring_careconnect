@@ -224,7 +224,7 @@ class _MainScreenState extends State<MainScreen> {
   }
   /// Build the global offline mode warning banner
   Widget _buildGlobalOfflineBanner(BuildContext context) {
-    final theme = Theme.of(context);
+    
     return MaterialBanner(
       elevation: 0,
       backgroundColor: Colors.amber.shade50,
