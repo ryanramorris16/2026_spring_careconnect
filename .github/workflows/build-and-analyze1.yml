@@ -217,18 +217,18 @@ jobs:
 
           test -s "${OUT}" || echo "" > "${OUT}"
   
+      # File: /Volumes/DevDrive/code/2026_spring_careconnect/.github/workflows/build-and-analyze1.yml
       # ------------------------------------------------------
       # Tool: Flutter Analyze (Dart/Flutter)
       #
+      # Contract:
+      # - SCAN_ROOT may be a container folder (ex: quality/sandbox/passing)
+      # - We auto-discover the first pubspec.yaml under SCAN_ROOT
+      #
       # Output:
       #   quality/analysis/raw/flutter_analyze.json
-      #
-      # Behavior (production-safe):
-      # - If SCAN_ROOT is a Flutter project (pubspec.yaml present), analyze it.
-      # - Else, auto-discover the first Flutter project under SCAN_ROOT (up to 6 levels).
-      # - If none exists, emit a valid empty machine output ([]) and continue.
       # ------------------------------------------------------
-      - name: Run Flutter Analyze (Dart/Flutter)
+      - name: Run Flutter Analyze (auto-discover project)
         shell: bash
         run: |
           set -euo pipefail
@@ -239,24 +239,21 @@ jobs:
           sudo snap install flutter --classic
           flutter --version
 
-          # 1) SCAN_ROOT is a Flutter project
-          if [[ -f "${ROOT}/pubspec.yaml" ]]; then
-            (cd "${ROOT}" && flutter pub get && flutter analyze --machine > "${OUT}") || true
-            test -s "${OUT}" || echo "[]" > "${OUT}"
+          FLUTTER_DIR="$(find "${ROOT}" -maxdepth 5 -type f -name pubspec.yaml -print0 | xargs -0 -n1 dirname | head -n1 || true)"
+
+          if [[ -z "${FLUTTER_DIR}" ]]; then
+            # No Flutter project under SCAN_ROOT. Emit valid empty JSON (non-blocking for “no flutter” scenarios).
+            echo "[]" > "${OUT}"
             exit 0
           fi
 
-          # 2) Auto-discover nested Flutter project (e.g., quality/sandbox/passing/flutter_sandbox)
-          PUBSPEC="$(find "${ROOT}" -maxdepth 6 -type f -name pubspec.yaml -print -quit || true)"
-          if [[ -n "${PUBSPEC}" ]]; then
-            FLUTTER_DIR="$(dirname "${PUBSPEC}")"
-            (cd "${FLUTTER_DIR}" && flutter pub get && flutter analyze --machine > "${OUT}") || true
-            test -s "${OUT}" || echo "[]" > "${OUT}"
-            exit 0
-          fi
+          pushd "${FLUTTER_DIR}" >/dev/null
+          flutter pub get
+          flutter analyze --machine > "${OUT}" || true
+          popd >/dev/null
 
-          # 3) No Flutter project found under SCAN_ROOT
-          echo "[]" > "${OUT}"
+          # Never allow empty/invalid JSON
+          test -s "${OUT}" || echo "[]" > "${OUT}"
 
       # ------------------------------------------------------
       # Toolchain: Setup Java (Required for Checkstyle/PMD/SpotBugs)
