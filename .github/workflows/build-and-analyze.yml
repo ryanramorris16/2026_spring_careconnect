@@ -46,14 +46,6 @@ name: Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
 # Trigger Conditions
 # ----------------------------------------------------------
-# Integration phase:
-#   - PRs: unscoped (workflow can be iterated safely on any PR)
-#   - Push: scoped to team_d integration branches
-#
-# Production flip (when ready):
-#   - Scope pull_request to: [main]
-#   - Scope push branches to: [main]
-# ----------------------------------------------------------
 on:
   pull_request:
   push:
@@ -64,17 +56,11 @@ on:
 # ----------------------------------------------------------
 # Default SCAN_ROOT
 # ----------------------------------------------------------
-# This value is overridden at runtime by .env if present.
-# Do not change this value directly — use .env instead.
-# ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/passing
+  SCAN_ROOT: quality/sandbox/failing
 
 # ----------------------------------------------------------
 # Permissions
-# ----------------------------------------------------------
-# pull-requests:write is required for PR comment creation
-# and updates by report.py via the GitHub API.
 # ----------------------------------------------------------
 permissions:
   contents: read
@@ -96,7 +82,6 @@ jobs:
       # ----------------------------------------------------------
       # If .env exists at the repo root, SCAN_ROOT is read from it.
       # This is the ONLY mechanism for toggling sandbox vs production.
-      # Only SCAN_ROOT is accepted — all other keys are silently ignored.
       # ----------------------------------------------------------
       - name: Load .env overrides
         shell: bash
@@ -106,7 +91,6 @@ jobs:
           ENV_FILE="${GITHUB_WORKSPACE}/.env"
           if [[ -f "${ENV_FILE}" ]]; then
             while IFS='=' read -r key value; do
-              # Skip blank lines and comments
               [[ -z "${key}" ]] && continue
               [[ "${key}" =~ ^# ]] && continue
               key="$(echo "${key}" | xargs)"
@@ -117,7 +101,6 @@ jobs:
                   echo "Loaded from .env: SCAN_ROOT=${value}"
                   ;;
                 *)
-                  # All other keys are ignored for security
                   ;;
               esac
             done < "${ENV_FILE}"
@@ -138,9 +121,7 @@ jobs:
       # ----------------------------------------------------------
       # pyyaml   → required by gate.py (policy.yaml parsing)
       # requests → required by report.py (GitHub API for PR comments)
-      #
-      # Note: semgrep is pinned and installed once here.
-      # It is NOT reinstalled in the Semgrep tool step.
+      # semgrep  → pinned, installed once here only
       # ----------------------------------------------------------
       - name: Install Python Dependencies
         shell: bash
@@ -152,13 +133,9 @@ jobs:
       # ------------------------------------------------------
       # Step 5: Create Analysis Directory Structure
       # ----------------------------------------------------------
-      # All tool outputs, normalized data, evaluated data, and
-      # the final report are written under quality/analysis/.
-      #
-      # Subdirectories:
-      #   raw/        → native tool outputs (evidence layer)
-      #   normalized/ → normalized.json (normalize.py output)
-      #   evaluated/  → evaluated.json  (policy_engine.py output)
+      # raw/        → native tool outputs (evidence layer)
+      # normalized/ → normalized.json (normalize.py output)
+      # evaluated/  → evaluated.json  (policy_engine.py output)
       # ----------------------------------------------------------
       - name: Create Analysis Directories
         shell: bash
@@ -171,13 +148,6 @@ jobs:
       # ======================================================
       # Step 6: Resolve Scan Roots
       # ----------------------------------------------------------
-      # SCAN_ROOT can be the repo root (.) in production or a
-      # sandbox folder during integration testing.
-      #
-      # This step auto-discovers project roots within SCAN_ROOT:
-      #   FLUTTER_ROOT → directory containing pubspec.yaml
-      #   JAVA_ROOT    → directory containing pom.xml or src/main/java
-      #
       # Exports to GITHUB_ENV:
       #   RESOLVED_ROOT, FLUTTER_ROOT, JAVA_ROOT
       # ======================================================
@@ -192,11 +162,9 @@ jobs:
             exit 1
           fi
 
-          # Locate Flutter project root (pubspec.yaml), depth-limited for speed
           FLUTTER_ROOT="$(find "${ROOT}" -maxdepth 4 -name pubspec.yaml -print -quit \
             | xargs -r dirname || true)"
 
-          # Locate Java project root — prefer pom.xml, fall back to src/main/java
           JAVA_POM="$(find "${ROOT}" -maxdepth 6 -name pom.xml -print -quit || true)"
           if [[ -n "${JAVA_POM}" ]]; then
             JAVA_ROOT="$(dirname "${JAVA_POM}")"
@@ -207,12 +175,10 @@ jobs:
             [[ "${JAVA_ROOT}" == "/" ]] && JAVA_ROOT=""
           fi
 
-          # Export resolved paths for all downstream steps
           echo "RESOLVED_ROOT=${ROOT}"         >> "$GITHUB_ENV"
           echo "FLUTTER_ROOT=${FLUTTER_ROOT}"  >> "$GITHUB_ENV"
           echo "JAVA_ROOT=${JAVA_ROOT}"        >> "$GITHUB_ENV"
 
-          # Log resolved roots for debugging
           echo "SCAN_ROOT      = ${SCAN_ROOT}"
           echo "RESOLVED_ROOT  = ${ROOT}"
           echo "FLUTTER_ROOT   = ${FLUTTER_ROOT:-<none>}"
@@ -220,55 +186,47 @@ jobs:
 
       # ======================================================
       # TOOL EXECUTION
-      # ----------------------------------------------------------
-      # All tools write raw artifacts to: quality/analysis/raw/
-      # Every tool step is non-blocking (|| true).
-      # The gate engine (gate.py) owns all enforcement decisions.
       # ======================================================
 
       # ------------------------------------------------------
       # Tool: TruffleHog (Secrets Detection)
       # ----------------------------------------------------------
-      # Scans the entire SCAN_ROOT for secrets using filesystem mode.
-      # Runs inside Docker to ensure a consistent, pinned environment.
+      # Scans SCAN_ROOT for secrets using filesystem mode.
+      # --no-verification reports both verified and unverified
+      # findings, ensuring sandbox fake secrets are captured.
       #
-      # Output (always created):
-      #   quality/analysis/raw/trufflehog.jsonl
-      #
-      # Native severities: Verified=true (critical), Verified=false (high)
-      # See parsers/trufflehog.py for normalization details.
+      # Output: quality/analysis/raw/trufflehog.jsonl
       # ------------------------------------------------------
       - name: Run TruffleHog (Secrets)
         shell: bash
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/trufflehog.jsonl"
-
-          # Initialize empty output file before Docker run
           : > "${OUT}"
 
           docker run --rm \
-                      -v "${GITHUB_WORKSPACE}:/repo" \
-                      trufflesecurity/trufflehog:3.82.6 \
-                      filesystem "/repo/${SCAN_ROOT}" \
-                      --json \
-                      --no-verification \
-                      >> "${OUT}" || true
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            trufflesecurity/trufflehog:3.82.6 \
+            filesystem "/repo/${SCAN_ROOT}" \
+            --json \
+            --no-verification \
+            >> "${OUT}" || true
 
-
-          # Ensure a valid (possibly empty) file always exists for the parser
           test -s "${OUT}" || echo "" > "${OUT}"
 
-      
       # ------------------------------------------------------
       # Tool: Gitleaks (Secrets Detection)
       # ----------------------------------------------------------
-      # Scans the working tree directly for secrets. Free, open
-      # source (MIT), no API key required. Complements TruffleHog.
+      # Scans the working tree directly for secrets using regex
+      # pattern matching. Free, open source (MIT), no API key
+      # required. Complements TruffleHog by scanning uncommitted
+      # files and catching patterns TruffleHog may filter.
       #
       # Output: quality/analysis/raw/gitleaks.json
       # Parser: parsers/gitleaks.py
-      # ------------------------------------------------------
+      #
+      # Native severities: mapped from rule severity field
+      # ----------------------------------------------------------
       - name: Run Gitleaks (Secrets)
         shell: bash
         run: |
@@ -289,28 +247,22 @@ jobs:
             --exit-code 0 || true
 
           test -s "${OUT}" || echo '[]' > "${OUT}"
-      
+
       # ------------------------------------------------------
       # Tool: Flutter Analyze (Dart Static Analyzer)
       # ----------------------------------------------------------
-      # Runs only when a Flutter project is discovered under SCAN_ROOT.
-      # Uses `flutter analyze --machine` for structured NDJSON output.
-      # A Python inline script converts NDJSON to the structured JSON
-      # format expected by parsers/flutter.py.
+      # Runs only when a Flutter project is found under SCAN_ROOT.
+      # Uses plain `flutter analyze` (not --machine) and parses
+      # the human-readable line format.
       #
-      # Output (always created):
-      #   quality/analysis/raw/flutter_analyze.json
-      #
-      # Native severities: error, warning, info, hint
-      # See parsers/flutter.py for normalization details.
+      # Output: quality/analysis/raw/flutter_analyze.json
+      # Format: {"issues": [{severity, message, file, line, rule}]}
       # ------------------------------------------------------
       - name: Run Flutter Analyze (if Flutter project found)
         shell: bash
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/flutter_analyze.json"
-
-          # Default to empty issues array — safe for parser if Flutter not found
           echo '{"issues":[]}' > "${OUT}"
 
           if [[ -z "${FLUTTER_ROOT:-}" ]]; then
@@ -318,104 +270,73 @@ jobs:
             exit 0
           fi
 
-          # Install Flutter via snap on Ubuntu runner
           sudo snap install flutter --classic
           flutter --version
 
           pushd "${FLUTTER_ROOT}" >/dev/null
           flutter pub get
 
-          # Run analyzer in machine-readable NDJSON mode.
-          # || true — issues found are not a workflow failure;
-          # the gate engine owns enforcement.
+          # Run plain flutter analyze (not --machine).
+          # Captures human-readable output for line-based parsing.
           TMP="${RUNNER_TEMP}/flutter_analyze_raw.txt"
           flutter analyze > "${TMP}" 2>&1 || true
 
-
           popd >/dev/null
 
-          # --------------------------------------------------
-          # Convert NDJSON output to structured JSON artifact.
-          #
-          # flutter analyze --machine emits one JSON object per line:
-          #   {
-          #     "severity": "ERROR",
-          #     "type": "COMPILE_TIME_ERROR",
-          #     "location": {
-          #       "file": "/abs/path/lib/main.dart",
-          #       "startLine": 34,
-          #       "startColumn": 1
-          #     },
-          #     "message": "...",
-          #     "code": "undefined_method"
-          #   }
-          #
-          # Output written to flutter_analyze.json:
-          #   {
-          #     "issues": [
-          #       {
-          #         "severity": "error",
-          #         "message":  "...",
-          #         "file":     "lib/main.dart",
-          #         "line":     34,
-          #         "column":   1,
-          #         "rule":     "undefined_method"
-          #       }
-          #     ]
-          #   }
-          # --------------------------------------------------
           python3 - <<'PYEOF'
-                    import json
-                    import os
-                    import re
-                    import sys
+          import json
+          import os
+          import re
+          import sys
 
-                    tmp_path     = os.environ.get("TMP_FLUTTER", "")
-                    out_path     = os.environ["OUT"]
-                    flutter_root = os.environ.get("FLUTTER_ROOT", "")
+          tmp_path     = os.environ.get("TMP_FLUTTER", "")
+          out_path     = os.environ["OUT"]
+          flutter_root = os.environ.get("FLUTTER_ROOT", "")
 
-                    # flutter analyze plain output format:
-                    #   severity • message • file/path.dart:line:col • rule_code
-                    ISSUE_RE = re.compile(
-                        r"^\s*(error|warning|info|hint)\s+[•·]\s+"
-                        r"(.+?)\s+[•·]\s+"
-                        r"(.+?):(\d+):\d+\s+[•·]\s+"
-                        r"(\S+)\s*$",
-                        re.IGNORECASE
-                    )
+          # flutter analyze plain output format:
+          #   severity • message • file/path.dart:line:col • rule_code
+          # Example:
+          #   warning • Avoid print calls • lib/services/api_service.dart:11:5 • avoid_print
+          ISSUE_RE = re.compile(
+              r"^\s*(error|warning|info|hint)\s+[•·]\s+"
+              r"(.+?)\s+[•·]\s+"
+              r"(.+?):(\d+):\d+\s+[•·]\s+"
+              r"(\S+)\s*$",
+              re.IGNORECASE
+          )
 
-                    try:
-                        with open(tmp_path) as f:
-                            lines = f.readlines()
-                    except Exception as e:
-                        print(f"Warning: could not read flutter analyze output: {e}", file=sys.stderr)
-                        lines = []
+          try:
+              with open(tmp_path) as f:
+                  lines = f.readlines()
+          except Exception as e:
+              print(f"Warning: could not read flutter analyze output: {e}", file=sys.stderr)
+              lines = []
 
-                    issues = []
-                    for line in lines:
-                        m = ISSUE_RE.match(line)
-                        if not m:
-                            continue
-                        severity, message, file_path, lineno, rule = m.groups()
+          issues = []
+          for line in lines:
+              m = ISSUE_RE.match(line)
+              if not m:
+                  continue
+              severity, message, file_path, lineno, rule = m.groups()
 
-                        if flutter_root and file_path.startswith(flutter_root):
-                            file_path = file_path[len(flutter_root):].lstrip("/")
+              # Strip flutter root prefix for relative paths
+              if flutter_root and file_path.startswith(flutter_root):
+                  file_path = file_path[len(flutter_root):].lstrip("/")
 
-                        issues.append({
-                            "severity": severity.lower(),
-                            "message":  message.strip(),
-                            "file":     file_path,
-                            "line":     int(lineno),
-                            "column":   0,
-                            "rule":     rule,
-                        })
+              issues.append({
+                  "severity": severity.lower(),
+                  "message":  message.strip(),
+                  "file":     file_path,
+                  "line":     int(lineno),
+                  "column":   0,
+                  "rule":     rule,
+              })
 
-                    with open(out_path, "w") as f:
-                        json.dump({"issues": issues}, f, indent=2)
+          with open(out_path, "w") as f:
+              json.dump({"issues": issues}, f, indent=2)
 
-                    print(f"Flutter analyze: {len(issues)} issue(s) written to {out_path}")
-                    PYEOF
-
+          print(f"Flutter analyze: {len(issues)} issue(s) written to {out_path}")
+          PYEOF
         env:
           OUT:          ${{ github.workspace }}/quality/analysis/raw/flutter_analyze.json
           FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
@@ -425,7 +346,6 @@ jobs:
       # Toolchain: Java 17
       # ----------------------------------------------------------
       # Required by Checkstyle, PMD, and SpotBugs.
-      # Must be set up before any Java tool step runs.
       # ------------------------------------------------------
       - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v4
@@ -436,14 +356,7 @@ jobs:
       # ------------------------------------------------------
       # Tool: Checkstyle (Java Style Enforcement)
       # ----------------------------------------------------------
-      # Runs only when a Java project is discovered under SCAN_ROOT.
-      # Scans src/main/java when available; falls back to JAVA_ROOT.
-      #
-      # Output (always created):
-      #   quality/analysis/raw/checkstyle.xml
-      #
-      # Native severities: error, warning, info
-      # See parsers/checkstyle.py for normalization details.
+      # Output: quality/analysis/raw/checkstyle.xml
       # ------------------------------------------------------
       - name: Run Checkstyle (if Java project found)
         shell: bash
@@ -475,14 +388,7 @@ jobs:
       # ------------------------------------------------------
       # Tool: PMD (Java Source Static Analysis)
       # ----------------------------------------------------------
-      # Runs only when a Java project is discovered under SCAN_ROOT.
-      # Scans src/main/java when available; falls back to JAVA_ROOT.
-      #
-      # Output (always created):
-      #   quality/analysis/raw/pmd.xml
-      #
-      # Native severities: priority 1–5 (1=most severe)
-      # See parsers/pmd.py for normalization details.
+      # Output: quality/analysis/raw/pmd.xml
       # ------------------------------------------------------
       - name: Run PMD (if Java project found)
         shell: bash
@@ -513,10 +419,10 @@ jobs:
           test -s "${OUT}" || echo "<pmd></pmd>" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool Prep: Compile Java (required by SpotBugs)
+      # Tool Prep: Compile Java via Maven (required by SpotBugs)
       # ----------------------------------------------------------
-      # SpotBugs analyzes bytecode, not source. This step compiles
-      # all Java source files and exports the classes directory.
+      # Uses Maven to compile so all pom.xml dependencies are
+      # resolved correctly. Falls back to javac if Maven fails.
       #
       # Exports to GITHUB_ENV:
       #   JAVA_CLASSES_DIR
@@ -524,56 +430,50 @@ jobs:
       - name: Compile Java (for SpotBugs)
         shell: bash
         run: |
-              set -euo pipefail
+          set -euo pipefail
 
-              if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
-                echo "No Java project found; skipping Java compilation."
-                CLASSES="$(mktemp -d)"
-                echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
-                exit 0
+          if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
+            echo "No Java project found; skipping Java compilation."
+            CLASSES="$(mktemp -d)"
+            echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          # Prefer Maven compile — resolves pom.xml dependencies correctly
+          if [[ -f "${JAVA_ROOT}/pom.xml" ]]; then
+            pushd "${JAVA_ROOT}" >/dev/null
+            mvn compile -q --batch-mode || true
+            popd >/dev/null
+            CLASSES="${JAVA_ROOT}/target/classes"
+            # Fall back to javac if Maven produced no classes
+            if [[ ! -d "${CLASSES}" || -z "$(ls -A "${CLASSES}" 2>/dev/null)" ]]; then
+              echo "::warning::Maven compile produced no classes; falling back to javac."
+              CLASSES="$(mktemp -d)"
+              TARGET="${JAVA_ROOT}/src/main/java"
+              mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
+              if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+                javac -d "${CLASSES}" "${SOURCES[@]}" || true
               fi
+            fi
+          else
+            # No pom.xml — compile with javac directly
+            CLASSES="$(mktemp -d)"
+            TARGET="${JAVA_ROOT}/src/main/java"
+            [[ -d "${TARGET}" ]] || TARGET="${JAVA_ROOT}"
+            mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
+            if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+              javac -d "${CLASSES}" "${SOURCES[@]}" || true
+            fi
+          fi
 
-              # Prefer Maven — resolves pom.xml dependencies correctly
-              if [[ -f "${JAVA_ROOT}/pom.xml" ]]; then
-                pushd "${JAVA_ROOT}" >/dev/null
-                mvn compile -q --batch-mode || true
-                popd >/dev/null
-                CLASSES="${JAVA_ROOT}/target/classes"
-                # Fall back to javac if Maven produced no classes
-                if [[ ! -d "${CLASSES}" || -z "$(ls -A "${CLASSES}" 2>/dev/null)" ]]; then
-                  echo "::warning::Maven compile produced no classes; falling back to javac."
-                  CLASSES="$(mktemp -d)"
-                  TARGET="${JAVA_ROOT}/src/main/java"
-                  mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
-                  if [[ "${#SOURCES[@]}" -gt 0 ]]; then
-                    javac -d "${CLASSES}" "${SOURCES[@]}" || true
-                  fi
-                fi
-              else
-                CLASSES="$(mktemp -d)"
-                TARGET="${JAVA_ROOT}/src/main/java"
-                [[ -d "${TARGET}" ]] || TARGET="${JAVA_ROOT}"
-                mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
-                if [[ "${#SOURCES[@]}" -gt 0 ]]; then
-                  javac -d "${CLASSES}" "${SOURCES[@]}" || true
-                fi
-              fi
-
-              echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
-              echo "Compiled classes directory: ${CLASSES}"
-              ls "${CLASSES}" || echo "(empty)"
+          echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+          echo "Compiled classes directory: ${CLASSES}"
+          ls "${CLASSES}" || echo "(empty)"
 
       # ------------------------------------------------------
       # Tool: SpotBugs (Java Bytecode Static Analysis)
       # ----------------------------------------------------------
-      # Runs only when compiled classes exist from the prior step.
-      # Analyzes bytecode for bug patterns, null dereferences, etc.
-      #
-      # Output (always created):
-      #   quality/analysis/raw/spotbugs.xml
-      #
-      # Native severities: priority 1–3 (1=most severe)
-      # See parsers/spotbugs.py for normalization details.
+      # Output: quality/analysis/raw/spotbugs.xml
       # ------------------------------------------------------
       - name: Run SpotBugs (if classes exist)
         shell: bash
@@ -595,7 +495,6 @@ jobs:
           fi
           echo "SpotBugs: analyzing ${CLASS_COUNT} class file(s)."
 
-
           curl -sSL \
             -o spotbugs.tgz \
             https://github.com/spotbugs/spotbugs/releases/download/4.8.3/spotbugs-4.8.3.tgz
@@ -612,14 +511,7 @@ jobs:
       # ------------------------------------------------------
       # Tool: Semgrep (Multi-language SAST)
       # ----------------------------------------------------------
-      # Scans RESOLVED_ROOT using the auto ruleset (community rules).
-      # Semgrep is installed once in Step 4 (not reinstalled here).
-      #
-      # Output (always created):
-      #   quality/analysis/raw/semgrep.json
-      #
-      # Native severities: ERROR, WARNING, INFO, INVENTORY
-      # See parsers/semgrep.py for normalization details.
+      # Output: quality/analysis/raw/semgrep.json
       # ------------------------------------------------------
       - name: Run Semgrep (SAST)
         shell: bash
@@ -634,24 +526,7 @@ jobs:
       # ------------------------------------------------------
       # Tool: OWASP Dependency-Check (SCA)
       # ----------------------------------------------------------
-      # Scans all dependencies under SCAN_ROOT for known CVEs.
-      # Uses the NVD API for vulnerability data (key required).
-      #
-      # NVD API Key:
-      #   Add your key as a GitHub Actions secret named NVD_API_KEY.
-      #   Obtain a key at: https://nvd.nist.gov/developers/request-an-api-key
-      #   Without a key, NVD requests are rate-limited and scans may fail.
-      #
-      # Fallback behavior:
-      #   If the NVD-connected run fails, retries with --noupdate to use
-      #   the cached local database. Remove --noupdate once your NVD API
-      #   key is active and the database has been populated at least once.
-      #
-      # Output (always created):
-      #   quality/analysis/raw/dependency-check-report.json
-      #
-      # Native severities: CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
-      # See parsers/dependency_check.py for normalization details.
+      # Output: quality/analysis/raw/dependency-check-report.json
       # ------------------------------------------------------
       - name: Run OWASP Dependency-Check (SCA)
         shell: bash
@@ -666,8 +541,6 @@ jobs:
             https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
           unzip -q dc.zip
 
-          # Primary run — uses NVD API key for up-to-date vulnerability data.
-          # --nvdApiKey: add NVD_API_KEY to your GitHub Actions repository secrets.
           if ! ./dependency-check/bin/dependency-check.sh \
             --project "careconnect-scan" \
             --scan "${ROOT}" \
@@ -676,8 +549,6 @@ jobs:
             --data "${DATA_DIR}" \
             --nvdApiKey "${{ secrets.NVD_API_KEY }}" ; then
 
-            # Fallback run — uses cached local database if NVD is unreachable.
-            # Remove --noupdate once NVD_API_KEY is active and DB is populated.
             echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
             ./dependency-check/bin/dependency-check.sh \
               --project "careconnect-scan" \
@@ -689,22 +560,13 @@ jobs:
               --disableAssembly || true
           fi
 
-          # Guarantee artifact exists for the parser even if both runs fail
           [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
             echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
 
       # ------------------------------------------------------
       # Tool: Sonar (placeholder — currently disabled)
       # ----------------------------------------------------------
-      # Sonar is not yet configured. This step writes a clean
-      # placeholder artifact so the gate engine does not treat
-      # a missing artifact as a runtime error.
-      #
-      # To activate Sonar, follow the steps in parsers/sonar.py.
-      # Once active, replace this step with a real scan step.
-      #
-      # Output (always created):
-      #   quality/analysis/raw/sonar.json
+      # Output: quality/analysis/raw/sonar.json
       # ------------------------------------------------------
       - name: Create Sonar placeholder artifact
         shell: bash
@@ -720,13 +582,6 @@ jobs:
       # ------------------------------------------------------
       # Step 7: Run Quality Gate Engine
       # ----------------------------------------------------------
-      # Single enforcement point for the entire pipeline.
-      # Reads raw artifacts → normalizes → evaluates policy.
-      #
-      # Writes:
-      #   quality/analysis/normalized/normalized.json
-      #   quality/analysis/evaluated/evaluated.json
-      #
       # Exit codes:
       #   0 → all policy checks passed (merge allowed)
       #   1 → one or more policy checks failed (merge blocked)
@@ -739,26 +594,7 @@ jobs:
 
       # ------------------------------------------------------
       # Step 8: Generate Report
-      # ----------------------------------------------------------
-      # report.py reads evaluated.json and produces:
-      #   - quality/analysis/report.md (written to disk)
-      #   - PR comment (created or updated via GitHub API)
-      #
-      # Runs with if: always() so the report is generated even
-      # when the gate engine blocks the merge (exit code 1).
-      #
-      # Environment variables passed to report.py:
-      #   GITHUB_TOKEN      → provided automatically by Actions
-      #   GITHUB_EVENT_NAME → pr or push
-      #   GITHUB_REPOSITORY → owner/repo
-      #   GITHUB_RUN_ID     → workflow run ID for deep links
-      #   GITHUB_RUN_NUMBER → human-readable run number
-      #   GITHUB_SHA        → commit SHA
-      #   GITHUB_HEAD_REF   → source branch (PR only)
-      #   GITHUB_BASE_REF   → target branch (PR only)
-      #   GITHUB_ACTOR      → user who triggered the workflow
-      #   PR_NUMBER         → pull request number (PR only)
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Generate Report
         if: always()
         shell: bash
@@ -771,9 +607,6 @@ jobs:
 
       # ------------------------------------------------------
       # Step 9: Publish report.md to Actions Job Summary
-      # ----------------------------------------------------------
-      # Appends the generated Markdown report to the workflow's
-      # job summary so it is visible directly in the Actions UI.
       # ------------------------------------------------------
       - name: Publish Report to Actions Summary
         if: always()
@@ -790,13 +623,6 @@ jobs:
 
       # ------------------------------------------------------
       # Step 10: Diagnostic — Raw Artifact Inventory
-      # ----------------------------------------------------------
-      # Lists all raw artifacts and previews the first 3 lines
-      # of each expected file. Useful for debugging missing or
-      # malformed artifacts without downloading the full bundle.
-      #
-      # Runs with if: always() so diagnostics are available even
-      # on failed runs.
       # ------------------------------------------------------
       - name: Diagnostic — Raw Artifact Inventory
         if: always()
@@ -827,18 +653,6 @@ jobs:
 
       # ------------------------------------------------------
       # Step 11: Upload Analysis Artifacts
-      # ----------------------------------------------------------
-      # Uploads the entire quality/analysis/ directory as a
-      # downloadable artifact bundle for post-run inspection.
-      #
-      # Includes:
-      #   raw/           → native tool outputs
-      #   normalized/    → normalized.json
-      #   evaluated/     → evaluated.json
-      #   report.md      → human-readable report
-      #
-      # Runs with if: always() so artifacts are preserved even
-      # on blocked or failed runs.
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         if: always()
