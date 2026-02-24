@@ -308,12 +308,14 @@ jobs:
 
           # Write to a temp file first, then validate non-empty before replacing OUT.
           TMP="$(mktemp)"
-          flutter analyze --machine > "${TMP}" || true
+          flutter analyze --machine > "${TMP}" 2>&1 || true
 
           if [[ -s "${TMP}" ]]; then
-            mv "${TMP}" "${OUT}"
+            ERROR_COUNT=$(grep -c '"severity":"ERROR"' "${TMP}" || echo 0)
+            WARN_COUNT=$(grep -c '"severity":"WARNING"' "${TMP}" || echo 0)
+            echo "{\"error_count\": ${ERROR_COUNT}, \"warning_count\": ${WARN_COUNT}}" > "${OUT}"
           else
-            echo "[]" > "${OUT}"
+            echo '{"error_count": 0, "warning_count": 0}' > "${OUT}"
           fi
 
           popd >/dev/null

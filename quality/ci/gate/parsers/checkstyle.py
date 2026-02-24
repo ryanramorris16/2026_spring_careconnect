@@ -56,6 +56,7 @@ def parse_checkstyle(raw_dir: Path):
         return result
 
     # Mark tool as executed (artifact exists and parser will attempt to read it)
+    result["artifact_present"] = True
     result["executed"] = True
 
     try:

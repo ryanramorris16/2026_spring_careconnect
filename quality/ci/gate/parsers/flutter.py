@@ -71,6 +71,7 @@ def parse_flutter(raw_dir: Path):
         return result
 
     # Mark tool as executed (artifact exists)
+    result["artifact_present"] = True
     result["executed"] = True
 
     try:

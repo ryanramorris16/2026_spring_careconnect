@@ -74,6 +74,7 @@ def parse_semgrep(raw_dir: Path):
         return result
 
     # Mark tool as executed (artifact exists; parsing will be attempted)
+    result["artifact_present"] = True
     result["executed"] = True
 
     try:
