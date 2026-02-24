@@ -1,8 +1,8 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/.github/workflows/build-and-analyze1.yml
+# File: .github/workflows/build-and-analyze.yml
 # ==========================================================
 # Build and Analyze (New Gate Engine)
 # ----------------------------------------------------------
-# Qquality/security workflow for CareConnect.
+# Quality/security workflow for CareConnect.
 #
 # System of record:
 #   quality/ci/gate/
@@ -10,18 +10,35 @@
 # Pipeline responsibilities:
 #   1) Execute scanners (SAST/SCA/Secrets)
 #   2) Write raw artifacts to: quality/analysis/raw/
-#   3) Normalize results:        quality/analysis/normalized/normalized.json
-#   4) Evaluate policy:          quality/analysis/evaluated/evaluated.json
+#   3) Normalize results:       quality/analysis/normalized/normalized.json
+#   4) Evaluate policy:         quality/analysis/evaluated/evaluated.json
 #   5) Enforce merge outcome via gate engine exit code
 #   6) Publish rich report:
-#        - quality/analysis/report.md
+#        - quality/analysis/report.md  (written by report.py)
 #        - Actions Job Summary
-#        - Optional PR comment (single updatable comment)
+#        - PR comment (single updatable comment, written by report.py)
+#
+# Architecture:
+#   This workflow is ORCHESTRATION ONLY.
+#   - No pass/fail logic lives here (gate.py owns enforcement).
+#   - No report rendering lives here (report.py owns reporting).
+#   - No tool-specific parsing lives here (parsers/ own parsing).
 #
 # IMPORTANT:
-# - Every scanner step is "non-blocking" (|| true). The gate engine decides enforcement.
-# - The ONLY environment difference between sandbox and production is SCAN_ROOT via .env.
-# - Flip to production by setting SCAN_ROOT='.' in .env (no workflow edits required).
+#   - Every scanner step is non-blocking (|| true).
+#     The gate engine decides enforcement, not the workflow.
+#   - The ONLY environment difference between sandbox and production
+#     is SCAN_ROOT, controlled via .env (no workflow edits required).
+#
+# Environment Toggle:
+#   Sandbox:    SCAN_ROOT=quality/sandbox/passing|failing  (set in .env)
+#   Production: SCAN_ROOT=.                                (set in .env)
+#
+# Production checklist (before flipping to SCAN_ROOT=.):
+#   1) Remove sandbox fixtures:
+#        git rm -r quality/sandbox/passing quality/sandbox/failing
+#   2) Commit and push removal.
+#   3) Update .env: SCAN_ROOT=.
 # ==========================================================
 
 name: Build and Analyze (New Gate Engine)
@@ -30,12 +47,12 @@ name: Build and Analyze (New Gate Engine)
 # Trigger Conditions
 # ----------------------------------------------------------
 # Integration phase:
-# - PRs: unscoped (so this workflow can be iterated safely)
-# - Push: scoped to team_d integration branches
+#   - PRs: unscoped (workflow can be iterated safely on any PR)
+#   - Push: scoped to team_d integration branches
 #
 # Production flip (when ready):
-# - Scope pull_request to main
-# - Scope push to main
+#   - Scope pull_request to: [main]
+#   - Scope push branches to: [main]
 # ----------------------------------------------------------
 on:
   pull_request:
@@ -45,56 +62,19 @@ on:
       - team_d-*
 
 # ----------------------------------------------------------
-# Global Environment Configuration
+# Default SCAN_ROOT
 # ----------------------------------------------------------
-# SCAN_ROOT defines the directory that ALL security and
-# quality tools will analyze.
-#
-# ==========================================================
-# TESTING MODE (Sandbox Fixtures)
-# ==========================================================
-# Purpose:
-#   Deterministic pass/fail validation of the gate engine.
-#
-# Usage (set in .env):
-#   SCAN_ROOT=quality/sandbox/passing
-#   SCAN_ROOT=quality/sandbox/failing
-#
-# Requirements:
-#   - quality/sandbox/passing must exist
-#   - quality/sandbox/failing must exist
-#
-# This mode is strictly for CI validation and must not be
-# enabled for production enforcement.
-#
-#
-# ==========================================================
-# PRODUCTION MODE (Authoritative Enforcement)
-# ==========================================================
-# Usage (set in .env):
-#   SCAN_ROOT=.
-#
-# BEFORE enabling production mode:
-#   1) Remove sandbox fixtures:
-#        git rm -r quality/sandbox/passing
-#        git rm -r quality/sandbox/failing
-#   2) Commit and push removal.
-#
-# Production Policy:
-#   - No test fixtures may exist in the repository.
-#   - All scanners operate on real application code only.
-#   - No special exclusions or conditional logic required.
-#
-# Switching environments requires changing ONLY the .env file.
-# No workflow modifications are necessary.
+# This value is overridden at runtime by .env if present.
+# Do not change this value directly — use .env instead.
 # ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/failing
+  SCAN_ROOT: quality/sandbox/passing
 
 # ----------------------------------------------------------
 # Permissions
 # ----------------------------------------------------------
-# pull-requests:write is required only for PR comment updates.
+# pull-requests:write is required for PR comment creation
+# and updates by report.py via the GitHub API.
 # ----------------------------------------------------------
 permissions:
   contents: read
@@ -102,9 +82,6 @@ permissions:
 
 jobs:
   quality-gate:
-    # ------------------------------------------------------
-    # Runner Environment
-    # ------------------------------------------------------
     runs-on: ubuntu-latest
 
     steps:
@@ -116,10 +93,11 @@ jobs:
 
       # ------------------------------------------------------
       # Step 2: Load Environment Overrides (.env)
-      # ------------------------------------------------------
-      # If .env exists, SCAN_ROOT is overridden from it.
-      # This is the ONLY sandbox/production toggle.
-      # ------------------------------------------------------
+      # ----------------------------------------------------------
+      # If .env exists at the repo root, SCAN_ROOT is read from it.
+      # This is the ONLY mechanism for toggling sandbox vs production.
+      # Only SCAN_ROOT is accepted — all other keys are silently ignored.
+      # ----------------------------------------------------------
       - name: Load .env overrides
         shell: bash
         run: |
@@ -127,8 +105,8 @@ jobs:
 
           ENV_FILE="${GITHUB_WORKSPACE}/.env"
           if [[ -f "${ENV_FILE}" ]]; then
-            # Export only supported keys (keep tight to avoid surprises)
             while IFS='=' read -r key value; do
+              # Skip blank lines and comments
               [[ -z "${key}" ]] && continue
               [[ "${key}" =~ ^# ]] && continue
               key="$(echo "${key}" | xargs)"
@@ -136,11 +114,15 @@ jobs:
               case "${key}" in
                 SCAN_ROOT)
                   echo "SCAN_ROOT=${value}" >> "$GITHUB_ENV"
+                  echo "Loaded from .env: SCAN_ROOT=${value}"
                   ;;
                 *)
+                  # All other keys are ignored for security
                   ;;
               esac
             done < "${ENV_FILE}"
+          else
+            echo "No .env file found; using default SCAN_ROOT=${SCAN_ROOT}"
           fi
 
       # ------------------------------------------------------
@@ -152,20 +134,32 @@ jobs:
           python-version: '3.11'
 
       # ------------------------------------------------------
-      # Step 4: Install Runtime Dependencies
-      # ------------------------------------------------------
-      # Note: semgrep is installed once here (not per-step).
-      # ------------------------------------------------------
-      - name: Install Dependencies
+      # Step 4: Install Python Dependencies
+      # ----------------------------------------------------------
+      # pyyaml   → required by gate.py (policy.yaml parsing)
+      # requests → required by report.py (GitHub API for PR comments)
+      #
+      # Note: semgrep is pinned and installed once here.
+      # It is NOT reinstalled in the Semgrep tool step.
+      # ----------------------------------------------------------
+      - name: Install Python Dependencies
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install pyyaml semgrep
+          python -m pip install pyyaml requests semgrep==1.73.0
 
       # ------------------------------------------------------
       # Step 5: Create Analysis Directory Structure
-      # ------------------------------------------------------
+      # ----------------------------------------------------------
+      # All tool outputs, normalized data, evaluated data, and
+      # the final report are written under quality/analysis/.
+      #
+      # Subdirectories:
+      #   raw/        → native tool outputs (evidence layer)
+      #   normalized/ → normalized.json (normalize.py output)
+      #   evaluated/  → evaluated.json  (policy_engine.py output)
+      # ----------------------------------------------------------
       - name: Create Analysis Directories
         shell: bash
         run: |
@@ -174,46 +168,19 @@ jobs:
           mkdir -p quality/analysis/normalized
           mkdir -p quality/analysis/evaluated
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
-
-
-
       # ======================================================
-      # Step 6: TOOL EXECUTION (ALL SCOPED BY SCAN_ROOT)
-      # Raw artifacts are written to: quality/analysis/raw/
-      # ======================================================
-
-      # ------------------------------------------------------
-      # Resolve Scan Roots (Production-safe autodiscovery)
+      # Step 6: Resolve Scan Roots
+      # ----------------------------------------------------------
+      # SCAN_ROOT can be the repo root (.) in production or a
+      # sandbox folder during integration testing.
       #
-      # SCAN_ROOT can be:
-      # - repo root (.) in production
-      # - a sandbox folder (quality/sandbox/passing|failing)
+      # This step auto-discovers project roots within SCAN_ROOT:
+      #   FLUTTER_ROOT → directory containing pubspec.yaml
+      #   JAVA_ROOT    → directory containing pom.xml or src/main/java
       #
-      # This step discovers:
-      # - FLUTTER_ROOT: directory containing pubspec.yaml (if any)
-      # - JAVA_ROOT:    directory containing pom.xml or src/main/java (if any)
-      #
-      # Exports:
+      # Exports to GITHUB_ENV:
       #   RESOLVED_ROOT, FLUTTER_ROOT, JAVA_ROOT
-      # ------------------------------------------------------
+      # ======================================================
       - name: Resolve scan roots
         shell: bash
         run: |
@@ -225,48 +192,59 @@ jobs:
             exit 1
           fi
 
-          # Find first pubspec.yaml under ROOT (limits depth to keep CI fast)
-          FLUTTER_ROOT="$(find "${ROOT}" -maxdepth 4 -name pubspec.yaml -print -quit | xargs -r dirname || true)"
+          # Locate Flutter project root (pubspec.yaml), depth-limited for speed
+          FLUTTER_ROOT="$(find "${ROOT}" -maxdepth 4 -name pubspec.yaml -print -quit \
+            | xargs -r dirname || true)"
 
-          # Find Maven root (pom.xml) or fallback to src/main/java parent
+          # Locate Java project root — prefer pom.xml, fall back to src/main/java
           JAVA_POM="$(find "${ROOT}" -maxdepth 6 -name pom.xml -print -quit || true)"
           if [[ -n "${JAVA_POM}" ]]; then
             JAVA_ROOT="$(dirname "${JAVA_POM}")"
           else
-            JAVA_SRC="$(find "${ROOT}" -maxdepth 8 -type d -path "*/src/main/java" -print -quit || true)"
+            JAVA_SRC="$(find "${ROOT}" -maxdepth 8 -type d -path "*/src/main/java" \
+              -print -quit || true)"
             JAVA_ROOT="$(dirname "$(dirname "$(dirname "${JAVA_SRC:-/}")")")"
             [[ "${JAVA_ROOT}" == "/" ]] && JAVA_ROOT=""
           fi
 
-          echo "RESOLVED_ROOT=${ROOT}" >> "$GITHUB_ENV"
-          echo "FLUTTER_ROOT=${FLUTTER_ROOT}" >> "$GITHUB_ENV"
-          echo "JAVA_ROOT=${JAVA_ROOT}" >> "$GITHUB_ENV"
+          # Export resolved paths for all downstream steps
+          echo "RESOLVED_ROOT=${ROOT}"         >> "$GITHUB_ENV"
+          echo "FLUTTER_ROOT=${FLUTTER_ROOT}"  >> "$GITHUB_ENV"
+          echo "JAVA_ROOT=${JAVA_ROOT}"        >> "$GITHUB_ENV"
 
-          echo "SCAN_ROOT=${SCAN_ROOT}"
-          echo "RESOLVED_ROOT=${ROOT}"
-          echo "FLUTTER_ROOT=${FLUTTER_ROOT:-<none>}"
-          echo "JAVA_ROOT=${JAVA_ROOT:-<none>}"
+          # Log resolved roots for debugging
+          echo "SCAN_ROOT      = ${SCAN_ROOT}"
+          echo "RESOLVED_ROOT  = ${ROOT}"
+          echo "FLUTTER_ROOT   = ${FLUTTER_ROOT:-<none>}"
+          echo "JAVA_ROOT      = ${JAVA_ROOT:-<none>}"
+
+      # ======================================================
+      # TOOL EXECUTION
+      # ----------------------------------------------------------
+      # All tools write raw artifacts to: quality/analysis/raw/
+      # Every tool step is non-blocking (|| true).
+      # The gate engine (gate.py) owns all enforcement decisions.
+      # ======================================================
 
       # ------------------------------------------------------
-      # Ensure raw artifact directory exists (single source of truth)
-      # ------------------------------------------------------
-      - name: Prepare raw output directory
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "${GITHUB_WORKSPACE}/quality/analysis/raw"
-
-      # ------------------------------------------------------
-      # Tool: TruffleHog (Secrets)
+      # Tool: TruffleHog (Secrets Detection)
+      # ----------------------------------------------------------
+      # Scans the entire SCAN_ROOT for secrets using filesystem mode.
+      # Runs inside Docker to ensure a consistent, pinned environment.
       #
       # Output (always created):
       #   quality/analysis/raw/trufflehog.jsonl
+      #
+      # Native severities: Verified=true (critical), Verified=false (high)
+      # See parsers/trufflehog.py for normalization details.
       # ------------------------------------------------------
       - name: Run TruffleHog (Secrets)
         shell: bash
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/trufflehog.jsonl"
+
+          # Initialize empty output file before Docker run
           : > "${OUT}"
 
           docker run --rm \
@@ -275,53 +253,140 @@ jobs:
             filesystem "/repo/${SCAN_ROOT}" --json \
             >> "${OUT}" || true
 
-          # Guarantee non-empty JSONL file exists (parser guard)
+          # Ensure a valid (possibly empty) file always exists for the parser
           test -s "${OUT}" || echo "" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool: Flutter Analyze (if Flutter project found)
+      # Tool: Flutter Analyze (Dart Static Analyzer)
+      # ----------------------------------------------------------
+      # Runs only when a Flutter project is discovered under SCAN_ROOT.
+      # Uses `flutter analyze --machine` for structured NDJSON output.
+      # A Python inline script converts NDJSON to the structured JSON
+      # format expected by parsers/flutter.py.
       #
       # Output (always created):
       #   quality/analysis/raw/flutter_analyze.json
       #
-      # IMPORTANT:
-      # - gate.py expects valid JSON.
-      # - If flutter analyze produces no output, we write [].
+      # Native severities: error, warning, info, hint
+      # See parsers/flutter.py for normalization details.
       # ------------------------------------------------------
       - name: Run Flutter Analyze (if Flutter project found)
         shell: bash
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/flutter_analyze.json"
-          echo "[]" > "${OUT}"
+
+          # Default to empty issues array — safe for parser if Flutter not found
+          echo '{"issues":[]}' > "${OUT}"
 
           if [[ -z "${FLUTTER_ROOT:-}" ]]; then
-            echo "No Flutter project found under SCAN_ROOT; leaving analyzer output as empty JSON array."
+            echo "No Flutter project found under SCAN_ROOT; skipping flutter analyze."
             exit 0
           fi
 
+          # Install Flutter via snap on Ubuntu runner
           sudo snap install flutter --classic
           flutter --version
 
           pushd "${FLUTTER_ROOT}" >/dev/null
           flutter pub get
 
-          # Write to a temp file first, then validate non-empty before replacing OUT.
-          TMP="$(mktemp)"
+          # Run analyzer in machine-readable NDJSON mode.
+          # || true — issues found are not a workflow failure;
+          # the gate engine owns enforcement.
+          TMP="${RUNNER_TEMP}/flutter_analyze_raw.txt"
           flutter analyze --machine > "${TMP}" 2>&1 || true
-
-          if [[ -s "${TMP}" ]]; then
-            ERROR_COUNT=$(grep -c '"severity":"ERROR"' "${TMP}" 2>/dev/null || true); ERROR_COUNT=${ERROR_COUNT:-0}; ERROR_COUNT=$(echo "$ERROR_COUNT" | tr -d '[:space:]')
-            WARN_COUNT=$(grep -c '"severity":"WARNING"' "${TMP}" 2>/dev/null || true); WARN_COUNT=${WARN_COUNT:-0}; WARN_COUNT=$(echo "$WARN_COUNT" | tr -d '[:space:]')
-            echo "{\"error_count\": ${ERROR_COUNT}, \"warning_count\": ${WARN_COUNT}}" > "${OUT}"
-          else
-            echo '{"error_count": 0, "warning_count": 0}' > "${OUT}"
-          fi
 
           popd >/dev/null
 
+          # --------------------------------------------------
+          # Convert NDJSON output to structured JSON artifact.
+          #
+          # flutter analyze --machine emits one JSON object per line:
+          #   {
+          #     "severity": "ERROR",
+          #     "type": "COMPILE_TIME_ERROR",
+          #     "location": {
+          #       "file": "/abs/path/lib/main.dart",
+          #       "startLine": 34,
+          #       "startColumn": 1
+          #     },
+          #     "message": "...",
+          #     "code": "undefined_method"
+          #   }
+          #
+          # Output written to flutter_analyze.json:
+          #   {
+          #     "issues": [
+          #       {
+          #         "severity": "error",
+          #         "message":  "...",
+          #         "file":     "lib/main.dart",
+          #         "line":     34,
+          #         "column":   1,
+          #         "rule":     "undefined_method"
+          #       }
+          #     ]
+          #   }
+          # --------------------------------------------------
+          python3 - <<'PYEOF'
+          import json
+          import os
+          import sys
+
+          tmp_path    = os.environ.get("TMP_FLUTTER", "")
+          out_path    = os.environ["OUT"]
+          flutter_root = os.environ.get("FLUTTER_ROOT", "")
+
+          try:
+              with open(tmp_path) as f:
+                  lines = f.readlines()
+          except Exception as e:
+              print(f"Warning: could not read flutter analyze output: {e}", file=sys.stderr)
+              lines = []
+
+          issues = []
+          for line in lines:
+              line = line.strip()
+              if not line:
+                  continue
+              try:
+                  obj = json.loads(line)
+              except json.JSONDecodeError:
+                  # Skip non-JSON lines (progress messages, banner text, etc.)
+                  continue
+
+              location  = obj.get("location", {})
+              file_path = location.get("file", "unknown")
+
+              # Strip Flutter root prefix to produce repo-relative paths
+              if flutter_root and file_path.startswith(flutter_root):
+                  file_path = file_path[len(flutter_root):].lstrip("/")
+
+              issues.append({
+                  "severity": obj.get("severity", "INFO").lower(),
+                  "message":  obj.get("message", ""),
+                  "file":     file_path,
+                  "line":     location.get("startLine", 0),
+                  "column":   location.get("startColumn", 0),
+                  "rule":     obj.get("code", "unknown"),
+              })
+
+          with open(out_path, "w") as f:
+              json.dump({"issues": issues}, f, indent=2)
+
+          print(f"Flutter analyze: {len(issues)} issue(s) written to {out_path}")
+          PYEOF
+        env:
+          OUT:          ${{ github.workspace }}/quality/analysis/raw/flutter_analyze.json
+          FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
+          TMP_FLUTTER:  ${{ runner.temp }}/flutter_analyze_raw.txt
+
       # ------------------------------------------------------
-      # Toolchain: Java 17 (Required for Checkstyle/PMD/SpotBugs)
+      # Toolchain: Java 17
+      # ----------------------------------------------------------
+      # Required by Checkstyle, PMD, and SpotBugs.
+      # Must be set up before any Java tool step runs.
       # ------------------------------------------------------
       - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v4
@@ -330,14 +395,16 @@ jobs:
           java-version: '17'
 
       # ------------------------------------------------------
-      # Tool: Checkstyle (Java)
+      # Tool: Checkstyle (Java Style Enforcement)
+      # ----------------------------------------------------------
+      # Runs only when a Java project is discovered under SCAN_ROOT.
+      # Scans src/main/java when available; falls back to JAVA_ROOT.
       #
       # Output (always created):
       #   quality/analysis/raw/checkstyle.xml
       #
-      # Behavior:
-      # - Runs only when a Java/Maven root is discovered.
-      # - Scans src/main/java when available; otherwise scans JAVA_ROOT.
+      # Native severities: error, warning, info
+      # See parsers/checkstyle.py for normalization details.
       # ------------------------------------------------------
       - name: Run Checkstyle (if Java project found)
         shell: bash
@@ -347,7 +414,7 @@ jobs:
           echo "<checkstyle></checkstyle>" > "${OUT}"
 
           if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
-            echo "No Java project found under SCAN_ROOT; writing empty Checkstyle output."
+            echo "No Java project found under SCAN_ROOT; skipping Checkstyle."
             exit 0
           fi
 
@@ -367,14 +434,16 @@ jobs:
           test -s "${OUT}" || echo "<checkstyle></checkstyle>" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool: PMD (Java)
+      # Tool: PMD (Java Source Static Analysis)
+      # ----------------------------------------------------------
+      # Runs only when a Java project is discovered under SCAN_ROOT.
+      # Scans src/main/java when available; falls back to JAVA_ROOT.
       #
       # Output (always created):
       #   quality/analysis/raw/pmd.xml
       #
-      # Behavior:
-      # - Runs only when a Java/Maven root is discovered.
-      # - Scans src/main/java when available.
+      # Native severities: priority 1–5 (1=most severe)
+      # See parsers/pmd.py for normalization details.
       # ------------------------------------------------------
       - name: Run PMD (if Java project found)
         shell: bash
@@ -384,7 +453,7 @@ jobs:
           echo "<pmd></pmd>" > "${OUT}"
 
           if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
-            echo "No Java project found under SCAN_ROOT; writing empty PMD output."
+            echo "No Java project found under SCAN_ROOT; skipping PMD."
             exit 0
           fi
 
@@ -405,9 +474,12 @@ jobs:
           test -s "${OUT}" || echo "<pmd></pmd>" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool Prep: Compile Java (for SpotBugs)
+      # Tool Prep: Compile Java (required by SpotBugs)
+      # ----------------------------------------------------------
+      # SpotBugs analyzes bytecode, not source. This step compiles
+      # all Java source files and exports the classes directory.
       #
-      # Exports:
+      # Exports to GITHUB_ENV:
       #   JAVA_CLASSES_DIR
       # ------------------------------------------------------
       - name: Compile Java (for SpotBugs)
@@ -418,7 +490,7 @@ jobs:
           echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
 
           if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
-            echo "No Java project found; skipping compilation."
+            echo "No Java project found; skipping Java compilation."
             exit 0
           fi
 
@@ -428,16 +500,21 @@ jobs:
           mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
           if [[ "${#SOURCES[@]}" -gt 0 ]]; then
             javac -d "${CLASSES}" "${SOURCES[@]}" || true
+          else
+            echo "No .java source files found; nothing to compile."
           fi
 
       # ------------------------------------------------------
-      # Tool: SpotBugs (Java)
+      # Tool: SpotBugs (Java Bytecode Static Analysis)
+      # ----------------------------------------------------------
+      # Runs only when compiled classes exist from the prior step.
+      # Analyzes bytecode for bug patterns, null dereferences, etc.
       #
       # Output (always created):
       #   quality/analysis/raw/spotbugs.xml
       #
-      # Behavior:
-      # - Runs only when compiled classes exist.
+      # Native severities: priority 1–3 (1=most severe)
+      # See parsers/spotbugs.py for normalization details.
       # ------------------------------------------------------
       - name: Run SpotBugs (if classes exist)
         shell: bash
@@ -447,7 +524,7 @@ jobs:
           echo "<BugCollection></BugCollection>" > "${OUT}"
 
           if [[ -z "${JAVA_CLASSES_DIR:-}" || ! -d "${JAVA_CLASSES_DIR}" ]]; then
-            echo "No compiled classes directory; writing empty SpotBugs output."
+            echo "No compiled classes directory; skipping SpotBugs."
             exit 0
           fi
 
@@ -462,14 +539,19 @@ jobs:
             -output "${OUT}" \
             "${JAVA_CLASSES_DIR}" || true
 
-
           test -s "${OUT}" || echo "<BugCollection></BugCollection>" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool: Semgrep (SAST)
+      # Tool: Semgrep (Multi-language SAST)
+      # ----------------------------------------------------------
+      # Scans RESOLVED_ROOT using the auto ruleset (community rules).
+      # Semgrep is installed once in Step 4 (not reinstalled here).
       #
       # Output (always created):
       #   quality/analysis/raw/semgrep.json
+      #
+      # Native severities: ERROR, WARNING, INFO, INVENTORY
+      # See parsers/semgrep.py for normalization details.
       # ------------------------------------------------------
       - name: Run Semgrep (SAST)
         shell: bash
@@ -478,23 +560,31 @@ jobs:
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/semgrep.json"
           echo '{"results":[]}' > "${OUT}"
 
-          python -m pip install --upgrade pip
-          python -m pip install semgrep==1.73.0
-
           semgrep --config=auto "${RESOLVED_ROOT}" --json > "${OUT}" || true
           test -s "${OUT}" || echo '{"results":[]}' > "${OUT}"
 
       # ------------------------------------------------------
       # Tool: OWASP Dependency-Check (SCA)
+      # ----------------------------------------------------------
+      # Scans all dependencies under SCAN_ROOT for known CVEs.
+      # Uses the NVD API for vulnerability data (key required).
+      #
+      # NVD API Key:
+      #   Add your key as a GitHub Actions secret named NVD_API_KEY.
+      #   Obtain a key at: https://nvd.nist.gov/developers/request-an-api-key
+      #   Without a key, NVD requests are rate-limited and scans may fail.
+      #
+      # Fallback behavior:
+      #   If the NVD-connected run fails, retries with --noupdate to use
+      #   the cached local database. Remove --noupdate once your NVD API
+      #   key is active and the database has been populated at least once.
       #
       # Output (always created):
       #   quality/analysis/raw/dependency-check-report.json
       #
-      # Note:
-      # - --noupdate avoids network flakiness during sandbox validation.
-      #   Remove --noupdate when you promote to production enforcement.
+      # Native severities: CRITICAL, HIGH, MEDIUM, LOW, INFORMATIONAL
+      # See parsers/dependency_check.py for normalization details.
       # ------------------------------------------------------
-      # File: .github/workflows/build-and-analyze1.yml
       - name: Run OWASP Dependency-Check (SCA)
         shell: bash
         run: |
@@ -508,14 +598,19 @@ jobs:
             https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
           unzip -q dc.zip
 
-          # Try normal run (may fail if NVD blocks)
+          # Primary run — uses NVD API key for up-to-date vulnerability data.
+          # --nvdApiKey: add NVD_API_KEY to your GitHub Actions repository secrets.
           if ! ./dependency-check/bin/dependency-check.sh \
             --project "careconnect-scan" \
             --scan "${ROOT}" \
             --format JSON \
             --out "${OUT_DIR}" \
-            --data "${DATA_DIR}" ; then
-            echo "::warning::Dependency-Check update failed; retrying with --noupdate"
+            --data "${DATA_DIR}" \
+            --nvdApiKey "${{ secrets.NVD_API_KEY }}" ; then
+
+            # Fallback run — uses cached local database if NVD is unreachable.
+            # Remove --noupdate once NVD_API_KEY is active and DB is populated.
+            echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
             ./dependency-check/bin/dependency-check.sh \
               --project "careconnect-scan" \
               --scan "${ROOT}" \
@@ -526,15 +621,22 @@ jobs:
               --disableAssembly || true
           fi
 
-          [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || echo '{"dependencies":[],"vulnerabilities":[]}' > "${OUT_DIR}/dependency-check-report.json"
-      
+          # Guarantee artifact exists for the parser even if both runs fail
+          [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
+            echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
+
       # ------------------------------------------------------
-      # Tool: Sonar (placeholder artifact to satisfy gate)
+      # Tool: Sonar (placeholder — currently disabled)
+      # ----------------------------------------------------------
+      # Sonar is not yet configured. This step writes a clean
+      # placeholder artifact so the gate engine does not treat
+      # a missing artifact as a runtime error.
+      #
+      # To activate Sonar, follow the steps in parsers/sonar.py.
+      # Once active, replace this step with a real scan step.
       #
       # Output (always created):
       #   quality/analysis/raw/sonar.json
-      #
-      # If/when you wire real Sonar later, remove this step.
       # ------------------------------------------------------
       - name: Create Sonar placeholder artifact
         shell: bash
@@ -543,64 +645,23 @@ jobs:
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/sonar.json"
           echo '{"projectStatus":{"status":"OK"},"issues":[]}' > "${OUT}"
 
-       
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      # File: /Volumes/DevDrive/code/2026_spring_careconnect/.github/workflows/build-and-analyze1.yml
-      - name: Debug raw artifacts (temporary)
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          ls -la quality/analysis/raw || true
-          for f in trufflehog.jsonl flutter_analyze.json checkstyle.xml pmd.xml spotbugs.xml semgrep.json dependency-check-report.json sonar.json; do
-            echo "---- ${f} ----"
-            test -f "quality/analysis/raw/${f}" && (head -n 3 "quality/analysis/raw/${f}" || true) || echo "MISSING"
-          done
-
-
-
-
-
-
-
-
-
-
-
-
       # ======================================================
       # GATE ENGINE + REPORTING
       # ======================================================
 
       # ------------------------------------------------------
-      # Step 7: Run Quality Gate Engine (single enforcement point)
+      # Step 7: Run Quality Gate Engine
+      # ----------------------------------------------------------
+      # Single enforcement point for the entire pipeline.
+      # Reads raw artifacts → normalizes → evaluates policy.
+      #
+      # Writes:
+      #   quality/analysis/normalized/normalized.json
+      #   quality/analysis/evaluated/evaluated.json
+      #
+      # Exit codes:
+      #   0 → all policy checks passed (merge allowed)
+      #   1 → one or more policy checks failed (merge blocked)
       # ------------------------------------------------------
       - name: Run Quality Gate
         shell: bash
@@ -609,155 +670,106 @@ jobs:
           python -m quality.ci.gate.gate
 
       # ------------------------------------------------------
-      # Step 8: Generate report.md (+ PR comment on PR events)
+      # Step 8: Generate Report
+      # ----------------------------------------------------------
+      # report.py reads evaluated.json and produces:
+      #   - quality/analysis/report.md (written to disk)
+      #   - PR comment (created or updated via GitHub API)
       #
-      # Output:
-      #   quality/analysis/report.md
-      # ------------------------------------------------------
-      - name: Generate report.md (+ PR comment on PR events)
+      # Runs with if: always() so the report is generated even
+      # when the gate engine blocks the merge (exit code 1).
+      #
+      # Environment variables passed to report.py:
+      #   GITHUB_TOKEN      → provided automatically by Actions
+      #   GITHUB_EVENT_NAME → pr or push
+      #   GITHUB_REPOSITORY → owner/repo
+      #   GITHUB_RUN_ID     → workflow run ID for deep links
+      #   GITHUB_RUN_NUMBER → human-readable run number
+      #   GITHUB_SHA        → commit SHA
+      #   GITHUB_HEAD_REF   → source branch (PR only)
+      #   GITHUB_BASE_REF   → target branch (PR only)
+      #   GITHUB_ACTOR      → user who triggered the workflow
+      #   PR_NUMBER         → pull request number (PR only)
+      # ----------------------------------------------------------
+      - name: Generate Report
         if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const workspace = process.env.GITHUB_WORKSPACE;
-            const evaluatedPath = path.join(workspace, 'quality/analysis/evaluated/evaluated.json');
-            const outPath = path.join(workspace, 'quality/analysis/report.md');
-
-            let evaluated;
-            try {
-              evaluated = JSON.parse(fs.readFileSync(evaluatedPath, 'utf8'));
-            } catch (e) {
-              evaluated = { overall_block: true, results: [] };
-            }
-
-            const utc = new Date().toISOString().replace('T', ' ').replace('Z', ' UTC');
-
-            const statusLine = evaluated.overall_block
-              ? '> **🚫 BLOCKED** — One or more required checks failed. Fix the issues below before merging.'
-              : '> **✅ APPROVED** — All required checks passed.';
-
-            const categoryMap = {
-              trufflehog: 'Secrets Scan',
-              checkstyle: 'SAST — Java',
-              spotbugs: 'SAST — Java',
-              pmd: 'SAST — Java',
-              sonar: 'SAST — Java',
-              semgrep: 'SAST — Multi',
-              flutter_analyze: 'SAST — Flutter',
-              dependency_check: 'SCA'
-            };
-
-            const lines = [];
-            lines.push('# CareConnect Quality Gate Report');
-            lines.push('');
-            lines.push(statusLine);
-            lines.push('');
-            lines.push('## 🔍 CareConnect — Security & Quality Analysis Report');
-            lines.push('');
-
-            lines.push('### 📋 Report Header');
-            lines.push('| Field | Value |');
-            lines.push('|-------|-------|');
-            lines.push(`| **Generated (UTC)** | ${utc} |`);
-            lines.push(`| **Pipeline Run** | [#${process.env.GITHUB_RUN_NUMBER}](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) |`);
-            lines.push(`| **Trigger** | \`${process.env.GITHUB_EVENT_NAME}\` |`);
-            lines.push(`| **Scan Root** | \`${process.env.SCAN_ROOT}\` |`);
-            lines.push('');
-            lines.push('_All timestamps are reported in Coordinated Universal Time (UTC)._');
-            lines.push('');
-
-            const pr = context.payload.pull_request;
-            if (pr) {
-              lines.push('### 🔀 Pull Request');
-              lines.push('| Field | Value |');
-              lines.push('|-------|-------|');
-              lines.push(`| **PR Number** | #${pr.number} |`);
-              lines.push(`| **PR Title** | ${pr.title.replace(/\|/g, '\\|')} |`);
-              lines.push(`| **PR Author** | @${process.env.GITHUB_ACTOR} |`);
-              lines.push(`| **Source Branch** | \`${process.env.GITHUB_HEAD_REF}\` |`);
-              lines.push(`| **Target Branch** | \`${process.env.GITHUB_BASE_REF}\` |`);
-              lines.push('');
-            }
-
-            const sha = process.env.GITHUB_SHA || '';
-            lines.push('### 📝 Commit Details');
-            lines.push('| Field | Value |');
-            lines.push('|-------|-------|');
-            lines.push(`| **Commit SHA** | \`${sha.substring(0,7)}\` ([full](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/commit/${sha})) |`);
-            lines.push('');
-
-            lines.push('### 🛡️ Tool Results Summary');
-            lines.push('| Tool | Category | Status | Blocking | Findings (preview) |');
-            lines.push('|------|----------|--------|----------|--------------------|');
-
-            const results = evaluated.results || [];
-            for (const r of results) {
-              const tool = r.tool || 'unknown';
-              const cat = categoryMap[tool] || 'Analysis';
-              const ok = !r.policy_violation;
-              const status = ok ? '✅ SUCCESS' : '❌ FAILURE';
-              const blocking = r.blocking ? '🚫 Yes' : '⚠️ Advisory';
-
-              const findings = Array.isArray(r.findings) ? r.findings : [];
-              const preview = findings.slice(0, 2).map(f =>
-                `\`${f.file || 'unknown'}:${f.line || '?'}\` ${String(f.message || 'Issue').replace(/\|/g,'\\|')}`
-              ).join('<br/>') || '—';
-
-              lines.push(`| ${tool} | ${cat} | ${status} | ${blocking} | ${preview} |`);
-            }
-
-            lines.push('');
-            lines.push('---');
-            lines.push('_Full artifact bundle available in the workflow run artifacts._');
-            lines.push('');
-
-            const body = lines.join('\n');
-            fs.writeFileSync(outPath, body, 'utf8');
-
-            if (context.eventName === 'pull_request' && pr) {
-              const marker = '## 🔍 CareConnect — Security & Quality Analysis Report';
-              const { owner, repo } = context.repo;
-              const issue_number = pr.number;
-
-              const comments = await github.paginate(github.rest.issues.listComments, {
-                owner, repo, issue_number, per_page: 100
-              });
-
-              const existing = comments.find(c =>
-                c.user?.login === 'github-actions[bot]' && c.body?.includes(marker)
-              );
-
-              if (existing) {
-                await github.rest.issues.updateComment({
-                  owner, repo, comment_id: existing.id, body
-                });
-              } else {
-                await github.rest.issues.createComment({
-                  owner, repo, issue_number, body
-                });
-              }
-            }
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER:    ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          python -m quality.ci.gate.report
 
       # ------------------------------------------------------
       # Step 9: Publish report.md to Actions Job Summary
+      # ----------------------------------------------------------
+      # Appends the generated Markdown report to the workflow's
+      # job summary so it is visible directly in the Actions UI.
       # ------------------------------------------------------
-      - name: Publish report to Actions Summary
+      - name: Publish Report to Actions Summary
         if: always()
         shell: bash
         run: |
           set -euo pipefail
           REPORT_PATH="quality/analysis/report.md"
-          if [[ -f "$REPORT_PATH" ]]; then
-            cat "$REPORT_PATH" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f "${REPORT_PATH}" ]]; then
+            cat "${REPORT_PATH}" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "No $REPORT_PATH found to publish." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::report.md not found at ${REPORT_PATH}; nothing to publish."
+            echo "Report generation failed or was skipped." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # ------------------------------------------------------
-      # Step 10: Upload Analysis Artifacts
+      # Step 10: Diagnostic — Raw Artifact Inventory
+      # ----------------------------------------------------------
+      # Lists all raw artifacts and previews the first 3 lines
+      # of each expected file. Useful for debugging missing or
+      # malformed artifacts without downloading the full bundle.
+      #
+      # Runs with if: always() so diagnostics are available even
+      # on failed runs.
+      # ------------------------------------------------------
+      - name: Diagnostic — Raw Artifact Inventory
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Raw artifact directory listing ==="
+          ls -la quality/analysis/raw || echo "Directory not found"
+          echo ""
+          echo "=== Artifact previews (first 3 lines each) ==="
+          for f in \
+            trufflehog.jsonl \
+            flutter_analyze.json \
+            checkstyle.xml \
+            pmd.xml \
+            spotbugs.xml \
+            semgrep.json \
+            dependency-check-report.json \
+            sonar.json; do
+            echo "---- ${f} ----"
+            if test -f "quality/analysis/raw/${f}"; then
+              head -n 3 "quality/analysis/raw/${f}" || true
+            else
+              echo "MISSING"
+            fi
+          done
+
+      # ------------------------------------------------------
+      # Step 11: Upload Analysis Artifacts
+      # ----------------------------------------------------------
+      # Uploads the entire quality/analysis/ directory as a
+      # downloadable artifact bundle for post-run inspection.
+      #
+      # Includes:
+      #   raw/           → native tool outputs
+      #   normalized/    → normalized.json
+      #   evaluated/     → evaluated.json
+      #   report.md      → human-readable report
+      #
+      # Runs with if: always() so artifacts are preserved even
+      # on blocked or failed runs.
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         if: always()

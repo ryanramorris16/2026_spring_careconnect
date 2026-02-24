@@ -1,111 +1,174 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/parsers/flutter.py
+# File: quality/ci/gate/parsers/flutter.py
 # ==========================================================
 # flutter.py
 # ----------------------------------------------------------
-# Flutter Analyze Parser (Dart Analyzer)
+# Flutter Analyze Parser (Dart Static Analyzer)
 #
 # Purpose:
-#   Parse the Flutter/Dart analyzer summary artifact and normalize
-#   the results into the standard schema defined in schemas.py.
+#   Parse the Flutter/Dart analyzer JSON artifact and normalize
+#   findings into the standard schema defined in schemas.py.
 #
 # Expected raw artifact:
 #   quality/analysis/raw/flutter_analyze.json
 #
-# Expected JSON structure (minimal contract):
-#   {
-#     "error_count": int,
-#     "warning_count": int
-#   }
+# Native Flutter/Dart Analyzer Severities:
+#   error   → Compile-time or analysis error; build will fail.
+#   warning → Potential issue; build may succeed.
+#   info    → Informational; lowest enforcement level.
+#   hint    → Style or best-practice suggestion.
+#
+# Severity Mapping (Flutter → Normalized):
+#   error   → high
+#   warning → medium
+#   info    → low
+#   hint    → info
+#   <unknown> → info
 #
 # Behavior:
-#   - Maps analyzer errors to "high" severity (blocking by policy).
-#   - Maps warnings to "low" severity (informational unless policy changes).
-#   - violation_count is the sum of errors + warnings.
+#   - Reads the structured issues array written by the CI workflow step.
+#   - Maps native severity to normalized severity per the table above.
+#   - Populates findings[] with per-issue detail.
+#   - Counts violations per normalized severity level.
+#   - Sets max_severity to the highest normalized severity found.
+#   - Does NOT apply policy thresholds (policy.yaml controls that).
 #
-# Policy linkage:
-#   - policy.yaml currently enforces:
-#       error_count: ">0"
-#     meaning ANY analyzer error blocks the merge (if blocking=true).
-#
-# Notes:
-#   - This parser assumes the workflow produces a simplified JSON summary
-#     rather than parsing raw text output.
-#   - If later you want rule-level detail (file/line/message), extend the
-#     raw artifact schema and store samples in result["metadata"].
+# Expected artifact structure (written by workflow step):
+#   {
+#     "issues": [
+#       {
+#         "severity": "error",
+#         "message":  "The method 'login' isn't defined.",
+#         "file":     "lib/auth/login.dart",
+#         "line":     34,
+#         "column":   1,
+#         "rule":     "undefined_method"
+#       }
+#     ]
+#   }
 # ==========================================================
 
 import json
 from pathlib import Path
 
 from ..schemas import base_tool_result
+from ..utils import determine_max_severity
 
 
-def parse_flutter(raw_dir: Path):
+# ----------------------------------------------------------
+# Severity mapping: Flutter native → normalized
+# ----------------------------------------------------------
+SEVERITY_MAP = {
+    "error":   "high",
+    "warning": "medium",
+    "info":    "low",
+    "hint":    "info",
+}
+
+
+def parse_flutter(raw_dir: Path) -> dict:
     """
     Parse flutter_analyze.json and return a standardized result dictionary.
 
+    Args:
+        raw_dir: Path to the directory containing raw tool outputs.
+
+    Returns:
+        A dict conforming to the base_tool_result schema, populated
+        with findings, severity counts, and max_severity.
+
     Contract:
-      - Always return base_tool_result structure.
-      - Missing artifact = runtime_error.
-      - This function should not raise exceptions outward.
+        - Always returns a base_tool_result structure.
+        - Never raises exceptions outward.
+        - Missing artifact → artifact_present=False, runtime_error=True.
+        - Malformed JSON   → runtime_error=True, error captured in metadata.
+        - Empty issues []  → valid result with zero violations.
     """
     tool_name = "flutter_analyze"
 
-    # Initialize standardized result structure
+    # Initialize the standardized result structure
     result = base_tool_result(tool_name)
 
-    # Expected artifact path produced by CI workflow step
+    # Build the expected artifact path
     artifact = raw_dir / "flutter_analyze.json"
 
-    # ------------------------------------------------------
-    # Artifact existence check
-    # ------------------------------------------------------
-    # Missing artifact means:
-    #   - tool did not run
-    #   - tool failed before writing output
-    #   - workflow path mismatch
-    # Treated as runtime_error (governance violation).
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Artifact presence check
+    # ----------------------------------------------------------
+    # If the file does not exist, mark as runtime error and return
+    # early. The policy engine will decide whether a missing artifact
+    # constitutes a blocking violation.
+    # ----------------------------------------------------------
     if not artifact.exists():
+        result["artifact_present"] = False
         result["runtime_error"] = True
         return result
 
-    # Mark tool as executed (artifact exists)
+    # Artifact is present; mark accordingly
     result["artifact_present"] = True
     result["executed"] = True
 
     try:
-        # Load JSON summary produced by the workflow
+        # Load and parse the structured JSON artifact
         with open(artifact) as f:
             data = json.load(f)
 
-        # Extract counts with safe defaults
-        error_count = data.get("error_count", 0)
-        warning_count = data.get("warning_count", 0)
+        # The workflow step writes a top-level "issues" array.
+        # An empty array is a valid result (no findings).
+        issues = data.get("issues", [])
 
-        # Total findings count (used for reporting / generic rules)
-        result["violation_count"] = error_count + warning_count
+        # Accumulate findings as we walk the issues list
+        findings = []
 
-        # ------------------------------------------------------
-        # Severity mapping
-        # ------------------------------------------------------
-        # We treat analyzer errors as "high" severity because they block builds.
-        # We treat warnings as "low" by default (configurable via policy.yaml).
-        # ------------------------------------------------------
-        result["severity_counts"]["high"] = error_count
-        result["severity_counts"]["low"] = warning_count
+        for issue in issues:
+            # Extract native severity; default to "info" if absent
+            native_severity = issue.get("severity", "info").lower()
 
-        # Determine max severity encountered
-        if error_count > 0:
-            result["max_severity"] = "high"
-        elif warning_count > 0:
-            result["max_severity"] = "low"
-        else:
-            result["max_severity"] = None
+            # Map native severity to normalized severity.
+            # Default to "info" for any unrecognized value.
+            normalized_severity = SEVERITY_MAP.get(native_severity, "info")
+
+            # Increment the appropriate severity bucket directly on the
+            # result dict — base_tool_result already owns the structure.
+            result["severity_counts"][normalized_severity] += 1
+
+            # Build the standardized finding record
+            finding = {
+                "file":            issue.get("file", "unknown"),
+                "line":            issue.get("line", 0),
+                "column":          issue.get("column", 0),
+                "severity":        normalized_severity,
+                "native_severity": native_severity,
+                "message":         issue.get("message", ""),
+                "rule":            issue.get("rule", "unknown"),
+            }
+            findings.append(finding)
+
+        # Store all individual findings
+        result["findings"] = findings
+
+        # Total number of issues found
+        result["violation_count"] = len(findings)
+
+        # Determine max_severity using the shared utility function
+        result["max_severity"] = determine_max_severity(result["severity_counts"])
+
+    except json.JSONDecodeError as e:
+        # ----------------------------------------------------------
+        # Malformed or unparseable JSON.
+        # Captured separately from generic exceptions so the error
+        # type is explicit in the metadata.
+        # ----------------------------------------------------------
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"JSON parse error: {e}"
 
     except Exception as e:
-        # Any parsing exception is treated as runtime_error.
+        # ----------------------------------------------------------
+        # Catch-all for unexpected failures (I/O errors, schema
+        # changes, etc.) to ensure the pipeline never crashes on a
+        # single parser. Surfaced as a runtime_error so the policy
+        # engine can flag it as a governance concern.
+        # ----------------------------------------------------------
         result["runtime_error"] = True
-        result["metadata"]["error"] = str(e)
+        result["metadata"]["error"] = f"Unexpected error: {e}"
 
     return result

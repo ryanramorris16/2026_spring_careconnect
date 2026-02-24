@@ -1,10 +1,8 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/policy_engine.py
+# File: quality/ci/gate/policy_engine.py
 # ==========================================================
 # policy_engine.py
 # ----------------------------------------------------------
-# Policy Evaluation Layer (Layer 2)
-#
-# This module is Layer 2 of the Quality Gate subsystem.
+# Policy Evaluation Layer (Layer 2 of the Quality Gate Engine)
 #
 # Purpose:
 #   Apply governance policy (policy.yaml) to normalized tool
@@ -12,271 +10,370 @@
 #   should be blocked.
 #
 # Inputs:
-#   - quality/analysis/normalized/normalized.json
-#       Produced by normalize.py
-#       Contains standardized per-tool results (counts + severities)
+#   quality/analysis/normalized/normalized.json
+#     Produced by normalize.py.
+#     Contains standardized per-tool results with findings,
+#     severity counts, and execution state.
 #
-#   - quality/ci/gate/policy.yaml
-#       Version-controlled governance policy (blocking flags + thresholds)
+#   quality/ci/gate/policy.yaml
+#     Version-controlled governance rules.
+#     Defines per-tool blocking flags and fail conditions.
 #
-# Outputs:
-#   - quality/analysis/evaluated/evaluated.json
-#       Contains:
-#         overall_block: bool
-#         results: list of per-tool evaluated states
+# Output:
+#   quality/analysis/evaluated/evaluated.json
+#   {
+#     "overall_block":       bool,
+#     "generated_at":        "UTC timestamp",
+#     "blocking_results":    [ ... ],   ← tools that can block the merge
+#     "non_blocking_results":[ ... ]    ← advisory tools (informational only)
+#   }
 #
 # Enforcement Contract:
-#   - If ANY tool that is marked "blocking: true" violates its policy,
-#     overall_block becomes True.
-#   - Additionally, runtime errors / missing artifacts / non-execution are
-#     treated as violations for blocking tools (fail-safe governance).
+#   - A tool marked blocking=true that violates its policy rules
+#     sets overall_block=True.
+#   - Runtime errors and missing artifacts are violations for
+#     blocking tools (fail-safe governance).
+#   - Disabled tools (metadata.status=disabled) are never flagged
+#     as violations regardless of blocking flag.
+#   - gate.mode (enforce vs report_only) is NOT applied here.
+#     gate.py is the single authority for exit-code decisions.
 #
-# NOTE ON gate.mode:
-#   - policy.yaml may define gate.mode (enforce vs report_only).
-#   - This file evaluates violations consistently either way.
-#   - The final exit-code decision is enforced by gate.py (single authority).
+# Execution:
+#   Recommended:  python -m quality.ci.gate.policy_engine
+#   Direct:       python quality/ci/gate/policy_engine.py
 # ==========================================================
 
-from __future__ import annotations
-
 import json
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
 
 import yaml
 
+from .utils import is_severity_at_least, SEVERITY_ORDER
+
 # ----------------------------------------------------------
-# Input / Output locations
+# Input / Output paths
 # ----------------------------------------------------------
 NORMALIZED_FILE = Path("quality/analysis/normalized/normalized.json")
-POLICY_FILE = Path("quality/ci/gate/policy.yaml")
-
-# The evaluated output folder is created automatically so workflows can
-# upload the entire quality/analysis directory as an artifact bundle.
-EVALUATED_DIR = Path("quality/analysis/evaluated")
-EVALUATED_DIR.mkdir(parents=True, exist_ok=True)
-
-OUTPUT_FILE = EVALUATED_DIR / "evaluated.json"
-
-# Shared normalized severity vocabulary (lowest → highest)
-SEVERITY_ORDER: List[str] = ["info", "low", "medium", "high", "critical"]
+POLICY_FILE     = Path("quality/ci/gate/policy.yaml")
+EVALUATED_DIR   = Path("quality/analysis/evaluated")
+OUTPUT_FILE     = EVALUATED_DIR / "evaluated.json"
 
 
-def load_policy() -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def load_policy() -> tuple[dict, dict]:
     """
-    Load policy.yaml and return both:
-      - gate config (global controls)
-      - tools config (per-tool enforcement rules)
+    Load and parse policy.yaml.
 
-    This keeps policy.yaml as the single governance source of truth.
+    Returns:
+        gate_cfg:  Global gate configuration (mode, etc.).
+        tools_cfg: Per-tool enforcement rules.
+
+    Note:
+        gate.mode is returned here for gate.py to consume.
+        This function does not apply gate.mode itself.
     """
     with open(POLICY_FILE, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
-    # Gate config is optional; defaults to enforce mode.
-    gate_cfg = data.get("gate", {}) or {}
+    gate_cfg  = data.get("gate", {}) or {}
     tools_cfg = data.get("tools", {}) or {}
 
     return gate_cfg, tools_cfg
 
 
-def load_normalized() -> List[Dict[str, Any]]:
+def load_normalized() -> tuple[list[dict], dict]:
     """
-    Load the normalized tool results produced by normalize.py.
-    Returns a list of tool result dicts (one per tool).
+    Load normalized.json produced by normalize.py.
+
+    Returns:
+        results:  List of per-tool result dicts.
+        summary:  Top-level summary fields (generated_at, max_severity, etc.).
     """
     with open(NORMALIZED_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    # normalize.py writes a top-level wrapper dict — extract results list
+    results = data.get("results", [])
+    summary = {
+        "generated_at":     data.get("generated_at", ""),
+        "tool_count":       data.get("tool_count", 0),
+        "total_violations": data.get("total_violations", 0),
+        "max_severity":     data.get("max_severity"),
+    }
+
+    return results, summary
 
 
-def severity_rank(level: str | None) -> int:
+def _is_disabled(tool_result: dict) -> bool:
     """
-    Convert severity labels into an ordered integer ranking.
+    Return True if the tool is explicitly marked as disabled.
 
-    The normalization layer provides max_severity and severity_counts
-    using this shared vocabulary.
+    Disabled tools have metadata.status=disabled and executed=False.
+    They are never treated as violations regardless of policy.
 
-    Higher rank means more severe.
+    Args:
+        tool_result: A normalized tool result dict.
+
+    Returns:
+        True if the tool is disabled, False otherwise.
     """
-    if not level:
-        return -1
-    try:
-        return SEVERITY_ORDER.index(level)
-    except ValueError:
-        return -1
+    metadata = tool_result.get("metadata", {}) or {}
+    return (
+        not tool_result.get("executed", False)
+        and metadata.get("status") == "disabled"
+    )
+
+
+def _evaluate_tool(
+    tool_result: dict,
+    tool_policy: dict,
+) -> tuple[bool, str | None]:
+    """
+    Evaluate a single tool result against its policy rules.
+
+    Args:
+        tool_result: Normalized result dict from normalize.py.
+        tool_policy: Policy entry for this tool from policy.yaml.
+
+    Returns:
+        policy_violation: True if any rule was violated.
+        reason:           Code identifying the first violation found,
+                          or None if no violation occurred.
+
+    Violation reason codes:
+        runtime_error           → Parser crashed or artifact unreadable.
+        tool_not_executed       → Tool did not run (not disabled).
+        violation_count_exceeded→ Total findings exceeded threshold.
+        flutter_errors_present  → Flutter analyzer errors found.
+        severity_high_and_above → Max severity is high or critical.
+        severity_medium_and_above→ Max severity is medium or above.
+        severity_critical       → Max severity is critical.
+        vulnerability_present   → Any CVE found (dependency_check).
+        finding_present         → Any finding found (trufflehog).
+        quality_gate_failed     → Sonar quality gate status is ERROR.
+    """
+    policy_violation = False
+    reason: str | None = None
+
+    def violate(code: str) -> None:
+        """Record first violation reason; subsequent violations are ignored."""
+        nonlocal policy_violation, reason
+        policy_violation = True
+        if reason is None:
+            reason = code
+
+    fail_rules      = tool_policy.get("fail_on", {}) or {}
+    violation_count = int(tool_result.get("violation_count", 0) or 0)
+    severity_counts = tool_result.get("severity_counts", {}) or {}
+    max_sev         = tool_result.get("max_severity")
+
+    # ----------------------------------------------------------
+    # Governance: runtime error is always a violation
+    # ----------------------------------------------------------
+    # Covers: parser crashes, malformed artifacts, unreadable files.
+    # ----------------------------------------------------------
+    if tool_result.get("runtime_error", False):
+        violate("runtime_error")
+
+    # ----------------------------------------------------------
+    # Governance: tool not executed is a violation
+    # ----------------------------------------------------------
+    # Prevents silent skips from masking enforcement gaps.
+    # Note: disabled tools are excluded before this is called.
+    # ----------------------------------------------------------
+    if not tool_result.get("executed", False):
+        violate("tool_not_executed")
+
+    # ----------------------------------------------------------
+    # Rule: violation_count
+    # ----------------------------------------------------------
+    # Triggers when total findings exceed the configured threshold.
+    # Example in policy.yaml:
+    #   fail_on:
+    #     violation_count: ">0"
+    # ----------------------------------------------------------
+    if "violation_count" in fail_rules:
+        threshold = fail_rules["violation_count"]
+        if threshold == ">0" and violation_count > 0:
+            violate("violation_count_exceeded")
+
+    # ----------------------------------------------------------
+    # Rule: error_count (Flutter-specific)
+    # ----------------------------------------------------------
+    # Flutter analyzer errors are normalized to "high" severity.
+    # This rule treats high-severity Flutter findings as errors.
+    # Example in policy.yaml:
+    #   fail_on:
+    #     error_count: ">0"
+    # ----------------------------------------------------------
+    if "error_count" in fail_rules:
+        threshold = fail_rules["error_count"]
+        if threshold == ">0":
+            flutter_errors = int(severity_counts.get("high", 0) or 0)
+            if flutter_errors > 0:
+                violate("flutter_errors_present")
+
+    # ----------------------------------------------------------
+    # Rule: severity
+    # ----------------------------------------------------------
+    # Triggers when max_severity meets or exceeds the threshold.
+    # Uses is_severity_at_least() from utils.py for consistent
+    # severity comparison across the gate engine.
+    #
+    # Example in policy.yaml:
+    #   fail_on:
+    #     severity: "high_and_above"
+    # ----------------------------------------------------------
+    if "severity" in fail_rules and max_sev:
+        rule = fail_rules["severity"]
+
+        if rule == "high_and_above" and is_severity_at_least(max_sev, "high"):
+            violate("severity_high_and_above")
+        elif rule == "medium_and_above" and is_severity_at_least(max_sev, "medium"):
+            violate("severity_medium_and_above")
+        elif rule == "critical_only" and max_sev == "critical":
+            violate("severity_critical")
+
+    # ----------------------------------------------------------
+    # Rule: any_vulnerability (Dependency-Check)
+    # ----------------------------------------------------------
+    # Blocks on any known CVE regardless of severity level.
+    # Example in policy.yaml:
+    #   fail_on:
+    #     any_vulnerability: true
+    # ----------------------------------------------------------
+    if fail_rules.get("any_vulnerability") is True and violation_count > 0:
+        violate("vulnerability_present")
+
+    # ----------------------------------------------------------
+    # Rule: any_finding (TruffleHog / secrets)
+    # ----------------------------------------------------------
+    # Blocks on any detected secret regardless of verified status.
+    # Example in policy.yaml:
+    #   fail_on:
+    #     any_finding: true
+    # ----------------------------------------------------------
+    if fail_rules.get("any_finding") is True and violation_count > 0:
+        violate("finding_present")
+
+    # ----------------------------------------------------------
+    # Rule: quality_gate (Sonar)
+    # ----------------------------------------------------------
+    # Blocks when Sonar's quality gate status is ERROR.
+    # normalize.py maps ERROR → violation_count = 1.
+    # Example in policy.yaml:
+    #   fail_on:
+    #     quality_gate: true
+    # ----------------------------------------------------------
+    if fail_rules.get("quality_gate") is True and violation_count > 0:
+        violate("quality_gate_failed")
+
+    return policy_violation, reason
 
 
 def evaluate() -> bool:
     """
-    Evaluate normalized results against policy.yaml.
+    Evaluate all normalized tool results against policy.yaml.
+
+    Produces evaluated.json with blocking and non-blocking results
+    clearly separated. Blocking results are listed first.
 
     Returns:
-      overall_block (bool)
+        overall_block: True if any blocking tool violated its policy.
 
     Side effects:
-      Writes quality/analysis/evaluated/evaluated.json
+        Writes quality/analysis/evaluated/evaluated.json.
     """
-    # gate_cfg is intentionally loaded here to validate policy.yaml structure,
-    # but gate.mode enforcement is handled in gate.py (single exit-code authority).
+    # Ensure output directory exists before writing
+    EVALUATED_DIR.mkdir(parents=True, exist_ok=True)
+
     gate_cfg, tools_policy = load_policy()
-    _ = gate_cfg  # keep linting quiet; gate.py owns gate.mode enforcement
+    normalized_results, normalized_summary = load_normalized()
 
-    normalized_results = load_normalized()
-
-    evaluated: List[Dict[str, Any]] = []
+    blocking_results:     list[dict] = []
+    non_blocking_results: list[dict] = []
     overall_block = False
 
     # ----------------------------------------------------------
-    # Per-tool evaluation
-    # ----------------------------------------------------------
-    # Each normalized tool result is matched against its policy entry.
-    # Tools missing from policy.yaml default to non-blocking and no rules.
+    # Evaluate each tool result
     # ----------------------------------------------------------
     for tool_result in normalized_results:
-        tool_name = tool_result.get("tool", "unknown_tool")
+        tool_name   = tool_result.get("tool", "unknown_tool")
         tool_policy = tools_policy.get(tool_name, {}) or {}
-
-        # Whether this tool is allowed to block merges (on/off switch)
-        blocking = bool(tool_policy.get("blocking", False))
-
-        # Tool-specific fail conditions (defined in policy.yaml)
-        fail_rules: Dict[str, Any] = tool_policy.get("fail_on", {}) or {}
-
-        policy_violation = False
-        reason: str | None = None  # stable code used in reporting
-
-        def violate(code: str) -> None:
-            """Set violation + first reason (do not overwrite earlier root cause)."""
-            nonlocal policy_violation, reason
-            policy_violation = True
-            if reason is None:
-                reason = code
+        blocking    = bool(tool_policy.get("blocking", False))
 
         # ----------------------------------------------------------
-        # Governance: runtime failures are violations
+        # Skip disabled tools entirely
         # ----------------------------------------------------------
-        # Missing artifacts, parser crashes, malformed outputs, etc.
-        # MUST block the merge if the tool is blocking.
+        # Disabled tools (e.g. Sonar before account setup) must not
+        # be flagged as violations. They are recorded as non-blocking
+        # advisory entries for transparency.
         # ----------------------------------------------------------
-        if bool(tool_result.get("runtime_error", False)):
-            violate("runtime_error")
+        if _is_disabled(tool_result):
+            non_blocking_results.append({
+                "tool":             tool_name,
+                "blocking":         False,
+                "policy_violation": False,
+                "reason":           "disabled",
+                "normalized":       tool_result,
+            })
+            continue
 
-        # ----------------------------------------------------------
-        # Governance: tool not executed is a violation
-        # ----------------------------------------------------------
-        # Even if runtime_error is not explicitly true, a tool that did not
-        # execute is treated as non-compliant. This prevents silent skips.
-        # ----------------------------------------------------------
-        if not bool(tool_result.get("executed", False)):
-            violate("tool_not_executed")
+        # Evaluate the tool against its policy rules
+        policy_violation, reason = _evaluate_tool(tool_result, tool_policy)
 
-        # Convenience locals from normalized schema (with safe defaults)
-        violation_count = int(tool_result.get("violation_count", 0) or 0)
-        severity_counts = tool_result.get("severity_counts", {}) or {}
-        max_sev = tool_result.get("max_severity")
-
-        # ----------------------------------------------------------
-        # Generic count-based rule
-        # Example:
-        #   violation_count: ">0"
-        # ----------------------------------------------------------
-        if "violation_count" in fail_rules:
-            threshold = fail_rules.get("violation_count")
-            if threshold == ">0" and violation_count > 0:
-                violate("violation_count_exceeded")
-
-        # ----------------------------------------------------------
-        # Flutter-specific error rule
-        # For Flutter analyze we treat "high" severity count as error_count.
-        # (Normalization layer maps analyzer errors -> high)
-        # Example:
-        #   error_count: ">0"
-        # ----------------------------------------------------------
-        if "error_count" in fail_rules:
-            threshold = fail_rules.get("error_count")
-            if threshold == ">0":
-                flutter_errors = int(severity_counts.get("high", 0) or 0)
-                if flutter_errors > 0:
-                    violate("flutter_errors_present")
-
-        # ----------------------------------------------------------
-        # Severity-based rule
-        # Example:
-        #   severity: "high_and_above"
-        #   severity: "medium_and_above"
-        #   severity: "critical_only"
-        # ----------------------------------------------------------
-        if "severity" in fail_rules and max_sev:
-            rule = fail_rules.get("severity")
-
-            if rule == "high_and_above" and severity_rank(max_sev) >= severity_rank("high"):
-                violate("severity_high_and_above")
-            elif rule == "medium_and_above" and severity_rank(max_sev) >= severity_rank("medium"):
-                violate("severity_medium_and_above")
-            elif rule == "critical_only" and max_sev == "critical":
-                violate("severity_critical")
-
-        # ----------------------------------------------------------
-        # Dependency-Check rule: any vulnerability triggers failure
-        # Example:
-        #   any_vulnerability: true
-        # ----------------------------------------------------------
-        if fail_rules.get("any_vulnerability") is True and violation_count > 0:
-            violate("vulnerability_present")
-
-        # ----------------------------------------------------------
-        # Generic "any finding" rule (e.g., TruffleHog)
-        # Example:
-        #   any_finding: true
-        # ----------------------------------------------------------
-        if fail_rules.get("any_finding") is True and violation_count > 0:
-            violate("finding_present")
-
-        # ----------------------------------------------------------
-        # Sonar Quality Gate rule (SonarQube or SonarCloud)
-        # Normalization maps "ERROR"/"FAILED" → violation_count = 1.
-        # Example:
-        #   quality_gate: true
-        # ----------------------------------------------------------
-        if fail_rules.get("quality_gate") is True and violation_count > 0:
-            violate("quality_gate_failed")
-
-        # ----------------------------------------------------------
-        # Determine overall merge block decision
-        # ----------------------------------------------------------
+        # A blocking tool with a violation sets the overall merge block
         if blocking and policy_violation:
             overall_block = True
 
-        # Store evaluated result for reporting and audit artifacts
-        evaluated.append(
-            {
-                "tool": tool_name,
-                "blocking": blocking,
-                "policy_violation": policy_violation,
-                "reason": reason,
-                "normalized": tool_result,
-            }
-        )
+        # Build the evaluated record for this tool
+        evaluated_record = {
+            "tool":             tool_name,
+            "blocking":         blocking,
+            "policy_violation": policy_violation,
+            "reason":           reason,
+            "normalized":       tool_result,
+        }
+
+        # Route to the correct section based on blocking flag
+        if blocking:
+            blocking_results.append(evaluated_record)
+        else:
+            non_blocking_results.append(evaluated_record)
 
     # ----------------------------------------------------------
-    # Write evaluated.json (single source of truth for reporting)
+    # Compose evaluated.json
     # ----------------------------------------------------------
+    # Blocking results are listed first for immediate visibility.
+    # Non-blocking results follow as advisory information.
+    # ----------------------------------------------------------
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    evaluated_doc = {
+        "overall_block":        overall_block,
+        "generated_at":         generated_at,
+        "blocking_results":     blocking_results,
+        "non_blocking_results": non_blocking_results,
+    }
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "overall_block": overall_block,
-                "results": evaluated,
-            },
-            f,
-            indent=2,
-        )
+        json.dump(evaluated_doc, f, indent=2)
+
+    # ----------------------------------------------------------
+    # Console summary
+    # ----------------------------------------------------------
+    blocking_violations = sum(
+        1 for r in blocking_results if r["policy_violation"]
+    )
+    print(f"[policy_engine] Blocking tools evaluated : {len(blocking_results)}")
+    print(f"[policy_engine] Blocking violations      : {blocking_violations}")
+    print(f"[policy_engine] Non-blocking tools       : {len(non_blocking_results)}")
+    print(f"[policy_engine] Overall block            : {overall_block}")
+    print(f"[policy_engine] Output written to        : {OUTPUT_FILE}")
 
     return overall_block
 
 
-# Allow standalone execution (useful for local debugging)
-# NOTE: gate.py is the preferred entrypoint in CI because it also
-# runs normalization + report generation and applies gate.mode.
 if __name__ == "__main__":
     blocked = evaluate()
     if blocked:

@@ -1,4 +1,4 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/parsers/pmd.py
+ #File: quality/ci/gate/parsers/pmd.py
 # ==========================================================
 # pmd.py
 # ----------------------------------------------------------
@@ -11,119 +11,188 @@
 # Expected raw artifact:
 #   quality/analysis/raw/pmd.xml
 #
-# PMD severity model (priority):
-#   PMD uses numeric priorities (1..5) where lower numbers are more severe.
+# Native PMD Severities (Priority Model):
+#   PMD uses numeric priorities (1–5) where lower numbers are more severe.
 #
-# Normalization mapping used here:
-#   priority 1-2 → high
-#   priority 3   → medium
-#   priority 4-5 → low
+#   Priority 1 → High Priority         (most severe)
+#   Priority 2 → Medium High Priority
+#   Priority 3 → Medium Priority
+#   Priority 4 → Medium Low Priority
+#   Priority 5 → Low Priority          (least severe)
 #
-# Policy linkage:
-#   - policy.yaml currently enforces:
-#       severity: "medium_and_above"
-#     meaning medium/high findings block the merge (if blocking=true).
+# Severity Mapping (PMD Priority → Normalized):
+#   Priority 1 → critical
+#   Priority 2 → high
+#   Priority 3 → medium
+#   Priority 4 → low
+#   Priority 5 → info
+#   <unknown>  → info
 #
-# Notes:
-#   - This parser counts every <violation> element as a finding.
-#   - If later you want to capture rule names, file paths, or line numbers,
-#     store a limited sample list in result["metadata"] for reporting.
+# Behavior:
+#   - Parses every <violation> node across all <file> nodes.
+#   - Maps native priority to normalized severity per the table above.
+#   - Populates findings[] with per-violation detail.
+#   - Counts violations per normalized severity level.
+#   - Sets max_severity to the highest normalized severity found.
+#   - Does NOT apply policy thresholds (policy.yaml controls that).
+#
+# PMD XML Structure:
+#   <pmd>
+#     <file name="/path/to/File.java">
+#       <violation beginline="12" endline="12"
+#                  begincolumn="1" endcolumn="10"
+#                  rule="UnusedVariable" ruleset="Best Practices"
+#                  priority="2" externalInfoUrl="https://...">
+#         Description of the violation.
+#       </violation>
+#     </file>
+#   </pmd>
 # ==========================================================
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from ..schemas import base_tool_result
+from ..utils import determine_max_severity
 
 
-def parse_pmd(raw_dir: Path):
+# ----------------------------------------------------------
+# Severity mapping: PMD native priority → normalized
+# ----------------------------------------------------------
+SEVERITY_MAP = {
+    "1": "critical",
+    "2": "high",
+    "3": "medium",
+    "4": "low",
+    "5": "info",
+}
+
+
+def parse_pmd(raw_dir: Path) -> dict:
     """
     Parse PMD XML and return a standardized result dictionary.
 
+    Args:
+        raw_dir: Path to the directory containing raw tool outputs.
+
+    Returns:
+        A dict conforming to the base_tool_result schema, populated
+        with findings, severity counts, and max_severity.
+
     Contract:
-      - Always return base_tool_result structure.
-      - Missing artifact = runtime_error.
-      - Parsing exceptions = runtime_error with diagnostic metadata.
+        - Always returns a base_tool_result structure.
+        - Never raises exceptions outward.
+        - Missing artifact → artifact_present=False, runtime_error=True.
+        - Malformed XML    → runtime_error=True, error captured in metadata.
     """
     tool_name = "pmd"
 
-    # Initialize standardized result structure
+    # Initialize the standardized result structure
     result = base_tool_result(tool_name)
 
-    # Expected artifact path produced by CI workflow step
+    # Build the expected artifact path
     artifact = raw_dir / "pmd.xml"
 
-    # ------------------------------------------------------
-    # Artifact existence check
-    # ------------------------------------------------------
-    # Missing report indicates a tool execution or workflow wiring issue.
-    # Treated as runtime_error (governance violation).
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Artifact presence check
+    # ----------------------------------------------------------
+    # If the file does not exist, mark as runtime error and return
+    # early. The policy engine will decide whether a missing artifact
+    # constitutes a blocking violation.
+    # ----------------------------------------------------------
     if not artifact.exists():
+        result["artifact_present"] = False
         result["runtime_error"] = True
         return result
 
-    # Mark tool as executed (artifact exists and parsing will be attempted)
+    # Artifact is present; mark accordingly
     result["artifact_present"] = True
     result["executed"] = True
 
     try:
-        # Parse PMD XML
+        # Parse the XML document from disk
         tree = ET.parse(artifact)
         root = tree.getroot()
-        # Strip namespace so tag searches work regardless of PMD version
+
+        # ----------------------------------------------------------
+        # Namespace stripping
+        # ----------------------------------------------------------
+        # PMD XML may include a namespace prefix on all tags, e.g.:
+        #   {net.sourceforge.pmd}pmd
+        # Stripping the namespace ensures tag searches work correctly
+        # regardless of which PMD version produced the artifact.
+        # ----------------------------------------------------------
         for elem in root.iter():
             if "}" in elem.tag:
                 elem.tag = elem.tag.split("}", 1)[1]
 
-        # ------------------------------------------------------
-        # PMD XML structure includes <violation> nodes.
-        # We iterate all violations and normalize their priority.
-        # ------------------------------------------------------
-        for violation in root.iter("violation"):
-            priority = violation.attrib.get("priority", "5")
+        # Accumulate findings as we walk the XML tree
+        findings = []
 
-            # --------------------------------------------------
-            # Normalize severity from PMD priority
-            # --------------------------------------------------
-            # PMD priority meaning:
-            #   1 = highest priority (most severe)
-            #   5 = lowest priority (least severe)
-            #
-            # We normalize to:
-            #   1-2 -> high
-            #   3   -> medium
-            #   4-5 -> low
-            # --------------------------------------------------
-            if priority in ["1", "2"]:
-                severity = "high"
-            elif priority == "3":
-                severity = "medium"
-            else:
-                severity = "low"
+        # ----------------------------------------------------------
+        # Walk the XML tree
+        # ----------------------------------------------------------
+        # Structure: <pmd> → <file name="..."> → <violation .../>
+        # Each <violation> node represents one PMD finding.
+        # ----------------------------------------------------------
+        for file_node in root.findall("file"):
+            file_path = file_node.attrib.get("name", "unknown")
 
-            # Update counters
-            result["severity_counts"][severity] += 1
-            result["violation_count"] += 1
+            for violation in file_node.findall("violation"):
 
-        # ------------------------------------------------------
-        # Determine max severity encountered
-        # ------------------------------------------------------
-        # This makes severity-based policy evaluation deterministic.
-        # ------------------------------------------------------
-        if result["severity_counts"]["high"] > 0:
-            result["max_severity"] = "high"
-        elif result["severity_counts"]["medium"] > 0:
-            result["max_severity"] = "medium"
-        elif result["severity_counts"]["low"] > 0:
-            result["max_severity"] = "low"
-        else:
-            # No findings
-            result["max_severity"] = None
+                # Extract native priority from the <violation> node
+                native_priority = violation.attrib.get("priority", "5")
+
+                # Map native priority to normalized severity.
+                # Default to "info" for any unrecognized priority value.
+                normalized_severity = SEVERITY_MAP.get(native_priority, "info")
+
+                # Increment the appropriate severity bucket directly on the
+                # result dict — base_tool_result already owns the structure.
+                result["severity_counts"][normalized_severity] += 1
+
+                # Violation text content is the human-readable description
+                message = (violation.text or "").strip()
+
+                # Build the standardized finding record
+                finding = {
+                    "file":            file_path,
+                    "line":            int(violation.attrib.get("beginline", 0)),
+                    "severity":        normalized_severity,
+                    "native_severity": f"priority {native_priority}",
+                    "rule":            violation.attrib.get("rule", "unknown"),
+                    "ruleset":         violation.attrib.get("ruleset", "unknown"),
+                    "message":         message,
+                    "rule_url":        violation.attrib.get("externalInfoUrl", ""),
+                }
+                findings.append(finding)
+
+        # Store all individual findings
+        result["findings"] = findings
+
+        # Total number of violations found
+        result["violation_count"] = len(findings)
+
+        # Determine max_severity using the shared utility function
+        result["max_severity"] = determine_max_severity(result["severity_counts"])
+
+    except ET.ParseError as e:
+        # ----------------------------------------------------------
+        # Malformed or unparseable XML.
+        # Captured separately from generic exceptions so the error
+        # type is explicit in the metadata.
+        # ----------------------------------------------------------
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"XML parse error: {e}"
 
     except Exception as e:
-        # Any exception parsing PMD output is treated as runtime_error.
+        # ----------------------------------------------------------
+        # Catch-all for unexpected failures (I/O errors, schema
+        # changes, etc.) to ensure the pipeline never crashes on a
+        # single parser. Surfaced as a runtime_error so the policy
+        # engine can flag it as a governance concern.
+        # ----------------------------------------------------------
         result["runtime_error"] = True
-        result["metadata"]["error"] = str(e)
+        result["metadata"]["error"] = f"Unexpected error: {e}"
 
     return result

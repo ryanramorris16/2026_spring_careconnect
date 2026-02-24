@@ -1,65 +1,52 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/humanize.py
+# File: quality/ci/gate/humanize.py
 # ==========================================================
 # humanize.py
 # ----------------------------------------------------------
-# Human-Readable Results Layer (Layer 3 - Presentation)
+# Human-Readable Results Layer (Layer 3 of the Quality Gate Engine)
 #
 # Purpose:
 #   Create a human-friendly, Markdown-based view of tool findings
 #   that maps:
-#     - tool name
-#     - actual error/message
-#     - file path (when available)
-#     - line number (when available)
+#     - tool name and enforcement status
+#     - actual error/message per finding
+#     - file path and line number (when available)
 #     - contextual code snippet from the repository checkout
 #
 # Inputs:
-#   - quality/analysis/normalized/normalized.json
-#       (Produced by normalize.py - Layer 1)
+#   quality/analysis/normalized/normalized.json
+#     Produced by normalize.py (Layer 1).
+#     Contains standardized per-tool results with findings[].
 #
-#   - quality/analysis/evaluated/evaluated.json
-#       (Produced by policy_engine.py - Layer 2)
+#   quality/analysis/evaluated/evaluated.json
+#     Produced by policy_engine.py (Layer 2).
+#     Contains blocking_results[] and non_blocking_results[].
 #
 # Outputs:
-#   - quality/analysis/human/index.md
-#   - quality/analysis/human/<tool>.md (per tool)
+#   quality/analysis/human/index.md       ← summary index of all tools
+#   quality/analysis/human/<tool>.md      ← one page per tool
 #
-#   Special case:
-#     Sonar (sonarqube OR sonarcloud) writes to:
-#       quality/analysis/human/sonar.md
-#
-# DESIGN PRINCIPLES:
-# - This layer does NOT change policy outcomes.
-# - It is read-only relative to enforcement.
-# - If a file/line is missing, we still render the finding message.
-# - Snippets are extracted from the CI runner checkout
-#   (deterministic, not developer-machine dependent).
-# - Failures in this layer must NEVER break enforcement logic.
+# Design Rules:
+#   - DOES NOT change policy outcomes (read-only relative to enforcement).
+#   - MUST be resilient: failures here must never break enforcement.
+#   - If file/line is missing, finding message is still rendered.
+#   - Snippets are extracted from the CI runner checkout (deterministic).
 # ==========================================================
-
-from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 
 # ==========================================================
 # Utility Functions
 # ==========================================================
 
-def _read_json(path: Path, default: Any) -> Any:
+def _read_json(path: Path, default) -> any:
     """
-    Safely read a JSON file.
+    Safely read and parse a JSON file.
 
-    Returns:
-        Parsed JSON object OR default value if:
-            - file missing
-            - malformed JSON
-            - unexpected exception
-
-    Rationale:
-        Human-readable generation must never crash the gate.
+    Returns the parsed object, or default if the file is missing,
+    malformed, or raises any exception. Human report generation
+    must never crash the gate engine.
     """
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -67,16 +54,12 @@ def _read_json(path: Path, default: Any) -> Any:
         return default
 
 
-def _safe_int(value: Any) -> Optional[int]:
+def _safe_int(value) -> int | None:
     """
-    Convert value to int safely.
+    Convert a value to int safely.
 
-    Returns:
-        int value OR None if conversion fails.
-
-    Used for:
-        - line number extraction
-        - start_line normalization across tools
+    Returns int or None if conversion fails. Used for line number
+    normalization across tools that may emit strings or None.
     """
     try:
         if value is None:
@@ -86,15 +69,17 @@ def _safe_int(value: Any) -> Optional[int]:
         return None
 
 
-def _repo_relative_path(p: Optional[str]) -> Optional[str]:
+def _repo_relative_path(p: str | None) -> str | None:
     """
     Normalize tool-reported file paths into repo-relative paths.
 
-    Common cases:
-      - TruffleHog filesystem reports: /repo/<path>
-      - Some tools report: ./<path> or /<path>
+    Strips common prefixes emitted by tools running inside Docker
+    or with absolute paths:
+      /repo/<path>  → <path>   (TruffleHog Docker mount)
+      ./<path>      → <path>   (relative with dot prefix)
+      /<path>       → <path>   (absolute without /repo)
 
-    We strip these prefixes so snippet extraction works on the CI checkout.
+    Returns None if the result is empty.
     """
     if not p:
         return None
@@ -115,64 +100,63 @@ def _read_snippet(
     repo_root: Path,
     rel_path: str,
     line: int,
-    context: int = 3
-) -> Optional[str]:
+    context: int = 3,
+) -> str | None:
     """
     Extract a code snippet around a specific line number.
 
     Args:
-        repo_root: root of the repository checkout
-        rel_path: relative path reported by tool (will be normalized)
-        line: target line number
-        context: number of lines above/below to include
+        repo_root: Root of the repository checkout on the CI runner.
+        rel_path:  Repo-relative file path reported by the tool.
+        line:      Target line number (1-indexed).
+        context:   Number of lines above and below to include.
 
     Returns:
-        Markdown-formatted code block OR None.
+        Markdown-formatted code block with line numbers and a ">"
+        marker on the target line, or None if extraction fails.
 
     Safety:
-        - Normalizes /repo/... paths to repo-relative
-        - Prevents path traversal outside repo_root
-        - Returns None if file missing or line invalid
+        - Normalizes paths before resolution.
+        - Guards against path traversal outside repo_root.
+        - Returns None on any failure (missing file, bad line, etc.).
     """
     try:
         rel_path = _repo_relative_path(rel_path) or ""
         if not rel_path:
             return None
 
-        abs_path = (repo_root / rel_path).resolve()
+        abs_path        = (repo_root / rel_path).resolve()
         repo_root_resolved = repo_root.resolve()
 
-        # Guard against path traversal: abs_path must be within repo_root
-        if abs_path != repo_root_resolved and repo_root_resolved not in abs_path.parents:
+        # Path traversal guard — file must be within the repo root
+        if abs_path != repo_root_resolved and \
+                repo_root_resolved not in abs_path.parents:
             return None
 
         if not abs_path.exists() or not abs_path.is_file():
             return None
 
         lines = abs_path.read_text(
-            encoding="utf-8",
-            errors="replace"
+            encoding="utf-8", errors="replace"
         ).splitlines()
 
         if line <= 0 or line > len(lines):
             return None
 
         start = max(1, line - context)
-        end = min(len(lines), line + context)
-
+        end   = min(len(lines), line + context)
         width = len(str(end))
-        buffer: List[str] = []
+        buffer: list[str] = []
 
         for i in range(start, end + 1):
+            # ">" marks the target line; " " for context lines
             prefix = ">" if i == line else " "
-            buffer.append(
-                f"{prefix} {str(i).rjust(width)} | {lines[i - 1]}"
-            )
+            buffer.append(f"{prefix} {str(i).rjust(width)} | {lines[i - 1]}")
 
         return "```text\n" + "\n".join(buffer) + "\n```"
 
     except Exception:
-        # Never break reporting due to snippet failure
+        # Never break reporting due to snippet extraction failure
         return None
 
 
@@ -183,30 +167,30 @@ def _read_snippet(
 def _tool_title(tool: str) -> str:
     """
     Map internal tool key to human-readable display title.
+
+    The tool key "sonar" is used regardless of whether the final
+    implementation uses SonarQube or SonarCloud — that decision
+    is deferred and does not affect this mapping.
     """
     return {
-        "trufflehog": "TruffleHog (Secrets)",
-        "checkstyle": "Checkstyle (Java Style)",
-        "spotbugs": "SpotBugs (Java Bytecode)",
-        "pmd": "PMD (Java Source)",
-        "semgrep": "Semgrep (Multi-language SAST)",
-        "flutter_analyze": "Flutter Analyze (Dart Linter)",
+        "trufflehog":       "TruffleHog (Secrets Detection)",
+        "checkstyle":       "Checkstyle (Java Style Enforcement)",
+        "spotbugs":         "SpotBugs (Java Bytecode Analysis)",
+        "pmd":              "PMD (Java Source Analysis)",
+        "semgrep":          "Semgrep (Multi-language SAST)",
+        "flutter_analyze":  "Flutter Analyze (Dart Static Analyzer)",
         "dependency_check": "OWASP Dependency-Check (SCA)",
-        "sonarqube": "Sonar (SonarQube / SonarCloud)",
-        "sonarcloud": "Sonar (SonarQube / SonarCloud)",
+        "sonar":            "Sonar (Quality Gate)",
     }.get(tool, tool)
 
 
 def _tool_page_name(tool: str) -> str:
     """
-    Determine output filename for tool page.
+    Return the output filename for a tool's detail page.
 
-    Special rule:
-        SonarQube and SonarCloud both write to sonar.md
-        to keep documentation stable across hosting changes.
+    All tools write to <tool>.md. The sonar key is stable
+    regardless of the underlying SonarQube/SonarCloud decision.
     """
-    if tool in ("sonarqube", "sonarcloud"):
-        return "sonar.md"
     return f"{tool}.md"
 
 
@@ -223,111 +207,134 @@ def generate_human_readable_outputs(
     """
     Generate human-readable Markdown reports for each tool.
 
-    This function:
-        1. Loads normalized results
-        2. Loads evaluated enforcement decisions
-        3. Builds an index page
-        4. Builds one page per tool
+    Steps:
+        1. Load normalized results from normalized.json.
+        2. Load evaluated enforcement decisions from evaluated.json.
+        3. Build eval_map for O(1) enforcement lookup per tool.
+        4. Render one Markdown page per tool.
+        5. Render index.md linking all tool pages.
 
-    NOTE:
-      If a parser does not populate "findings", the human report will still
-      render an informative summary using counts + metadata, so the output
-      never looks empty or "broken" to the team.
+    Args:
+        repo_root:       Root of the repository checkout.
+        analysis_dir:    Path to quality/analysis/.
+        normalized_path: Path to normalized.json.
+        evaluated_path:  Path to evaluated.json.
+
+    Contract:
+        - Never raises exceptions outward.
+        - Missing findings still produce an informative page.
+        - Snippet extraction failures are silently skipped.
     """
-    normalized_list = _read_json(normalized_path, default=[])
-    evaluated = _read_json(
+    # ----------------------------------------------------------
+    # Load inputs
+    # ----------------------------------------------------------
+    normalized_doc = _read_json(normalized_path, default={})
+    evaluated_doc  = _read_json(
         evaluated_path,
-        default={"overall_block": True, "results": []}
+        default={"overall_block": True, "blocking_results": [], "non_blocking_results": []}
     )
 
-    # ------------------------------------------------------
-    # Map tool → enforcement metadata
-    # ------------------------------------------------------
-    eval_map: Dict[str, Dict[str, Any]] = {}
-    for result in (evaluated.get("results") or []):
-        tool_key = result.get("tool")
-        if tool_key:
-            eval_map[tool_key] = result
+    # Extract results list from normalized wrapper
+    normalized_results: list[dict] = normalized_doc.get("results", [])
 
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
+    # Build eval_map: tool_key → evaluated record
+    # ----------------------------------------------------------
+    # evaluated.json now has two lists: blocking_results and
+    # non_blocking_results. We merge both into a single lookup map.
+    # ----------------------------------------------------------
+    eval_map: dict[str, dict] = {}
+    for record in (evaluated_doc.get("blocking_results") or []):
+        tool_key = record.get("tool")
+        if tool_key:
+            eval_map[tool_key] = record
+    for record in (evaluated_doc.get("non_blocking_results") or []):
+        tool_key = record.get("tool")
+        if tool_key:
+            eval_map[tool_key] = record
+
+    # ----------------------------------------------------------
     # Create output directory
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
     human_dir = analysis_dir / "human"
     human_dir.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------
-    # Build index.md
-    # ------------------------------------------------------
-    index_lines: List[str] = [
-        "# Human-Readable Results",
+    # Build index lines as we render each tool page
+    index_lines: list[str] = [
+        "# Human-Readable Quality Gate Results",
         "",
-        "This folder maps each tool finding to:",
-        "- tool",
-        "- actual error/message",
-        "- file + line (when available)",
-        "- code snippet (when available)",
+        "Per-tool detail pages with findings, file locations, and code snippets.",
         "",
         "## Tool Pages",
         "",
     ]
 
-    # ------------------------------------------------------
-    # Render per-tool pages
-    # ------------------------------------------------------
-    for tool_result in normalized_list:
-        tool = tool_result.get("tool", "unknown")
-        findings = tool_result.get("findings") or []
-
+    # ----------------------------------------------------------
+    # Render one Markdown page per tool
+    # ----------------------------------------------------------
+    for tool_result in normalized_results:
+        tool      = tool_result.get("tool", "unknown")
+        findings  = tool_result.get("findings") or []
         page_name = _tool_page_name(tool)
         page_path = human_dir / page_name
-        title = _tool_title(tool)
+        title     = _tool_title(tool)
 
         index_lines.append(
-            f"- [{title}](./{page_name}) ({len(findings)} finding(s))"
+            f"- [{title}](./{page_name}) — {len(findings)} finding(s)"
         )
 
-        lines: List[str] = [f"# {title}", ""]
+        lines: list[str] = [f"# {title}", ""]
 
         # --------------------------------------------------
-        # Enforcement Summary
+        # Enforcement summary block
         # --------------------------------------------------
         enforcement = eval_map.get(tool)
         if enforcement:
-            lines.extend([
+            violation = enforcement.get("policy_violation", False)
+            blocking  = enforcement.get("blocking", False)
+            reason    = enforcement.get("reason")
+
+            lines += [
                 "## Enforcement",
                 "",
-                f"- **Blocking:** `{enforcement.get('blocking')}`",
-                f"- **Policy violation:** `{enforcement.get('policy_violation')}`",
-            ])
-            if enforcement.get("reason"):
-                lines.append(f"- **Reason:** `{enforcement.get('reason')}`")
+                f"- **Blocking:**         `{blocking}`",
+                f"- **Policy violation:** `{violation}`",
+            ]
+            if reason:
+                lines.append(f"- **Reason:**           `{reason}`")
             lines.append("")
 
         # --------------------------------------------------
-        # No findings case (still render a useful page)
+        # No findings — render informative summary page
         # --------------------------------------------------
         if not findings:
-            vc = tool_result.get("violation_count", 0)
-            executed = tool_result.get("executed", False)
+            vc            = tool_result.get("violation_count", 0)
+            executed      = tool_result.get("executed", False)
             runtime_error = tool_result.get("runtime_error", False)
-            meta = tool_result.get("metadata") or {}
+            meta          = tool_result.get("metadata") or {}
 
-            lines.append("## Summary")
-            lines.append("")
-            lines.append(f"- **Executed:** `{executed}`")
-            lines.append(f"- **Runtime error:** `{runtime_error}`")
-            lines.append(f"- **Violation count:** `{vc}`")
+            lines += [
+                "## Summary",
+                "",
+                f"- **Executed:**        `{executed}`",
+                f"- **Runtime error:**   `{runtime_error}`",
+                f"- **Violation count:** `{vc}`",
+            ]
 
             if meta:
-                lines.append("")
-                lines.append("## Metadata")
-                lines.append("")
-                lines.append("```json")
-                lines.append(json.dumps(meta, indent=2))
-                lines.append("```")
+                lines += [
+                    "",
+                    "## Metadata",
+                    "",
+                    "```json",
+                    json.dumps(meta, indent=2),
+                    "```",
+                ]
 
-            lines.append("")
-            lines.append("_No per-finding detail was provided by the parser for this tool._")
+            lines += [
+                "",
+                "_No per-finding detail was provided by the parser for this tool._",
+            ]
 
             page_path.write_text("\n".join(lines), encoding="utf-8")
             continue
@@ -335,18 +342,17 @@ def generate_human_readable_outputs(
         # --------------------------------------------------
         # Findings rendering
         # --------------------------------------------------
-        lines.append("## Findings")
-        lines.append("")
+        lines += ["## Findings", ""]
 
         for idx, finding in enumerate(findings, start=1):
+            # Extract common finding fields with safe fallbacks
             message = (
                 finding.get("message")
                 or finding.get("error")
                 or finding.get("title")
                 or "N/A"
             )
-
-            file_path = _repo_relative_path(
+            file_path   = _repo_relative_path(
                 finding.get("file") or finding.get("path")
             )
             line_number = _safe_int(
@@ -354,50 +360,49 @@ def generate_human_readable_outputs(
                 or finding.get("start_line")
                 or finding.get("startLine")
             )
-
             severity = finding.get("severity") or finding.get("level")
-            rule = finding.get("rule") or finding.get("check_id")
+            rule     = finding.get("rule") or finding.get("check_id")
             rule_url = (
                 finding.get("rule_url")
                 or finding.get("helpUri")
                 or finding.get("url")
             )
 
+            # Attempt to extract a code snippet for this finding
             snippet = None
             if file_path and line_number:
                 snippet = _read_snippet(
-                    repo_root,
-                    file_path,
-                    line_number,
-                    context=3
+                    repo_root, file_path, line_number, context=3
                 )
 
-            lines.append(f"### {idx}. {message}")
-            lines.append("")
+            # Render finding header and detail fields
+            lines += [f"### {idx}. {message}", ""]
 
             if severity:
                 lines.append(f"- **Severity:** `{severity}`")
             if rule:
                 lines.append(f"- **Rule:** `{rule}`")
             if rule_url:
-                lines.append(f"- **Rule URL:** `{rule_url}`")
+                lines.append(f"- **Rule URL:** {rule_url}")
             if file_path:
                 lines.append(f"- **File:** `{file_path}`")
             if line_number:
                 lines.append(f"- **Line:** `{line_number}`")
 
+            # Render snippet if extraction succeeded
             if snippet:
-                lines.extend(["", "**Snippet**", "", snippet])
+                lines += ["", "**Code Snippet**", "", snippet]
 
-            lines.extend(["", "---", ""])
+            lines += ["", "---", ""]
 
         page_path.write_text("\n".join(lines), encoding="utf-8")
 
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
     # Write index.md
-    # ------------------------------------------------------
+    # ----------------------------------------------------------
     (human_dir / "index.md").write_text(
-        "\n".join(index_lines),
-        encoding="utf-8"
+        "\n".join(index_lines), encoding="utf-8"
     )
+
+    print(f"[humanize] Human-readable pages written to: {human_dir}")
     

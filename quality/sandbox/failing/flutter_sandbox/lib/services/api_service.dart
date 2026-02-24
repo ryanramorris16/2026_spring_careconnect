@@ -1,16 +1,13 @@
-// File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/sandbox/failing/flutter_sandbox/lib/services/api_service.dart
-
 class ApiService {
-  static const String baseUrl = "https://api.careconnect.local";
+  static const String baseUrl = 'https://api.careconnect.local';
 
   String fetchData() {
-    // Intentional issue: unused local (analyzer warning)
+    // Intentional violation: unused local variable
     final unusedLocal = DateTime.now().toIso8601String();
 
-    // Use it in a harmless way to avoid “unused” if you don’t want that warning:
-    // ignore: avoid_print
+    // Intentional violation: avoid_print (do not suppress)
     print(unusedLocal);
 
-    return "data";
+    return 'data';
   }
 }

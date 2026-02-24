@@ -13,10 +13,10 @@ public final class User {
   /**
    * Creates a user.
    *
-   * @param id unique identifier
+   * @param id   unique identifier
    * @param name display name
    */
-  public User(String id, String name) {
+  public User(final String id, final String name) {
     this.id = Objects.requireNonNull(id, "id");
     this.name = Objects.requireNonNull(name, "name");
   }
@@ -27,7 +27,6 @@ public final class User {
    * @return unique identifier
    */
   public String getId() {
-
     return id;
   }
 
@@ -37,7 +36,6 @@ public final class User {
    * @return display name
    */
   public String getName() {
-
     return name;
   }
 }
