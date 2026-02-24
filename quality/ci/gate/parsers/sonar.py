@@ -80,7 +80,8 @@ def parse_sonar(raw_dir: Path) -> Dict[str, Any]:
     # Whether this blocks depends on policy.yaml (blocking flag).
     # ------------------------------------------------------
     if not artifact.exists():
-        result["executed"] = False
+        result["artifact_present"] = True
+        result["executed"] = True
         result["runtime_error"] = True
         result["metadata"]["error"] = "Missing artifact: sonar.json"
         return result

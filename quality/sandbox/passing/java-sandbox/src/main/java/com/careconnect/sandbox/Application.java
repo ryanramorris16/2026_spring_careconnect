@@ -1,21 +1,22 @@
 package com.careconnect.sandbox;
 
-import java.time.LocalDateTime;
-
 /**
- * Entry point for CareConnect sandbox backend.
+ * Minimal Java entrypoint used by CI sandbox scans.
  */
 public final class Application {
 
-    private Application() {
-        // Prevent instantiation
-    }
+  private Application() {
+    // Utility class; prevent instantiation.
+  }
 
-    public static void main(String[] args) {
-        UserService userService = new UserService();
-        User user = userService.createUser("james@example.com", "James");
-
-        System.out.println("User created: " + user.getDisplayName());
-        System.out.println("Timestamp: " + LocalDateTime.now());
-    }
+  /**
+   * Program entrypoint.
+   *
+   * @param args command line args
+   */
+  public static void main(String[] args) {
+    UserService service = new UserService();
+    User user = new User("u-001", "Alex");
+    System.out.println(service.greet(user));
+  }
 }

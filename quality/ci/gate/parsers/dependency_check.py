@@ -45,7 +45,7 @@ def parse_dependency_check(raw_dir: Path):
     result = base_tool_result(tool_name)
 
     # Expected artifact path produced by CI workflow step
-    artifact = raw_dir / "dependency_check.json"
+    artifact = raw_dir / "dependency-check-report.json"
 
     # ------------------------------------------------------
     # Artifact existence check
@@ -60,6 +60,7 @@ def parse_dependency_check(raw_dir: Path):
         return result
 
     # Mark tool as executed (artifact exists; parser will attempt to read it)
+    result["artifact_present"] = True
     result["executed"] = True
 
     try:

@@ -1,24 +1,20 @@
 package com.careconnect.sandbox;
 
-import java.util.UUID;
+import java.util.Objects;
 
 /**
- * Service layer for user management.
+ * Simple service used by CI sandbox scans.
  */
 public final class UserService {
 
-    public User createUser(String email, String displayName) {
-        User user = new User(email, displayName);
-        logUserCreation(user);
-        return user;
-    }
-
-    private void logUserCreation(User user) {
-        String message = String.format(
-            "User created [id=%s, email=%s]",
-            UUID.randomUUID(),
-            user.getEmail()
-        );
-        System.out.println(message);
-    }
+  /**
+   * Returns a deterministic greeting.
+   *
+   * @param user user to greet
+   * @return greeting string
+   */
+  public String greet(User user) {
+    Objects.requireNonNull(user, "user");
+    return "Hello, " + user.getName() + "!";
+  }
 }
