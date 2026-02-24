@@ -311,8 +311,8 @@ jobs:
           flutter analyze --machine > "${TMP}" 2>&1 || true
 
           if [[ -s "${TMP}" ]]; then
-            ERROR_COUNT=$(grep -c '"severity":"ERROR"' "${TMP}" || echo 0)
-            WARN_COUNT=$(grep -c '"severity":"WARNING"' "${TMP}" || echo 0)
+            ERROR_COUNT=$(grep -c '"severity":"ERROR"' "${TMP}" 2>/dev/null || true); ERROR_COUNT=${ERROR_COUNT:-0}; ERROR_COUNT=$(echo "$ERROR_COUNT" | tr -d '[:space:]')
+            WARN_COUNT=$(grep -c '"severity":"WARNING"' "${TMP}" 2>/dev/null || true); WARN_COUNT=${WARN_COUNT:-0}; WARN_COUNT=$(echo "$WARN_COUNT" | tr -d '[:space:]')
             echo "{\"error_count\": ${ERROR_COUNT}, \"warning_count\": ${WARN_COUNT}}" > "${OUT}"
           else
             echo '{"error_count": 0, "warning_count": 0}' > "${OUT}"
@@ -527,8 +527,9 @@ jobs:
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/sonar.json"
-          echo '{"issues":[]}' > "${OUT}"
-          
+          echo '{"status":"OK","issues":[]}' > "${OUT}"
+
+       
 
 
 

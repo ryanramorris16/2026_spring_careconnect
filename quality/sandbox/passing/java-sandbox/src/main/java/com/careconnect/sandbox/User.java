@@ -22,16 +22,22 @@ public final class User {
   }
 
   /**
+   * Returns the unique identifier.
+   *
    * @return unique identifier
    */
   public String getId() {
+
     return id;
   }
 
   /**
+   * Returns the display name.
+   *
    * @return display name
    */
   public String getName() {
+
     return name;
   }
 }
