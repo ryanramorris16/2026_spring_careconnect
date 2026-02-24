@@ -64,6 +64,7 @@ from .parsers.semgrep import parse_semgrep
 from .parsers.sonar import parse_sonar
 from .parsers.spotbugs import parse_spotbugs
 from .parsers.trufflehog import parse_trufflehog
+from .parsers.gitleaks import parse_gitleaks
 from .schemas import base_tool_result
 from .utils import determine_max_severity, SEVERITY_ORDER
 
@@ -97,6 +98,7 @@ OUTPUT_FILE    = NORMALIZED_DIR / "normalized.json"
 # ----------------------------------------------------------
 TOOL_PARSERS: list[tuple[str, callable]] = [
     ("trufflehog",        parse_trufflehog),       # Secrets detection  (JSONL)
+    ("gitleaks",          parse_gitleaks),          # Secrets detection  (JSON)
     ("flutter_analyze",   parse_flutter),           # Dart static analysis (JSON)
     ("checkstyle",        parse_checkstyle),        # Java style enforcement (XML)
     ("pmd",               parse_pmd),               # Java source analysis (XML)

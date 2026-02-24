@@ -71,6 +71,20 @@ tools:
       any_finding: true   # Fail if ANY finding is present
 
   # ----------------------------------------------------------
+  # Gitleaks (Secrets Scan)
+  # ----------------------------------------------------------
+  # Intent: Block on ANY secret finding.
+  # Notes:
+  # - Complements TruffleHog by scanning the working tree directly.
+  # - No API key required. Free and open source (MIT).
+  # ----------------------------------------------------------
+  gitleaks:
+    blocking: true
+    description: "Gitleaks (Secrets Scan)"
+    fail_on:
+      any_finding: true
+
+  # ----------------------------------------------------------
   # Flutter Analyze (Dart Analyzer)
   # ----------------------------------------------------------
   # Intent: Block on any analyzer ERROR.
