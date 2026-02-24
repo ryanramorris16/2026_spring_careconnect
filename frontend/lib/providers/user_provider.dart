@@ -198,7 +198,6 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
   /// Initializes the hardware connectivity listener to monitor internet status.
   /// 
   /// This method performs two key actions:
