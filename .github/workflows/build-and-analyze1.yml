@@ -279,14 +279,14 @@ jobs:
           test -s "${OUT}" || echo "" > "${OUT}"
 
       # ------------------------------------------------------
-      # Tool: Flutter Analyze
+      # Tool: Flutter Analyze (if Flutter project found)
       #
       # Output (always created):
       #   quality/analysis/raw/flutter_analyze.json
       #
-      # Behavior:
-      # - Runs only when a real Flutter project is discovered.
-      # - Never copies code. Never stages temp projects.
+      # IMPORTANT:
+      # - gate.py expects valid JSON.
+      # - If flutter analyze produces no output, we write [].
       # ------------------------------------------------------
       - name: Run Flutter Analyze (if Flutter project found)
         shell: bash
@@ -296,7 +296,7 @@ jobs:
           echo "[]" > "${OUT}"
 
           if [[ -z "${FLUTTER_ROOT:-}" ]]; then
-            echo "No Flutter project found under SCAN_ROOT; writing empty analyzer output."
+            echo "No Flutter project found under SCAN_ROOT; leaving analyzer output as empty JSON array."
             exit 0
           fi
 
@@ -305,11 +305,18 @@ jobs:
 
           pushd "${FLUTTER_ROOT}" >/dev/null
           flutter pub get
-          flutter analyze --machine > "${OUT}" || true
-          popd >/dev/null
 
-          # Analyzer sometimes writes nothing on hard failure; force valid JSON
-          test -s "${OUT}" || echo "[]" > "${OUT}"
+          # Write to a temp file first, then validate non-empty before replacing OUT.
+          TMP="$(mktemp)"
+          flutter analyze --machine > "${TMP}" || true
+
+          if [[ -s "${TMP}" ]]; then
+            mv "${TMP}" "${OUT}"
+          else
+            echo "[]" > "${OUT}"
+          fi
+
+          popd >/dev/null
 
       # ------------------------------------------------------
       # Toolchain: Java 17 (Required for Checkstyle/PMD/SpotBugs)
@@ -548,7 +555,17 @@ jobs:
 
 
 
-
+      # File: /Volumes/DevDrive/code/2026_spring_careconnect/.github/workflows/build-and-analyze1.yml
+      - name: Debug raw artifacts (temporary)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la quality/analysis/raw || true
+          for f in trufflehog.jsonl flutter_analyze.json checkstyle.xml pmd.xml spotbugs.xml semgrep.json dependency-check-report.json sonar.json; do
+            echo "---- ${f} ----"
+            test -f "quality/analysis/raw/${f}" && (head -n 3 "quality/analysis/raw/${f}" || true) || echo "MISSING"
+          done
 
 
 
