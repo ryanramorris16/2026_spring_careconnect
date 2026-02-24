@@ -398,7 +398,7 @@ jobs:
 
           ./pmd-bin-6.55.0/bin/run.sh pmd \
             -d "${TARGET}" \
-            -R category/java/bestpractices.xml \
+            -R category/java/bestpractices.xml,category/java/errorprone.xml,category/java/codestyle.xml \
             -f xml \
             -r "${OUT}" || true
 
@@ -527,7 +527,7 @@ jobs:
         run: |
           set -euo pipefail
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/sonar.json"
-          echo '{"status":"OK","issues":[]}' > "${OUT}"
+          echo '{"projectStatus":{"status":"OK"},"issues":[]}' > "${OUT}"
 
        
 

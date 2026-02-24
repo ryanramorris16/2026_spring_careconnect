@@ -93,9 +93,9 @@ def parse_semgrep(raw_dir: Path):
             severity = finding.get("extra", {}).get("severity", "").lower()
 
             # Normalize Semgrep-provided severity into shared vocabulary.
-            if severity == "critical":
+            if severity in ("critical",):
                 normalized = "critical"
-            elif severity == "high":
+            elif severity in ("high", "error"):
                 normalized = "high"
             elif severity == "medium":
                 normalized = "medium"
