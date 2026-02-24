@@ -68,7 +68,7 @@ on:
 # Do not change this value directly — use .env instead.
 # ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/passing
+  SCAN_ROOT: quality/sandbox/failing
 
 # ----------------------------------------------------------
 # Permissions
