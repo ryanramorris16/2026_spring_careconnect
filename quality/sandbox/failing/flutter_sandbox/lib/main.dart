@@ -1,3 +1,5 @@
+// File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/sandbox/failing/flutter_sandbox/lib/main.dart
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -7,24 +9,22 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Finding #1 — hardcoded secret pattern (Semgrep / secret scanners)
-  static const String apiToken = "SECRET_DEMO_FLUTTER_TOKEN_123456";
+  // Intentionally “bad practice” but NOT secret-like (avoid SECRET/AKIA/PASSWORD/etc.)
+  static const String apiToken = "DEMO_TOKEN_NOT_REAL_123456";
 
   @override
   Widget build(BuildContext context) {
-    // Finding #2 — unused variable (Flutter analyzer warning)
+    // Intentional issue: unused local (analyzer warning)
     final unused = apiToken;
 
-    // Finding #3 — always true condition (lint-style issue)
+    // Intentional issue: always true condition (lint/analyzer)
     if (true) {
       debugPrint("Condition always true");
     }
 
     return const MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: Text('FAIL'),
-        ),
+        body: Center(child: Text('FAIL')),
       ),
     );
   }
