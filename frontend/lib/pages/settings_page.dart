@@ -27,27 +27,13 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _telemetryEnabled = true;
   bool _loadingTelemetry = true;
   bool _telemetryDialogShownThisSession = false;
-  
-  // BNS 5: Offline persistence state
-  bool _offlinePersistenceEnabled = true; // Enabled by default
-  bool _loadingPersistence = true;
 
   @override
   void initState() {
     super.initState();
     _loadNotificationSettings();
     _loadTelemetrySettings();
-    _loadPersistenceSettings();// BNS 5
   }
-
-  // BNS 5: Simulated loading of offline persistence setting
-  Future<void> _loadPersistenceSettings() async {
-      // Logic to fetch saved preference goes here. 
-      // For now, we default to true per BNS 5.
-      setState(() {
-        _loadingPersistence = false;
-      });
-    }
 
   Widget _buildLanguageCard(BuildContext context) {
     final t = AppLocalizations.of(context)!;
