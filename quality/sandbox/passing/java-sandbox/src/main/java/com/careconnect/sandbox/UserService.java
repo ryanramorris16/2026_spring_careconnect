@@ -10,8 +10,9 @@ public final class UserService {
   /**
    * Default constructor.
    */
+  @SuppressWarnings("PMD.UnnecessaryConstructor")
   public UserService() {
-    // Default constructor required by PMD AtLeastOneConstructor.
+    // Explicit constructor required by PMD AtLeastOneConstructor.
   }
 
   /**

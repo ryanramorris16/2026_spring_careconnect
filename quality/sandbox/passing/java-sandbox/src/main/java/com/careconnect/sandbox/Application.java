@@ -20,10 +20,8 @@ public final class Application {
    * @param args command line args
    */
   public static void main(final String[] args) {
-    final UserService service = new UserService();
-    final AppUser user = new AppUser("u-001", "Alex");
     if (LOGGER.isInfoEnabled()) {
-      LOGGER.info(service.greet(user));
+      LOGGER.info(new UserService().greet(new AppUser("u-001", "Alex")));
     }
   }
 }
