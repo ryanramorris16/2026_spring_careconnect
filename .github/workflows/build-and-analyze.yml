@@ -57,7 +57,7 @@ on:
 # Default SCAN_ROOT
 # ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/passing
+  SCAN_ROOT: quality/sandbox/failing
 
 # ----------------------------------------------------------
 # Permissions
