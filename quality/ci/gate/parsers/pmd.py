@@ -71,6 +71,10 @@ def parse_pmd(raw_dir: Path):
         # Parse PMD XML
         tree = ET.parse(artifact)
         root = tree.getroot()
+        # Strip namespace so tag searches work regardless of PMD version
+        for elem in root.iter():
+            if "}" in elem.tag:
+                elem.tag = elem.tag.split("}", 1)[1]
 
         # ------------------------------------------------------
         # PMD XML structure includes <violation> nodes.

@@ -458,8 +458,10 @@ jobs:
 
           ./spotbugs-4.8.3/bin/spotbugs \
             -textui -xml \
+            -effort:max \
             -output "${OUT}" \
             "${JAVA_CLASSES_DIR}" || true
+
 
           test -s "${OUT}" || echo "<BugCollection></BugCollection>" > "${OUT}"
 
@@ -510,7 +512,6 @@ jobs:
             --scan "${RESOLVED_ROOT}" \
             --format JSON \
             --out "${OUT_DIR}" \
-            --noupdate || true
 
           test -s "${OUT}" || echo '{"dependencies":[],"vulnerabilities":[]}' > "${OUT}"
 
