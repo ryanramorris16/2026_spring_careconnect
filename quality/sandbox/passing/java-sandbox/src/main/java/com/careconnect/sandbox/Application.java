@@ -21,7 +21,9 @@ public final class Application {
    */
   public static void main(final String[] args) {
     final UserService service = new UserService();
-    final User user = new User("u-001", "Alex");
-    LOGGER.info(service.greet(user));
+    final AppUser user = new AppUser("u-001", "Alex");
+    if (LOGGER.isInfoEnabled()) {
+      LOGGER.info(service.greet(user));
+    }
   }
 }

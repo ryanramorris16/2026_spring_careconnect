@@ -8,12 +8,19 @@ import java.util.Objects;
 public final class UserService {
 
   /**
+   * Default constructor.
+   */
+  public UserService() {
+    // Default constructor required by PMD AtLeastOneConstructor.
+  }
+
+  /**
    * Returns a deterministic greeting.
    *
    * @param user user to greet
    * @return greeting string
    */
-  public String greet(User user) {
+  public String greet(final AppUser user) {
     Objects.requireNonNull(user, "user");
     return "Hello, " + user.getName() + "!";
   }

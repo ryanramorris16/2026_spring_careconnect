@@ -67,17 +67,14 @@ import requests
 # ----------------------------------------------------------
 # Path Configuration
 # ----------------------------------------------------------
-ANALYSIS_DIR   = Path("quality/analysis")
-EVALUATED_FILE = ANALYSIS_DIR / "evaluated" / "evaluated.json"
-NORMALIZED_FILE = ANALYSIS_DIR / "normalized" / "normalized.json"
-REPORT_MD_FILE  = ANALYSIS_DIR / "report.md"
+ANALYSIS_DIR     = Path("quality/analysis")
+EVALUATED_FILE   = ANALYSIS_DIR / "evaluated" / "evaluated.json"
+NORMALIZED_FILE  = ANALYSIS_DIR / "normalized" / "normalized.json"
+REPORT_MD_FILE   = ANALYSIS_DIR / "report.md"
 REPORT_HTML_FILE = ANALYSIS_DIR / "report.html"
 
 # ----------------------------------------------------------
 # Stable PR comment marker
-# ----------------------------------------------------------
-# Used to identify the existing bot comment for in-place updates.
-# Must never change between runs.
 # ----------------------------------------------------------
 PR_COMMENT_MARKER = "## 🔍 CareConnect — Security & Quality Analysis Report"
 
@@ -96,7 +93,7 @@ CATEGORY_MAP: dict[str, str] = {
 }
 
 # ----------------------------------------------------------
-# Severity badge colors (used in HTML report)
+# Severity badge colors (HTML report)
 # ----------------------------------------------------------
 SEVERITY_COLORS: dict[str, str] = {
     "critical": "#7c0000",
@@ -112,23 +109,19 @@ SEVERITY_COLORS: dict[str, str] = {
 # ==========================================================
 
 def _get_env() -> dict:
-    """
-    Collect all workflow environment variables into a single dict.
-    Provides safe defaults for local execution outside of CI.
-    """
     return {
-        "event_name":  os.environ.get("GITHUB_EVENT_NAME", "unknown"),
-        "run_number":  os.environ.get("GITHUB_RUN_NUMBER", "?"),
-        "run_id":      os.environ.get("GITHUB_RUN_ID", ""),
-        "sha":         os.environ.get("GITHUB_SHA", ""),
-        "server_url":  os.environ.get("GITHUB_SERVER_URL", "https://github.com"),
-        "repository":  os.environ.get("GITHUB_REPOSITORY", ""),
-        "actor":       os.environ.get("GITHUB_ACTOR", "unknown"),
-        "head_ref":    os.environ.get("GITHUB_HEAD_REF", ""),
-        "base_ref":    os.environ.get("GITHUB_BASE_REF", ""),
-        "pr_number":   os.environ.get("PR_NUMBER", ""),
-        "scan_root":   os.environ.get("SCAN_ROOT", "."),
-        "token":       os.environ.get("GITHUB_TOKEN", ""),
+        "event_name": os.environ.get("GITHUB_EVENT_NAME", "unknown"),
+        "run_number": os.environ.get("GITHUB_RUN_NUMBER", "?"),
+        "run_id":     os.environ.get("GITHUB_RUN_ID", ""),
+        "sha":        os.environ.get("GITHUB_SHA", ""),
+        "server_url": os.environ.get("GITHUB_SERVER_URL", "https://github.com"),
+        "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+        "actor":      os.environ.get("GITHUB_ACTOR", "unknown"),
+        "head_ref":   os.environ.get("GITHUB_HEAD_REF", ""),
+        "base_ref":   os.environ.get("GITHUB_BASE_REF", ""),
+        "pr_number":  os.environ.get("PR_NUMBER", ""),
+        "scan_root":  os.environ.get("SCAN_ROOT", "."),
+        "token":      os.environ.get("GITHUB_TOKEN", ""),
     }
 
 
@@ -137,28 +130,14 @@ def _get_env() -> dict:
 # ==========================================================
 
 def _build_markdown_report(evaluated_doc: dict, env: dict) -> str:
-    """
-    Build the high-level Markdown report for the PR comment
-    and GitHub Actions Job Summary.
-
-    Shows one row per tool with finding count only — no per-finding
-    detail. This keeps the report fast to read and scannable.
-
-    Args:
-        evaluated_doc: Parsed evaluated.json dict.
-        env:           Workflow environment variables.
-
-    Returns:
-        Complete Markdown report string.
-    """
     overall_block        = bool(evaluated_doc.get("overall_block", True))
     blocking_results     = evaluated_doc.get("blocking_results", [])
     non_blocking_results = evaluated_doc.get("non_blocking_results", [])
     all_results          = blocking_results + non_blocking_results
 
-    sha_short  = env["sha"][:7] if env["sha"] else "unknown"
-    run_url    = f"{env['server_url']}/{env['repository']}/actions/runs/{env['run_id']}"
-    commit_url = f"{env['server_url']}/{env['repository']}/commit/{env['sha']}"
+    sha_short    = env["sha"][:7] if env["sha"] else "unknown"
+    run_url      = f"{env['server_url']}/{env['repository']}/actions/runs/{env['run_id']}"
+    commit_url   = f"{env['server_url']}/{env['repository']}/commit/{env['sha']}"
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     lines: list[str] = []
@@ -215,22 +194,38 @@ def _build_markdown_report(evaluated_doc: dict, env: dict) -> str:
         "",
     ]
 
+    # ----------------------------------------------------------
+    # Legend — appears before the tool summary table
+    # ----------------------------------------------------------
+    lines += [
+        "### 📖 Legend",
+        "",
+        "| Symbol | Meaning |",
+        "|--------|---------|",
+        "| ✅ SUCCESS | Tool ran and found no violations |",
+        "| ❌ FAILURE | Tool found one or more violations |",
+        "| ⏸️ DISABLED | Tool is not yet configured |",
+        "| 🚫 Enforced | Violations from this tool will block the merge |",
+        "| ⚠️ Advisory | Violations are reported but will not block the merge |",
+        "",
+    ]
+
     # Tool Results Summary table
     lines += [
         "### 🛡️ Tool Results Summary",
         "",
-        "| Tool | Category | Status | Blocking | Findings |",
-        "|------|----------|--------|----------|----------|",
+        "| Tool | Category | Status | Role | Findings |",
+        "|------|----------|--------|------|----------|",
     ]
 
     for r in all_results:
-        tool           = r.get("tool", "unknown")
-        category       = CATEGORY_MAP.get(tool, "Analysis")
-        violation      = r.get("policy_violation", False)
-        blocking       = r.get("blocking", False)
-        reason         = r.get("reason", "")
-        normalized     = r.get("normalized", {})
-        finding_count  = normalized.get("violation_count", 0)
+        tool          = r.get("tool", "unknown")
+        category      = CATEGORY_MAP.get(tool, "Analysis")
+        violation     = r.get("policy_violation", False)
+        blocking      = r.get("blocking", False)
+        reason        = r.get("reason", "")
+        normalized    = r.get("normalized", {})
+        finding_count = normalized.get("violation_count", 0)
         findings_label = f"{finding_count} finding(s)" if finding_count else "—"
 
         if reason == "disabled":
@@ -240,10 +235,10 @@ def _build_markdown_report(evaluated_doc: dict, env: dict) -> str:
         else:
             status = "✅ SUCCESS"
 
-        blocking_label = "🚫 Yes" if blocking else "⚠️ Advisory"
+        role = "🚫 Enforced" if blocking else "⚠️ Advisory"
 
         lines.append(
-            f"| {tool} | {category} | {status} | {blocking_label} | {findings_label} |"
+            f"| {tool} | {category} | {status} | {role} | {findings_label} |"
         )
 
     lines += [
@@ -261,15 +256,6 @@ def _build_markdown_report(evaluated_doc: dict, env: dict) -> str:
 # ==========================================================
 
 def _severity_badge(severity: str | None) -> str:
-    """
-    Render an inline HTML severity badge with the appropriate color.
-
-    Args:
-        severity: Normalized severity string or None.
-
-    Returns:
-        HTML span element styled as a colored badge.
-    """
     if not severity:
         return "<span>—</span>"
     color = SEVERITY_COLORS.get(severity.lower(), "#95a5a6")
@@ -281,15 +267,6 @@ def _severity_badge(severity: str | None) -> str:
 
 
 def _html_finding_row(finding: dict) -> str:
-    """
-    Render a single finding as an HTML table row.
-
-    Args:
-        finding: A normalized finding dict from findings[].
-
-    Returns:
-        HTML <tr> string.
-    """
     severity = finding.get("severity", "")
     message  = finding.get("message", "—").replace("<", "&lt;").replace(">", "&gt;")
     file_    = finding.get("file", "—")
@@ -314,32 +291,17 @@ def _html_finding_row(finding: dict) -> str:
 
 
 def _html_tool_section(r: dict, section_label: str) -> str:
-    """
-    Render a full tool section for the HTML report.
-
-    Includes enforcement status, severity counts, and a findings
-    table with all per-finding detail.
-
-    Args:
-        r:             An evaluated result record (blocking or non-blocking).
-        section_label: "Blocking" or "Non-Blocking" for display context.
-
-    Returns:
-        HTML string for this tool's section.
-    """
-    tool       = r.get("tool", "unknown")
-    category   = CATEGORY_MAP.get(tool, "Analysis")
-    violation  = r.get("policy_violation", False)
-    blocking   = r.get("blocking", False)
-    reason     = r.get("reason", "")
-    normalized = r.get("normalized", {})
-    findings   = normalized.get("findings", [])
-    sev_counts = normalized.get("severity_counts", {})
-    max_sev    = normalized.get("max_severity")
-    executed   = normalized.get("executed", False)
+    tool        = r.get("tool", "unknown")
+    category    = CATEGORY_MAP.get(tool, "Analysis")
+    violation   = r.get("policy_violation", False)
+    blocking    = r.get("blocking", False)
+    reason      = r.get("reason", "")
+    normalized  = r.get("normalized", {})
+    findings    = normalized.get("findings", [])
+    sev_counts  = normalized.get("severity_counts", {})
+    executed    = normalized.get("executed", False)
     runtime_err = normalized.get("runtime_error", False)
 
-    # Status and header color
     if reason == "disabled":
         status_html  = '<span style="color:#7f8c8d;">⏸️ DISABLED</span>'
         header_color = "#7f8c8d"
@@ -350,13 +312,12 @@ def _html_tool_section(r: dict, section_label: str) -> str:
         status_html  = '<span style="color:#27ae60;">✅ SUCCESS</span>'
         header_color = "#27ae60"
 
-    blocking_html = (
-        '<span style="color:#c0392b;">🚫 Yes</span>'
+    role_html = (
+        '<span style="color:#c0392b;">🚫 Enforced</span>'
         if blocking else
         '<span style="color:#e67e22;">⚠️ Advisory</span>'
     )
 
-    # Severity count pills
     sev_pills = ""
     for level in ["critical", "high", "medium", "low", "info"]:
         count = sev_counts.get(level, 0)
@@ -370,7 +331,6 @@ def _html_tool_section(r: dict, section_label: str) -> str:
     if not sev_pills:
         sev_pills = '<span style="color:#7f8c8d;">No findings</span>'
 
-    # Findings table
     if findings:
         rows = "\n".join(_html_finding_row(f) for f in findings)
         findings_html = f"""
@@ -384,9 +344,7 @@ def _html_tool_section(r: dict, section_label: str) -> str:
                     <th>Message</th>
                 </tr>
             </thead>
-            <tbody>
-                {rows}
-            </tbody>
+            <tbody>{rows}</tbody>
         </table>
         """
     elif reason == "disabled":
@@ -408,38 +366,21 @@ def _html_tool_section(r: dict, section_label: str) -> str:
             </div>
             <div class="tool-meta">
                 <span>{status_html}</span>
-                <span style="margin-left:12px;">Blocking: {blocking_html}</span>
+                <span style="margin-left:12px;">Role: {role_html}</span>
                 {f'<span style="margin-left:12px;color:#7f8c8d;font-size:0.85em;">Reason: <code>{reason}</code></span>' if reason and reason != "disabled" else ""}
             </div>
             <div class="sev-counts">{sev_pills}</div>
         </div>
-        <div class="tool-findings">
-            {findings_html}
-        </div>
+        <div class="tool-findings">{findings_html}</div>
     </div>
     """
 
 
 def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> str:
-    """
-    Build the rich self-contained HTML report.
-
-    Sections:
-        1. Header and summary table (mirrors report.md)
-        2. Blocking Tools — full per-finding detail
-        3. Non-Blocking Tools — full per-finding detail
-
-    Args:
-        evaluated_doc:  Parsed evaluated.json dict.
-        normalized_doc: Parsed normalized.json dict.
-        env:            Workflow environment variables.
-
-    Returns:
-        Complete self-contained HTML string.
-    """
     overall_block        = bool(evaluated_doc.get("overall_block", True))
     blocking_results     = evaluated_doc.get("blocking_results", [])
     non_blocking_results = evaluated_doc.get("non_blocking_results", [])
+    all_results          = blocking_results + non_blocking_results
 
     sha_short    = env["sha"][:7] if env["sha"] else "unknown"
     run_url      = f"{env['server_url']}/{env['repository']}/actions/runs/{env['run_id']}"
@@ -453,11 +394,8 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
         "✅ APPROVED — All required checks passed."
     )
 
-    # ----------------------------------------------------------
     # Summary table rows
-    # ----------------------------------------------------------
-    all_results   = blocking_results + non_blocking_results
-    summary_rows  = ""
+    summary_rows = ""
     for r in all_results:
         tool          = r.get("tool", "unknown")
         category      = CATEGORY_MAP.get(tool, "Analysis")
@@ -474,8 +412,8 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
         else:
             status_cell = '<span style="color:#27ae60;">✅ SUCCESS</span>'
 
-        blocking_cell = (
-            '<span style="color:#c0392b;">🚫 Yes</span>'
+        role_cell = (
+            '<span style="color:#c0392b;">🚫 Enforced</span>'
             if blocking else
             '<span style="color:#e67e22;">⚠️ Advisory</span>'
         )
@@ -483,13 +421,11 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
 
         summary_rows += (
             f"<tr><td><code>{tool}</code></td><td>{category}</td>"
-            f"<td>{status_cell}</td><td>{blocking_cell}</td>"
+            f"<td>{status_cell}</td><td>{role_cell}</td>"
             f"<td>{findings_cell}</td></tr>\n"
         )
 
-    # ----------------------------------------------------------
-    # PR info block
-    # ----------------------------------------------------------
+    # PR block
     pr_block = ""
     if env["event_name"] == "pull_request" and env["pr_number"]:
         pr_block = f"""
@@ -504,20 +440,28 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
         </div>
         """
 
-    # ----------------------------------------------------------
-    # Blocking and non-blocking tool sections
-    # ----------------------------------------------------------
+    # Legend block
+    legend_block = """
+        <div class="info-card">
+            <h3>📖 Legend</h3>
+            <table class="info-table">
+                <tr><td>✅ SUCCESS</td><td>Tool ran and found no violations</td></tr>
+                <tr><td>❌ FAILURE</td><td>Tool found one or more violations</td></tr>
+                <tr><td>⏸️ DISABLED</td><td>Tool is not yet configured</td></tr>
+                <tr><td>🚫 Enforced</td><td>Violations from this tool will block the merge</td></tr>
+                <tr><td>⚠️ Advisory</td><td>Violations are reported but will not block the merge</td></tr>
+            </table>
+        </div>
+    """
+
     blocking_sections = "\n".join(
         _html_tool_section(r, "Blocking") for r in blocking_results
-    ) or "<p><em>No blocking tools configured.</em></p>"
+    ) or "<p><em>No enforced tools configured.</em></p>"
 
     non_blocking_sections = "\n".join(
         _html_tool_section(r, "Non-Blocking") for r in non_blocking_results
     ) or "<p><em>No advisory tools configured.</em></p>"
 
-    # ----------------------------------------------------------
-    # Inline CSS
-    # ----------------------------------------------------------
     css = """
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -599,10 +543,7 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
             font-size: 1.05em;
             font-family: "SFMono-Regular", Consolas, monospace;
         }
-        .tool-category {
-            color: #7f8c8d;
-            font-size: 0.85em;
-        }
+        .tool-category { color: #7f8c8d; font-size: 0.85em; }
         .tool-meta {
             display: flex;
             align-items: center;
@@ -632,9 +573,6 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
         a:hover { text-decoration: underline; }
     """
 
-    # ----------------------------------------------------------
-    # Assemble full HTML document
-    # ----------------------------------------------------------
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -663,6 +601,8 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
 
     {pr_block}
 
+    {legend_block}
+
     <h2>🛡️ Tool Results Summary</h2>
     <table>
         <thead>
@@ -670,19 +610,17 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
                 <th>Tool</th>
                 <th>Category</th>
                 <th>Status</th>
-                <th>Blocking</th>
+                <th>Role</th>
                 <th>Findings</th>
             </tr>
         </thead>
-        <tbody>
-            {summary_rows}
-        </tbody>
+        <tbody>{summary_rows}</tbody>
     </table>
 
-    <div class="section-header">🚫 Blocking Tools</div>
+    <div class="section-header">🚫 Enforced Tools</div>
     {blocking_sections}
 
-    <div class="section-header advisory">⚠️ Advisory Tools (Non-Blocking)</div>
+    <div class="section-header advisory">⚠️ Advisory Tools</div>
     {non_blocking_sections}
 
     <footer>
@@ -698,17 +636,6 @@ def _build_html_report(evaluated_doc: dict, normalized_doc: dict, env: dict) -> 
 # ==========================================================
 
 def _post_or_update_pr_comment(body: str, env: dict) -> None:
-    """
-    Post or update a single PR comment with the Markdown report.
-
-    Finds an existing bot comment containing PR_COMMENT_MARKER
-    and updates it in place. Creates a new comment if none exists.
-    This prevents comment spam on repeated runs.
-
-    Args:
-        body: The full Markdown report string.
-        env:  Workflow environment variables dict.
-    """
     token      = env["token"]
     repository = env["repository"]
     pr_number  = env["pr_number"]
@@ -725,7 +652,6 @@ def _post_or_update_pr_comment(body: str, env: dict) -> None:
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    # Search for existing bot comment across all pages
     existing_comment_id = None
     page = 1
 
@@ -756,7 +682,6 @@ def _post_or_update_pr_comment(body: str, env: dict) -> None:
             break
         page += 1
 
-    # Update existing or create new comment
     if existing_comment_id:
         resp = requests.patch(
             f"{api_base}/repos/{repository}/issues/comments/{existing_comment_id}",
@@ -788,20 +713,8 @@ def _post_or_update_pr_comment(body: str, env: dict) -> None:
 # ==========================================================
 
 def generate_report() -> None:
-    """
-    Generate report.md and report.html, then post the PR comment.
-
-    Contract:
-        - Always writes report.md (even on partial failures).
-        - Always writes report.html (even on partial failures).
-        - PR comment posted/updated on pull_request events only.
-        - Failures in PR comment posting do not raise exceptions.
-    """
     env = _get_env()
 
-    # ----------------------------------------------------------
-    # Load evaluated.json
-    # ----------------------------------------------------------
     if not EVALUATED_FILE.exists():
         print(f"[report] ❌ evaluated.json not found at {EVALUATED_FILE}.")
         sys.exit(1)
@@ -813,9 +726,6 @@ def generate_report() -> None:
         print(f"[report] ❌ Failed to parse evaluated.json: {e}")
         sys.exit(1)
 
-    # ----------------------------------------------------------
-    # Load normalized.json (for HTML report findings detail)
-    # ----------------------------------------------------------
     normalized_doc: dict = {}
     try:
         if NORMALIZED_FILE.exists():
@@ -824,24 +734,15 @@ def generate_report() -> None:
     except Exception as e:
         print(f"[report] Warning: could not load normalized.json: {e}")
 
-    # ----------------------------------------------------------
-    # Write report.md
-    # ----------------------------------------------------------
     REPORT_MD_FILE.parent.mkdir(parents=True, exist_ok=True)
     md_body = _build_markdown_report(evaluated_doc, env)
     REPORT_MD_FILE.write_text(md_body, encoding="utf-8")
     print(f"[report] report.md written to: {REPORT_MD_FILE}")
 
-    # ----------------------------------------------------------
-    # Write report.html
-    # ----------------------------------------------------------
     html_body = _build_html_report(evaluated_doc, normalized_doc, env)
     REPORT_HTML_FILE.write_text(html_body, encoding="utf-8")
     print(f"[report] report.html written to: {REPORT_HTML_FILE}")
 
-    # ----------------------------------------------------------
-    # Post PR comment (pull_request events only)
-    # ----------------------------------------------------------
     if env["event_name"] == "pull_request" and env["pr_number"]:
         _post_or_update_pr_comment(md_body, env)
     else:
@@ -850,4 +751,3 @@ def generate_report() -> None:
 
 if __name__ == "__main__":
     generate_report()
-    
