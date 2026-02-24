@@ -7,24 +7,21 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Finding #1 — hardcoded secret pattern (Semgrep / secret scanners)
-  static const String apiToken = "SECRET_DEMO_FLUTTER_TOKEN_123456";
+  static const String apiToken = 'DEMO_TOKEN_NOT_REAL_123456';
 
   @override
   Widget build(BuildContext context) {
-    // Finding #2 — unused variable (Flutter analyzer warning)
+    // Intentional violation: unused local variable
     final unused = apiToken;
 
-    // Finding #3 — always true condition (lint-style issue)
+    // Intentional violation: condition always evaluates to true
     if (true) {
-      debugPrint("Condition always true");
+      debugPrint('Condition always true');
     }
 
     return const MaterialApp(
       home: Scaffold(
-        body: Center(
-          child: Text('FAIL'),
-        ),
+        body: Center(child: Text('FAIL')),
       ),
     );
   }

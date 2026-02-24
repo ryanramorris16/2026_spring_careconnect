@@ -1,14 +1,13 @@
 class ApiService {
-  // Finding #1 — hardcoded credential
-  static const String baseUrl = "https://api.careconnect.local";
-  static const String apiKey = "SECRET_BACKEND_KEY_999999";
+  static const String baseUrl = 'https://api.careconnect.local';
 
   String fetchData() {
-    // Finding #2 — dead code
-    if (false) {
-      return "never";
-    }
+    // Intentional violation: unused local variable
+    final unusedLocal = DateTime.now().toIso8601String();
 
-    return "data";
+    // Intentional violation: avoid_print (do not suppress)
+    print(unusedLocal);
+
+    return 'data';
   }
 }

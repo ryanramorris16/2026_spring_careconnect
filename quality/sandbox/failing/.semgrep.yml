@@ -3,11 +3,11 @@ rules:
     patterns:
       - pattern: $X = "SECRET_..."
     message: Hardcoded secret-like string (demo rule)
-    severity: ERROR
+    severity: HIGH
     languages: [python, javascript, java, dart]
 
   - id: demo.insecure-hash
     pattern: MessageDigest.getInstance("MD5")
     message: Insecure hash algorithm MD5 (demo rule)
-    severity: ERROR
+    severity: HIGH
     languages: [java]

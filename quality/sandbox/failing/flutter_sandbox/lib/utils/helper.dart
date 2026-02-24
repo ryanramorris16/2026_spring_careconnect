@@ -1,10 +1,10 @@
 int calculate(int a, int b) {
-  // Finding #3 — unnecessary comparison
+  // Intentional violation: condition always evaluates to true
   if (a == a) {
     // no-op
   }
 
-  // Finding #4 — unused variable
+  // Intentional violation: unused local variable
   final temp = a + b;
 
   return a + b;

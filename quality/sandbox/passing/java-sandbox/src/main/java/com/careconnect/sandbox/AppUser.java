@@ -3,21 +3,21 @@ package com.careconnect.sandbox;
 import java.util.Objects;
 
 /**
- * Simple POJO used by CI sandbox scans.
+ * Simple domain object used by CI sandbox scans.
  */
-public final class User {
+public final class AppUser {
 
-  private final String id;
+  private final String userId;
   private final String name;
 
   /**
-   * Creates a user.
+   * Creates an AppUser.
    *
-   * @param id unique identifier
-   * @param name display name
+   * @param userId unique identifier
+   * @param name   display name
    */
-  public User(String id, String name) {
-    this.id = Objects.requireNonNull(id, "id");
+  public AppUser(final String userId, final String name) {
+    this.userId = Objects.requireNonNull(userId, "userId");
     this.name = Objects.requireNonNull(name, "name");
   }
 
@@ -26,9 +26,8 @@ public final class User {
    *
    * @return unique identifier
    */
-  public String getId() {
-
-    return id;
+  public String getUserId() {
+    return userId;
   }
 
   /**
@@ -37,7 +36,6 @@ public final class User {
    * @return display name
    */
   public String getName() {
-
     return name;
   }
 }
