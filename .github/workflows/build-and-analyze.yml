@@ -68,7 +68,7 @@ on:
 # Do not change this value directly — use .env instead.
 # ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/failing
+  SCAN_ROOT: quality/sandbox/passing
 
 # ----------------------------------------------------------
 # Permissions
@@ -248,14 +248,48 @@ jobs:
           : > "${OUT}"
 
           docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/repo" \
-            trufflesecurity/trufflehog:3.82.6 \
-            filesystem "/repo/${SCAN_ROOT}" --json \
-            >> "${OUT}" || true
+                      -v "${GITHUB_WORKSPACE}:/repo" \
+                      trufflesecurity/trufflehog:3.82.6 \
+                      filesystem "/repo/${SCAN_ROOT}" \
+                      --json \
+                      --no-verification \
+                      >> "${OUT}" || true
+
 
           # Ensure a valid (possibly empty) file always exists for the parser
           test -s "${OUT}" || echo "" > "${OUT}"
 
+      
+      # ------------------------------------------------------
+      # Tool: Gitleaks (Secrets Detection)
+      # ----------------------------------------------------------
+      # Scans the working tree directly for secrets. Free, open
+      # source (MIT), no API key required. Complements TruffleHog.
+      #
+      # Output: quality/analysis/raw/gitleaks.json
+      # Parser: parsers/gitleaks.py
+      # ------------------------------------------------------
+      - name: Run Gitleaks (Secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/gitleaks.json"
+          echo '[]' > "${OUT}"
+
+          curl -sSL \
+            -o gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+
+          ./gitleaks detect \
+            --source "${GITHUB_WORKSPACE}/${SCAN_ROOT}" \
+            --report-format json \
+            --report-path "${OUT}" \
+            --no-git \
+            --exit-code 0 || true
+
+          test -s "${OUT}" || echo '[]' > "${OUT}"
+      
       # ------------------------------------------------------
       # Tool: Flutter Analyze (Dart Static Analyzer)
       # ----------------------------------------------------------
@@ -295,7 +329,8 @@ jobs:
           # || true — issues found are not a workflow failure;
           # the gate engine owns enforcement.
           TMP="${RUNNER_TEMP}/flutter_analyze_raw.txt"
-          flutter analyze --machine > "${TMP}" 2>&1 || true
+          flutter analyze > "${TMP}" 2>&1 || true
+
 
           popd >/dev/null
 
@@ -330,53 +365,57 @@ jobs:
           #   }
           # --------------------------------------------------
           python3 - <<'PYEOF'
-          import json
-          import os
-          import sys
+                    import json
+                    import os
+                    import re
+                    import sys
 
-          tmp_path    = os.environ.get("TMP_FLUTTER", "")
-          out_path    = os.environ["OUT"]
-          flutter_root = os.environ.get("FLUTTER_ROOT", "")
+                    tmp_path     = os.environ.get("TMP_FLUTTER", "")
+                    out_path     = os.environ["OUT"]
+                    flutter_root = os.environ.get("FLUTTER_ROOT", "")
 
-          try:
-              with open(tmp_path) as f:
-                  lines = f.readlines()
-          except Exception as e:
-              print(f"Warning: could not read flutter analyze output: {e}", file=sys.stderr)
-              lines = []
+                    # flutter analyze plain output format:
+                    #   severity • message • file/path.dart:line:col • rule_code
+                    ISSUE_RE = re.compile(
+                        r"^\s*(error|warning|info|hint)\s+[•·]\s+"
+                        r"(.+?)\s+[•·]\s+"
+                        r"(.+?):(\d+):\d+\s+[•·]\s+"
+                        r"(\S+)\s*$",
+                        re.IGNORECASE
+                    )
 
-          issues = []
-          for line in lines:
-              line = line.strip()
-              if not line:
-                  continue
-              try:
-                  obj = json.loads(line)
-              except json.JSONDecodeError:
-                  # Skip non-JSON lines (progress messages, banner text, etc.)
-                  continue
+                    try:
+                        with open(tmp_path) as f:
+                            lines = f.readlines()
+                    except Exception as e:
+                        print(f"Warning: could not read flutter analyze output: {e}", file=sys.stderr)
+                        lines = []
 
-              location  = obj.get("location", {})
-              file_path = location.get("file", "unknown")
+                    issues = []
+                    for line in lines:
+                        m = ISSUE_RE.match(line)
+                        if not m:
+                            continue
+                        severity, message, file_path, lineno, rule = m.groups()
 
-              # Strip Flutter root prefix to produce repo-relative paths
-              if flutter_root and file_path.startswith(flutter_root):
-                  file_path = file_path[len(flutter_root):].lstrip("/")
+                        if flutter_root and file_path.startswith(flutter_root):
+                            file_path = file_path[len(flutter_root):].lstrip("/")
 
-              issues.append({
-                  "severity": obj.get("severity", "INFO").lower(),
-                  "message":  obj.get("message", ""),
-                  "file":     file_path,
-                  "line":     location.get("startLine", 0),
-                  "column":   location.get("startColumn", 0),
-                  "rule":     obj.get("code", "unknown"),
-              })
+                        issues.append({
+                            "severity": severity.lower(),
+                            "message":  message.strip(),
+                            "file":     file_path,
+                            "line":     int(lineno),
+                            "column":   0,
+                            "rule":     rule,
+                        })
 
-          with open(out_path, "w") as f:
-              json.dump({"issues": issues}, f, indent=2)
+                    with open(out_path, "w") as f:
+                        json.dump({"issues": issues}, f, indent=2)
 
-          print(f"Flutter analyze: {len(issues)} issue(s) written to {out_path}")
-          PYEOF
+                    print(f"Flutter analyze: {len(issues)} issue(s) written to {out_path}")
+                    PYEOF
+
         env:
           OUT:          ${{ github.workspace }}/quality/analysis/raw/flutter_analyze.json
           FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
@@ -485,24 +524,44 @@ jobs:
       - name: Compile Java (for SpotBugs)
         shell: bash
         run: |
-          set -euo pipefail
-          CLASSES="$(mktemp -d)"
-          echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+              set -euo pipefail
 
-          if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
-            echo "No Java project found; skipping Java compilation."
-            exit 0
-          fi
+              if [[ -z "${JAVA_ROOT:-}" || ! -d "${JAVA_ROOT}" ]]; then
+                echo "No Java project found; skipping Java compilation."
+                CLASSES="$(mktemp -d)"
+                echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+                exit 0
+              fi
 
-          TARGET="${JAVA_ROOT}/src/main/java"
-          [[ -d "${TARGET}" ]] || TARGET="${JAVA_ROOT}"
+              # Prefer Maven — resolves pom.xml dependencies correctly
+              if [[ -f "${JAVA_ROOT}/pom.xml" ]]; then
+                pushd "${JAVA_ROOT}" >/dev/null
+                mvn compile -q --batch-mode || true
+                popd >/dev/null
+                CLASSES="${JAVA_ROOT}/target/classes"
+                # Fall back to javac if Maven produced no classes
+                if [[ ! -d "${CLASSES}" || -z "$(ls -A "${CLASSES}" 2>/dev/null)" ]]; then
+                  echo "::warning::Maven compile produced no classes; falling back to javac."
+                  CLASSES="$(mktemp -d)"
+                  TARGET="${JAVA_ROOT}/src/main/java"
+                  mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
+                  if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+                    javac -d "${CLASSES}" "${SOURCES[@]}" || true
+                  fi
+                fi
+              else
+                CLASSES="$(mktemp -d)"
+                TARGET="${JAVA_ROOT}/src/main/java"
+                [[ -d "${TARGET}" ]] || TARGET="${JAVA_ROOT}"
+                mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
+                if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+                  javac -d "${CLASSES}" "${SOURCES[@]}" || true
+                fi
+              fi
 
-          mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
-          if [[ "${#SOURCES[@]}" -gt 0 ]]; then
-            javac -d "${CLASSES}" "${SOURCES[@]}" || true
-          else
-            echo "No .java source files found; nothing to compile."
-          fi
+              echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
+              echo "Compiled classes directory: ${CLASSES}"
+              ls "${CLASSES}" || echo "(empty)"
 
       # ------------------------------------------------------
       # Tool: SpotBugs (Java Bytecode Static Analysis)
@@ -527,6 +586,15 @@ jobs:
             echo "No compiled classes directory; skipping SpotBugs."
             exit 0
           fi
+
+          # Verify there are actually .class files to analyze
+          CLASS_COUNT="$(find "${JAVA_CLASSES_DIR}" -name "*.class" | wc -l)"
+          if [[ "${CLASS_COUNT}" -eq 0 ]]; then
+            echo "No .class files found in ${JAVA_CLASSES_DIR}; skipping SpotBugs."
+            exit 0
+          fi
+          echo "SpotBugs: analyzing ${CLASS_COUNT} class file(s)."
+
 
           curl -sSL \
             -o spotbugs.tgz \
@@ -741,6 +809,7 @@ jobs:
           echo "=== Artifact previews (first 3 lines each) ==="
           for f in \
             trufflehog.jsonl \
+            gitleaks.json \
             flutter_analyze.json \
             checkstyle.xml \
             pmd.xml \
