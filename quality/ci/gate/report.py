@@ -83,6 +83,7 @@ PR_COMMENT_MARKER = "## 🔍 CareConnect — Security & Quality Analysis Report"
 # ----------------------------------------------------------
 CATEGORY_MAP: dict[str, str] = {
     "trufflehog":       "Secrets Scan",
+    "gitleaks":         "Secrets Scan",
     "checkstyle":       "SAST — Java",
     "pmd":              "SAST — Java",
     "spotbugs":         "SAST — Java",

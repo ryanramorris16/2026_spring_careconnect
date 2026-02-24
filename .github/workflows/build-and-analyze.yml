@@ -499,6 +499,8 @@ jobs:
             -o spotbugs.tgz \
             https://github.com/spotbugs/spotbugs/releases/download/4.8.3/spotbugs-4.8.3.tgz
           tar -xzf spotbugs.tgz
+          chmod +x ./spotbugs-4.8.3/bin/spotbugs
+
 
           ./spotbugs-4.8.3/bin/spotbugs \
             -textui -xml \
