@@ -89,7 +89,7 @@ on:
 # No workflow modifications are necessary.
 # ----------------------------------------------------------
 env:
-  SCAN_ROOT: quality/sandbox/passing
+  SCAN_ROOT: quality/sandbox/failing
 
 # ----------------------------------------------------------
 # Permissions
