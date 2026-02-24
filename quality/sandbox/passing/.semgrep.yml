@@ -1,0 +1,7 @@
+rules:
+  - id: demo.hardcoded-secret
+    patterns:
+      - pattern: $X = "SECRET_..."
+    message: Hardcoded secret-like string (demo rule)
+    severity: ERROR
+    languages: [python, javascript, java, dart]
