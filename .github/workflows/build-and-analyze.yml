@@ -662,3 +662,5 @@ jobs:
         with:
           name: quality-analysis-report
           path: quality/analysis/
+          exclude: quality/analysis/dc-data/**
+          
