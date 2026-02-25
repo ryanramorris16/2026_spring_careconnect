@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'config/router/app_router.dart';
 import 'services/auth_migration_helper.dart';
 import 'services/messaging_service.dart';
+import 'services/local_db/local_db_startup.dart';
 import 'config/theme/app_theme.dart';
 import 'config/utils/responsive_utils.dart';
 import 'config/utils/web_utils.dart';
@@ -62,6 +63,7 @@ Future<void> main() async {
       final shortcutProvider = ShortcutProvider()..init();
       final localeProvider = LocaleProvider();
       await localeProvider.loadSaved();
+
       // Start the app immediately, initialize services in background
       runApp(
         MultiProvider(
@@ -187,6 +189,8 @@ Future<void> _handleAuthMigration() async {
 Future<void> _bootstrap() async {
   // Performance optimization: Warm up system caches
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  await initializeLocalDbOnStartup();
 
   // Initialize web-specific optimizations
   if (kIsWeb) {
