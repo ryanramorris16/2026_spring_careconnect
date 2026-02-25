@@ -410,6 +410,7 @@
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
+                    <outputFile>${project.basedir}/Static_Analysis_Reports/checkstyle-result.xml</outputFile>
                 </configuration>
                 <dependencies>
                     <dependency>
