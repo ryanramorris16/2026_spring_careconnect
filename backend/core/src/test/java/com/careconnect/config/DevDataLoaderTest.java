@@ -136,4 +136,70 @@ class DevDataLoaderTest {
 
         assertDoesNotThrow(() -> loader.run());
     }
+
+    // -------------------------------------------------
+    // 6. ResultSet has no rows → shouldLoadMockData returns true
+    // -------------------------------------------------
+
+    @Test
+    void run_AttemptsLoadWhenResultSetHasNoRows() throws Exception {
+        // Verifies that when the guard query returns a ResultSet where next() is false
+        // (no rows at all), shouldLoadMockData still returns true and load is attempted.
+        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(false);
+        when(statement.executeUpdate(anyString())).thenReturn(1);
+
+        assertDoesNotThrow(() -> loader.run());
+        verify(statement, atLeastOnce()).executeQuery("SELECT COUNT(*) FROM users");
+    }
+
+    // -------------------------------------------------
+    // 7. DB connection fails during SQL script execution
+    // -------------------------------------------------
+
+    @Test
+    void run_DoesNotThrowWhenConnectionFailsDuringExecution() throws Exception {
+        // Verifies that if DataSource.getConnection() throws during executeSqlScript,
+        // the outer catch block absorbs the error without crashing application startup.
+        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(resultSet);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getInt(1)).thenReturn(0); // users = 0 → triggers loadMockData
+
+        when(dataSource.getConnection())
+                .thenReturn(connection)                                    // shouldLoadMockData
+                .thenThrow(new RuntimeException("No connections available")); // executeSqlScript
+
+        assertDoesNotThrow(() -> loader.run());
+    }
+
+    // -------------------------------------------------
+    // 8. verifyDataLoad: patient_medication table missing
+    // -------------------------------------------------
+
+    @Test
+    void run_IgnoresPatientMedicationTableException() throws Exception {
+        // Verifies that if the patient_medication table does not yet exist during
+        // post-load verification, the exception is swallowed and loading completes cleanly.
+        ResultSet countRs = mock(ResultSet.class);
+        when(countRs.next()).thenReturn(true);
+        when(countRs.getInt(1)).thenReturn(0);
+
+        ResultSet patientRs = mock(ResultSet.class);
+        when(patientRs.next()).thenReturn(true);
+        when(patientRs.getInt(1)).thenReturn(1);
+
+        ResultSet caregiverRs = mock(ResultSet.class);
+        when(caregiverRs.next()).thenReturn(true);
+        when(caregiverRs.getInt(1)).thenReturn(1);
+
+        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(countRs);
+        when(statement.executeQuery("SELECT COUNT(*) FROM patient")).thenReturn(patientRs);
+        when(statement.executeQuery("SELECT COUNT(*) FROM caregiver")).thenReturn(caregiverRs);
+        when(statement.executeQuery("SELECT COUNT(*) FROM patient_medication"))
+                .thenThrow(new RuntimeException("Table does not exist"));
+
+        when(statement.executeUpdate(anyString())).thenReturn(1);
+
+        assertDoesNotThrow(() -> loader.run());
+    }
 }
