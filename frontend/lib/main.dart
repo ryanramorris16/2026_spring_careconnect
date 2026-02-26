@@ -124,10 +124,7 @@ class _CareConnectAppWithErrorBoundaryState
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
-                      // Navigate to home instead of calling runApp again
-                      Navigator.of(
-                        context,
-                      ).pushNamedAndRemoveUntil('/', (route) => false);
+                      appRouter.go('/');
                     },
                     child: const Text('Go Home'),
                   ),
