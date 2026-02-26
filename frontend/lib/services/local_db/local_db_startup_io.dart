@@ -1,6 +1,4 @@
 import 'app_database.dart';
-import 'create_table.dart';
-import 'offline_table_config.dart';
 
 /// Shared app-level database instance used during startup initialization.
 AppDatabase? _startupDb;
@@ -9,11 +7,7 @@ AppDatabase? _startupDb;
 Future<void> initializeLocalDbOnStartup() async {
   _startupDb ??= AppDatabase();
   final db = _startupDb!;
-
-  for (final tableName in offlineEnabledTables) {
-    final createSql = CreateTable.forTable(tableName);
-    if (createSql != null && createSql.isNotEmpty) {
-      await db.customStatement(createSql);
-    }
-  }
+  // Opening a connection once at startup triggers Drift's built-in table
+  // creation/migration strategy for all tables declared in AppDatabase.
+  await db.customSelect('SELECT 1').getSingle();
 }

@@ -8,23 +8,15 @@ import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 import 'package:sqlite3/open.dart';
 
 import 'db_encryption_service.dart';
+import 'generated/jpa_drift_bundle.dart';
 
 part 'app_database.g.dart';
 
-/// Local copy of backend `Mood` table for offline mode.
-///
-/// Source model: backend/core/src/main/java/com/careconnect/model/Mood.java
-class Moods extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  IntColumn get userId => integer()();
-  IntColumn get score => integer()();
-  TextColumn get label => text()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-}
-
 /// Encrypted Drift database used by mobile offline storage.
-@DriftDatabase(tables: [Moods])
+///
+/// Table definitions are generated from backend JPA models and imported from
+/// `generated/jpa_drift_bundle.dart`.
+@DriftDatabase(tables: [Moods, Tasks])
 class AppDatabase extends _$AppDatabase {
   AppDatabase({DbEncryptionService? encryptionService})
       : _encryptionService = encryptionService ?? DbEncryptionService(),
