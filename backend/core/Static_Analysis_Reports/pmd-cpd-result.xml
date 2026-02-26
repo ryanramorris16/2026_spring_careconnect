@@ -1,0 +1,792 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<pmd-cpd violationCount="24">
+  <duplication lines="164" tokens="878">
+    <file begintoken="79913" column="19" endcolumn="5" endline="258" endtoken="80790" line="95" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\AlexaCodeStoreService.java" />
+    <file begintoken="92585" column="8" endcolumn="1" endline="194" endtoken="93462" line="31" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\ChatAnalyticsService.java" />
+    <codefragment><![CDATA[    public static class ChatAnalyticsService {
+
+        private final ChatConversationRepository chatConversationRepository;
+        private final ChatMessageRepository chatMessageRepository;
+
+        /**
+         * Collect anonymized analytics from a conversation before it's deleted
+         * This is called during the cleanup process to extract insights
+         */
+        @Transactional
+        public void collectAnalytics(ChatConversation conversation, List<ChatMessage> messages) {
+            try {
+                // Create anonymized analytics record
+                ChatAnalytics analytics = ChatAnalytics.builder()
+                    .sessionId(UUID.randomUUID().toString()) // Anonymized session ID
+                    .sessionDate(conversation.getCreatedAt().toLocalDate())
+                    .sessionHour(conversation.getCreatedAt().getHour())
+                    .sessionDurationMinutes(calculateSessionDuration(conversation))
+                    .messageCount(messages.size())
+                    .userMessageCount(countUserMessages(messages))
+                    .aiMessageCount(countAiMessages(messages))
+                    .topicCategories(extractTopicCategories(messages))
+                    .averageResponseTimeMs(calculateAverageResponseTime(messages))
+                    .conversationType(conversation.getChatType().toString())
+                    .isSharedWithProvider(false) // Will be updated if shared
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+                // Store analytics (this would be a separate table in real implementation)
+                logAnalytics(analytics);
+
+            } catch (Exception e) {
+                log.error("Error collecting analytics for conversation: {}",
+                    conversation.getConversationId(), e);
+            }
+        }
+
+        /**
+         * Get aggregated analytics for reporting (no individual data)
+         */
+        public Map<String, Object> getAggregatedAnalytics(LocalDateTime from, LocalDateTime to) {
+            // In a real implementation, this would query the analytics table
+            // For now, return sample aggregated data
+            return Map.of(
+                "totalSessions", 0,
+                "averageSessionDuration", 0,
+                "mostCommonTopics", List.of(),
+                "peakUsageHours", List.of(),
+                "userSatisfactionScore", 0.0,
+                "systemPerformance", Map.of(
+                    "averageResponseTime", 0,
+                    "errorRate", 0.0
+                )
+            );
+        }
+
+        /**
+         * Extract topic categories from messages (anonymized)
+         */
+        private List<String> extractTopicCategories(List<ChatMessage> messages) {
+            Set<String> topics = new HashSet<>();
+
+            for (ChatMessage message : messages) {
+                if (message.getMessageType() == ChatMessage.MessageType.USER) {
+                    String content = message.getContent().toLowerCase();
+
+                    // Categorize based on keywords (anonymized)
+                    if (containsKeywords(content, Arrays.asList("medication", "drug", "pill", "prescription"))) {
+                        topics.add("MEDICATION_INQUIRY");
+                    }
+                    if (containsKeywords(content, Arrays.asList("symptom", "pain", "ache", "hurt"))) {
+                        topics.add("SYMPTOM_TRACKING");
+                    }
+                    if (containsKeywords(content, Arrays.asList("appointment", "visit", "doctor", "schedule"))) {
+                        topics.add("APPOINTMENT_MANAGEMENT");
+                    }
+                    if (containsKeywords(content, Arrays.asList("allergy", "reaction", "intolerance"))) {
+                        topics.add("ALLERGY_INQUIRY");
+                    }
+                    if (containsKeywords(content, Arrays.asList("vital", "blood pressure", "temperature", "heart rate"))) {
+                        topics.add("VITALS_INQUIRY");
+                    }
+                    if (containsKeywords(content, Arrays.asList("mood", "mental", "anxiety", "depression"))) {
+                        topics.add("MENTAL_HEALTH");
+                    }
+                    if (topics.isEmpty()) {
+                        topics.add("GENERAL_INQUIRY");
+                    }
+                }
+            }
+
+            return new ArrayList<>(topics);
+        }
+
+        private boolean containsKeywords(String content, List<String> keywords) {
+            return keywords.stream().anyMatch(content::contains);
+        }
+
+        private int calculateSessionDuration(ChatConversation conversation) {
+            if (conversation.getUpdatedAt() != null && conversation.getCreatedAt() != null) {
+                return (int) java.time.Duration.between(
+                    conversation.getCreatedAt(),
+                    conversation.getUpdatedAt()
+                ).toMinutes();
+            }
+            return 0;
+        }
+
+        private int countUserMessages(List<ChatMessage> messages) {
+            return (int) messages.stream()
+                .filter(msg -> msg.getMessageType() == ChatMessage.MessageType.USER)
+                .count();
+        }
+
+        private int countAiMessages(List<ChatMessage> messages) {
+            return (int) messages.stream()
+                .filter(msg -> msg.getMessageType() == ChatMessage.MessageType.ASSISTANT)
+                .count();
+        }
+
+        private long calculateAverageResponseTime(List<ChatMessage> messages) {
+            List<Long> responseTimes = messages.stream()
+                .filter(msg -> msg.getMessageType() == ChatMessage.MessageType.ASSISTANT)
+                .filter(msg -> msg.getProcessingTimeMs() != null)
+                .map(ChatMessage::getProcessingTimeMs)
+                .collect(Collectors.toList());
+
+            if (responseTimes.isEmpty()) return 0;
+
+            return responseTimes.stream()
+                .mapToLong(Long::longValue)
+                .sum() / responseTimes.size();
+        }
+
+        private void logAnalytics(ChatAnalytics analytics) {
+            // In a real implementation, this would save to an analytics table
+            log.info("Analytics collected: Session={}, Date={}, Duration={}min, Messages={}, Topics={}",
+                analytics.getSessionId(),
+                analytics.getSessionDate(),
+                analytics.getSessionDurationMinutes(),
+                analytics.getMessageCount(),
+                analytics.getTopicCategories());
+        }
+
+        /**
+         * Analytics data model (anonymized)
+         */
+        @lombok.Builder
+        @lombok.Data
+        public static class ChatAnalytics {
+            private String sessionId; // Anonymized UUID
+            private java.time.LocalDate sessionDate;
+            private int sessionHour;
+            private int sessionDurationMinutes;
+            private int messageCount;
+            private int userMessageCount;
+            private int aiMessageCount;
+            private List<String> topicCategories;
+            private long averageResponseTimeMs;
+            private String conversationType;
+            private boolean isSharedWithProvider;
+            private LocalDateTime createdAt;
+        }
+    }]]></codefragment>
+  </duplication>
+  <duplication lines="68" tokens="331">
+    <file begintoken="96517" column="5" endcolumn="5" endline="167" endtoken="96847" line="100" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\DatabaseChatMemory.java" />
+    <file begintoken="152258" column="5" endcolumn="5" endline="211" endtoken="152588" line="144" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SessionBasedChatMemory.java" />
+    <codefragment><![CDATA[    }
+    
+    /**
+     * Convert LangChain4j ChatMessage to database ChatMessage
+     */
+    private com.careconnect.model.ChatMessage convertToDbMessage(ChatMessage message) {
+        MessageType messageType;
+        String content;
+        
+        if (message instanceof SystemMessage) {
+            messageType = MessageType.SYSTEM;
+            content = ((SystemMessage) message).text();
+        } else if (message instanceof UserMessage) {
+            messageType = MessageType.USER;
+            content = ((UserMessage) message).singleText();
+        } else if (message instanceof AiMessage) {
+            messageType = MessageType.ASSISTANT;
+            content = ((AiMessage) message).text();
+        } else {
+            messageType = MessageType.USER; // fallback
+            content = message.toString();
+        }
+        
+        return com.careconnect.model.ChatMessage.builder()
+            .conversation(conversation)
+            .messageType(messageType)
+            .content(content)
+            .build();
+    }
+    
+    /**
+     * Convert database ChatMessage to LangChain4j ChatMessage
+     */
+    private ChatMessage convertToLangchainMessage(com.careconnect.model.ChatMessage dbMessage) {
+        String content = dbMessage.getContent();
+        
+        return switch (dbMessage.getMessageType()) {
+            case SYSTEM -> SystemMessage.from(content);
+            case USER -> UserMessage.from(content);
+            case ASSISTANT -> AiMessage.from(content);
+            default -> {
+                log.warn("Unknown message type: {}", dbMessage.getMessageType());
+                yield null;
+            }
+        };
+    }
+    
+    /**
+     * Clean up old messages to maintain the maxMessages limit
+     */
+    private void cleanupOldMessages() {
+        try {
+            List<com.careconnect.model.ChatMessage> allMessages = chatMessageRepository
+                .findByConversationOrderByCreatedAtAsc(conversation);
+            
+            if (allMessages.size() > maxMessages) {
+                int messagesToDeleteCount = allMessages.size() - maxMessages;
+                List<com.careconnect.model.ChatMessage> messagesToDelete = allMessages.subList(0, messagesToDeleteCount);
+                
+                chatMessageRepository.deleteAll(messagesToDelete);
+                
+                log.debug("Cleaned up {} old messages from conversation {}", 
+                    messagesToDelete.size(), conversation.getConversationId());
+            }
+        } catch (Exception e) {
+            log.error("Failed to cleanup old messages", e);
+        }
+    }]]></codefragment>
+  </duplication>
+  <duplication lines="43" tokens="269">
+    <file begintoken="184149" column="84" endcolumn="17" endline="137" endtoken="184417" line="95" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CallNotificationHandler.java" />
+    <file begintoken="186785" column="105" endcolumn="17" endline="152" endtoken="187053" line="110" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CareConnectWebSocketHandler.java" />
+    <codefragment><![CDATA[            sendErrorMessage(session, "Error processing message: " + e.getMessage());
+        }
+    }
+
+    private void handleAuthentication(WebSocketSession session, Map<String, Object> payload) throws Exception {
+        String token = (String) payload.get("token");
+        
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            Map<String, Object> response = Map.of(
+                "type", "authentication-failed",
+                "message", "Invalid or missing token"
+            );
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+            session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Authentication failed"));
+            return;
+        }
+        
+        String userEmail = jwtTokenProvider.getEmailFromToken(token);
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        
+        if (user == null) {
+            Map<String, Object> response = Map.of(
+                "type", "authentication-failed",
+                "message", "User not found"
+            );
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+            session.close(CloseStatus.NOT_ACCEPTABLE.withReason("User not found"));
+            return;
+        }
+        
+        // Store user session
+        userSessions.put(user.getId().toString(), session);
+        sessionUsers.put(session.getId(), user);
+        
+        Map<String, Object> response = Map.of(
+            "type", "authentication-success",
+            "userId", user.getId(),
+            "userEmail", user.getEmail(),
+            "userRole", user.getRole().name()
+        );
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+        
+        log.info("User authenticated: {} ({})", user.getEmail(), user.getRole());]]></codefragment>
+  </duplication>
+  <duplication lines="39" tokens="240">
+    <file begintoken="84951" column="63" endcolumn="13" endline="479" endtoken="85190" line="441" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\AuthService.java" />
+    <file begintoken="85357" column="57" endcolumn="17" endline="554" endtoken="85596" line="514" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\AuthService.java" />
+    <codefragment><![CDATA[            Caregiver c = caregivers.findByUserId(user.getId()).orElse(null);
+            if (c != null) { caregiverId = c.getId(); name = c.getFirstName()+" "+c.getLastName(); }
+        }
+        case FAMILY_MEMBER -> {
+            FamilyMember fm = familyMembers.findByUser(user).orElse(null);
+            if (fm != null) {
+                name = fm.getFirstName() + " " + fm.getLastName();
+                caregiverId = fm.getId(); 
+            }
+        }
+        case ADMIN -> {
+            name = user.getName();
+        }
+    }
+
+    /* ---------------- Build short-lived access token -------------------- */
+    String token = jwt.createToken(user.getEmail(), user.getRole());  // 15-min exp
+
+    /* ---------------- Send it as an HttpOnly cookie --------------------- */
+    ResponseCookie cookie = ResponseCookie.from("AUTH", token)
+            .httpOnly(true)
+            .secure(false)        // disable only when running localhost over http set to true in prod
+            .sameSite("Lax")
+            .path("/")
+            .maxAge(Duration.ofHours(3))      // upper bound of sliding window
+            .build();
+    res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+    /* ---------------- Response body (unchanged) ------------------------- */
+    return LoginResponse.builder()
+            .id(user.getId())
+            .email(user.getEmail())
+            .role(user.getRole())
+            .token(token)           // optional but handy for Postman / unit tests
+            .patientId(patientId)
+            .caregiverId(caregiverId)
+            .name(name)
+            .status(user.getStatus())
+            .emailVerified(user.getIsVerified())]]></codefragment>
+  </duplication>
+  <duplication lines="31" tokens="226">
+    <file begintoken="101229" column="5" endcolumn="5" endline="393" endtoken="101454" line="363" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\DefaultAIChatService.java" />
+    <file begintoken="138021" column="5" endcolumn="5" endline="243" endtoken="138246" line="215" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\MockAIChatService.java" />
+    <codefragment><![CDATA[    }
+
+    // Helper: Convert to conversation summary
+    private ChatConversationSummary convertToConversationSummary(ChatConversation conversation) {
+        int messageCount = chatMessageRepository.countByConversation(conversation);
+        ChatConversationSummary summary = new ChatConversationSummary();
+        summary.setConversationId(conversation.getConversationId());
+        summary.setTitle(conversation.getTitle());
+        summary.setChatType(conversation.getChatType());
+        summary.setAiProvider(conversation.getAiProviderUsed() != null ? conversation.getAiProviderUsed().name() : null);
+        summary.setAiModel(conversation.getAiModelUsed());
+        summary.setTotalMessages(messageCount);
+        summary.setTotalTokensUsed(conversation.getTotalTokensUsed());
+        summary.setLastMessageAt(conversation.getUpdatedAt());
+        summary.setCreatedAt(conversation.getCreatedAt());
+        summary.setIsActive(conversation.getIsActive());
+        return summary;
+    }
+
+    // Helper: Convert to message summary
+    private ChatMessageSummary convertToMessageSummary(ChatMessage message) {
+        ChatMessageSummary summary = new ChatMessageSummary();
+        summary.setMessageId(message.getId());
+        summary.setMessageType(message.getMessageType());
+        summary.setContent(message.getContent());
+        summary.setTokensUsed(message.getTokensUsed());
+        summary.setProcessingTimeMs(message.getProcessingTimeMs());
+        summary.setAiModelUsed(message.getAiModelUsed());
+        summary.setCreatedAt(message.getCreatedAt());
+        return summary;
+    }]]></codefragment>
+  </duplication>
+  <duplication lines="31" tokens="198">
+    <file begintoken="97688" column="100" endcolumn="48" endline="197" endtoken="97885" line="167" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\DatabaseStorageService.java" />
+    <file begintoken="118828" column="68" endcolumn="48" endline="287" endtoken="119025" line="257" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\FileManagementService.java" />
+    <codefragment><![CDATA[        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String extension = getFileExtension(originalFilename);
+        return String.format("%s_%d_%s_%s%s", userType.toLowerCase(), userId, category, timestamp, extension);
+    }
+    
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return "";
+        }
+        return filename.substring(filename.lastIndexOf("."));
+    }
+    
+    private UserFile.FileCategory mapCategoryToEnum(String category) {
+        if (category == null) {
+            return UserFile.FileCategory.OTHER_DOCUMENT;
+        }
+        
+        return switch (category.toUpperCase()) {
+            case "PROFILE_IMAGE", "PROFILE" -> UserFile.FileCategory.PROFILE_IMAGE;
+            case "MEDICAL_RECORD", "MEDICAL" -> UserFile.FileCategory.MEDICAL_RECORD;
+            case "CLINICAL_NOTE", "CLINICAL" -> UserFile.FileCategory.CLINICAL_NOTE;
+            case "PRESCRIPTION" -> UserFile.FileCategory.PRESCRIPTION;
+            case "LAB_RESULT", "LAB" -> UserFile.FileCategory.LAB_RESULT;
+            case "INSURANCE_DOCUMENT", "INSURANCE" -> UserFile.FileCategory.INSURANCE_DOCUMENT;
+            case "CONSENT_FORM", "CONSENT" -> UserFile.FileCategory.CONSENT_FORM;
+            case "CARE_PLAN", "CARE" -> UserFile.FileCategory.CARE_PLAN;
+            default -> UserFile.FileCategory.OTHER_DOCUMENT;
+        };
+    }
+    
+    private Long determinePatientId(Long userId, UserFile.OwnerType ownerType) {]]></codefragment>
+  </duplication>
+  <duplication lines="37" tokens="194">
+    <file begintoken="10852" column="75" endcolumn="37" endline="188" endtoken="11045" line="152" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\controller\AnalyticsController.java" />
+    <file begintoken="11601" column="54" endcolumn="41" endline="327" endtoken="11794" line="293" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\controller\AnalyticsController.java" />
+    <codefragment><![CDATA[            .orElseThrow(() -> new IllegalStateException("User not found"));
+        
+        // Find patient
+        Optional<Patient> patientOpt = patientRepository.findById(patientId);
+        if (patientOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Patient not found"));
+        }
+        
+        Patient patient = patientOpt.get();
+        User patientUser = patient.getUser();
+        
+        // Check access based on role
+        boolean hasAccess = false;
+        
+        if (currentUser.getRole() == Role.PATIENT) {
+            // Patient can only access their own data
+            hasAccess = currentUser.getId().equals(patientUser.getId());
+        } 
+        else if (currentUser.getRole() == Role.CAREGIVER) {
+            // Check if user is a caregiver for this patient
+    hasAccess = caregiverService.hasAccessToPatient(currentUser.getId(), patientId);
+
+        }
+        else if (currentUser.getRole() == Role.FAMILY_MEMBER) {
+            // Check if user is a family member for this patient
+    hasAccess = caregiverService.hasAccessToPatient(currentUser.getId(), patientId);
+
+        }
+        else if (currentUser.getRole() == Role.ADMIN) {
+            // Admins have access to all patients
+            hasAccess = true;
+        }
+        
+        if (!hasAccess) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Not authorized to access this patient's data"));]]></codefragment>
+  </duplication>
+  <duplication lines="31" tokens="193">
+    <file begintoken="185806" column="68" endcolumn="21" endline="394" endtoken="185998" line="364" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CallNotificationHandler.java" />
+    <file begintoken="188083" column="91" endcolumn="21" endline="341" endtoken="188275" line="311" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CareConnectWebSocketHandler.java" />
+    <codefragment><![CDATA[            log.info("Call {} ended by {}", callId, user.getEmail());
+        }
+    }
+
+    private void handleHeartbeat(WebSocketSession session, Map<String, Object> payload) throws Exception {
+        Map<String, Object> response = Map.of(
+            "type", "heartbeat-response",
+            "timestamp", System.currentTimeMillis()
+        );
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+    }
+
+    private void sendErrorMessage(WebSocketSession session, String errorMessage) {
+        try {
+            Map<String, Object> error = Map.of(
+                "type", "error",
+                "message", errorMessage,
+                "timestamp", System.currentTimeMillis()
+            );
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(error)));
+        } catch (Exception e) {
+            log.error("Failed to send error message to session {}", session.getId(), e);
+        }
+    }
+
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        User user = sessionUsers.remove(session.getId());
+        if (user != null) {
+            userSessions.remove(user.getId().toString());
+            log.info("WebSocket connection closed for user: {} - Status: {}", user.getEmail(), status);]]></codefragment>
+  </duplication>
+  <duplication lines="23" tokens="159">
+    <file begintoken="111480" column="72" endcolumn="27" endline="57" endtoken="111638" line="35" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\evv\EvvService.java" />
+    <file begintoken="112410" column="96" endcolumn="27" endline="223" endtoken="112568" line="202" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\evv\EvvService.java" />
+    <codefragment><![CDATA[    public EvvRecord createRecord(EvvRecordRequestDto req, Long actorId) {
+        var patient = patientRepository.findById(req.getPatientId())
+                .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        
+        // Build individual name from patient data
+        String individualName = patient.getFirstName() + " " + patient.getLastName();
+        
+        var rec = EvvRecord.builder()
+                .patient(patient)
+                .serviceType(req.getServiceType())
+                .individualName(individualName)
+                .caregiverId(req.getCaregiverId())
+                .dateOfService(req.getDateOfService())
+                .timeIn(req.getTimeIn())
+                .timeOut(req.getTimeOut())
+                // Legacy location fields for backward compatibility
+                .locationLat(req.getLocationLat())
+                .locationLng(req.getLocationLng())
+                .locationSource(req.getLocationSource())
+                .status("UNDER_REVIEW")
+                .stateCode(req.getStateCode())
+                .deviceInfo(req.getDeviceInfo())
+                .isOffline(false)]]></codefragment>
+  </duplication>
+  <duplication lines="22" tokens="148">
+    <file begintoken="57049" column="76" endcolumn="62" endline="131" endtoken="57196" line="110" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\model\CaregiverPatientLink.java" />
+    <file begintoken="62033" column="76" endcolumn="62" endline="141" endtoken="62180" line="120" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\model\FamilyMemberLink.java" />
+    <codefragment><![CDATA[    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public LinkStatus getStatus() { return status; }
+    public void setStatus(LinkStatus status) { 
+        this.status = status; 
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public LinkType getLinkType() { return linkType; }
+    public void setLinkType(LinkType linkType) { this.linkType = linkType; }
+
+    public LocalDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }]]></codefragment>
+  </duplication>
+  <duplication lines="15" tokens="130">
+    <file begintoken="163580" column="74" endcolumn="58" endline="609" endtoken="163709" line="595" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="164165" column="68" endcolumn="58" endline="702" endtoken="164294" line="688" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                        subscription.setStripeCustomerId(stripeCustomerId);
+                        subscription.setUser(user);
+                        subscription.setStatus("ACTIVE");
+                        subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                        subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                        
+                        // Get the price ID and try to find a matching plan
+                        if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                            subscription.setPriceId(priceId);
+                            
+                            // Try to find matching plan by code
+                            Plan plan = planRepository.findByCode(priceId);
+                            if (plan != null) {
+                                subscription.setPlan(plan);]]></codefragment>
+  </duplication>
+  <duplication lines="18" tokens="128">
+    <file begintoken="166606" column="56" endcolumn="9" endline="1107" endtoken="166733" line="1090" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166822" column="57" endcolumn="9" endline="1137" endtoken="166949" line="1120" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[            subscription.setStripeCustomerId(customerId);
+            subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+            subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+            
+            // Try to find the matching plan
+            if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                subscription.setPriceId(priceId);
+                
+                // Try to find matching plan
+                Plan plan = planRepository.findByCode(priceId);
+                if (plan != null) {
+                    subscription.setPlan(plan);
+                }
+            }
+            
+            return subscriptionRepository.save(subscription);
+        } else {]]></codefragment>
+  </duplication>
+  <duplication lines="15" tokens="120">
+    <file begintoken="164177" column="56" endcolumn="25" endline="704" endtoken="164296" line="690" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166606" column="56" endcolumn="13" endline="1104" endtoken="166725" line="1090" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166822" column="57" endcolumn="13" endline="1134" endtoken="166941" line="1120" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                        subscription.setStatus("ACTIVE");
+                        subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                        subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                        
+                        // Get the price ID
+                        if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                            subscription.setPriceId(priceId);
+                            
+                            // Try to find matching plan by code
+                            Plan plan = planRepository.findByCode(priceId);
+                            if (plan != null) {
+                                subscription.setPlan(plan);
+                            }
+                        }]]></codefragment>
+  </duplication>
+  <duplication lines="13" tokens="118">
+    <file begintoken="163592" column="56" endcolumn="58" endline="609" endtoken="163709" line="597" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166606" column="56" endcolumn="46" endline="1102" endtoken="166723" line="1090" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166822" column="57" endcolumn="46" endline="1132" endtoken="166939" line="1120" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                        subscription.setStatus("ACTIVE");
+                        subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                        subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                        
+                        // Get the price ID and try to find a matching plan
+                        if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                            subscription.setPriceId(priceId);
+                            
+                            // Try to find matching plan by code
+                            Plan plan = planRepository.findByCode(priceId);
+                            if (plan != null) {
+                                subscription.setPlan(plan);]]></codefragment>
+  </duplication>
+  <duplication lines="12" tokens="117">
+    <file begintoken="120209" column="13" endcolumn="45" endline="87" endtoken="120325" line="76" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\GmailClient.java" />
+    <file begintoken="120611" column="13" endcolumn="45" endline="150" endtoken="120727" line="139" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\GmailClient.java" />
+    <codefragment><![CDATA[            Iterator<JsonNode> iterator = search.get("messages").elements();
+            while (iterator.hasNext()) {
+                JsonNode messageRef = iterator.next();
+                String messageId = messageRef.path("id").asText(null);
+                if (messageId == null) continue;
+
+                String messageUrl = BASE_URL + "/users/me/messages/" + messageId + "?format=full";
+                HttpEntity<Void> messageEntity = new HttpEntity<>(createHeaders(accessToken));
+                ResponseEntity<JsonNode> messageResponse = restTemplate.exchange(messageUrl, HttpMethod.GET, messageEntity, JsonNode.class);
+                JsonNode message = messageResponse.getBody();
+
+                if (message == null) continue;]]></codefragment>
+  </duplication>
+  <duplication lines="12" tokens="110">
+    <file begintoken="99422" column="17" endcolumn="13" endline="120" endtoken="99531" line="109" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\DefaultAIChatService.java" />
+    <file begintoken="99533" column="9" endcolumn="5" endline="134" endtoken="99642" line="123" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\DefaultAIChatService.java" />
+    <codefragment><![CDATA[                ChatConversation newConversation = ChatConversation.builder()
+                        .conversationId(UUID.randomUUID().toString())
+                        .patientId(request.getPatientId())
+                        .userId(request.getUserId())
+                        .chatType(request.getChatType())
+                        .title(request.getTitle() != null ? request.getTitle() : generateConversationTitle(request.getMessage()))
+                        .aiProviderUsed(aiConfig.getPreferredAiProvider())
+                        .aiModelUsed(determineModel(request, aiConfig))
+                        .isActive(true)
+                        .build();
+                return cacheService.saveConversation(newConversation);
+            }]]></codefragment>
+  </duplication>
+  <duplication lines="19" tokens="108">
+    <file begintoken="10864" column="76" endcolumn="72" endline="173" endtoken="10971" line="155" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\controller\AnalyticsController.java" />
+    <file begintoken="11187" column="97" endcolumn="84" endline="237" endtoken="11294" line="219" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\controller\AnalyticsController.java" />
+    <file begintoken="11613" column="80" endcolumn="84" endline="314" endtoken="11720" line="296" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\controller\AnalyticsController.java" />
+    <codefragment><![CDATA[        Optional<Patient> patientOpt = patientRepository.findById(patientId);
+        if (patientOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Patient not found"));
+        }
+        
+        Patient patient = patientOpt.get();
+        User patientUser = patient.getUser();
+        
+        // Check access based on role
+        boolean hasAccess = false;
+        
+        if (currentUser.getRole() == Role.PATIENT) {
+            // Patient can only access their own data
+            hasAccess = currentUser.getId().equals(patientUser.getId());
+        } 
+        else if (currentUser.getRole() == Role.CAREGIVER) {
+            // Check if user is a caregiver for this patient
+    hasAccess = caregiverService.hasAccessToPatient(currentUser.getId(), patientId);]]></codefragment>
+  </duplication>
+  <duplication lines="17" tokens="108">
+    <file begintoken="164195" column="116" endcolumn="65" endline="707" endtoken="164302" line="691" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="164435" column="64" endcolumn="61" endline="742" endtoken="164542" line="727" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                        subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                        subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                        
+                        // Get the price ID
+                        if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                            subscription.setPriceId(priceId);
+                            
+                            // Try to find matching plan by code
+                            Plan plan = planRepository.findByCode(priceId);
+                            if (plan != null) {
+                                subscription.setPlan(plan);
+                            }
+                        }
+                        
+                        // Save the subscription
+                        subscriptionRepository.save(subscription);]]></codefragment>
+  </duplication>
+  <duplication lines="8" tokens="104">
+    <file begintoken="157431" column="41" endcolumn="81" endline="149" endtoken="157534" line="142" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionEnrichmentService.java" />
+    <file begintoken="157784" column="32" endcolumn="77" endline="201" endtoken="157887" line="194" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionEnrichmentService.java" />
+    <codefragment><![CDATA[                    existingSubscription.setStatus("ACTIVE");
+                    
+                    // Get price ID if available
+                    if (stripeSubJson.has("items") && stripeSubJson.get("items").has("data") && 
+                        stripeSubJson.get("items").get("data").size() > 0) {
+                        JsonNode item = stripeSubJson.get("items").get("data").get(0);
+                        if (item.has("price") && item.get("price").has("id")) {
+                            String priceId = item.get("price").get("id").asText();]]></codefragment>
+  </duplication>
+  <duplication lines="16" tokens="102">
+    <file begintoken="130125" column="29" endcolumn="29" endline="181" endtoken="130226" line="166" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\invoice\InvoiceService.java" />
+    <file begintoken="130376" column="44" endcolumn="29" endline="221" endtoken="130477" line="207" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\invoice\InvoiceService.java" />
+    <codefragment><![CDATA[        invoice.addPayment(p);
+
+        // Recalculate due and status
+        BigDecimal total = nvl(invoice.getTotal(), BigDecimal.ZERO);
+        BigDecimal paidSum = invoice.getPayments().stream()
+                .map(InvoicePayment::getAmountPaid)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal due = total.subtract(paidSum);
+        if (due.signum() < 0) due = BigDecimal.ZERO;
+
+        invoice.setAmountDue(due);
+        invoice.setUpdatedAt(OffsetDateTime.now());
+
+        if (due.signum() == 0) {]]></codefragment>
+  </duplication>
+  <duplication lines="14" tokens="102">
+    <file begintoken="164435" column="64" endcolumn="21" endline="740" endtoken="164536" line="727" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166624" column="104" endcolumn="13" endline="1104" endtoken="166725" line="1091" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="166840" column="104" endcolumn="13" endline="1134" endtoken="166941" line="1121" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                    subscription.setStatus(stripeSub.getStatus());
+                    subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                    
+                    // Update price ID if it changed
+                    if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                        String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                        subscription.setPriceId(priceId);
+                        
+                        // Try to find matching plan by code
+                        Plan plan = planRepository.findByCode(priceId);
+                        if (plan != null) {
+                            subscription.setPlan(plan);
+                        }
+                    }]]></codefragment>
+  </duplication>
+  <duplication lines="16" tokens="101">
+    <file begintoken="183902" column="63" endcolumn="21" endline="62" endtoken="184002" line="47" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CallNotificationHandler.java" />
+    <file begintoken="186548" column="68" endcolumn="21" endline="76" endtoken="186648" line="61" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\websocket\CareConnectWebSocketHandler.java" />
+    <codefragment><![CDATA[            "message", "Connected to CareConnect call service",
+            "sessionId", session.getId()
+        );
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        try {
+            Map<String, Object> payload = objectMapper.readValue(
+                message.getPayload(),
+                new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
+            String type = (String) payload.get("type");
+
+            log.info("Received WebSocket message: {} from session: {}", type, session.getId());]]></codefragment>
+  </duplication>
+  <duplication lines="13" tokens="100">
+    <file begintoken="90542" column="25" endcolumn="62" endline="153" endtoken="90641" line="141" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\CaregiverService.java" />
+    <file begintoken="92312" column="5" endcolumn="42" endline="492" endtoken="92411" line="478" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\CaregiverService.java" />
+    <codefragment><![CDATA[                        }
+                        PatientSummaryDTO summary = PatientSummaryDTO.builder()
+                            .id(patient.getId())
+                            .firstName(patient.getFirstName())
+                            .lastName(patient.getLastName())
+                            .email(patient.getEmail())
+                            .phone(patient.getPhone())
+                            .dob(patient.getDob())
+                            .gender(patient.getGender())
+                            .address(patient.getAddress())
+                            .relationship(patient.getRelationship())
+                            .build();
+                        return new PatientWithLinkDto(summary, link);]]></codefragment>
+  </duplication>
+  <duplication lines="12" tokens="100">
+    <file begintoken="163610" column="116" endcolumn="58" endline="609" endtoken="163709" line="598" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <file begintoken="164435" column="64" endcolumn="54" endline="738" endtoken="164534" line="727" path="C:\Users\Corey\OneDrive\Desktop\Swen670TeamDProject\2026_spring_careconnect\backend\core\src\main\java\com\careconnect\service\SubscriptionService.java" />
+    <codefragment><![CDATA[                        subscription.setStartedAt(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodStart()));
+                        subscription.setCurrentPeriodEnd(java.time.Instant.ofEpochSecond(stripeSub.getCurrentPeriodEnd()));
+                        
+                        // Get the price ID and try to find a matching plan
+                        if (stripeSub.getItems() != null && !stripeSub.getItems().getData().isEmpty()) {
+                            String priceId = stripeSub.getItems().getData().get(0).getPrice().getId();
+                            subscription.setPriceId(priceId);
+                            
+                            // Try to find matching plan by code
+                            Plan plan = planRepository.findByCode(priceId);
+                            if (plan != null) {
+                                subscription.setPlan(plan);]]></codefragment>
+  </duplication>
+</pmd-cpd>
