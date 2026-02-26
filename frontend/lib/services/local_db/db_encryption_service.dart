@@ -37,4 +37,12 @@ class DbEncryptionService {
   String escapeForPragma(String rawKey) {
     return rawKey.replaceAll("'", "''");
   }
+
+  /// Deletes the stored encryption key.
+  ///
+  /// Useful for factory-reset flows when the encrypted database is unreadable
+  /// and needs to be recreated from scratch.
+  Future<void> deleteKey() async {
+    await _storage.delete(key: _encryptionKeyStorageKey);
+  }
 }

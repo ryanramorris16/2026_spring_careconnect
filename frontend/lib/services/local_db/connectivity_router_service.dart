@@ -12,9 +12,17 @@ class ConnectivityRouterService {
   Future<T> route<T>({
     required Future<T> Function() online,
     required Future<T> Function() offline,
+    bool fallbackToOfflineOnOnlineError = false,
   }) async {
     final isOnline = await _isOnline();
     if (isOnline) {
+      if (fallbackToOfflineOnOnlineError) {
+        try {
+          return await online();
+        } catch (_) {
+          return offline();
+        }
+      }
       return online();
     }
     return offline();

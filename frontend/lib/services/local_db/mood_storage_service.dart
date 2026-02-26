@@ -11,11 +11,14 @@ class MoodStorageService {
   MoodStorageService({
     required ConnectivityRouterService connectivityRouter,
     AppDatabase? appDatabase,
+    Future<int?> Function()? currentUserIdProvider,
   })  : _connectivityRouter = connectivityRouter,
-        _appDatabase = appDatabase ?? AppDatabase();
+        _appDatabase = appDatabase ?? AppDatabase(),
+        _currentUserIdProvider = currentUserIdProvider;
 
   final ConnectivityRouterService _connectivityRouter;
   final AppDatabase _appDatabase;
+  final Future<int?> Function()? _currentUserIdProvider;
 
   /// Saves mood online when available, otherwise stores it locally.
   Future<void> saveMood({
@@ -40,7 +43,27 @@ class MoodStorageService {
           createdAt: DateTime.now(),
         );
       },
+      fallbackToOfflineOnOnlineError: true,
     );
+  }
+
+  /// Saves mood for the current user resolved from shared app state.
+  Future<void> saveMoodForCurrentUser({
+    required int score,
+    required String label,
+  }) async {
+    if (_currentUserIdProvider == null) {
+      throw Exception(
+        'No currentUserIdProvider configured for MoodStorageService.',
+      );
+    }
+
+    final userId = await _currentUserIdProvider.call();
+    if (userId == null) {
+      throw Exception('Current user ID is unavailable.');
+    }
+
+    await saveMood(userId: userId, score: score, label: label);
   }
 
   /// Returns mood history from backend when online, local DB when offline.

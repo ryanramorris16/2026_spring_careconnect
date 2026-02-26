@@ -16,7 +16,7 @@ class Moods extends Table {
 // Source: ../backend/core/src/main/java/com/careconnect/model\Task.java
 class Tasks extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get patient => integer().nullable()();
+  IntColumn get patient => integer().named('patient_id').nullable()();
   TextColumn get name => text().nullable()();
   TextColumn get description => text().nullable()();
   TextColumn get date => text().nullable()();

@@ -363,7 +363,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   );
   @override
   late final GeneratedColumn<int> patient = GeneratedColumn<int>(
-    'patient',
+    'patient_id',
     aliasedName,
     true,
     type: DriftSqlType.int,
@@ -532,10 +532,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('patient')) {
+    if (data.containsKey('patient_id')) {
       context.handle(
         _patientMeta,
-        patient.isAcceptableOrUnknown(data['patient']!, _patientMeta),
+        patient.isAcceptableOrUnknown(data['patient_id']!, _patientMeta),
       );
     }
     if (data.containsKey('name')) {
@@ -640,7 +640,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       )!,
       patient: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
-        data['${effectivePrefix}patient'],
+        data['${effectivePrefix}patient_id'],
       ),
       name: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -735,7 +735,7 @@ class Task extends DataClass implements Insertable<Task> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     if (!nullToAbsent || patient != null) {
-      map['patient'] = Variable<int>(patient);
+      map['patient_id'] = Variable<int>(patient);
     }
     if (!nullToAbsent || name != null) {
       map['name'] = Variable<String>(name);
@@ -1043,7 +1043,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (patient != null) 'patient': patient,
+      if (patient != null) 'patient_id': patient,
       if (name != null) 'name': name,
       if (description != null) 'description': description,
       if (date != null) 'date': date,
@@ -1100,7 +1100,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       map['id'] = Variable<int>(id.value);
     }
     if (patient.present) {
-      map['patient'] = Variable<int>(patient.value);
+      map['patient_id'] = Variable<int>(patient.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);

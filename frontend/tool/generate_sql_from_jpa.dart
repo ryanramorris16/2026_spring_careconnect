@@ -304,6 +304,10 @@ String _columnDrift(_ColumnSpec c) {
     _MappedType.dateTime => 'dateTime()',
   };
 
+  if (c.columnName != c.fieldName) {
+    builder = "$builder.named('${c.columnName}')";
+  }
+
   if (c.nullable) {
     builder = '$builder.nullable()';
   } else if (c.mappedType == _MappedType.dateTime &&
