@@ -23,6 +23,23 @@ class SyncSummary {
   final bool ranOnline;
 }
 
+/// Non-sensitive queue projection used by UI.
+///
+/// This deliberately excludes account identifiers (for example, userId).
+class MoodQueueItem {
+  const MoodQueueItem({
+    required this.localId,
+    required this.score,
+    required this.label,
+    required this.createdAt,
+  });
+
+  final int localId;
+  final int score;
+  final String label;
+  final DateTime createdAt;
+}
+
 /// Thrown when a write requires offline persistence but user disabled it.
 class OfflinePersistenceDisabledException implements Exception {
   const OfflinePersistenceDisabledException(this.message);
@@ -148,6 +165,69 @@ class MoodStorageService {
         failed: 0,
         ranOnline: false,
       ),
+    );
+  }
+
+  /// Returns pending local moods in deterministic queue order.
+  ///
+  /// Queue order is oldest-first so the sync pipeline can process entries in
+  /// creation sequence.
+  Future<List<MoodQueueItem>> getPendingMoodQueue({
+    required int userId,
+  }) async {
+    final rows = await _appDatabase.getMoodsForUserOldestFirst(userId);
+    return rows
+        .map(
+          (row) => MoodQueueItem(
+            localId: row.id,
+            score: row.score,
+            label: row.label,
+            createdAt: row.createdAt,
+          ),
+        )
+        .toList();
+  }
+
+  /// Removes one queued mood entry before it is synced.
+  Future<bool> deleteQueuedMoodItem({
+    required int localId,
+  }) async {
+    final deleted = await _appDatabase.deleteMoodById(localId);
+    return deleted > 0;
+  }
+
+  /// Syncs one queued mood entry by local id and removes it on success.
+  ///
+  /// Returns `true` when a backend write succeeds and local row is deleted.
+  /// Returns `false` when row is missing or backend write fails.
+  Future<bool> syncQueuedMoodItemById({
+    required int userId,
+    required int localId,
+  }) async {
+    return _connectivityRouter.route<bool>(
+      online: () async {
+        final row = await _appDatabase.getMoodByIdForUser(
+          moodId: localId,
+          userIdValue: userId,
+        );
+        if (row == null) {
+          return false;
+        }
+
+        try {
+          final response = await ApiService.saveMoodScore(
+            userId: row.userId,
+            score: row.score,
+            label: row.label,
+          );
+          _throwIfHttpError(response, 'sync queued mood item to backend');
+          await _appDatabase.deleteMoodById(localId);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      },
+      offline: () async => false,
     );
   }
 

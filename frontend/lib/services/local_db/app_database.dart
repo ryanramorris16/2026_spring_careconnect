@@ -57,6 +57,34 @@ class AppDatabase extends _$AppDatabase {
     return query.get();
   }
 
+  /// Returns moods for one user, oldest first.
+  ///
+  /// This order is useful when presenting a queue where the oldest unsynced
+  /// item should be processed first.
+  Future<List<Mood>> getMoodsForUserOldestFirst(int userIdValue) {
+    final query = select(moods)
+      ..where((tbl) => tbl.userId.equals(userIdValue))
+      ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]);
+    return query.get();
+  }
+
+  /// Returns one mood row by local primary key for a specific user.
+  Future<Mood?> getMoodByIdForUser({
+    required int moodId,
+    required int userIdValue,
+  }) {
+    final query = select(moods)
+      ..where((tbl) => tbl.id.equals(moodId))
+      ..where((tbl) => tbl.userId.equals(userIdValue))
+      ..limit(1);
+    return query.getSingleOrNull();
+  }
+
+  /// Deletes one mood row by local primary key.
+  Future<int> deleteMoodById(int moodId) {
+    return (delete(moods)..where((tbl) => tbl.id.equals(moodId))).go();
+  }
+
   /// Deletes mood rows by primary key.
   Future<void> deleteMoodsByIds(Iterable<int> ids) async {
     final values = ids.toList();
