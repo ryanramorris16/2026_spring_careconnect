@@ -35,6 +35,12 @@ class _MainScreenState extends State<MainScreen> {
   MoodStorageService? _moodStorageService;
   bool _isMoodSyncInProgress = false;
   bool? _lastKnownOnlineState;
+  List<MoodQueueItem> _pendingMoodQueue = const [];
+  int? _currentlySyncingMoodId;
+  final Set<int> _failedMoodIds = <int>{};
+  Timer? _syncStartDelayTimer;
+  bool _showSyncCompleteBanner = false;
+  Timer? _syncCompleteBannerHideTimer;
 
   @override
   void initState() {
@@ -49,6 +55,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _observedUserProvider?.removeListener(_handleConnectivityTransition);
+    _syncStartDelayTimer?.cancel();
+    _syncCompleteBannerHideTimer?.cancel();
     if (_moodStorageService != null) {
       unawaited(_moodStorageService!.close());
     }
@@ -90,7 +98,16 @@ class _MainScreenState extends State<MainScreen> {
         _lastKnownOnlineState == false && isOnlineNow == true;
     _lastKnownOnlineState = isOnlineNow;
 
-    if (!transitionedToOnline || _isMoodSyncInProgress) {
+    if (isOnlineNow == false) {
+      _syncStartDelayTimer?.cancel();
+      setState(() {
+        _currentlySyncingMoodId = null;
+        _isMoodSyncInProgress = false;
+      });
+      return;
+    }
+
+    if (!transitionedToOnline) {
       return;
     }
 
@@ -99,15 +116,114 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
+    await _prepareQueuedSync(userId: userId);
+  }
+
+  /// Loads pending local moods and schedules delayed sync after reconnect.
+  ///
+  /// UX behavior:
+  /// 1. Show a blue banner with pending queue state.
+  /// 2. Wait 30 seconds before first sync.
+  /// 3. Process one item every 15 seconds until queue is empty.
+  Future<void> _prepareQueuedSync({required int userId}) async {
+    if (_moodStorageService == null) {
+      return;
+    }
+    _syncStartDelayTimer?.cancel();
+    final queue = await _moodStorageService!.getPendingMoodQueue(userId: userId);
+    if (!mounted || queue.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _pendingMoodQueue = queue;
+      _failedMoodIds.clear();
+      _currentlySyncingMoodId = null;
+      _showSyncCompleteBanner = false;
+    });
+
+    _syncStartDelayTimer = Timer(const Duration(seconds: 30), () {
+      unawaited(_runQueuedSyncCycle(userId: userId));
+    });
+  }
+
+  /// Processes queued moods sequentially with a 15-second pacing interval.
+  Future<void> _runQueuedSyncCycle({required int userId}) async {
+    if (_isMoodSyncInProgress || _moodStorageService == null) {
+      return;
+    }
     _isMoodSyncInProgress = true;
+
     try {
-      // Sync is best-effort: failures should not interrupt navigation/UI.
-      await _moodStorageService!.syncMoodsToBackendIfOnline(userId: userId);
+      while (mounted && _pendingMoodQueue.isNotEmpty) {
+        final provider = _observedUserProvider;
+        if (provider == null || !provider.isDeviceOnline) {
+          break;
+        }
+
+        final item = _pendingMoodQueue.first;
+        setState(() {
+          _currentlySyncingMoodId = item.localId;
+          _failedMoodIds.remove(item.localId);
+        });
+
+        final synced = await _moodStorageService!.syncQueuedMoodItemById(
+          userId: userId,
+          localId: item.localId,
+        );
+
+        if (!mounted) {
+          break;
+        }
+
+        setState(() {
+          _currentlySyncingMoodId = null;
+          if (synced) {
+            _pendingMoodQueue = _pendingMoodQueue
+                .where((queued) => queued.localId != item.localId)
+                .toList();
+          } else {
+            _failedMoodIds.add(item.localId);
+            // Keep failed item visible and move it to the end for later retry.
+            if (_pendingMoodQueue.length > 1) {
+              final nextQueue = List<MoodQueueItem>.from(_pendingMoodQueue);
+              nextQueue.removeAt(0);
+              nextQueue.add(item);
+              _pendingMoodQueue = nextQueue;
+            }
+          }
+        });
+
+        if (_pendingMoodQueue.isEmpty) {
+          _showSyncCompleteToastBanner();
+          break;
+        }
+
+        await Future<void>.delayed(const Duration(seconds: 15));
+      }
     } catch (_) {
-      // Suppress to keep app flow resilient. Retry occurs on next transition.
+      // Best-effort sync remains non-fatal to app flow.
     } finally {
       _isMoodSyncInProgress = false;
     }
+  }
+
+  void _showSyncCompleteToastBanner() {
+    _syncCompleteBannerHideTimer?.cancel();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _showSyncCompleteBanner = true;
+    });
+    _syncCompleteBannerHideTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _showSyncCompleteBanner = false;
+      });
+    });
   }
 
   /// Initialize the MainScreenConfig object.
@@ -246,6 +362,10 @@ class _MainScreenState extends State<MainScreen> {
               // Hardware Connection Lost
               if (!userProvider.isDeviceOnline)
                 _buildGlobalNoInternetBanner(theme)
+              else if (_showSyncCompleteBanner)
+                _buildSyncCompleteBanner(theme)
+              else if (_pendingMoodQueue.isNotEmpty)
+                _buildQueuedSyncBanner(theme)
 
               // BNS 5 offline mode Banner
               else if (!userProvider.offlineModeEnabled)
@@ -288,6 +408,161 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildSyncCompleteBanner(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      color: Colors.green.shade600,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      child: const Row(
+        children: [
+          Icon(Icons.check_circle_outline, color: Colors.white),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Sync complete',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQueuedSyncBanner(ThemeData theme) {
+    final queuedCount = _pendingMoodQueue.length;
+    final statusText = _currentlySyncingMoodId == null
+        ? 'Queued items: $queuedCount. Sync starts in 30s, then every 15s.'
+        : 'Syncing 1 of $queuedCount. Tap to review queue.';
+
+    return Material(
+      color: Colors.blue.shade600,
+      child: InkWell(
+        onTap: _openQueuedSyncSheet,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+          child: Row(
+            children: [
+              const Icon(Icons.sync, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: _openQueuedSyncSheet,
+                child: const Text(
+                  'View Queue',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openQueuedSyncSheet() {
+    if (!mounted) {
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StreamBuilder<int>(
+          stream: Stream<int>.periodic(const Duration(seconds: 1), (x) => x),
+          builder: (context, _) {
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.of(sheetContext).size.height * 0.65,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'Queued Mood Sync Items',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Only non-sensitive fields are shown. Items currently syncing cannot be deleted.',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: _pendingMoodQueue.isEmpty
+                          ? const Center(child: Text('No queued items'))
+                          : ListView.separated(
+                              itemCount: _pendingMoodQueue.length,
+                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final item = _pendingMoodQueue[index];
+                                final isSyncing =
+                                    item.localId == _currentlySyncingMoodId;
+                                final isFailed = _failedMoodIds.contains(item.localId);
+                                final status = isSyncing
+                                    ? 'Syncing now'
+                                    : isFailed
+                                        ? 'Failed (will retry)'
+                                        : 'Queued';
+
+                                return ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text('${index + 1}'),
+                                  ),
+                                  title: Text('Mood: ${item.label} (${item.score}/10)'),
+                                  subtitle: Text(
+                                    'Created: ${item.createdAt.toLocal()} \nStatus: $status',
+                                  ),
+                                  isThreeLine: true,
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed: isSyncing
+                                        ? null
+                                        : () => _deleteQueuedMoodItem(item),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteQueuedMoodItem(MoodQueueItem item) async {
+    if (_moodStorageService == null || _currentlySyncingMoodId == item.localId) {
+      return;
+    }
+    final removed = await _moodStorageService!.deleteQueuedMoodItem(
+      localId: item.localId,
+    );
+    if (!mounted || !removed) {
+      return;
+    }
+    setState(() {
+      _pendingMoodQueue = _pendingMoodQueue
+          .where((queued) => queued.localId != item.localId)
+          .toList();
+      _failedMoodIds.remove(item.localId);
+    });
   }
   /// Build the global offline mode warning banner
   Widget _buildGlobalOfflineBanner(BuildContext context) {
