@@ -84,6 +84,12 @@ class _MainScreenState extends State<MainScreen> {
         canUseOfflineFallback: () async => provider.offlineModeEnabled,
       );
       provider.addListener(_handleConnectivityTransition);
+
+      // On cold start, also recover and schedule any existing queue.
+      final userId = provider.user?.id;
+      if (provider.isDeviceOnline && userId != null) {
+        unawaited(_prepareQueuedSync(userId: userId));
+      }
     });
   }
 
@@ -506,7 +512,8 @@ class _MainScreenState extends State<MainScreen> {
                           ? const Center(child: Text('No queued items'))
                           : ListView.separated(
                               itemCount: _pendingMoodQueue.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              separatorBuilder: (_, i) =>
+                                  const Divider(height: 1),
                               itemBuilder: (context, index) {
                                 final item = _pendingMoodQueue[index];
                                 final isSyncing =
@@ -524,7 +531,7 @@ class _MainScreenState extends State<MainScreen> {
                                   ),
                                   title: Text('Mood: ${item.label} (${item.score}/10)'),
                                   subtitle: Text(
-                                    'Created: ${item.createdAt.toLocal()} \nStatus: $status',
+                                    'Created: ${_formatQueueTimestamp(item.createdAt)} \nStatus: $status',
                                   ),
                                   isThreeLine: true,
                                   trailing: IconButton(
@@ -563,6 +570,15 @@ class _MainScreenState extends State<MainScreen> {
           .toList();
       _failedMoodIds.remove(item.localId);
     });
+  }
+
+  String _formatQueueTimestamp(DateTime value) {
+    final local = value.toLocal();
+    final twoDigitMonth = local.month.toString().padLeft(2, '0');
+    final twoDigitDay = local.day.toString().padLeft(2, '0');
+    final twoDigitHour = local.hour.toString().padLeft(2, '0');
+    final twoDigitMinute = local.minute.toString().padLeft(2, '0');
+    return '$twoDigitMonth/$twoDigitDay ${local.year} $twoDigitHour:$twoDigitMinute';
   }
   /// Build the global offline mode warning banner
   Widget _buildGlobalOfflineBanner(BuildContext context) {
