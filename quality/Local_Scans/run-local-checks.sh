@@ -9,16 +9,19 @@
 # Usage:
 # sh quality/local/run-local-checks.sh
 #
-# Requires: java, mvn, python3
+# Requires: java, mvn, python
 # ==========================================================
 set -eu
+
+# Trap errors and pause before exit
+trap 'echo ""; echo "ERROR occurred at line $LINENO"; echo "Press any key to close..."; read -n 1 -s -r' ERR
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 CHECKS_DIR="${SCRIPT_DIR}/checks"
 REPORT_DIR="${SCRIPT_DIR}/report"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
 TIMESTAMP="$(date '+%Y-%m-%d-%H%M%S')"
-WORK_DIR="$(python3 -c "import tempfile; print(tempfile.mkdtemp())")"
+WORK_DIR="$(python -c "import tempfile; print(tempfile.mkdtemp())")"
 ZIP_NAME="careconnect-local-report-${TIMESTAMP}.zip"
 ZIP_PATH="${HOME}/Downloads/${ZIP_NAME}"
 GENERATED_AT="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -39,8 +42,7 @@ echo ""
 # Run Checkstyle
 # ----------------------------------------------------------
 echo "--- Checkstyle ---"
-if sh "${CHECKS_DIR}/check_checkstyle.sh" "${REPO_ROOT}" "${WORK_DIR}"
-"${TOOLS_DIR}"; then
+if sh "${CHECKS_DIR}/check_checkstyle.sh" "${REPO_ROOT}" "${WORK_DIR}" "${TOOLS_DIR}"; then
 CS_STATUS="passed"
 else
 CS_STATUS="failed"
@@ -64,8 +66,7 @@ fi
 # ----------------------------------------------------------
 echo ""
 echo "--- SpotBugs ---"
-if sh "${CHECKS_DIR}/check_spotbugs.sh" "${REPO_ROOT}" "${WORK_DIR}"
-"${TOOLS_DIR}"; then
+if sh "${CHECKS_DIR}/check_spotbugs.sh" "${REPO_ROOT}" "${WORK_DIR}" "${TOOLS_DIR}"; then
 SB_STATUS="passed"
 else
 SB_STATUS="failed"
@@ -88,20 +89,20 @@ export FAILED
 # ----------------------------------------------------------
 echo ""
 echo "📄 Generating HTML report..."
-python3 "${REPORT_DIR}/generate_report.py"
+python "${REPORT_DIR}/generate_report.py"
 # ----------------------------------------------------------
 # Package zip
 # ----------------------------------------------------------
 echo ""
 echo "📦 Packaging report..."
-python3 "${REPORT_DIR}/package_report.py"
+python "${REPORT_DIR}/package_report.py"
 # ----------------------------------------------------------
 # Open in browser
 # ----------------------------------------------------------
 echo ""
 
 echo "🌐 Opening report in browser..."
-python3 "${REPORT_DIR}/open_report.py"
+python "${REPORT_DIR}/open_report.py"
 # ----------------------------------------------------------
 # Summary
 # ----------------------------------------------------------
@@ -131,4 +132,6 @@ echo "=============================="
 echo ""
 echo "📦 Report saved to: ${ZIP_PATH}"
 echo ""
+echo "Press any key to close..."
+read -n 1 -s -r
 exit "${FAILED}"
