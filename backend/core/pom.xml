@@ -20,6 +20,8 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <aws.sdk.version>2.31.75</aws.sdk.version>
+        <!-- Static Analysis Reports Directory -->
+        <analysis.reports.dir>${project.basedir}/../../quality/Local_Scans/Static_Analysis_Reports</analysis.reports.dir>
         <!-- OWASP Dependency-Check: default to environment variable, override with -Dnvd.api.key=... -->
         <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
         <!-- OWASP Dependency-Check runtime toggles -->
@@ -410,7 +412,8 @@
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
-                    <outputFile>${project.basedir}/Static_Analysis_Reports/checkstyle-result.xml</outputFile>
+                    <outputFile>${analysis.reports.dir}/checkstyle-result.xml</outputFile>
+                    <cacheFile>${analysis.reports.dir}/checkstyle-cachefile</cacheFile>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -419,6 +422,28 @@
                         <version>10.14.2</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+
+            <!-- Move checkstyle-checker.xml from target to Static_Analysis_Reports -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>move-checkstyle-checker</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- SpotBugs plugin -->
@@ -450,7 +475,7 @@
                     <threshold>low</threshold>
                     <failOnError>true</failOnError>
                     <xmlOutput>true</xmlOutput>
-                    <outputDirectory>${project.basedir}/Static_Analysis_Reports</outputDirectory>
+                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
                 </configuration>
             </plugin>
 
@@ -461,6 +486,19 @@
                 <version>3.1.0</version>
                 <executions>
                     <execution>
+                        <id>move-checkstyle-checker</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>ensure-spotbugs-report</id>
                         <phase>verify</phase>
                         <goals>
@@ -468,8 +506,24 @@
                         </goals>
                         <configuration>
                             <target>
-                                <mkdir dir="${project.basedir}/Static_Analysis_Reports"/>
-                                <touch file="${project.basedir}/Static_Analysis_Reports/spotbugs-result.xml" mkdirs="true"/>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <touch file="${analysis.reports.dir}/spotbugs-result.xml" mkdirs="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>move-spotbugs-files</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <move todir="${analysis.reports.dir}" failonerror="false" verbose="true">
+                                    <fileset dir="${project.basedir}/target">
+                                        <include name="spotbugs*.xml"/>
+                                    </fileset>
+                                </move>
                             </target>
                         </configuration>
                     </execution>
@@ -497,6 +551,7 @@
                     <rulesets>
                         <ruleset>category/java/bestpractices.xml</ruleset>
                     </rulesets>
+                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
                 </configuration>
             </plugin>
 
