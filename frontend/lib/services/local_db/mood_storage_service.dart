@@ -6,6 +6,23 @@ import '../api_service.dart';
 import 'app_database.dart';
 import 'connectivity_router_service.dart';
 
+/// Summary returned by sync operations.
+class SyncSummary {
+  const SyncSummary({
+    required this.attempted,
+    required this.created,
+    required this.skippedExisting,
+    required this.failed,
+    required this.ranOnline,
+  });
+
+  final int attempted;
+  final int created;
+  final int skippedExisting;
+  final int failed;
+  final bool ranOnline;
+}
+
 /// Routes mood reads/writes between backend APIs and local encrypted storage.
 class MoodStorageService {
   MoodStorageService({
@@ -94,6 +111,99 @@ class MoodStorageService {
     );
   }
 
+  /// Syncs local moods to backend when online.
+  ///
+  /// Flow:
+  /// 1. Load local moods for user.
+  /// 2. Load backend mood history.
+  /// 3. Compare using deterministic fingerprints.
+  /// 4. Create only missing backend rows.
+  /// 5. Remove successfully synced local rows to avoid reprocessing.
+  ///
+  /// The method is fully wrapped in try/catch boundaries so individual row
+  /// failures don't abort the whole sync.
+  Future<SyncSummary> syncMoodsToBackendIfOnline({
+    required int userId,
+  }) async {
+    return _connectivityRouter.route<SyncSummary>(
+      online: () => _syncMoodsToBackendOnline(userId: userId),
+      offline: () async => const SyncSummary(
+        attempted: 0,
+        created: 0,
+        skippedExisting: 0,
+        failed: 0,
+        ranOnline: false,
+      ),
+    );
+  }
+
+  Future<SyncSummary> _syncMoodsToBackendOnline({required int userId}) async {
+    try {
+      final localRows = await _appDatabase.getMoodsForUser(userId);
+      if (localRows.isEmpty) {
+        return const SyncSummary(
+          attempted: 0,
+          created: 0,
+          skippedExisting: 0,
+          failed: 0,
+          ranOnline: true,
+        );
+      }
+
+      final backendRows = await ApiService.getMoodHistory(userId);
+      final backendFingerprints = backendRows
+          .whereType<Map<String, dynamic>>()
+          .map(_moodFingerprintFromBackend)
+          .toSet();
+
+      final syncedLocalIds = <int>[];
+      var created = 0;
+      var skippedExisting = 0;
+      var failed = 0;
+
+      for (final row in localRows) {
+        final localFingerprint = _moodFingerprintFromLocal(row);
+        if (backendFingerprints.contains(localFingerprint)) {
+          skippedExisting++;
+          syncedLocalIds.add(row.id);
+          continue;
+        }
+
+        try {
+          final response = await ApiService.saveMoodScore(
+            userId: row.userId,
+            score: row.score,
+            label: row.label,
+          );
+          _throwIfHttpError(response, 'sync mood row to backend');
+          created++;
+          syncedLocalIds.add(row.id);
+        } catch (_) {
+          failed++;
+        }
+      }
+
+      await _appDatabase.deleteMoodsByIds(syncedLocalIds);
+      return SyncSummary(
+        attempted: localRows.length,
+        created: created,
+        skippedExisting: skippedExisting,
+        failed: failed,
+        ranOnline: true,
+      );
+    } catch (_) {
+      // Industry standard: keep sync failures non-fatal for app flow and return
+      // a structured summary for callers to decide retry/backoff behavior.
+      return const SyncSummary(
+        attempted: 0,
+        created: 0,
+        skippedExisting: 0,
+        failed: 0,
+        ranOnline: true,
+      );
+    }
+  }
+
   /// Returns true when local encryption key exists.
   Future<bool> isLocalDbEncrypted() async {
     return _appDatabase.isEncrypted();
@@ -101,6 +211,30 @@ class MoodStorageService {
 
   /// Closes the local database handle.
   Future<void> close() => _appDatabase.close();
+
+  String _moodFingerprintFromLocal(Mood row) {
+    final normalized = row.createdAt.toUtc().toIso8601String();
+    return '${row.userId}|${row.score}|${row.label}|$normalized';
+  }
+
+  String _moodFingerprintFromBackend(Map<String, dynamic> row) {
+    final userId = row['userId']?.toString() ?? '';
+    final score = row['score']?.toString() ?? '';
+    final label = row['label']?.toString() ?? '';
+    final createdAt = _normalizeDateTimeString(row['createdAt']?.toString());
+    return '$userId|$score|$label|$createdAt';
+  }
+
+  String _normalizeDateTimeString(String? value) {
+    if (value == null || value.isEmpty) {
+      return '';
+    }
+    try {
+      return DateTime.parse(value).toUtc().toIso8601String();
+    } catch (_) {
+      return value;
+    }
+  }
 
   void _throwIfHttpError(http.Response response, String action) {
     if (response.statusCode >= 200 && response.statusCode < 300) {

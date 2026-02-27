@@ -56,6 +56,15 @@ class AppDatabase extends _$AppDatabase {
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
     return query.get();
   }
+
+  /// Deletes mood rows by primary key.
+  Future<void> deleteMoodsByIds(Iterable<int> ids) async {
+    final values = ids.toList();
+    if (values.isEmpty) {
+      return;
+    }
+    await (delete(moods)..where((tbl) => tbl.id.isIn(values))).go();
+  }
 }
 
 /// Opens the encrypted sqlite database and applies SQLCipher keying.
