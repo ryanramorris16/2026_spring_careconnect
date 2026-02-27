@@ -23,19 +23,31 @@ class SyncSummary {
   final bool ranOnline;
 }
 
+/// Thrown when a write requires offline persistence but user disabled it.
+class OfflinePersistenceDisabledException implements Exception {
+  const OfflinePersistenceDisabledException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// Routes mood reads/writes between backend APIs and local encrypted storage.
 class MoodStorageService {
   MoodStorageService({
     required ConnectivityRouterService connectivityRouter,
     AppDatabase? appDatabase,
     Future<int?> Function()? currentUserIdProvider,
+    Future<bool> Function()? canUseOfflineFallback,
   })  : _connectivityRouter = connectivityRouter,
         _appDatabase = appDatabase ?? AppDatabase(),
-        _currentUserIdProvider = currentUserIdProvider;
+        _currentUserIdProvider = currentUserIdProvider,
+        _canUseOfflineFallback = canUseOfflineFallback;
 
   final ConnectivityRouterService _connectivityRouter;
   final AppDatabase _appDatabase;
   final Future<int?> Function()? _currentUserIdProvider;
+  final Future<bool> Function()? _canUseOfflineFallback;
 
   /// Saves mood online when available, otherwise stores it locally.
   Future<void> saveMood({
@@ -53,12 +65,14 @@ class MoodStorageService {
         _throwIfHttpError(response, 'save mood to backend');
       },
       offline: () async {
-        await _appDatabase.insertMood(
-          userId: userId,
-          score: score,
-          label: label,
-          createdAt: DateTime.now(),
-        );
+        await _runOfflineWriteGuarded(() async {
+          await _appDatabase.insertMood(
+            userId: userId,
+            score: score,
+            label: label,
+            createdAt: DateTime.now(),
+          );
+        });
       },
       fallbackToOfflineOnOnlineError: true,
     );
@@ -211,6 +225,28 @@ class MoodStorageService {
 
   /// Closes the local database handle.
   Future<void> close() => _appDatabase.close();
+
+  /// Ensures offline writes honor user-level persistence settings.
+  ///
+  /// When `_canUseOfflineFallback` is provided, it acts as a central policy
+  /// gate. This keeps call sites simple and makes the same rule reusable for
+  /// future offline-capable services.
+  Future<void> _runOfflineWriteGuarded(Future<void> Function() action) async {
+    final allowed = await _isOfflineWriteAllowed();
+    if (!allowed) {
+      throw const OfflinePersistenceDisabledException(
+        'Offline persistence is disabled in Settings.',
+      );
+    }
+    await action();
+  }
+
+  Future<bool> _isOfflineWriteAllowed() async {
+    if (_canUseOfflineFallback == null) {
+      return true;
+    }
+    return _canUseOfflineFallback.call();
+  }
 
   String _moodFingerprintFromLocal(Mood row) {
     final normalized = row.createdAt.toUtc().toIso8601String();

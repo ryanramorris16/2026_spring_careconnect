@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:care_connect_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../providers/user_provider.dart';
 import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
+import '../services/local_db/connectivity_router_service.dart';
+import '../services/local_db/mood_storage_service.dart';
 
 /// Main screen of the application. This is where the user is navigated to
 /// after logging in. This contains the bottom nav bar and main screens
@@ -27,6 +31,10 @@ class _MainScreenState extends State<MainScreen> {
   List<BottomNavItem> _navItems = [];
   late PageController _pageController;
   late MainScreenConfig _config;
+  UserProvider? _observedUserProvider;
+  MoodStorageService? _moodStorageService;
+  bool _isMoodSyncInProgress = false;
+  bool? _lastKnownOnlineState;
 
   @override
   void initState() {
@@ -35,12 +43,71 @@ class _MainScreenState extends State<MainScreen> {
     _pageController = PageController(initialPage: widget.initialTabIndex ?? 0);
     _selectedIndex = widget.initialTabIndex ?? 0;
     _initializeNavigation();
+    _initializeConnectivitySyncBridge();
   }
 
   @override
   void dispose() {
+    _observedUserProvider?.removeListener(_handleConnectivityTransition);
+    if (_moodStorageService != null) {
+      unawaited(_moodStorageService!.close());
+    }
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Connects global connectivity state to background sync.
+  ///
+  /// This listens to [UserProvider] network transitions and triggers a focused
+  /// sync of offline mood records once the device comes back online.
+  void _initializeConnectivitySyncBridge() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final provider = Provider.of<UserProvider>(context, listen: false);
+      _observedUserProvider = provider;
+      _lastKnownOnlineState = provider.isDeviceOnline;
+      _moodStorageService = MoodStorageService(
+        connectivityRouter: ConnectivityRouterService(
+          isOnline: () async => provider.isDeviceOnline,
+        ),
+        currentUserIdProvider: () async => provider.user?.id,
+        canUseOfflineFallback: () async => provider.offlineModeEnabled,
+      );
+      provider.addListener(_handleConnectivityTransition);
+    });
+  }
+
+  Future<void> _handleConnectivityTransition() async {
+    final provider = _observedUserProvider;
+    if (provider == null) {
+      return;
+    }
+
+    final isOnlineNow = provider.isDeviceOnline;
+    final transitionedToOnline =
+        _lastKnownOnlineState == false && isOnlineNow == true;
+    _lastKnownOnlineState = isOnlineNow;
+
+    if (!transitionedToOnline || _isMoodSyncInProgress) {
+      return;
+    }
+
+    final userId = provider.user?.id;
+    if (userId == null || _moodStorageService == null) {
+      return;
+    }
+
+    _isMoodSyncInProgress = true;
+    try {
+      // Sync is best-effort: failures should not interrupt navigation/UI.
+      await _moodStorageService!.syncMoodsToBackendIfOnline(userId: userId);
+    } catch (_) {
+      // Suppress to keep app flow resilient. Retry occurs on next transition.
+    } finally {
+      _isMoodSyncInProgress = false;
+    }
   }
 
   /// Initialize the MainScreenConfig object.
@@ -139,6 +206,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<UserProvider>(
       builder: (context, userProvider, child) {
         // Check if user data is missing or invalid
@@ -164,8 +232,6 @@ class _MainScreenState extends State<MainScreen> {
           });
         }
         
-
-
         return Scaffold(
           backgroundColor: _config.backgroundColor,
           appBar: _config.showAppBar ? AppBar(
@@ -174,19 +240,81 @@ class _MainScreenState extends State<MainScreen> {
             foregroundColor: Colors.white,
             actions: _config.appBarActions,
           ) : null,
-          body: PageView.builder(
-            controller: _pageController,
-            onPageChanged: _onPageChanged,
-            itemCount: _navItems.length,
-            itemBuilder: (context, index) {
-              final navItem = _navItems[index];
+          // BNS 5: Global Banners (No Internet & Offline Mode)
+          body: Column(
+            children: [
+              // Hardware Connection Lost
+              if (!userProvider.isDeviceOnline)
+                _buildGlobalNoInternetBanner(theme)
 
-              return _navItems[index].screen;
-            },
+              // BNS 5 offline mode Banner
+              else if (!userProvider.offlineModeEnabled)
+                _buildGlobalOfflineBanner(context),
+
+              // The actual tab content
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: _onPageChanged,
+                  itemCount: _navItems.length,
+                  itemBuilder: (context, index) {
+                    return _navItems[index].screen;
+                  },
+                ),
+              ),
+            ],
           ),
           bottomNavigationBar: _buildBottomNavigationBar(),
         );
       },
+    );
+  }
+
+  Widget _buildGlobalNoInternetBanner(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.error, // Use a solid error color (usually Red)
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        children: [
+          const Icon(Icons.wifi_off, color: Colors.white),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'No Internet Connection.',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  /// Build the global offline mode warning banner
+  Widget _buildGlobalOfflineBanner(BuildContext context) {
+    
+    return MaterialBanner(
+      elevation: 0,
+      backgroundColor: Colors.amber.shade50,
+      leading: Icon(Icons.cloud_off, color: Colors.amber.shade900),
+      content: Text(
+        'Offline Mode Disabled',
+        style: TextStyle(
+          color: Colors.amber.shade900,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => _onItemTapped(_navItems.length - 1),
+          child: Icon(
+            Icons.settings, 
+            color: Colors.amber.shade900,
+            size: 24, // Matches the standard emoji scale
+          ),
+        ),
+      ],
+
     );
   }
 
