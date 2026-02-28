@@ -173,9 +173,8 @@ def normalize() -> list[dict]:
     total_violations = sum(r.get("violation_count", 0) for r in results)
 
     # Aggregate severity counts across all tools
-    combined_severity_counts: dict[str, int] = {
-        level: 0 for level in SEVERITY_ORDER
-    }
+    combined_severity_counts: dict[str, int] = dict.fromkeys(SEVERITY_ORDER, 0)
+
     for r in results:
         for level, count in r.get("severity_counts", {}).items():
             if level in combined_severity_counts:
