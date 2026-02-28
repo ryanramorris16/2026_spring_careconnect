@@ -1,4 +1,4 @@
-﻿
+
 #!/bin/sh
 
 # File: quality/local/checks/check_pmd.sh

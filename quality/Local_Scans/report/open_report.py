@@ -20,8 +20,8 @@ REPORT = Path(WORK_DIR) / "local-report.html"
 # Open in browser
 # ----------------------------------------------------------
 if not REPORT.exists():
-	print(f"[open-report] ⚠️ Report not found at: {REPORT}")
+    print(f"[open-report] ⚠️ Report not found at: {REPORT}")
 else:
-	url = REPORT.as_uri()
-	webbrowser.open(url)
-	print(f"[open-report] Opened in browser: {url}")
+    url = REPORT.as_uri()
+    webbrowser.open(url)
+    print(f"[open-report] Opened in browser: {url}")

@@ -36,12 +36,13 @@ Path(ZIP_PATH).parent.mkdir(parents=True, exist_ok=True)
 # Build zip
 # ----------------------------------------------------------
 with zipfile.ZipFile(ZIP_PATH, "w", zipfile.ZIP_DEFLATED) as zf:
-	if REPORT_HTML.exists():
-		zf.write(REPORT_HTML, "local-report.html")
-	if RAW_CS.exists():
-		zf.write(RAW_CS, "raw/checkstyle.xml")
-	if RAW_PMD.exists():
-		zf.write(RAW_PMD, "raw/pmd.xml")
-	if RAW_SB.exists():
-		zf.write(RAW_SB, "raw/spotbugs.xml")
+    if REPORT_HTML.exists():
+        zf.write(REPORT_HTML, "local-report.html")
+    if RAW_CS.exists():
+        zf.write(RAW_CS, "raw/checkstyle.xml")
+    if RAW_PMD.exists():
+        zf.write(RAW_PMD, "raw/pmd.xml")
+    if RAW_SB.exists():
+        zf.write(RAW_SB, "raw/spotbugs.xml")
+
 print(f"[package-report] Zip saved to: {ZIP_PATH}")
