@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 // Pain level card
@@ -18,9 +19,7 @@ import '../widgets/mood_history_card.dart';
 
 // Health tab
 import '../widgets/current_medications_card.dart';
-
 // Recent Activity tab
-
 // Virtual Check-in history
 // Virtual Check-In domain entities
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in.dart';
@@ -39,6 +38,7 @@ import '../widgets/recent_symptom_card.dart' as sympt;
 
 // API and models
 import '../../../../services/api_service.dart';
+import '../../../../services/call_notification_service.dart';
 import '../../../health/medication-tracker/models/medication-model.dart';
 import '../../../../providers/user_provider.dart';
 import 'package:care_connect_app/features/activities/presentation/pages/adl_iadl_management_screen.dart';
@@ -88,6 +88,93 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   bool _isEditingRisks = false;
   Set<int> _editingCheckedTypeIds = {}; // while editing, which risk type ids are checked
   bool _isSavingRisks = false;
+
+  Future<void> _startVideoCall(String patientName) async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to determine your account.')),
+      );
+      return;
+    }
+
+    final role = user.role.toUpperCase();
+    final currentUserId = user.id;
+
+    int? targetUserId;
+    var recipientName = patientName;
+
+    if (role == 'CAREGIVER') {
+      targetUserId = int.tryParse(widget.patientId);
+      if (targetUserId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid patient ID for video call.')),
+        );
+        return;
+      }
+    } else if (role == 'PATIENT') {
+      final linkedCaregiverUserIds = await ApiService.getPatientLinkedCaregiverUserIds(
+        currentUserId,
+      );
+
+      if (!mounted) return;
+
+      if (linkedCaregiverUserIds.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No assigned caregiver found for video call.')),
+        );
+        return;
+      }
+
+      targetUserId = linkedCaregiverUserIds.first;
+      recipientName = 'Caregiver';
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video calling is not available for this role.')),
+      );
+      return;
+    }
+
+    final allowed = await ApiService.canInitiateVideoCall(
+      currentUserId: currentUserId,
+      currentUserRole: role,
+      targetUserId: targetUserId,
+      caregiverId: user.caregiverId,
+    );
+
+    if (!mounted) return;
+
+    if (!allowed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You are not allowed to start this video call.')),
+      );
+      return;
+    }
+
+    final callId = 'chime_call_${DateTime.now().millisecondsSinceEpoch}';
+    final recipientRole = role == 'CAREGIVER' ? 'PATIENT' : 'CAREGIVER';
+    await CallNotificationService.sendCallInvitation(
+      recipientId: targetUserId.toString(),
+      recipientRole: recipientRole,
+      callId: callId,
+      isVideoCall: true,
+    );
+
+    context.push(
+      '/video-call-chime'
+      '?userId=$currentUserId'
+      '&recipientId=$targetUserId'
+      '&userName=${Uri.encodeComponent(user.name ?? role)}'
+      '&recipientName=${Uri.encodeComponent(recipientName)}'
+      '&initiator=true'
+      '&video=true'
+      '&audio=true'
+      '&callId=$callId',
+    );
+  }
   
   @override
   void initState() {
@@ -1381,8 +1468,9 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       ),
     ];
 
+    // --- Virtual Check-In configuration (popup) ---
     return DefaultTabController(
-      length: 5,
+      length: 4,
       child: Scaffold(
         appBar: _DetailsAppBar(
           title: patientName,
@@ -1410,6 +1498,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
               oxygenPercent: 98,
               temperatureF: 98.0,*/
               emergencyPhones: const ['+15559876543', '+15552227788'],
+              onStartVideoCall: () => _startVideoCall(patientName),
             ),
 
             // Tab bar row (like your mock)
