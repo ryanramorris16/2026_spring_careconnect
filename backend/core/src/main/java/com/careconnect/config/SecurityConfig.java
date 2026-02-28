@@ -59,7 +59,8 @@ public class SecurityConfig {
                         "/v1/api/users/setup-password",
                         "/v1/api/email-test/**",  // Allow email testing endpoints
                         "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
-                        "/oauth/**"// Permit OAuth paths
+                        "/oauth/**",// Permit OAuth paths
+                        "/ws/**" // Permit websocket handshake endpoints
                 ).permitAll()
 
                 /* ---------- public static assets ------------------------ */
@@ -79,6 +80,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/ai/deepseek/**").authenticated()
                         .requestMatchers("/v1/api/family-members/**").authenticated()
                         .requestMatchers("/v1/api/ai-chat/**").authenticated()
+                        .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
+                        .requestMatchers("/api/v3/calls/**").authenticated()
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()

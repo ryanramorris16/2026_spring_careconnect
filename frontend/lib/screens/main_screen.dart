@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/user_provider.dart';
 import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
+import '../services/call_notification_service.dart';
 
 /// Main screen of the application. This is where the user is navigated to
 /// after logging in. This contains the bottom nav bar and main screens
@@ -35,12 +36,31 @@ class _MainScreenState extends State<MainScreen> {
     _pageController = PageController(initialPage: widget.initialTabIndex ?? 0);
     _selectedIndex = widget.initialTabIndex ?? 0;
     _initializeNavigation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeCallNotifications();
+    });
   }
 
   @override
   void dispose() {
+    CallNotificationService.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeCallNotifications() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    if (user == null) return;
+
+    final role = user.role.toUpperCase();
+    if (role != 'CAREGIVER' && role != 'PATIENT') return;
+
+    await CallNotificationService.initialize(
+      userId: user.id.toString(),
+      userRole: role,
+      context: context,
+    );
   }
 
   /// Initialize the MainScreenConfig object.
