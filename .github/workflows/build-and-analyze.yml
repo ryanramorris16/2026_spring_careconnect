@@ -122,13 +122,20 @@ jobs:
       # pyyaml   → required by gate.py (policy.yaml parsing)
       # requests → required by report.py (GitHub API for PR comments)
       # semgrep  → pinned, installed once here only
+      # pylint   → Python static analysis
+      # bandit   → Python security SAST
       # ----------------------------------------------------------
       - name: Install Python Dependencies
         shell: bash
         run: |
           set -euo pipefail
           python -m pip install --upgrade pip
-          python -m pip install pyyaml requests semgrep==1.73.0
+          python -m pip install \
+            pyyaml \
+            requests \
+            semgrep==1.73.0 \
+            pylint \
+            bandit
 
       # ------------------------------------------------------
       # Step 5: Create Analysis Directory Structure
@@ -149,7 +156,7 @@ jobs:
       # Step 6: Resolve Scan Roots
       # ----------------------------------------------------------
       # Exports to GITHUB_ENV:
-      #   RESOLVED_ROOT, FLUTTER_ROOT, JAVA_ROOT
+      #   RESOLVED_ROOT, FLUTTER_ROOT, JAVA_ROOT, JS_ROOT, PY_ROOT
       # ======================================================
       - name: Resolve scan roots
         shell: bash
@@ -162,9 +169,11 @@ jobs:
             exit 1
           fi
 
+          # Flutter root — directory containing pubspec.yaml
           FLUTTER_ROOT="$(find "${ROOT}" -maxdepth 4 -name pubspec.yaml -print -quit \
             | xargs -r dirname || true)"
 
+          # Java root — directory containing pom.xml or src/main/java
           JAVA_POM="$(find "${ROOT}" -maxdepth 6 -name pom.xml -print -quit || true)"
           if [[ -n "${JAVA_POM}" ]]; then
             JAVA_ROOT="$(dirname "${JAVA_POM}")"
@@ -175,14 +184,32 @@ jobs:
             [[ "${JAVA_ROOT}" == "/" ]] && JAVA_ROOT=""
           fi
 
+          # JS root — directory containing package.json (excluding node_modules)
+          JS_ROOT="$(find "${ROOT}" -maxdepth 4 -name package.json \
+            ! -path "*/node_modules/*" -print -quit \
+            | xargs -r dirname || true)"
+
+          # Python root — use RESOLVED_ROOT if any .py files exist
+          PY_COUNT="$(find "${ROOT}" -name "*.py" \
+            ! -path "*/.venv/*" ! -path "*/node_modules/*" | wc -l)"
+          if [[ "${PY_COUNT}" -gt 0 ]]; then
+            PY_ROOT="${ROOT}"
+          else
+            PY_ROOT=""
+          fi
+
           echo "RESOLVED_ROOT=${ROOT}"         >> "$GITHUB_ENV"
           echo "FLUTTER_ROOT=${FLUTTER_ROOT}"  >> "$GITHUB_ENV"
           echo "JAVA_ROOT=${JAVA_ROOT}"        >> "$GITHUB_ENV"
+          echo "JS_ROOT=${JS_ROOT}"            >> "$GITHUB_ENV"
+          echo "PY_ROOT=${PY_ROOT}"            >> "$GITHUB_ENV"
 
           echo "SCAN_ROOT      = ${SCAN_ROOT}"
           echo "RESOLVED_ROOT  = ${ROOT}"
           echo "FLUTTER_ROOT   = ${FLUTTER_ROOT:-<none>}"
           echo "JAVA_ROOT      = ${JAVA_ROOT:-<none>}"
+          echo "JS_ROOT        = ${JS_ROOT:-<none>}"
+          echo "PY_ROOT        = ${PY_ROOT:-<none>}"
 
       # ======================================================
       # TOOL EXECUTION
@@ -191,10 +218,6 @@ jobs:
       # ------------------------------------------------------
       # Tool: TruffleHog (Secrets Detection)
       # ----------------------------------------------------------
-      # Scans SCAN_ROOT for secrets using filesystem mode.
-      # --no-verification reports both verified and unverified
-      # findings, ensuring sandbox fake secrets are captured.
-      #
       # Output: quality/analysis/raw/trufflehog.jsonl
       # ------------------------------------------------------
       - name: Run TruffleHog (Secrets)
@@ -217,16 +240,8 @@ jobs:
       # ------------------------------------------------------
       # Tool: Gitleaks (Secrets Detection)
       # ----------------------------------------------------------
-      # Scans the working tree directly for secrets using regex
-      # pattern matching. Free, open source (MIT), no API key
-      # required. Complements TruffleHog by scanning uncommitted
-      # files and catching patterns TruffleHog may filter.
-      #
       # Output: quality/analysis/raw/gitleaks.json
-      # Parser: parsers/gitleaks.py
-      #
-      # Native severities: mapped from rule severity field
-      # ----------------------------------------------------------
+      # ------------------------------------------------------
       - name: Run Gitleaks (Secrets)
         shell: bash
         run: |
@@ -251,10 +266,6 @@ jobs:
       # ------------------------------------------------------
       # Tool: Flutter Analyze (Dart Static Analyzer)
       # ----------------------------------------------------------
-      # Runs only when a Flutter project is found under SCAN_ROOT.
-      # Uses plain `flutter analyze` (not --machine) and parses
-      # the human-readable line format.
-      #
       # Output: quality/analysis/raw/flutter_analyze.json
       # Format: {"issues": [{severity, message, file, line, rule}]}
       # ------------------------------------------------------
@@ -276,8 +287,6 @@ jobs:
           pushd "${FLUTTER_ROOT}" >/dev/null
           flutter pub get
 
-          # Run plain flutter analyze (not --machine).
-          # Captures human-readable output for line-based parsing.
           TMP="${RUNNER_TEMP}/flutter_analyze_raw.txt"
           flutter analyze > "${TMP}" 2>&1 || true
 
@@ -293,10 +302,6 @@ jobs:
           out_path     = os.environ["OUT"]
           flutter_root = os.environ.get("FLUTTER_ROOT", "")
 
-          # flutter analyze plain output format:
-          #   severity • message • file/path.dart:line:col • rule_code
-          # Example:
-          #   warning • Avoid print calls • lib/services/api_service.dart:11:5 • avoid_print
           ISSUE_RE = re.compile(
               r"^\s*(error|warning|info|hint)\s+[•·]\s+"
               r"(.+?)\s+[•·]\s+"
@@ -318,11 +323,8 @@ jobs:
               if not m:
                   continue
               severity, message, file_path, lineno, rule = m.groups()
-
-              # Strip flutter root prefix for relative paths
               if flutter_root and file_path.startswith(flutter_root):
                   file_path = file_path[len(flutter_root):].lstrip("/")
-
               issues.append({
                   "severity": severity.lower(),
                   "message":  message.strip(),
@@ -421,9 +423,6 @@ jobs:
       # ------------------------------------------------------
       # Tool Prep: Compile Java via Maven (required by SpotBugs)
       # ----------------------------------------------------------
-      # Uses Maven to compile so all pom.xml dependencies are
-      # resolved correctly. Falls back to javac if Maven fails.
-      #
       # Exports to GITHUB_ENV:
       #   JAVA_CLASSES_DIR
       # ------------------------------------------------------
@@ -439,13 +438,11 @@ jobs:
             exit 0
           fi
 
-          # Prefer Maven compile — resolves pom.xml dependencies correctly
           if [[ -f "${JAVA_ROOT}/pom.xml" ]]; then
             pushd "${JAVA_ROOT}" >/dev/null
             mvn compile -q --batch-mode || true
             popd >/dev/null
             CLASSES="${JAVA_ROOT}/target/classes"
-            # Fall back to javac if Maven produced no classes
             if [[ ! -d "${CLASSES}" || -z "$(ls -A "${CLASSES}" 2>/dev/null)" ]]; then
               echo "::warning::Maven compile produced no classes; falling back to javac."
               CLASSES="$(mktemp -d)"
@@ -456,7 +453,6 @@ jobs:
               fi
             fi
           else
-            # No pom.xml — compile with javac directly
             CLASSES="$(mktemp -d)"
             TARGET="${JAVA_ROOT}/src/main/java"
             [[ -d "${TARGET}" ]] || TARGET="${JAVA_ROOT}"
@@ -487,7 +483,6 @@ jobs:
             exit 0
           fi
 
-          # Verify there are actually .class files to analyze
           CLASS_COUNT="$(find "${JAVA_CLASSES_DIR}" -name "*.class" | wc -l)"
           if [[ "${CLASS_COUNT}" -eq 0 ]]; then
             echo "No .class files found in ${JAVA_CLASSES_DIR}; skipping SpotBugs."
@@ -500,7 +495,6 @@ jobs:
             https://github.com/spotbugs/spotbugs/releases/download/4.8.3/spotbugs-4.8.3.tgz
           tar -xzf spotbugs.tgz
           chmod +x ./spotbugs-4.8.3/bin/spotbugs
-
 
           ./spotbugs-4.8.3/bin/spotbugs \
             -textui -xml \
@@ -524,6 +518,165 @@ jobs:
 
           semgrep --config=auto "${RESOLVED_ROOT}" --json > "${OUT}" || true
           test -s "${OUT}" || echo '{"results":[]}' > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: Pylint (Python Static Analysis)
+      # ----------------------------------------------------------
+      # Runs only when Python files are found under SCAN_ROOT.
+      # Excludes virtual environments and node_modules.
+      #
+      # Output: quality/analysis/raw/pylint.json
+      # Format: array of message objects
+      # ------------------------------------------------------
+      - name: Run Pylint (if Python files found)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/pylint.json"
+          echo '[]' > "${OUT}"
+
+          if [[ -z "${PY_ROOT:-}" ]]; then
+            echo "No Python files found under SCAN_ROOT; skipping Pylint."
+            exit 0
+          fi
+
+          # Collect all .py files excluding venv and node_modules
+          mapfile -t PY_FILES < <(find "${PY_ROOT}" -name "*.py" \
+            ! -path "*/.venv/*" \
+            ! -path "*/venv/*" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/__pycache__/*" \
+            || true)
+
+          if [[ "${#PY_FILES[@]}" -eq 0 ]]; then
+            echo "No Python files found; skipping Pylint."
+            exit 0
+          fi
+
+          echo "Pylint: analyzing ${#PY_FILES[@]} Python file(s)."
+
+          pylint "${PY_FILES[@]}" \
+            --output-format=json \
+            --exit-zero > "${OUT}" || true
+
+          test -s "${OUT}" || echo '[]' > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: Bandit (Python Security SAST)
+      # ----------------------------------------------------------
+      # Runs only when Python files are found under SCAN_ROOT.
+      # Scans recursively from PY_ROOT.
+      #
+      # Output: quality/analysis/raw/bandit.json
+      # Format: {"results": [...], "metrics": {...}}
+      # ------------------------------------------------------
+      - name: Run Bandit (if Python files found)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/bandit.json"
+          echo '{"results":[]}' > "${OUT}"
+
+          if [[ -z "${PY_ROOT:-}" ]]; then
+            echo "No Python files found under SCAN_ROOT; skipping Bandit."
+            exit 0
+          fi
+
+          echo "Bandit: scanning ${PY_ROOT}"
+
+          bandit \
+            -r "${PY_ROOT}" \
+            -f json \
+            -o "${OUT}" \
+            --exit-zero \
+            --exclude "${PY_ROOT}/.venv,${PY_ROOT}/venv,${PY_ROOT}/node_modules" \
+            || true
+
+          test -s "${OUT}" || echo '{"results":[]}' > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: HTMLHint (HTML Static Analysis)
+      # ----------------------------------------------------------
+      # Runs only when HTML files are found under SCAN_ROOT.
+      # Excludes node_modules and .dart_tool build artifacts.
+      #
+      # Output: quality/analysis/raw/htmlhint.json
+      # Format: array of per-file result objects
+      # ------------------------------------------------------
+      - name: Run HTMLHint (if HTML files found)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/htmlhint.json"
+          echo '[]' > "${OUT}"
+
+          HTML_COUNT="$(find "${RESOLVED_ROOT}" -name "*.html" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/.dart_tool/*" \
+            ! -path "*/build/*" \
+            | wc -l)"
+
+          if [[ "${HTML_COUNT}" -eq 0 ]]; then
+            echo "No HTML files found under SCAN_ROOT; skipping HTMLHint."
+            exit 0
+          fi
+
+          echo "HTMLHint: analyzing ${HTML_COUNT} HTML file(s)."
+
+          npx --yes htmlhint \
+            "$(find "${RESOLVED_ROOT}" -name "*.html" \
+               ! -path "*/node_modules/*" \
+               ! -path "*/.dart_tool/*" \
+               ! -path "*/build/*")" \
+            --format json > "${OUT}" || true
+
+          test -s "${OUT}" || echo '[]' > "${OUT}"
+
+      # ------------------------------------------------------
+      # Tool: Stylelint (CSS/SCSS Static Analysis)
+      # ----------------------------------------------------------
+      # Runs only when CSS or SCSS files are found under SCAN_ROOT.
+      # Uses standard config; creates minimal config if none found.
+      #
+      # Output: quality/analysis/raw/stylelint.json
+      # Format: array of per-file result objects
+      # ------------------------------------------------------
+      - name: Run Stylelint (if CSS/SCSS files found)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/stylelint.json"
+          echo '[]' > "${OUT}"
+
+          CSS_COUNT="$(find "${RESOLVED_ROOT}" \( -name "*.css" -o -name "*.scss" \) \
+            ! -path "*/node_modules/*" \
+            ! -path "*/build/*" \
+            | wc -l)"
+
+          if [[ "${CSS_COUNT}" -eq 0 ]]; then
+            echo "No CSS/SCSS files found under SCAN_ROOT; skipping Stylelint."
+            exit 0
+          fi
+
+          echo "Stylelint: analyzing ${CSS_COUNT} CSS/SCSS file(s)."
+
+          # Create a minimal config if none exists in the workspace
+          if [[ ! -f "${GITHUB_WORKSPACE}/.stylelintrc.json" && \
+                ! -f "${GITHUB_WORKSPACE}/.stylelintrc.yml" && \
+                ! -f "${GITHUB_WORKSPACE}/stylelint.config.js" ]]; then
+            echo '{"extends":["stylelint-config-standard"]}' \
+              > "${GITHUB_WORKSPACE}/.stylelintrc.json"
+          fi
+
+          npx --yes stylelint \
+            "$(find "${RESOLVED_ROOT}" \( -name "*.css" -o -name "*.scss" \) \
+               ! -path "*/node_modules/*" \
+               ! -path "*/build/*" \
+               | tr '\n' ' ')" \
+            --formatter json \
+            --allow-empty-input > "${OUT}" || true
+
+          test -s "${OUT}" || echo '[]' > "${OUT}"
 
       # ------------------------------------------------------
       # Tool: OWASP Dependency-Check (SCA)
@@ -643,6 +796,10 @@ jobs:
             pmd.xml \
             spotbugs.xml \
             semgrep.json \
+            pylint.json \
+            bandit.json \
+            htmlhint.json \
+            stylelint.json \
             dependency-check-report.json \
             sonar.json; do
             echo "---- ${f} ----"
@@ -663,4 +820,3 @@ jobs:
           name: quality-analysis-report
           path: quality/analysis/
           exclude: quality/analysis/dc-data/**
-          

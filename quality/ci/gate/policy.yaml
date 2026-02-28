@@ -1,4 +1,4 @@
-# File: /Volumes/DevDrive/code/2026_spring_careconnect/quality/ci/gate/policy.yaml
+ # File: quality/ci/gate/policy.yaml
 # ==========================================================
 # CareConnect CI Quality & Security Enforcement Policy
 # ==========================================================
@@ -56,19 +56,12 @@ tools:
   # Intent: Block on ANY secret finding.
   # Notes:
   # - TruffleHog produces JSONL output; normalization counts findings.
-  #
-  # Temporary disable (advisory mode):
-  # - To keep running but not block merges, set:
-  #     blocking: false
-  #
-  # Full disable:
-  # - Remove the TruffleHog step from the workflow (not recommended long-term).
   # ----------------------------------------------------------
   trufflehog:
     blocking: true
     description: "TruffleHog (Secrets Scan)"
     fail_on:
-      any_finding: true   # Fail if ANY finding is present
+      any_finding: true
 
   # ----------------------------------------------------------
   # Gitleaks (Secrets Scan)
@@ -99,21 +92,18 @@ tools:
     blocking: true
     description: "Flutter/Dart static analysis"
     fail_on:
-      error_count: ">0"   # Fail if ANY analyzer error is present
+      error_count: ">0"
 
   # ----------------------------------------------------------
   # Checkstyle (Java Style)
   # ----------------------------------------------------------
   # Intent: Any style violation blocks the merge.
-  # Customization examples:
-  #   - Allow minor baseline drift:
-  #       violation_count: ">10"
   # ----------------------------------------------------------
   checkstyle:
     blocking: true
     description: "Java style enforcement"
     fail_on:
-      violation_count: ">0"   # Fail if ANY violation is found
+      violation_count: ">0"
 
   # ----------------------------------------------------------
   # PMD (Java Source Analysis)
@@ -155,11 +145,6 @@ tools:
   # Semgrep (Multi-language SAST)
   # ----------------------------------------------------------
   # Intent: Block on high severity and above.
-  # Customization examples:
-  #   - Critical only:
-  #       severity: "critical_only"
-  #   - Medium and above:
-  #       severity: "medium_and_above"
   # ----------------------------------------------------------
   semgrep:
     blocking: true
@@ -172,12 +157,96 @@ tools:
       #   medium_and_above
 
   # ----------------------------------------------------------
+  # Pylint (Python Static Analysis)
+  # ----------------------------------------------------------
+  # Intent: Block on errors and fatal issues only.
+  # Notes:
+  # - Normalization maps Pylint type → severity:
+  #     fatal      → critical
+  #     error      → high
+  #     warning    → medium
+  #     refactor   → low
+  #     convention → low
+  # - Blocking on high_and_above catches errors and fatals
+  #   without failing on style/convention findings.
+  # Customization examples:
+  #   - Block on any finding (strictest):
+  #       violation_count: ">0"
+  #   - Block on warnings and above:
+  #       severity: "medium_and_above"
+  # ----------------------------------------------------------
+  pylint:
+    blocking: true
+    description: "Python static analysis (style + correctness)"
+    fail_on:
+      severity: "high_and_above"
+      # Options:
+      #   high_and_above   (current; errors + fatals only)
+      #   medium_and_above (warnings and above)
+      #   violation_count: ">0" (any finding)
+
+  # ----------------------------------------------------------
+  # Bandit (Python Security SAST)
+  # ----------------------------------------------------------
+  # Intent: Block on medium severity and above.
+  # Notes:
+  # - Normalization maps Bandit severity → normalized:
+  #     HIGH   → high
+  #     MEDIUM → medium
+  #     LOW    → low
+  # - LOW findings are typically informational and do not block.
+  # Customization examples:
+  #   - Block on any finding:
+  #       any_finding: true
+  #   - Block only on high:
+  #       severity: "high_and_above"
+  # ----------------------------------------------------------
+  bandit:
+    blocking: true
+    description: "Python security analysis"
+    fail_on:
+      severity: "medium_and_above"
+      # Options:
+      #   high_and_above   (least strict; high security issues only)
+      #   medium_and_above (current; medium + high)
+      #   any_finding: true (strictest)
+
+  # ----------------------------------------------------------
+  # HTMLHint (HTML Static Analysis)
+  # ----------------------------------------------------------
+  # Intent: Advisory only until baseline is established.
+  # Notes:
+  # - Normalization maps HTMLHint type → severity:
+  #     error   → high
+  #     warning → medium
+  # - Set blocking: true once the HTML baseline is clean.
+  # ----------------------------------------------------------
+  htmlhint:
+    blocking: false
+    description: "HTML static analysis"
+    fail_on:
+      violation_count: ">0"
+
+  # ----------------------------------------------------------
+  # Stylelint (CSS/SCSS Static Analysis)
+  # ----------------------------------------------------------
+  # Intent: Advisory only until baseline is established.
+  # Notes:
+  # - Normalization maps Stylelint severity → normalized:
+  #     error   → high
+  #     warning → medium
+  # - Set blocking: true once the CSS baseline is clean.
+  # ----------------------------------------------------------
+  stylelint:
+    blocking: false
+    description: "CSS/SCSS static analysis"
+    fail_on:
+      violation_count: ">0"
+
+  # ----------------------------------------------------------
   # OWASP Dependency-Check (SCA)
   # ----------------------------------------------------------
   # Intent: Block on ANY vulnerability (strict).
-  # Customization examples:
-  #   - Switch to CVSS threshold enforcement (future enhancement):
-  #       cvss_threshold: 7.0
   # ----------------------------------------------------------
   dependency_check:
     blocking: true
@@ -194,15 +263,9 @@ tools:
   #     - project is onboarded
   #     - token/access is available
   #     - quality gate is stable
-  # - Once ready, set:
-  #     blocking: true
-  #
-  # MIGRATION NOTE:
-  # - Consider setting blocking: true only after Sonar is fully configured
-  #   (project onboarded, token available, and quality gate stable).
   # ----------------------------------------------------------
   sonar:
-    blocking: false   # Set to true once quality gate is configured
+    blocking: false
     description: "Sonar Quality Gate"
     fail_on:
       quality_gate: "fail"
