@@ -46,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
     _pageController = PageController(initialPage: widget.initialTabIndex ?? 0);
     _selectedIndex = widget.initialTabIndex ?? 0;
     _initializeNavigation();
+    // Keep both startup flows: offline queue recovery and realtime call notifications.
     _initializeConnectivitySyncBridge();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeCallNotifications();

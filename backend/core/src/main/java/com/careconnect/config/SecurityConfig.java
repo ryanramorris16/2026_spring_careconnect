@@ -100,6 +100,7 @@ public class SecurityConfig {
                                 "/v1/api/email-test/**",
                                 "/v1/api/test/**",
                                 "/oauth/**",
+                                // Keep websocket handshake public for Team A call notifications/signaling.
                                 "/ws/**"
                         ).permitAll()
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
@@ -114,7 +115,10 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/family-members/**").authenticated()
                         .requestMatchers("/v1/api/ai-chat/**").authenticated()
                         .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
+                        .requestMatchers("/v1/api/invoices/**").authenticated()
+                        // Keep broad API auth from main while preserving explicit call route below.
                         .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
+                        // Team A call lifecycle endpoints are under /api/v3/calls/**.
                         .requestMatchers("/api/v3/calls/**").authenticated()
 
                         .anyRequest().denyAll()
