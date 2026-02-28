@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/bin/sh
 # File: quality/local/checks/check_flutter.sh
 # ==========================================================
 # Flutter Analyze - Local Check

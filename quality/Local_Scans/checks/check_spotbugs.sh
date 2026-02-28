@@ -1,4 +1,4 @@
-﻿
+
 #!/bin/sh
 
 # File: quality/local/checks/check_spotbugs.sh
@@ -59,7 +59,7 @@ SPOTBUGS_DIR="${TOOLS_DIR}/spotbugs-${SPOTBUGS_VERSION}"
 
 SPOTBUGS_TGZ="${TOOLS_DIR}/spotbugs-${SPOTBUGS_VERSION}.tgz"
 
-SPOTBUGS_URL="https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERS…
+SPOTBUGS_URL="https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERS?
 
 OUT="${WORK_DIR}/spotbugs.xml"
  
