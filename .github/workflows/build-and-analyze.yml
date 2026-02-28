@@ -605,7 +605,7 @@ jobs:
           PR_NUMBER:    ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          python -m quality.ci.gate.report
+          python -m quality.ci.gate.report.report
 
       # ------------------------------------------------------
       # Step 9: Publish report.md to Actions Job Summary
