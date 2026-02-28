@@ -112,8 +112,53 @@ public class SecurityConfig {
                                 .build();
         }
 
+<<<<<<< HEAD
         @Bean
         public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
                 return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         }
 }
+=======
+                        .requestMatchers(
+                                "/v1/api/auth/**",
+                                "/api/v1/auth/**",
+                                "/api/auth/**",
+                                "/v1/api/users/reset-password",
+                                "/v1/api/users/setup-password",
+                                "/v1/api/email-test/**",
+                                "/v1/api/test/**",
+                                "/oauth/**",
+                                "/ws/**"
+                        ).permitAll()
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
+<<<<<<< HEAD
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**", "/api/v3/calls/**").authenticated()
+=======
+
+                        /* ---------- Require JWT for these APIs ------------------------ */
+                        .requestMatchers("/v1/api/patients/**").authenticated()
+                        .requestMatchers("/v1/api/caregivers/**").authenticated()
+                        .requestMatchers("/v1/api/allergies/**").authenticated()
+                        .requestMatchers("/v1/api/symptoms/**").authenticated()
+                        .requestMatchers("/v1/api/ai/**", "/api/ai/**").authenticated()
+                        .requestMatchers("/v1/api/ai/deepseek/**").authenticated()
+                        .requestMatchers("/v1/api/family-members/**").authenticated()
+                        .requestMatchers("/v1/api/ai-chat/**").authenticated()
+                        .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
+                        .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/api/v3/calls/**").authenticated()
+
+                        /* ---------- Everything else: deny (safer default) ------------- */
+>>>>>>> 89c736cc (Checkpoint: stabilize calls/sentiment and vendor Chime web SDK)
+                        .anyRequest().denyAll()
+                )
+                .build();
+    }
+
+    @Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    }
+}
+>>>>>>> 0f5af0c9 (Checkpoint: stabilize calls/sentiment and vendor Chime web SDK)
