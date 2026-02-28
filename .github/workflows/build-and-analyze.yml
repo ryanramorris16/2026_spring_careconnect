@@ -540,7 +540,7 @@ jobs:
           mkdir -p "${OUT_DIR}" "${DATA_DIR}"
 
           curl -sSL -o dc.zip \
-            https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
+            https://github.com/jeremylong/DependencyCheck/releases/download/v9.2.0/dependency-check-9.2.0-release.zip
           unzip -q dc.zip
 
           if ! ./dependency-check/bin/dependency-check.sh \
