@@ -25,8 +25,7 @@ TOOLS_DIR="$3"
 JAVA_SRC="${REPO_ROOT}/backend/core/src/main/java"
 CHECKSTYLE_VERSION="10.12.4"
 CHECKSTYLE_JAR="${TOOLS_DIR}/checkstyle-${CHECKSTYLE_VERSION}-all.jar"
-CHECKSTYLE_URL="https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKS
-all.jar"
+CHECKSTYLE_URL="https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar"
 OUT="${WORK_DIR}/checkstyle.xml"
 # Initialize empty artifact
 echo "<checkstyle></checkstyle>" > "${OUT}"
@@ -49,7 +48,7 @@ echo "✅ Checkstyle downloaded."
 fi
 # Run Checkstyle
 java -jar "${CHECKSTYLE_JAR}" \
--c /google_checks.xml \
+-c sun_checks.xml \
 "${JAVA_SRC}" \
 -f xml \
 -o "${OUT}" || true

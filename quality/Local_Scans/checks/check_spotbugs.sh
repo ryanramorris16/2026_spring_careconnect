@@ -59,7 +59,7 @@ SPOTBUGS_DIR="${TOOLS_DIR}/spotbugs-${SPOTBUGS_VERSION}"
 
 SPOTBUGS_TGZ="${TOOLS_DIR}/spotbugs-${SPOTBUGS_VERSION}.tgz"
 
-SPOTBUGS_URL="https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERS?
+SPOTBUGS_URL="https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.tgz"
 
 OUT="${WORK_DIR}/spotbugs.xml"
  
@@ -72,13 +72,16 @@ if ! command -v java > /dev/null 2>&1; then
   exit 0
 
 fi
- 
-if ! command -v mvn > /dev/null 2>&1; then
-
-  echo "mvn not installed - skipping SpotBugs."
-
+# Set up Maven wrapper command
+if [ -f "${JAVA_ROOT}/mvnw" ]; then
+  MVN_CMD="${JAVA_ROOT}/mvnw"
+elif [ -f "${JAVA_ROOT}/mvnw.cmd" ]; then
+  MVN_CMD="${JAVA_ROOT}/mvnw.cmd"
+elif command -v mvn > /dev/null 2>&1; then
+  MVN_CMD="mvn"
+else
+  echo "mvn not found (no mvnw wrapper and mvn not in PATH) - skipping SpotBugs."
   exit 0
-
 fi
  
 if [ ! -d "${JAVA_ROOT}" ]; then
@@ -133,7 +136,7 @@ fi
  
 echo "Compiling Java..."
 
-(cd "${JAVA_ROOT}" && mvn compile -q --batch-mode) || true
+(cd "${JAVA_ROOT}" && "${MVN_CMD}" compile -q --batch-mode) || true
  
 if [ ! -d "${CLASSES}" ]; then
 
@@ -154,15 +157,11 @@ if [ "${CLASS_COUNT}" -eq 0 ]; then
 fi
  
 echo "Analyzing ${CLASS_COUNT} class file(s)..."
- 
+
 "${SPOTBUGS_DIR}/bin/spotbugs" \
-
   -textui -xml \
-
   -effort:max \
-
   -output "${OUT}" \
-
   "${CLASSES}" || true
  
 COUNT="$(grep -c "<BugInstance" "${OUT}" || true)"

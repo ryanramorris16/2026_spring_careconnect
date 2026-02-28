@@ -100,13 +100,9 @@ if [ ! -d "${PMD_DIR}" ]; then
 fi
  
 "${PMD_DIR}/bin/run.sh" pmd \
-
   -d "${JAVA_SRC}" \
-
-  -R category/java/bestpractices.xml,category/java/errorprone.xml,category/java/codestyle.xml \
-
+  --rulesets category/java/bestpractices.xml,category/java/errorprone.xml,category/java/codestyle.xml \
   -f xml \
-
   -r "${OUT}" || true
  
 COUNT="$(grep -c "<violation" "${OUT}" || true)"
