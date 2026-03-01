@@ -19,15 +19,16 @@ class ApiConstants {
   static final String friends = '$_host/v1/api/friends';
   static final String analytics = '$_host/v1/api/analytics';
   static final String baseUrl = '$_host/v1/api/';
-  static final String familyMembers = '$_host/v1/api/family-members';
+  static final String familyMembers = '$_host/v3/api/family-members';
   static final String patient = '$_host/v1/api/patient';
   static final String mood = '$_host/v1/api/patient';
   static final String patients = '$_host/v1/api/patients';
   static final String caregivers = '$_host/v1/api/caregivers';
   static final String files = '$_host/v1/api/files';
   static final String connectionRequests = '$_host/v1/api/connection-requests';
-  static final String subscriptions = '$_host/v1/api/subscriptions';
-  static final String tasks = '$_host/v1/api/tasks';
+  static final String subscriptions = '$_host/v3/api/subscriptions';
+  static final String tasks = '$_host/v3/api/tasks';
+  static final String patientsV3 = '$_host/v3/api/patients';
   static final String allergies = '$_host/v1/api/allergies';
   static final String symptoms = '$_host/v1/api/symptoms';
 
@@ -1006,7 +1007,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http.get(
       Uri.parse(
-        '${ApiConstants._host}/v1/api/family-members/patients/$patientId',
+        '${ApiConstants.familyMembers}/patients/$patientId',
       ),
       headers: headers,
     );
@@ -1053,7 +1054,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http.get(
       Uri.parse(
-        '${ApiConstants._host}/v1/api/family-members/patients/$patientId/access',
+        '${ApiConstants.familyMembers}/patients/$patientId/access',
       ),
       headers: headers,
     );
@@ -1072,7 +1073,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http.get(
       Uri.parse(
-        '${ApiConstants._host}/v1/api/family-members/patients/$patientId/dashboard?days=$days',
+        '${ApiConstants.familyMembers}/patients/$patientId/dashboard?days=$days',
       ),
       headers: headers,
     );
@@ -1116,7 +1117,7 @@ class ApiService {
     final response = await http
         .get(
           Uri.parse(
-            '${ApiConstants._host}/v1/api/family-members/patients/$patientId/status',
+            '${ApiConstants.familyMembers}/patients/$patientId/status',
           ),
           headers: headers,
         )
@@ -1671,7 +1672,7 @@ class ApiService {
       try {
         final headers = await AuthTokenManager.getAuthHeaders();
         final uri = Uri.parse(
-            '${ApiConstants.patients}/$patientId/medications');
+            '${ApiConstants.patientsV3}/$patientId/medications');
         return await httpClient
             .get(uri, headers: headers)
             .timeout(
@@ -1691,7 +1692,7 @@ class ApiService {
       try {
         final headers = await AuthTokenManager.getAuthHeaders();
         final uri = Uri.parse(
-          '${ApiConstants.patients}/$patientId/medications',
+          '${ApiConstants.patientsV3}/$patientId/medications',
         );
 
         return await httpClient
@@ -1717,7 +1718,7 @@ class ApiService {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final uri = Uri.parse(
-        '${ApiConstants.patients}/$patientId/medications/$medicationId',
+        '${ApiConstants.patientsV3}/$patientId/medications/$medicationId',
       );
 
         return await httpClient
@@ -1775,7 +1776,7 @@ class ApiService {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final uri = Uri.parse(
-        '${ApiConstants.patients}/$patientId/medications/$medicationId/caregiver/$caregiverId',
+        '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/caregiver/$caregiverId',
       );
 
       return await httpClient
@@ -1797,7 +1798,7 @@ class ApiService {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final uri = Uri.parse(
-        '${ApiConstants.patients}/$patientId/medications/$medicationId/approve',
+        '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/approve',
       );
 
       return await httpClient
