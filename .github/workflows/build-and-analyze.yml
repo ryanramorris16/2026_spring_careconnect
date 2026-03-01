@@ -349,11 +349,11 @@ jobs:
       # ----------------------------------------------------------
       # Required by Checkstyle, PMD, and SpotBugs.
       # ------------------------------------------------------
-      - name: Setup Java 17 (Temurin)
+      - name: Setup Java 21 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       # ------------------------------------------------------
       # Tool: Checkstyle (Java Style Enforcement)
@@ -822,5 +822,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quality-analysis-report
-          path: quality/analysis/
-          exclude: quality/analysis/dc-data/**
+          path: |
+            quality/analysis/
+            !quality/analysis/dc-data/**
+          if-no-files-found: warn
+
