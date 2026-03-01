@@ -59,6 +59,7 @@ class _MainScreenState extends State<MainScreen> {
     await CallNotificationService.initialize(
       userId: user.id.toString(),
       userRole: role,
+      userDisplayName: user.name,
       context: context,
     );
   }
