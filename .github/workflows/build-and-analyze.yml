@@ -630,18 +630,28 @@ jobs:
           echo "HTMLHint: analyzing ${#HTML_FILES[@]} HTML file(s)."
 
           npx --yes htmlhint \
-                      "${HTML_FILES[@]}" \
-                      --format json 2>/dev/null > "${OUT}" || true
+            "${HTML_FILES[@]}" \
+            --format json \
+            > >(tee /tmp/htmlhint_stdout.txt) \
+            2> >(tee /tmp/htmlhint_stderr.txt) || true
 
-                    python3 -c "
-          import json, sys
-          try:
-              data = json.load(open('${OUT}'))
-              print(f'HTMLHint: {len(data)} file result(s) parsed.')
-          except Exception as e:
-              print(f'Warning: htmlhint output invalid: {e}', file=sys.stderr)
-              open('${OUT}', 'w').write('[]')
-          "
+          echo "=== HTMLHINT STDOUT ==="
+          cat /tmp/htmlhint_stdout.txt
+          echo "=== HTMLHINT STDERR ==="
+          cat /tmp/htmlhint_stderr.txt
+          echo "=== HTMLHINT STDOUT LENGTH ==="
+          wc -c /tmp/htmlhint_stdout.txt
+          echo "=== HTMLHINT STDERR LENGTH ==="
+          wc -c /tmp/htmlhint_stderr.txt
+
+          if [[ -s /tmp/htmlhint_stdout.txt ]]; then
+            cp /tmp/htmlhint_stdout.txt "${OUT}"
+          elif [[ -s /tmp/htmlhint_stderr.txt ]]; then
+            cp /tmp/htmlhint_stderr.txt "${OUT}"
+          else
+            echo '[]' > "${OUT}"
+          fi
+
 
 
       # ------------------------------------------------------
@@ -687,18 +697,28 @@ jobs:
           npx stylelint \
             "${CSS_FILES[@]}" \
             --formatter json \
-            --allow-empty-input 2>/dev/null > "${OUT}" || true
+            --allow-empty-input \
+            > >(tee /tmp/stylelint_stdout.txt) \
+            2> >(tee /tmp/stylelint_stderr.txt) || true
 
-          # Verify output is valid JSON array, not empty
-          python3 -c "
-          import json, sys
-          try:
-              data = json.load(open('${OUT}'))
-              print(f'Stylelint: {len(data)} file result(s) parsed.')
-          except Exception as e:
-              print(f'Warning: stylelint output invalid: {e}', file=sys.stderr)
-              open('${OUT}', 'w').write('[]')
-          "
+          echo "=== STYLELINT STDOUT ==="
+          cat /tmp/stylelint_stdout.txt
+          echo "=== STYLELINT STDERR ==="
+          cat /tmp/stylelint_stderr.txt
+          echo "=== STYLELINT STDOUT LENGTH ==="
+          wc -c /tmp/stylelint_stdout.txt
+          echo "=== STYLELINT STDERR LENGTH ==="
+          wc -c /tmp/stylelint_stderr.txt
+
+          # Copy whichever stream has content to OUT
+          if [[ -s /tmp/stylelint_stdout.txt ]]; then
+            cp /tmp/stylelint_stdout.txt "${OUT}"
+          elif [[ -s /tmp/stylelint_stderr.txt ]]; then
+            cp /tmp/stylelint_stderr.txt "${OUT}"
+          else
+            echo '[]' > "${OUT}"
+          fi
+
 
       # ------------------------------------------------------
       # Diagnostic — Check NVD API Key presence
