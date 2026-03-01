@@ -222,7 +222,7 @@ tools:
   # - Set blocking: true once the HTML baseline is clean.
   # ----------------------------------------------------------
   htmlhint:
-    blocking: false
+    blocking: true
     description: "HTML static analysis"
     fail_on:
       violation_count: ">0"
@@ -238,7 +238,7 @@ tools:
   # - Set blocking: true once the CSS baseline is clean.
   # ----------------------------------------------------------
   stylelint:
-    blocking: false
+    blocking: true
     description: "CSS/SCSS static analysis"
     fail_on:
       violation_count: ">0"

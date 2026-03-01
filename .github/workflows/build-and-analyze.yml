@@ -440,15 +440,20 @@ jobs:
 
           if [[ -f "${JAVA_ROOT}/pom.xml" ]]; then
             pushd "${JAVA_ROOT}" >/dev/null
-            mvn compile -q --batch-mode || true
+            echo "Running Maven compile..."
+            mvn compile -q --batch-mode -DskipTests || {
+              echo "::warning::Maven compile failed; falling back to javac."
+            }
             popd >/dev/null
             CLASSES="${JAVA_ROOT}/target/classes"
+
             if [[ ! -d "${CLASSES}" || -z "$(ls -A "${CLASSES}" 2>/dev/null)" ]]; then
-              echo "::warning::Maven compile produced no classes; falling back to javac."
+              echo "::warning::Maven produced no classes; falling back to javac."
               CLASSES="$(mktemp -d)"
               TARGET="${JAVA_ROOT}/src/main/java"
               mapfile -t SOURCES < <(find "${TARGET}" -type f -name "*.java" || true)
               if [[ "${#SOURCES[@]}" -gt 0 ]]; then
+                echo "javac: compiling ${#SOURCES[@]} source file(s)."
                 javac -d "${CLASSES}" "${SOURCES[@]}" || true
               fi
             fi
@@ -464,7 +469,7 @@ jobs:
 
           echo "JAVA_CLASSES_DIR=${CLASSES}" >> "$GITHUB_ENV"
           echo "Compiled classes directory: ${CLASSES}"
-          ls "${CLASSES}" || echo "(empty)"
+          echo "Class file count: $(find "${CLASSES}" -name "*.class" | wc -l)"
 
       # ------------------------------------------------------
       # Tool: SpotBugs (Java Bytecode Static Analysis)
@@ -598,7 +603,8 @@ jobs:
       # Tool: HTMLHint (HTML Static Analysis)
       # ----------------------------------------------------------
       # Runs only when HTML files are found under SCAN_ROOT.
-      # Excludes node_modules and .dart_tool build artifacts.
+      # Uses mapfile + array to pass files individually to htmlhint,
+      # avoiding the single-string subshell argument bug.
       #
       # Output: quality/analysis/raw/htmlhint.json
       # Format: array of per-file result objects
@@ -610,24 +616,21 @@ jobs:
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/htmlhint.json"
           echo '[]' > "${OUT}"
 
-          HTML_COUNT="$(find "${RESOLVED_ROOT}" -name "*.html" \
+          mapfile -t HTML_FILES < <(find "${RESOLVED_ROOT}" -name "*.html" \
             ! -path "*/node_modules/*" \
             ! -path "*/.dart_tool/*" \
             ! -path "*/build/*" \
-            | wc -l)"
+            || true)
 
-          if [[ "${HTML_COUNT}" -eq 0 ]]; then
+          if [[ "${#HTML_FILES[@]}" -eq 0 ]]; then
             echo "No HTML files found under SCAN_ROOT; skipping HTMLHint."
             exit 0
           fi
 
-          echo "HTMLHint: analyzing ${HTML_COUNT} HTML file(s)."
+          echo "HTMLHint: analyzing ${#HTML_FILES[@]} HTML file(s)."
 
           npx --yes htmlhint \
-            "$(find "${RESOLVED_ROOT}" -name "*.html" \
-               ! -path "*/node_modules/*" \
-               ! -path "*/.dart_tool/*" \
-               ! -path "*/build/*")" \
+            "${HTML_FILES[@]}" \
             --format json > "${OUT}" || true
 
           test -s "${OUT}" || echo '[]' > "${OUT}"
@@ -636,7 +639,9 @@ jobs:
       # Tool: Stylelint (CSS/SCSS Static Analysis)
       # ----------------------------------------------------------
       # Runs only when CSS or SCSS files are found under SCAN_ROOT.
-      # Uses standard config; creates minimal config if none found.
+      # Installs stylelint-config-standard locally to avoid the
+      # "could not find stylelint-config-standard" npx error.
+      # Uses mapfile + array to pass files individually.
       #
       # Output: quality/analysis/raw/stylelint.json
       # Format: array of per-file result objects
@@ -648,31 +653,30 @@ jobs:
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/stylelint.json"
           echo '[]' > "${OUT}"
 
-          CSS_COUNT="$(find "${RESOLVED_ROOT}" \( -name "*.css" -o -name "*.scss" \) \
+          mapfile -t CSS_FILES < <(find "${RESOLVED_ROOT}" \
+            \( -name "*.css" -o -name "*.scss" \) \
             ! -path "*/node_modules/*" \
             ! -path "*/build/*" \
-            | wc -l)"
+            || true)
 
-          if [[ "${CSS_COUNT}" -eq 0 ]]; then
+          if [[ "${#CSS_FILES[@]}" -eq 0 ]]; then
             echo "No CSS/SCSS files found under SCAN_ROOT; skipping Stylelint."
             exit 0
           fi
 
-          echo "Stylelint: analyzing ${CSS_COUNT} CSS/SCSS file(s)."
+          echo "Stylelint: analyzing ${#CSS_FILES[@]} CSS/SCSS file(s)."
 
-          # Create a minimal config if none exists in the workspace
-          if [[ ! -f "${GITHUB_WORKSPACE}/.stylelintrc.json" && \
-                ! -f "${GITHUB_WORKSPACE}/.stylelintrc.yml" && \
-                ! -f "${GITHUB_WORKSPACE}/stylelint.config.js" ]]; then
-            echo '{"extends":["stylelint-config-standard"]}' \
-              > "${GITHUB_WORKSPACE}/.stylelintrc.json"
-          fi
+          # Install stylelint and config-standard together locally so
+          # npx can resolve the extends reference without a configBasedir error.
+          npm install --save-dev \
+            stylelint \
+            stylelint-config-standard 2>/dev/null || true
 
-          npx --yes stylelint \
-            "$(find "${RESOLVED_ROOT}" \( -name "*.css" -o -name "*.scss" \) \
-               ! -path "*/node_modules/*" \
-               ! -path "*/build/*" \
-               | tr '\n' ' ')" \
+          echo '{"extends":["stylelint-config-standard"]}' \
+            > "${GITHUB_WORKSPACE}/.stylelintrc.json"
+
+          npx stylelint \
+            "${CSS_FILES[@]}" \
             --formatter json \
             --allow-empty-input > "${OUT}" || true
 
