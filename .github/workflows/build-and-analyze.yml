@@ -630,11 +630,18 @@ jobs:
           echo "HTMLHint: analyzing ${#HTML_FILES[@]} HTML file(s)."
 
           npx --yes htmlhint \
-            "${HTML_FILES[@]}" \
-            --format json \
-            --output-file "${OUT}" || true
+                      "${HTML_FILES[@]}" \
+                      --format json 2>/dev/null > "${OUT}" || true
 
-          test -s "${OUT}" || echo '[]' > "${OUT}"
+                    python3 -c "
+          import json, sys
+          try:
+              data = json.load(open('${OUT}'))
+              print(f'HTMLHint: {len(data)} file result(s) parsed.')
+          except Exception as e:
+              print(f'Warning: htmlhint output invalid: {e}', file=sys.stderr)
+              open('${OUT}', 'w').write('[]')
+          "
 
 
       # ------------------------------------------------------
@@ -680,9 +687,18 @@ jobs:
           npx stylelint \
             "${CSS_FILES[@]}" \
             --formatter json \
-            --allow-empty-input > "${OUT}" || true
+            --allow-empty-input 2>/dev/null > "${OUT}" || true
 
-          test -s "${OUT}" || echo '[]' > "${OUT}"
+          # Verify output is valid JSON array, not empty
+          python3 -c "
+          import json, sys
+          try:
+              data = json.load(open('${OUT}'))
+              print(f'Stylelint: {len(data)} file result(s) parsed.')
+          except Exception as e:
+              print(f'Warning: stylelint output invalid: {e}', file=sys.stderr)
+              open('${OUT}', 'w').write('[]')
+          "
 
       # ------------------------------------------------------
       # Diagnostic — Check NVD API Key presence
