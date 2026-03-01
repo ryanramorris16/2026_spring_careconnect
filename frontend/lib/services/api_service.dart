@@ -1200,6 +1200,79 @@ class ApiService {
     );
   }
 
+  static Future<http.Response> getPatientCompleteProfile(int patientId) async {
+    return getPatientProfile(patientId);
+  }
+
+  static Future<List<Map<String, dynamic>>> getPatientFamilyMembers(
+    int patientId,
+  ) async {
+    final response = await getFamilyMembers(patientId);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const [];
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+
+    if (decoded is Map<String, dynamic>) {
+      final data = decoded['data'];
+      if (data is List) {
+        return data.whereType<Map<String, dynamic>>().toList();
+      }
+      if (data is Map<String, dynamic>) {
+        final members = data['familyMembers'];
+        if (members is List) {
+          return members.whereType<Map<String, dynamic>>().toList();
+        }
+      }
+      final members = decoded['familyMembers'];
+      if (members is List) {
+        return members.whereType<Map<String, dynamic>>().toList();
+      }
+    }
+
+    return const [];
+  }
+
+  static Future<List<Map<String, dynamic>>> getMyCallTelemetry() async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.get(
+      Uri.parse('${ApiConstants._host}/api/v3/calls/telemetry/my'),
+      headers: headers,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const [];
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    return const [];
+  }
+
+  static Future<List<Map<String, dynamic>>> getCallTelemetry(String callId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.get(
+      Uri.parse('${ApiConstants._host}/api/v3/calls/$callId/telemetry'),
+      headers: headers,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return const [];
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded.whereType<Map<String, dynamic>>().toList();
+    }
+    return const [];
+  }
+
 
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
