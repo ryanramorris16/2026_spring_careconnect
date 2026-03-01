@@ -630,29 +630,11 @@ jobs:
           echo "HTMLHint: analyzing ${#HTML_FILES[@]} HTML file(s)."
 
           npx --yes htmlhint \
-            "${HTML_FILES[@]}" \
-            --format json \
-            > >(tee /tmp/htmlhint_stdout.txt) \
-            2> >(tee /tmp/htmlhint_stderr.txt) || true
+                      "${HTML_FILES[@]}" \
+                      --format json \
+                      2>/dev/null > "${OUT}" || true
 
-          echo "=== HTMLHINT STDOUT ==="
-          cat /tmp/htmlhint_stdout.txt
-          echo "=== HTMLHINT STDERR ==="
-          cat /tmp/htmlhint_stderr.txt
-          echo "=== HTMLHINT STDOUT LENGTH ==="
-          wc -c /tmp/htmlhint_stdout.txt
-          echo "=== HTMLHINT STDERR LENGTH ==="
-          wc -c /tmp/htmlhint_stderr.txt
-
-          if [[ -s /tmp/htmlhint_stdout.txt ]]; then
-            cp /tmp/htmlhint_stdout.txt "${OUT}"
-          elif [[ -s /tmp/htmlhint_stderr.txt ]]; then
-            cp /tmp/htmlhint_stderr.txt "${OUT}"
-          else
-            echo '[]' > "${OUT}"
-          fi
-
-
+                    test -s "${OUT}" || echo '[]' > "${OUT}"
 
       # ------------------------------------------------------
       # Tool: Stylelint (CSS/SCSS Static Analysis)

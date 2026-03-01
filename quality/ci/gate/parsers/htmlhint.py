@@ -86,7 +86,7 @@ def parse_htmlhint(raw_dir: Path) -> dict:
         findings     = []
 
         for file_result in file_results:
-            file_path = file_result.get("filePath", "unknown")
+            file_path = file_result.get("file", file_result.get("filePath", "unknown"))
             messages  = file_result.get("messages", [])
 
             for msg in messages:
