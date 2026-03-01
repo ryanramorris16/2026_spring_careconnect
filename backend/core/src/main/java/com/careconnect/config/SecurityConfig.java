@@ -116,6 +116,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/ai-chat/**").authenticated()
                         .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
                         .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/v1/api/patient/**").authenticated()
+                        .requestMatchers("/api/patient/**").authenticated()
                         // Keep broad API auth from main while preserving explicit call route below.
                         .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
                         // Team A call lifecycle endpoints are under /api/v3/calls/**.
