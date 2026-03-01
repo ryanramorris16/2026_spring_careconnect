@@ -56,28 +56,24 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .parsers.bandit import parse_bandit
 from .parsers.checkstyle import parse_checkstyle
 from .parsers.dependency_check import parse_dependency_check
 from .parsers.flutter import parse_flutter
+from .parsers.gitleaks import parse_gitleaks
+from .parsers.htmlhint import parse_htmlhint
 from .parsers.pmd import parse_pmd
+from .parsers.pylint import parse_pylint
 from .parsers.semgrep import parse_semgrep
 from .parsers.sonar import parse_sonar
 from .parsers.spotbugs import parse_spotbugs
+from .parsers.stylelint import parse_stylelint
 from .parsers.trufflehog import parse_trufflehog
-from .parsers.gitleaks import parse_gitleaks
 from .schemas import base_tool_result
 from .utils import determine_max_severity, SEVERITY_ORDER
 
 # ----------------------------------------------------------
 # Directory configuration
-# ----------------------------------------------------------
-# RAW_DIR:
-#   Location where the CI workflow writes raw tool reports.
-#   Each parser reads from this directory.
-#
-# NORMALIZED_DIR:
-#   Output directory for normalized.json.
-#   Created at runtime inside normalize() — not at import time.
 # ----------------------------------------------------------
 RAW_DIR        = Path("quality/analysis/raw")
 NORMALIZED_DIR = Path("quality/analysis/normalized")
@@ -97,15 +93,19 @@ OUTPUT_FILE    = NORMALIZED_DIR / "normalized.json"
 # and the final report.
 # ----------------------------------------------------------
 TOOL_PARSERS: list[tuple[str, callable]] = [
-    ("trufflehog",        parse_trufflehog),       # Secrets detection  (JSONL)
-    ("gitleaks",          parse_gitleaks),          # Secrets detection  (JSON)
-    ("flutter_analyze",   parse_flutter),           # Dart static analysis (JSON)
+    ("trufflehog",        parse_trufflehog),       # Secrets detection      (JSONL)
+    ("gitleaks",          parse_gitleaks),          # Secrets detection      (JSON)
+    ("flutter_analyze",   parse_flutter),           # Dart static analysis   (JSON)
     ("checkstyle",        parse_checkstyle),        # Java style enforcement (XML)
-    ("pmd",               parse_pmd),               # Java source analysis (XML)
-    ("spotbugs",          parse_spotbugs),           # Java bytecode analysis (XML)
-    ("semgrep",           parse_semgrep),            # Multi-language SAST (JSON)
-    ("dependency_check",  parse_dependency_check),  # SCA — known CVEs (JSON)
-    ("sonar",             parse_sonar),             # Quality gate (JSON, disabled)
+    ("pmd",               parse_pmd),               # Java source analysis   (XML)
+    ("spotbugs",          parse_spotbugs),          # Java bytecode analysis (XML)
+    ("semgrep",           parse_semgrep),           # Multi-language SAST    (JSON)
+    ("pylint",            parse_pylint),            # Python static analysis (JSON)
+    ("bandit",            parse_bandit),            # Python security SAST   (JSON)
+    ("htmlhint",          parse_htmlhint),          # HTML static analysis   (JSON)
+    ("stylelint",         parse_stylelint),         # CSS/SCSS analysis      (JSON)
+    ("dependency_check",  parse_dependency_check),  # SCA — known CVEs       (JSON)
+    ("sonar",             parse_sonar),             # Quality gate           (JSON)
 ]
 
 
@@ -129,7 +129,6 @@ def normalize() -> list[dict]:
         - Parser exceptions are converted to runtime_error records.
         - Output directory is created if it does not exist.
     """
-    # Ensure output directory exists before writing
     NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)
 
     results: list[dict] = []
@@ -147,16 +146,10 @@ def normalize() -> list[dict]:
             results.append(result)
 
         except Exception as e:
-            # --------------------------------------------------
-            # Parser crash guard
-            # --------------------------------------------------
-            # Build a minimal error record using the standard schema
-            # so the policy layer always receives a consistent structure.
-            # --------------------------------------------------
             error_result = base_tool_result(tool_name)
-            error_result["executed"]               = False
-            error_result["runtime_error"]          = True
-            error_result["metadata"]["error"]      = (
+            error_result["executed"]          = False
+            error_result["runtime_error"]     = True
+            error_result["metadata"]["error"] = (
                 f"Parser raised an unhandled exception: {e}"
             )
             results.append(error_result)
@@ -164,29 +157,17 @@ def normalize() -> list[dict]:
     # ----------------------------------------------------------
     # Build top-level summary
     # ----------------------------------------------------------
-    # Aggregates key metrics across all tool results so the policy
-    # engine and report layer do not need to iterate results
-    # themselves for overall pipeline state.
-    # ----------------------------------------------------------
-
-    # Sum violation counts across all tools
     total_violations = sum(r.get("violation_count", 0) for r in results)
 
-    # Aggregate severity counts across all tools
     combined_severity_counts: dict[str, int] = dict.fromkeys(SEVERITY_ORDER, 0)
-
     for r in results:
         for level, count in r.get("severity_counts", {}).items():
             if level in combined_severity_counts:
                 combined_severity_counts[level] += count
 
-    # Determine the highest severity found across all tools
     overall_max_severity = determine_max_severity(combined_severity_counts)
+    generated_at         = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # UTC timestamp for audit trail
-    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    # Compose the top-level normalized document
     normalized_doc = {
         "generated_at":     generated_at,
         "tool_count":       len(results),
@@ -195,11 +176,6 @@ def normalize() -> list[dict]:
         "results":          results,
     }
 
-    # ----------------------------------------------------------
-    # Write normalized.json
-    # ----------------------------------------------------------
-    # This is the sole input consumed by policy_engine.py.
-    # ----------------------------------------------------------
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(normalized_doc, f, indent=2)
 
@@ -213,4 +189,3 @@ def normalize() -> list[dict]:
 
 if __name__ == "__main__":
     normalize()
-    
