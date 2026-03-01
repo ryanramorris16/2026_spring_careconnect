@@ -631,9 +631,11 @@ jobs:
 
           npx --yes htmlhint \
             "${HTML_FILES[@]}" \
-            --format json > "${OUT}" || true
+            --format json \
+            --output-file "${OUT}" || true
 
           test -s "${OUT}" || echo '[]' > "${OUT}"
+
 
       # ------------------------------------------------------
       # Tool: Stylelint (CSS/SCSS Static Analysis)
@@ -681,6 +683,44 @@ jobs:
             --allow-empty-input > "${OUT}" || true
 
           test -s "${OUT}" || echo '[]' > "${OUT}"
+
+
+
+
+
+
+
+
+
+
+
+          
+
+      # ------------------------------------------------------
+      # Diagnostic — Check NVD API Key presence
+      # ------------------------------------------------------
+      - name: Diagnostic — NVD API Key presence
+        shell: bash
+        run: |
+          if [[ -n "${NVD_KEY}" ]]; then
+            echo "NVD_API_KEY is set (length: ${#NVD_KEY} chars)"
+          else
+            echo "::warning::NVD_API_KEY is NOT set or empty"
+          fi
+        env:
+          NVD_KEY: ${{ secrets.NVD_API_KEY }}
+
+
+
+
+
+
+
+
+
+
+
+
 
       # ------------------------------------------------------
       # Tool: OWASP Dependency-Check (SCA)
