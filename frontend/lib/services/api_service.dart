@@ -2018,6 +2018,36 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getCallRecordingExtractInfo({
+    required String callId,
+    required int patientUserId,
+  }) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final response = await _httpClient
+          .get(
+            Uri.parse(
+              '${ApiConstants.callsV3}/$callId/recording/extract?patientUserId=$patientUserId',
+            ),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) {
+        return null;
+      }
+
+      return Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getMyCallTelemetry() async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
@@ -2041,6 +2071,37 @@ class ApiService {
     } catch (_) {
       return [];
     }
+  }
+
+  static Future<int> deleteCallTelemetryDev(String callId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient
+        .delete(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'), headers: headers)
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode != 200) {
+      String details = '';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          final message = (decoded['message'] ?? decoded['error'] ?? '').toString().trim();
+          if (message.isNotEmpty) {
+            details = ' - $message';
+          }
+        }
+      } catch (_) {
+        // keep default message
+      }
+      throw HttpException(
+        'Failed to delete call telemetry (${response.statusCode})$details',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map && decoded['deletedEvents'] is num) {
+      return (decoded['deletedEvents'] as num).toInt();
+    }
+    return 0;
   }
 }
 
