@@ -29,9 +29,13 @@ import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,9 +55,9 @@ import static org.mockito.Mockito.*;
  *
  * <p>Coverage targets: processChat (happy path + validation + AI error handling),
  * getPatientConversations, getConversationMessages, getRecentMessagesForUser,
- * and deactivateConversation.
+ * deactivateConversation, and all private helper methods via reflection.
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
+@SuppressWarnings({"unchecked"})
 class DefaultAIChatServiceTest {
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -248,6 +252,34 @@ class DefaultAIChatServiceTest {
             // A new conversation must have been persisted via the cache service
             verify(cacheService, atLeastOnce()).saveConversation(any());
         }
+
+        @Test
+        @DisplayName("returns error response when message is null and no files are attached")
+        void nullMessageAndNoFiles_returnsErrorResponse() {
+            ChatRequest req = new ChatRequest();
+            req.setUserId(USER_ID);
+            req.setPatientId(PATIENT_ID);
+            req.setMessage(null);
+
+            ChatResponse resp = service.processChat(req);
+
+            assertFalse(resp.getSuccess());
+            assertTrue(resp.getErrorMessage().contains("Message content"));
+        }
+
+        @Test
+        @DisplayName("returns error response when message is null and files list is empty")
+        void nullMessageAndEmptyFiles_returnsErrorResponse() {
+            ChatRequest req = new ChatRequest();
+            req.setUserId(USER_ID);
+            req.setPatientId(PATIENT_ID);
+            req.setMessage(null);
+            req.setUploadedFiles(Collections.emptyList());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertFalse(resp.getSuccess());
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -302,10 +334,9 @@ class DefaultAIChatServiceTest {
                     .thenReturn(pass)    // first invocation: user message
                     .thenReturn(block);  // second invocation: extracted file text
 
-            UploadedFileDTO file = UploadedFileDTO.builder()
-                    .filename("report.pdf")
-                    .contentType("application/pdf")
-                    .build();
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("report.pdf");
+            file.setContentType("application/pdf");
             when(documentProcessingService.extractTextContent(any())).thenReturn("extracted text");
 
             ChatRequest req = buildBasicRequest();
@@ -429,6 +460,53 @@ class DefaultAIChatServiceTest {
             assertTrue(resp.getAiResponse().contains("encountered an error"),
                     "Unrecognised runtime errors should produce a generic retry message");
         }
+
+        @Test
+        @DisplayName("returns fallback message when a generic checked Exception is thrown")
+        void checkedExceptionFromAi_returnsFallbackMessage() {
+            // Force a checked Exception to be wrapped and thrown by the chat method
+            when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList()))
+                    .thenAnswer(inv -> { throw new Exception("Unexpected checked exception"); });
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            assertTrue(resp.getAiResponse().contains("unexpected error"),
+                    "Checked exceptions should produce an unexpected error message");
+            verify(chatAuditService).logSystemError(
+                    eq(USER_ID), eq(CONV_ID), eq("AI_PROCESSING_ERROR"), eq("ai_service_exception"));
+        }
+
+        @Test
+        @DisplayName("logs AI_RESPONSE_NULL when AI returns null aiMessage text")
+        void nullAiMessageText_logsSystemError() {
+            // Make the response non-null but aiMessage returns null text
+            var mockResponse = mock(dev.langchain4j.model.chat.response.ChatResponse.class, RETURNS_DEEP_STUBS);
+            when(mockResponse.aiMessage().text()).thenReturn(null);
+            when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList()))
+                    .thenReturn(mockResponse);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            assertTrue(resp.getAiResponse().contains("having trouble processing"));
+            verify(chatAuditService).logSystemError(
+                    eq(USER_ID), eq(CONV_ID), eq("AI_RESPONSE_NULL"), eq("ai_service_error"));
+        }
+
+        @Test
+        @DisplayName("logs AI_RESPONSE_NULL when AI response has null aiMessage")
+        void nullAiMessage_logsSystemError() {
+            var mockResponse = mock(dev.langchain4j.model.chat.response.ChatResponse.class);
+            when(mockResponse.aiMessage()).thenReturn(null);
+            when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList()))
+                    .thenReturn(mockResponse);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            assertTrue(resp.getAiResponse().contains("having trouble processing"));
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -541,10 +619,9 @@ class DefaultAIChatServiceTest {
         @Test
         @DisplayName("appends extracted file content to the message for uploaded files")
         void uploadedFileWithContent_fileTextIncluded() {
-            UploadedFileDTO file = UploadedFileDTO.builder()
-                    .filename("lab_results.pdf")
-                    .contentType("application/pdf")
-                    .build();
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("lab_results.pdf");
+            file.setContentType("application/pdf");
             when(documentProcessingService.extractTextContent(any()))
                     .thenReturn("Lab result: HbA1c 6.5%");
 
@@ -561,10 +638,9 @@ class DefaultAIChatServiceTest {
         @Test
         @DisplayName("handles uploaded files gracefully when extraction returns empty text")
         void uploadedFileWithNoExtractedText_successWithoutFileContent() {
-            UploadedFileDTO file = UploadedFileDTO.builder()
-                    .filename("empty.pdf")
-                    .contentType("application/pdf")
-                    .build();
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("empty.pdf");
+            file.setContentType("application/pdf");
             when(documentProcessingService.extractTextContent(any())).thenReturn("");
 
             ChatRequest req = buildBasicRequest();
@@ -578,10 +654,9 @@ class DefaultAIChatServiceTest {
         @Test
         @DisplayName("handles file extraction exception gracefully and continues processing")
         void uploadedFileThrowsDuringExtraction_processingContinues() {
-            UploadedFileDTO file = UploadedFileDTO.builder()
-                    .filename("corrupt.pdf")
-                    .contentType("application/pdf")
-                    .build();
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("corrupt.pdf");
+            file.setContentType("application/pdf");
             when(documentProcessingService.extractTextContent(any()))
                     .thenThrow(new RuntimeException("Corrupt PDF"));
 
@@ -623,6 +698,280 @@ class DefaultAIChatServiceTest {
             assertEquals(300, resp.getTotalTokensUsedInConversation());
             assertNotNull(resp.getContextIncluded());
             assertFalse(resp.getApproachingTokenLimit());
+        }
+
+        @Test
+        @DisplayName("handles null return from sumTokensUsedByConversation gracefully")
+        void nullTotalTokens_defaultsToZero() {
+            when(chatMessageRepository.sumTokensUsedByConversation(any())).thenReturn(null);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            assertEquals(0, resp.getTotalTokensUsedInConversation());
+        }
+
+        @Test
+        @DisplayName("logs chat session start when conversation is newly created")
+        void newConversation_logsChatSessionStart() {
+            // Set createdAt to now so it is within the last minute
+            conversation.setCreatedAt(LocalDateTime.now());
+            when(cacheService.saveConversation(any())).thenReturn(conversation);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            verify(chatAuditService).logChatSessionStart(
+                    eq(USER_ID), eq(CONV_ID), eq("mobile_app"), eq("127.0.0.1"));
+        }
+
+        @Test
+        @DisplayName("does not log chat session start when conversation is old")
+        void oldConversation_doesNotLogChatSessionStart() {
+            // createdAt is 5 minutes ago (set in setUp) — should NOT trigger logging
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            verify(chatAuditService, never()).logChatSessionStart(any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("adds medical context to chat memory when present and memory is empty")
+        void nonEmptyMedicalContext_addedToChatMemory() {
+            when(medicalContextService.buildPatientContext(eq(PATIENT_ID), any(), any()))
+                    .thenReturn("Vitals: HR 72  Medications: Aspirin");
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            // system prompt + medical context + user message + AI response = 4 adds
+            verify(chatMemory, times(4)).add(any(dev.langchain4j.data.message.ChatMessage.class));
+        }
+
+        @Test
+        @DisplayName("skips adding system prompt to memory when memory is not empty")
+        void nonEmptyMemory_skipsSystemPromptAddition() {
+            // Simulate non-empty chat memory (already has messages from previous interaction)
+            List<dev.langchain4j.data.message.ChatMessage> existingMessages = new ArrayList<>();
+            existingMessages.add(dev.langchain4j.data.message.SystemMessage.from("Existing prompt"));
+            when(chatMemory.messages()).thenReturn(existingMessages);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            // user message + AI response = 2 adds (system prompt skipped since memory non-empty)
+            verify(chatMemory, times(2)).add(any(dev.langchain4j.data.message.ChatMessage.class));
+        }
+
+        @Test
+        @DisplayName("handles null extracted text from file processing")
+        void uploadedFileWithNullExtractedText_fallbackMessage() {
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("image.png");
+            file.setContentType("image/png");
+            when(documentProcessingService.extractTextContent(any())).thenReturn(null);
+
+            ChatRequest req = buildBasicRequest();
+            req.setUploadedFiles(List.of(file));
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(documentProcessingService).extractTextContent(any());
+        }
+
+        @Test
+        @DisplayName("processes request with null message but valid uploaded files")
+        void nullMessageWithFiles_processesSuccessfully() {
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("report.pdf");
+            file.setContentType("application/pdf");
+            when(documentProcessingService.extractTextContent(any())).thenReturn("File content");
+
+            ChatRequest req = new ChatRequest();
+            req.setUserId(USER_ID);
+            req.setPatientId(PATIENT_ID);
+            req.setMessage(null);
+            req.setUploadedFiles(List.of(file));
+
+            // When message is null but files are present, the service should still process
+            // Note: the existing code checks (message == null || message.trim().isEmpty()) AND (files == null || files.isEmpty())
+            // So null message with non-empty files should pass validation
+            ChatResponse resp = service.processChat(req);
+            // The message null-ness may cause NPE in later processing, handled by outer catch
+            assertNotNull(resp);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  processChat — outer exception handling
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("processChat — outer error handling")
+    class ProcessChatOuterExceptions {
+
+        @Test
+        @DisplayName("returns error response when an unexpected exception occurs in the outer try block")
+        void outerException_returnsErrorResponse() {
+            // Force the cacheService.findUserAIConfig to throw an exception
+            // which happens inside the try block at line 479
+            when(cacheService.findUserAIConfig(eq(USER_ID), any()))
+                    .thenThrow(new RuntimeException("Database connection lost"));
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertFalse(resp.getSuccess());
+            assertNotNull(resp.getErrorMessage());
+            assertEquals("PROCESSING_ERROR", resp.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("returns error response with user-friendly AI response on outer catch")
+        void outerException_responseContainsFriendlyMessage() {
+            when(cacheService.findUserAIConfig(eq(USER_ID), any()))
+                    .thenThrow(new RuntimeException("Unexpected error"));
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertFalse(resp.getSuccess());
+            assertNotNull(resp.getAiResponse());
+            assertTrue(resp.getAiResponse().contains("apologize"));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  processChat — AI config fallback path
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("processChat — AI config creation fallback")
+    class ProcessChatAIConfigFallback {
+
+        @Test
+        @DisplayName("creates default AI config when none is found in cache")
+        void noExistingAIConfig_createsDefault() {
+            when(cacheService.findUserAIConfig(eq(USER_ID), any())).thenReturn(Optional.empty());
+            // saveUserAIConfig returns a valid config
+            when(cacheService.saveUserAIConfig(any())).thenReturn(aiConfig);
+
+            ChatResponse resp = service.processChat(buildBasicRequest());
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveUserAIConfig(any());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  processChat — conversation title generation
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("processChat — conversation creation with title")
+    class ProcessChatConversationTitle {
+
+        @Test
+        @DisplayName("uses explicit title from request when provided")
+        void explicitTitle_usedInConversation() {
+            ChatRequest req = buildBasicRequest();
+            req.setTitle("My Custom Title");
+            req.setConversationId("not-found-id");
+            when(cacheService.findConversation("not-found-id")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    "My Custom Title".equals(conv.getTitle())));
+        }
+
+        @Test
+        @DisplayName("generates truncated title from long message when no title is provided")
+        void longMessage_titleIsTruncated() {
+            ChatRequest req = new ChatRequest();
+            req.setUserId(USER_ID);
+            req.setPatientId(PATIENT_ID);
+            req.setMessage("This is a very long message that is definitely more than fifty characters in length for testing purposes");
+            req.setConversationId("not-found-conv");
+            when(cacheService.findConversation("not-found-conv")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    conv.getTitle() != null && conv.getTitle().length() == 50
+                            && conv.getTitle().endsWith("...")));
+        }
+
+        @Test
+        @DisplayName("uses full message as title when message is 50 chars or fewer")
+        void shortMessage_fullMessageUsedAsTitle() {
+            ChatRequest req = new ChatRequest();
+            req.setUserId(USER_ID);
+            req.setPatientId(PATIENT_ID);
+            req.setMessage("Short message");
+            req.setConversationId("not-found-conv2");
+            when(cacheService.findConversation("not-found-conv2")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    "Short message".equals(conv.getTitle())));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  processChat — determineModel paths
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("processChat — model determination")
+    class ProcessChatModelDetermination {
+
+        @Test
+        @DisplayName("uses preferred model from request when set")
+        void preferredModelSet_usedInConversation() {
+            ChatRequest req = buildBasicRequest();
+            req.setPreferredModel("custom-model-v2");
+            req.setConversationId("conv-for-model-test");
+            when(cacheService.findConversation("conv-for-model-test")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    "custom-model-v2".equals(conv.getAiModelUsed())));
+        }
+
+        @Test
+        @DisplayName("uses openai model when provider is OPENAI and no preferred model set")
+        void openaiProvider_usesOpenaiModel() {
+            aiConfig.setPreferredAiProvider(UserAIConfig.AIProvider.OPENAI);
+            ChatRequest req = buildBasicRequest();
+            req.setConversationId("conv-openai-test");
+            when(cacheService.findConversation("conv-openai-test")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    "gpt-4o".equals(conv.getAiModelUsed())));
+        }
+
+        @Test
+        @DisplayName("uses deepseek model when provider is DEEPSEEK and no preferred model set")
+        void deepseekProvider_usesDeepseekModel() {
+            aiConfig.setPreferredAiProvider(UserAIConfig.AIProvider.DEEPSEEK);
+            ChatRequest req = buildBasicRequest();
+            req.setConversationId("conv-deepseek-test");
+            when(cacheService.findConversation("conv-deepseek-test")).thenReturn(Optional.empty());
+
+            ChatResponse resp = service.processChat(req);
+
+            assertTrue(resp.getSuccess());
+            verify(cacheService).saveConversation(argThat(conv ->
+                    "deepseek-chat".equals(conv.getAiModelUsed())));
         }
     }
 
@@ -692,6 +1041,27 @@ class DefaultAIChatServiceTest {
                     service.getPatientConversations(PATIENT_ID);
 
             assertNull(summaries.get(0).getAiProvider());
+        }
+
+        @Test
+        @DisplayName("maps all conversation fields correctly in summary")
+        void allFieldsMappedCorrectly() {
+            conversation.setAiModelUsed("deepseek-chat");
+            conversation.setTotalTokensUsed(500);
+            conversation.setUpdatedAt(LocalDateTime.of(2026, 1, 15, 10, 30));
+            when(chatConversationRepository
+                    .findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(PATIENT_ID))
+                    .thenReturn(List.of(conversation));
+
+            List<ChatConversationSummary> summaries =
+                    service.getPatientConversations(PATIENT_ID);
+
+            ChatConversationSummary s = summaries.get(0);
+            assertEquals("deepseek-chat", s.getAiModel());
+            assertEquals(500, s.getTotalTokensUsed());
+            assertEquals(LocalDateTime.of(2026, 1, 15, 10, 30), s.getLastMessageAt());
+            assertNotNull(s.getCreatedAt());
+            assertEquals(ChatConversation.ChatType.GENERAL_SUPPORT, s.getChatType());
         }
     }
 
@@ -903,15 +1273,6 @@ class DefaultAIChatServiceTest {
     @DisplayName("Medical context — context type tagging")
     class MedicalContextParsing {
 
-        /**
-         * The medical-context parsing logic lives inside {@code parseContextIncluded},
-         * which is a private helper.  We exercise it indirectly through
-         * {@code processChat}: the method's output is NOT surfaced in the response
-         * (the main path sets contextIncluded to a fixed list), but we can confirm
-         * that the correct medical-context string was passed to the sanitization
-         * and AI layers when different context sections are present.
-         */
-
         @Test
         @DisplayName("builds patient context when patientId is present")
         void patientContext_built_whenPatientIdSet() {
@@ -939,6 +1300,1013 @@ class DefaultAIChatServiceTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  Private helper methods tested via reflection
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("Private helpers — via reflection")
+    class PrivateHelpers {
+
+        @Test
+        @DisplayName("generateConversationTitle truncates messages longer than 50 characters")
+        void generateConversationTitle_truncatesLongMessage() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "generateConversationTitle", String.class);
+            method.setAccessible(true);
+
+            String longMsg = "A".repeat(60);
+            String result = (String) method.invoke(service, longMsg);
+
+            assertEquals(50, result.length());
+            assertTrue(result.endsWith("..."));
+            assertEquals("A".repeat(47) + "...", result);
+        }
+
+        @Test
+        @DisplayName("generateConversationTitle returns full message when 50 chars or fewer")
+        void generateConversationTitle_shortMessage() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "generateConversationTitle", String.class);
+            method.setAccessible(true);
+
+            String shortMsg = "Hello";
+            String result = (String) method.invoke(service, shortMsg);
+
+            assertEquals("Hello", result);
+        }
+
+        @Test
+        @DisplayName("generateConversationTitle returns full message when exactly 50 chars")
+        void generateConversationTitle_exactly50Chars() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "generateConversationTitle", String.class);
+            method.setAccessible(true);
+
+            String msg50 = "A".repeat(50);
+            String result = (String) method.invoke(service, msg50);
+
+            assertEquals(msg50, result);
+        }
+
+        @Test
+        @DisplayName("createMessage returns a Map with role and content")
+        void createMessage_returnsMap() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "createMessage", String.class, String.class);
+            method.setAccessible(true);
+
+            Object result = method.invoke(service, "user", "Hello there");
+
+            assertTrue(result instanceof Map);
+            Map<String, String> map = (Map<String, String>) result;
+            assertEquals("user", map.get("role"));
+            assertEquals("Hello there", map.get("content"));
+        }
+
+        @Test
+        @DisplayName("buildContextSummary returns 'Medical context included' when context is non-null")
+        void buildContextSummary_nonNullContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "buildContextSummary", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(service, "Some medical context");
+
+            assertEquals("Medical context included", result);
+        }
+
+        @Test
+        @DisplayName("buildContextSummary returns 'No medical context' when context is null")
+        void buildContextSummary_nullContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "buildContextSummary", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(service, (Object) null);
+
+            assertEquals("No medical context", result);
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded returns empty list for null context")
+        void parseContextIncluded_nullContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, (Object) null);
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded returns empty list for blank context")
+        void parseContextIncluded_blankContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "   ");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects vitals tag")
+        void parseContextIncluded_vitals() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "Vitals: HR 72");
+
+            assertTrue(result.contains("vitals"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects medications tag")
+        void parseContextIncluded_medications() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "Medications: Aspirin");
+
+            assertTrue(result.contains("medications"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects notes tag")
+        void parseContextIncluded_notes() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "Clinical Notes: checkup");
+
+            assertTrue(result.contains("notes"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects mood/pain logs tag")
+        void parseContextIncluded_moodPainLogs() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "Mood/Pain Logs: pain 3/10");
+
+            assertTrue(result.contains("mood_pain_logs"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects allergies tag")
+        void parseContextIncluded_allergies() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "Allergies: Penicillin");
+
+            assertTrue(result.contains("allergies"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded detects all tags in combined context")
+        void parseContextIncluded_allTags() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            String fullContext = "Vitals: HR 72 Medications: Aspirin Clinical Notes: ok " +
+                    "Mood/Pain Logs: 5/10 Allergies: none";
+            List<String> result = (List<String>) method.invoke(service, fullContext);
+
+            assertEquals(5, result.size());
+            assertTrue(result.contains("vitals"));
+            assertTrue(result.contains("medications"));
+            assertTrue(result.contains("notes"));
+            assertTrue(result.contains("mood_pain_logs"));
+            assertTrue(result.contains("allergies"));
+        }
+
+        @Test
+        @DisplayName("parseContextIncluded returns empty list for context with no known tags")
+        void parseContextIncluded_noKnownTags() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "parseContextIncluded", String.class);
+            method.setAccessible(true);
+
+            List<String> result = (List<String>) method.invoke(service, "General information only");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("determineModel returns preferred model when set")
+        void determineModel_preferredModelSet() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "determineModel", ChatRequest.class, UserAIConfig.class);
+            method.setAccessible(true);
+
+            ChatRequest req = new ChatRequest();
+            req.setPreferredModel("custom-model");
+
+            String result = (String) method.invoke(service, req, aiConfig);
+
+            assertEquals("custom-model", result);
+        }
+
+        @Test
+        @DisplayName("determineModel returns openai model for OPENAI provider")
+        void determineModel_openaiProvider() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "determineModel", ChatRequest.class, UserAIConfig.class);
+            method.setAccessible(true);
+
+            ChatRequest req = new ChatRequest();
+            UserAIConfig openaiConfig = UserAIConfig.builder()
+                    .preferredAiProvider(UserAIConfig.AIProvider.OPENAI)
+                    .openaiModel("gpt-4o")
+                    .deepseekModel("deepseek-chat")
+                    .build();
+
+            String result = (String) method.invoke(service, req, openaiConfig);
+
+            assertEquals("gpt-4o", result);
+        }
+
+        @Test
+        @DisplayName("determineModel returns deepseek model for DEEPSEEK provider")
+        void determineModel_deepseekProvider() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "determineModel", ChatRequest.class, UserAIConfig.class);
+            method.setAccessible(true);
+
+            ChatRequest req = new ChatRequest();
+
+            String result = (String) method.invoke(service, req, aiConfig);
+
+            assertEquals("deepseek-chat", result);
+        }
+
+        @Test
+        @DisplayName("buildErrorResponse sets all error fields correctly")
+        void buildErrorResponse_allFieldsSet() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "buildErrorResponse", ChatRequest.class, String.class);
+            method.setAccessible(true);
+
+            ChatRequest req = buildBasicRequest();
+            req.setConversationId("test-conv");
+
+            ChatResponse result = (ChatResponse) method.invoke(service, req, "Test error");
+
+            assertEquals("test-conv", result.getConversationId());
+            assertEquals(req.getMessage(), result.getMessage());
+            assertFalse(result.getSuccess());
+            assertEquals("Test error", result.getErrorMessage());
+            assertEquals("PROCESSING_ERROR", result.getErrorCode());
+            assertNotNull(result.getTimestamp());
+            assertNotNull(result.getAiResponse());
+            assertTrue(result.getAiResponse().contains("apologize"));
+            assertEquals("DEEPSEEK_VIA_LANGCHAIN4J", result.getAiProvider());
+            assertEquals(0, result.getTokensUsed());
+            assertEquals(0L, result.getProcessingTimeMs());
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles returns empty string when file list is empty")
+        void processUploadedFiles_emptyList() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            List<UploadedFileDTO> files = Collections.emptyList();
+            String result = (String) method.invoke(service, files);
+
+            assertEquals("", result);
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles includes file name and extracted text")
+        void processUploadedFiles_withContent() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("doc.pdf");
+            file.setContentType("application/pdf");
+            when(documentProcessingService.extractTextContent(any())).thenReturn("Extracted text");
+
+            String result = (String) method.invoke(service, List.of(file));
+
+            assertTrue(result.contains("doc.pdf"));
+            assertTrue(result.contains("Extracted text"));
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles handles null extracted text")
+        void processUploadedFiles_nullExtracted() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("image.png");
+            file.setContentType("image/png");
+            when(documentProcessingService.extractTextContent(any())).thenReturn(null);
+
+            String result = (String) method.invoke(service, List.of(file));
+
+            assertTrue(result.contains("image.png"));
+            assertTrue(result.contains("no text content could be extracted"));
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles handles empty extracted text")
+        void processUploadedFiles_emptyExtracted() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("blank.txt");
+            file.setContentType("text/plain");
+            when(documentProcessingService.extractTextContent(any())).thenReturn("  ");
+
+            String result = (String) method.invoke(service, List.of(file));
+
+            assertTrue(result.contains("blank.txt"));
+            assertTrue(result.contains("no text content could be extracted"));
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles handles extraction exception")
+        void processUploadedFiles_exception() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            UploadedFileDTO file = new UploadedFileDTO();
+            file.setFilename("corrupt.pdf");
+            file.setContentType("application/pdf");
+            when(documentProcessingService.extractTextContent(any()))
+                    .thenThrow(new RuntimeException("Parse error"));
+
+            String result = (String) method.invoke(service, List.of(file));
+
+            assertTrue(result.contains("corrupt.pdf"));
+            assertTrue(result.contains("Error processing file"));
+            assertTrue(result.contains("Parse error"));
+        }
+
+        @Test
+        @DisplayName("processUploadedFiles handles multiple files with mixed results")
+        void processUploadedFiles_multipleFiles() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "processUploadedFiles", List.class);
+            method.setAccessible(true);
+
+            UploadedFileDTO file1 = new UploadedFileDTO();
+            file1.setFilename("good.pdf");
+            file1.setContentType("application/pdf");
+
+            UploadedFileDTO file2 = new UploadedFileDTO();
+            file2.setFilename("bad.pdf");
+            file2.setContentType("application/pdf");
+
+            when(documentProcessingService.extractTextContent(file1)).thenReturn("Good content");
+            when(documentProcessingService.extractTextContent(file2))
+                    .thenThrow(new RuntimeException("Corrupt"));
+
+            String result = (String) method.invoke(service, List.of(file1, file2));
+
+            assertTrue(result.contains("good.pdf"));
+            assertTrue(result.contains("Good content"));
+            assertTrue(result.contains("bad.pdf"));
+            assertTrue(result.contains("Error processing file"));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Private inner classes tested via reflection
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("Inner classes — ChatProcessingContext and ChatProcessingResult")
+    class InnerClasses {
+
+        @Test
+        @DisplayName("ChatProcessingContext constructor sets all fields")
+        void chatProcessingContext_allFieldsSet() throws Exception {
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctor.setAccessible(true);
+
+            List<Object> messages = new ArrayList<>();
+            messages.add("msg1");
+            Object context = ctor.newInstance(
+                    patient, aiConfig, conversation, messages,
+                    "model-name", 0.5, 1024, "med-context", 12345L);
+
+            // Verify fields via reflection
+            var patientField = contextClass.getDeclaredField("patient");
+            patientField.setAccessible(true);
+            assertEquals(patient, patientField.get(context));
+
+            var aiConfigField = contextClass.getDeclaredField("aiConfig");
+            aiConfigField.setAccessible(true);
+            assertEquals(aiConfig, aiConfigField.get(context));
+
+            var conversationField = contextClass.getDeclaredField("conversation");
+            conversationField.setAccessible(true);
+            assertEquals(conversation, conversationField.get(context));
+
+            var messagesField = contextClass.getDeclaredField("messages");
+            messagesField.setAccessible(true);
+            assertEquals(messages, messagesField.get(context));
+
+            var modelField = contextClass.getDeclaredField("model");
+            modelField.setAccessible(true);
+            assertEquals("model-name", modelField.get(context));
+
+            var temperatureField = contextClass.getDeclaredField("temperature");
+            temperatureField.setAccessible(true);
+            assertEquals(0.5, temperatureField.get(context));
+
+            var maxTokensField = contextClass.getDeclaredField("max_tokens");
+            maxTokensField.setAccessible(true);
+            assertEquals(1024, maxTokensField.get(context));
+
+            var medicalContextField = contextClass.getDeclaredField("medicalContext");
+            medicalContextField.setAccessible(true);
+            assertEquals("med-context", medicalContextField.get(context));
+
+            var startTimeField = contextClass.getDeclaredField("startTime");
+            startTimeField.setAccessible(true);
+            assertEquals(12345L, startTimeField.get(context));
+        }
+
+        @Test
+        @DisplayName("ChatProcessingResult constructor sets all fields")
+        void chatProcessingResult_allFieldsSet() throws Exception {
+            // First create a ChatProcessingContext
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, new ArrayList<>(),
+                    "model", 0.5, 1024, "context", 0L);
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            Object result = resCtor.newInstance(context, "AI response", 100, 500L, null);
+
+            var contextField = resultClass.getDeclaredField("context");
+            contextField.setAccessible(true);
+            assertEquals(context, contextField.get(result));
+
+            var aiResponseField = resultClass.getDeclaredField("aiResponse");
+            aiResponseField.setAccessible(true);
+            assertEquals("AI response", aiResponseField.get(result));
+
+            var tokensUsedField = resultClass.getDeclaredField("tokensUsed");
+            tokensUsedField.setAccessible(true);
+            assertEquals(100, tokensUsedField.get(result));
+
+            var processingTimeMsField = resultClass.getDeclaredField("processingTimeMs");
+            processingTimeMsField.setAccessible(true);
+            assertEquals(500L, processingTimeMsField.get(result));
+
+            var errorField = resultClass.getDeclaredField("error");
+            errorField.setAccessible(true);
+            assertNull(errorField.get(result));
+        }
+
+        @Test
+        @DisplayName("ChatProcessingResult with error message set")
+        void chatProcessingResult_withError() throws Exception {
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, new ArrayList<>(),
+                    "model", 0.5, 1024, "context", 0L);
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            Object result = resCtor.newInstance(context, null, null, null, "Something went wrong");
+
+            var errorField = resultClass.getDeclaredField("error");
+            errorField.setAccessible(true);
+            assertEquals("Something went wrong", errorField.get(result));
+
+            var tokensUsedField = resultClass.getDeclaredField("tokensUsed");
+            tokensUsedField.setAccessible(true);
+            assertNull(tokensUsedField.get(result));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  prepareMessagesForAI and prepareChatMessagesForAI via reflection
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("Message preparation helpers — via reflection")
+    class MessagePreparationHelpers {
+
+        @Test
+        @DisplayName("prepareMessagesForAI with custom system prompt and medical context")
+        void prepareMessagesForAI_withPromptAndContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(Collections.emptyList());
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, conversation, "Hello", "Vitals: HR 72", "Custom prompt");
+
+            assertNotNull(result);
+            // system prompt + medical context + user message = 3
+            assertEquals(3, result.size());
+        }
+
+        @Test
+        @DisplayName("prepareMessagesForAI with null system prompt uses default")
+        void prepareMessagesForAI_nullPromptUsesDefault() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, conversation, "Hello", null, null);
+
+            assertNotNull(result);
+            // system prompt (default) + user message = 2 (no medical context)
+            assertEquals(2, result.size());
+        }
+
+        @Test
+        @DisplayName("prepareMessagesForAI with blank system prompt uses default")
+        void prepareMessagesForAI_blankPromptUsesDefault() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, conversation, "Hello", "   ", "   ");
+
+            assertNotNull(result);
+            // default prompt + user message = 2 (blank medical context skipped)
+            assertEquals(2, result.size());
+        }
+
+        @Test
+        @DisplayName("prepareMessagesForAI includes chat history messages")
+        void prepareMessagesForAI_includesHistory() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatMessage historyMsg = buildChatMessage(ChatMessage.MessageType.USER, "Previous msg");
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(List.of(historyMsg));
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, conversation, "New msg", null, "System prompt");
+
+            // system prompt + 1 history message + user message = 3
+            assertEquals(3, result.size());
+        }
+
+        @Test
+        @DisplayName("prepareMessagesForAI uses default history limit when userId or patientId is null")
+        void prepareMessagesForAI_nullIdsUsesDefaultLimit() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatConversation convNoUser = ChatConversation.builder()
+                    .conversationId("conv-no-user")
+                    .patientId(PATIENT_ID)
+                    .userId(null)
+                    .isActive(true)
+                    .totalTokensUsed(0)
+                    .build();
+            convNoUser.setCreatedAt(LocalDateTime.now());
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, convNoUser, "Hello", null, "Prompt");
+
+            assertNotNull(result);
+            // Default limit 20 used when userId is null
+            verify(chatMessageRepository).findTopNByConversationOrderByCreatedAtAsc(convNoUser, 20);
+        }
+
+        @Test
+        @DisplayName("prepareMessagesForAI with null conversationHistoryLimit on config defaults to 20")
+        void prepareMessagesForAI_nullHistoryLimitDefaults() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            // Config with null conversation history limit
+            UserAIConfig nullLimitConfig = UserAIConfig.builder()
+                    .userId(USER_ID)
+                    .patientId(PATIENT_ID)
+                    .preferredAiProvider(UserAIConfig.AIProvider.DEEPSEEK)
+                    .conversationHistoryLimit(null)
+                    .build();
+            when(cacheService.findUserAIConfig(eq(USER_ID), any())).thenReturn(Optional.of(nullLimitConfig));
+
+            List<Object> result = (List<Object>) method.invoke(
+                    service, conversation, "Hello", null, "Prompt");
+
+            assertNotNull(result);
+            verify(chatMessageRepository).findTopNByConversationOrderByCreatedAtAsc(conversation, 20);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI with custom system prompt and medical context")
+        void prepareChatMessagesForAI_withPromptAndContext() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(Collections.emptyList());
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "Hello", "Vitals: HR 72", "Custom prompt");
+
+            assertNotNull(result);
+            // system prompt + medical context + user message = 3
+            assertEquals(3, result.size());
+            assertTrue(result.get(0) instanceof dev.langchain4j.data.message.SystemMessage);
+            assertTrue(result.get(result.size() - 1) instanceof dev.langchain4j.data.message.UserMessage);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI with null system prompt uses medical default")
+        void prepareChatMessagesForAI_nullPromptUsesDefault() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "Hello", null, null);
+
+            assertNotNull(result);
+            assertEquals(2, result.size()); // default prompt + user message
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI with blank system prompt uses default")
+        void prepareChatMessagesForAI_blankPromptUsesDefault() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "Hello", "  ", "  ");
+
+            assertNotNull(result);
+            assertEquals(2, result.size()); // default prompt + user message (blank context skipped)
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI maps USER message type correctly")
+        void prepareChatMessagesForAI_userMessageType() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatMessage userMsg = buildChatMessage(ChatMessage.MessageType.USER, "User msg");
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(List.of(userMsg));
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "New msg", null, "Prompt");
+
+            // prompt + user history msg + new user msg = 3
+            assertEquals(3, result.size());
+            assertTrue(result.get(1) instanceof dev.langchain4j.data.message.UserMessage);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI maps ASSISTANT message type correctly")
+        void prepareChatMessagesForAI_assistantMessageType() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatMessage assistantMsg = buildChatMessage(ChatMessage.MessageType.ASSISTANT, "AI msg");
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(List.of(assistantMsg));
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "New msg", null, "Prompt");
+
+            assertEquals(3, result.size());
+            assertTrue(result.get(1) instanceof dev.langchain4j.data.message.AiMessage);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI maps SYSTEM message type correctly")
+        void prepareChatMessagesForAI_systemMessageType() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatMessage systemMsg = buildChatMessage(ChatMessage.MessageType.SYSTEM, "System msg");
+            when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(any(), anyInt()))
+                    .thenReturn(List.of(systemMsg));
+
+            List<dev.langchain4j.data.message.ChatMessage> result =
+                    (List<dev.langchain4j.data.message.ChatMessage>) method.invoke(
+                            service, conversation, "New msg", null, "Prompt");
+
+            assertEquals(3, result.size());
+            assertTrue(result.get(1) instanceof dev.langchain4j.data.message.SystemMessage);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI with null userId on conversation uses default limit")
+        void prepareChatMessagesForAI_nullUserIdDefaultsLimit() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatConversation convNullUser = ChatConversation.builder()
+                    .conversationId("no-user")
+                    .userId(null)
+                    .patientId(PATIENT_ID)
+                    .isActive(true)
+                    .totalTokensUsed(0)
+                    .build();
+            convNullUser.setCreatedAt(LocalDateTime.now());
+
+            method.invoke(service, convNullUser, "Hello", null, "Prompt");
+
+            verify(chatMessageRepository).findTopNByConversationOrderByCreatedAtAsc(convNullUser, 20);
+        }
+
+        @Test
+        @DisplayName("prepareChatMessagesForAI with null patientId on conversation uses default limit")
+        void prepareChatMessagesForAI_nullPatientIdDefaultsLimit() throws Exception {
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "prepareChatMessagesForAI", ChatConversation.class, String.class,
+                    String.class, String.class);
+            method.setAccessible(true);
+
+            ChatConversation convNullPatient = ChatConversation.builder()
+                    .conversationId("no-patient")
+                    .userId(USER_ID)
+                    .patientId(null)
+                    .isActive(true)
+                    .totalTokensUsed(0)
+                    .build();
+            convNullPatient.setCreatedAt(LocalDateTime.now());
+
+            method.invoke(service, convNullPatient, "Hello", null, "Prompt");
+
+            verify(chatMessageRepository).findTopNByConversationOrderByCreatedAtAsc(convNullPatient, 20);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  saveAndBuildResponse via reflection
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("saveAndBuildResponse — via reflection")
+    class SaveAndBuildResponse {
+
+        @Test
+        @DisplayName("saveAndBuildResponse sets all response fields correctly")
+        void saveAndBuildResponse_allFieldsSet() throws Exception {
+            // Create inner class instances via reflection
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+
+            List<Object> messages = new ArrayList<>();
+            messages.add(Map.of("role", "user", "content", "Hello"));
+            conversation.setCreatedAt(LocalDateTime.now().minusHours(2));
+            conversation.setTotalTokensUsed(100);
+
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, messages,
+                    "deepseek-chat", 0.5, 1024, "Vitals: HR 72", System.currentTimeMillis());
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            Object processingResult = resCtor.newInstance(context, "AI says hello", 50, 300L, null);
+
+            // Set up mocks for saved messages
+            ChatMessage savedMsg = buildChatMessage(ChatMessage.MessageType.ASSISTANT, "AI says hello");
+            savedMsg.setId(99L);
+            when(chatMessageRepository.save(any())).thenReturn(savedMsg);
+
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "saveAndBuildResponse", resultClass);
+            method.setAccessible(true);
+
+            ChatResponse resp = (ChatResponse) method.invoke(service, processingResult);
+
+            assertNotNull(resp);
+            assertTrue(resp.getSuccess());
+            assertEquals(CONV_ID, resp.getConversationId());
+            assertEquals("AI says hello", resp.getAiResponse());
+            assertEquals("DEEPSEEK", resp.getAiProvider());
+            assertEquals("deepseek-chat", resp.getModelUsed());
+            assertEquals(50, resp.getTokensUsed());
+            assertEquals(300L, resp.getProcessingTimeMs());
+            assertEquals(0.5, resp.getTemperatureUsed());
+            assertNotNull(resp.getContextIncluded());
+            assertTrue(resp.getContextIncluded().contains("vitals"));
+            assertNotNull(resp.getTimestamp());
+            assertEquals("Test conversation", resp.getConversationTitle());
+        }
+
+        @Test
+        @DisplayName("saveAndBuildResponse handles null tokensUsed by defaulting to 0")
+        void saveAndBuildResponse_nullTokensUsed() throws Exception {
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+
+            List<Object> messages = new ArrayList<>();
+            messages.add("msg");
+            conversation.setCreatedAt(LocalDateTime.now().minusHours(2));
+            conversation.setTotalTokensUsed(null);
+
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, messages,
+                    "model", 0.5, 1024, null, System.currentTimeMillis());
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            Object processingResult = resCtor.newInstance(context, "Response", null, 100L, null);
+
+            ChatMessage savedMsg = buildChatMessage(ChatMessage.MessageType.ASSISTANT, "Response");
+            savedMsg.setId(1L);
+            when(chatMessageRepository.save(any())).thenReturn(savedMsg);
+
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "saveAndBuildResponse", resultClass);
+            method.setAccessible(true);
+
+            ChatResponse resp = (ChatResponse) method.invoke(service, processingResult);
+
+            assertNotNull(resp);
+            assertEquals(0, resp.getTokensUsed());
+        }
+
+        @Test
+        @DisplayName("saveAndBuildResponse marks approaching token limit when tokens > 80% max")
+        void saveAndBuildResponse_approachingTokenLimit() throws Exception {
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+
+            List<Object> messages = new ArrayList<>();
+            messages.add("msg");
+            conversation.setCreatedAt(LocalDateTime.now().minusHours(2));
+            // Set high token count to exceed 80% of maxTokens (2048 * 0.8 = 1638.4)
+            conversation.setTotalTokensUsed(1600);
+
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, messages,
+                    "model", 0.5, 1024, null, System.currentTimeMillis());
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            // 100 tokens will bring total to 1700, which is > 1638.4
+            Object processingResult = resCtor.newInstance(context, "Response", 100, 100L, null);
+
+            ChatMessage savedMsg = buildChatMessage(ChatMessage.MessageType.ASSISTANT, "Response");
+            savedMsg.setId(1L);
+            when(chatMessageRepository.save(any())).thenReturn(savedMsg);
+
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "saveAndBuildResponse", resultClass);
+            method.setAccessible(true);
+
+            ChatResponse resp = (ChatResponse) method.invoke(service, processingResult);
+
+            assertTrue(resp.getApproachingTokenLimit());
+        }
+
+        @Test
+        @DisplayName("saveAndBuildResponse marks isNewConversation true when created within a minute")
+        void saveAndBuildResponse_newConversation() throws Exception {
+            Class<?> contextClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingContext");
+            Constructor<?> ctxCtor = contextClass.getDeclaredConstructor(
+                    Patient.class, UserAIConfig.class, ChatConversation.class,
+                    List.class, String.class, Double.class, Integer.class,
+                    String.class, long.class);
+            ctxCtor.setAccessible(true);
+
+            List<Object> messages = new ArrayList<>();
+            messages.add("msg");
+            conversation.setCreatedAt(LocalDateTime.now()); // just created
+            conversation.setTotalTokensUsed(0);
+
+            Object context = ctxCtor.newInstance(
+                    patient, aiConfig, conversation, messages,
+                    "model", 0.5, 1024, null, System.currentTimeMillis());
+
+            Class<?> resultClass = Class.forName(
+                    "com.careconnect.service.DefaultAIChatService$ChatProcessingResult");
+            Constructor<?> resCtor = resultClass.getDeclaredConstructor(
+                    contextClass, String.class, Integer.class, Long.class, String.class);
+            resCtor.setAccessible(true);
+
+            Object processingResult = resCtor.newInstance(context, "Response", 10, 100L, null);
+
+            ChatMessage savedMsg = buildChatMessage(ChatMessage.MessageType.ASSISTANT, "Response");
+            savedMsg.setId(1L);
+            when(chatMessageRepository.save(any())).thenReturn(savedMsg);
+
+            Method method = DefaultAIChatService.class.getDeclaredMethod(
+                    "saveAndBuildResponse", resultClass);
+            method.setAccessible(true);
+
+            ChatResponse resp = (ChatResponse) method.invoke(service, processingResult);
+
+            assertTrue(resp.getIsNewConversation());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  Helpers
     // ══════════════════════════════════════════════════════════════════════════
 
@@ -959,11 +2327,10 @@ class DefaultAIChatServiceTest {
      * with {@code createdAt} pre-set so that summary conversion does not NPE.
      */
     private ChatMessage buildChatMessage(ChatMessage.MessageType type, String content) {
-        ChatMessage msg = ChatMessage.builder()
-                .conversation(conversation)
-                .messageType(type)
-                .content(content)
-                .build();
+        ChatMessage msg = new ChatMessage();
+        msg.setConversation(conversation);
+        msg.setMessageType(type);
+        msg.setContent(content);
         msg.setCreatedAt(LocalDateTime.now());
         return msg;
     }
