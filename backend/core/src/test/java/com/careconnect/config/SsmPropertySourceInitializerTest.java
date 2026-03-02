@@ -151,4 +151,143 @@ class SsmPropertySourceInitializerTest {
 
         assertTrue(result.isEmpty());
     }
+
+    // ==========================================
+    // Should NOT initialize with no active profiles
+    // ==========================================
+
+    @Test
+    void shouldNotInitializeWhenNoActiveProfilesSet() {
+        // Verifies the profile guard with no profiles set at all (empty array).
+        // MockEnvironment has no active profiles by default, so "prod" is absent.
+        initializer.initialize(context);
+
+        assertNull(environment.getPropertySources().get("ssmPropertySource"));
+    }
+
+    // ==========================================
+    // Should NOT initialize when profile is "test"
+    // ==========================================
+
+    @Test
+    void shouldNotInitializeWhenProfileIsTest() {
+        // Verifies the profile guard works for any non-prod profile, not just "dev".
+        environment.setActiveProfiles("test");
+
+        initializer.initialize(context);
+
+        assertNull(environment.getPropertySources().get("ssmPropertySource"));
+    }
+
+    // ==========================================
+    // Should attempt initialization on prod (graceful failure without real AWS)
+    // ==========================================
+
+    @Test
+    void shouldNotCrashWhenProdAndAwsEnabledDefaultButNoRealAws() {
+        // Verifies the outer try/catch in initialize(): when on "prod" with the default
+        // careconnect.aws.enabled (not set → defaults to "true"), the initializer
+        // attempts to contact AWS SSM. In a test environment without real AWS credentials
+        // or region configured, the SDK throws (e.g. SdkClientException for missing
+        // region). The outer catch block must absorb this and not propagate — startup
+        // must never be blocked by a missing secret store.
+        environment.setActiveProfiles("prod");
+        // careconnect.aws.enabled not set; defaults to "true" inside initialize()
+
+        assertDoesNotThrow(() -> initializer.initialize(context));
+        // Either the exception path (no AWS) or the empty-map path (AWS reachable but
+        // no params) is taken; in neither case should a property source be added.
+        assertNull(environment.getPropertySources().get("ssmPropertySource"));
+    }
+
+    @Test
+    void shouldNotCrashWhenProdAndAwsEnabledExplicitlyTrueButNoRealAws() {
+        // Same as above but with careconnect.aws.enabled explicitly set to "true",
+        // exercising the branch where the string comparison passes and the guard is
+        // not triggered. Covers the prod+enabled code path in initialize().
+        environment.setActiveProfiles("prod");
+        environment.setProperty("careconnect.aws.enabled", "true");
+
+        assertDoesNotThrow(() -> initializer.initialize(context));
+        assertNull(environment.getPropertySources().get("ssmPropertySource"));
+    }
+
+    // ==========================================
+    // Load ALL parameters when all SSM calls succeed
+    // ==========================================
+
+    @Test
+    void shouldLoadAllParametersWhenAllSsmCallsSucceed() throws Exception {
+        // Verifies that loadParametersFromSsm() iterates every entry in SSM_PARAMETERS
+        // and populates the map with the matching Spring property key from
+        // PARAMETER_MAPPING. With 15 parameters defined and all calls succeeding, the
+        // result must contain exactly 15 entries.
+
+        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder()
+                        .name("irrelevant-name")
+                        .value("mock-value")
+                        .build())
+                .build();
+
+        Mockito.when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenReturn(response);
+
+        Method method = SsmPropertySourceInitializer.class
+                .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
+        method.setAccessible(true);
+
+        Map<String, Object> result =
+                (Map<String, Object>) method.invoke(initializer, ssmClient);
+
+        // All 15 SSM_PARAMETERS entries are in PARAMETER_MAPPING, so all should load.
+        assertEquals(15, result.size());
+
+        // Spot-check a representative sample of the PARAMETER_MAPPING entries.
+        assertEquals("mock-value", result.get("stripe.secret-key"));
+        assertEquals("mock-value", result.get("stripe.webhook-secret"));
+        assertEquals("mock-value", result.get("security.jwt.secret"));
+        assertEquals("mock-value", result.get("careconnect.db.password"));
+        assertEquals("mock-value", result.get("careconnect.db.username"));
+        assertEquals("mock-value", result.get("aws.s3.access-key"));
+        assertEquals("mock-value", result.get("aws.s3.secret-key"));
+        assertEquals("mock-value", result.get("firebase.service-account-key"));
+    }
+
+    // ==========================================
+    // Partial load: some parameters succeed, some fail
+    // ==========================================
+
+    @Test
+    void shouldLoadOnlySuccessfulParametersWhenSomeSsmCallsFail() throws Exception {
+        // Verifies that individual parameter failures do not abort the loop: the first
+        // SSM call succeeds (stripe-secret-key) and all subsequent calls throw, so the
+        // returned map contains exactly the one successfully fetched property.
+
+        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+
+        GetParameterResponse firstResponse = GetParameterResponse.builder()
+                .parameter(Parameter.builder()
+                        .name("/careconnect/prod/stripe-secret-key")
+                        .value("only-this-one")
+                        .build())
+                .build();
+
+        Mockito.when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenReturn(firstResponse)
+                .thenThrow(new RuntimeException("Access denied"));
+
+        Method method = SsmPropertySourceInitializer.class
+                .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
+        method.setAccessible(true);
+
+        Map<String, Object> result =
+                (Map<String, Object>) method.invoke(initializer, ssmClient);
+
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey("stripe.secret-key"));
+        assertEquals("only-this-one", result.get("stripe.secret-key"));
+    }
 }

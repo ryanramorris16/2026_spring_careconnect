@@ -1,0 +1,247 @@
+package com.careconnect.service;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import software.amazon.awssdk.services.ssm.SsmClient;
+import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
+import software.amazon.awssdk.services.ssm.model.GetParameterResponse;
+import software.amazon.awssdk.services.ssm.model.Parameter;
+import software.amazon.awssdk.services.ssm.model.ParameterNotFoundException;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class SsmParameterServiceTest {
+
+    @Mock
+    private SsmClient ssmClient;
+
+    private SsmParameterService ssmParameterService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        ssmParameterService = new SsmParameterService(ssmClient);
+    }
+
+    // ── getParameter(String, boolean) ──
+
+    @Test
+    @DisplayName("getParameter_parameterExists_returnsValue")
+    void getParameter_parameterExists_returnsValue() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("secret-value").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+
+        assertEquals("secret-value", result);
+
+        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        verify(ssmClient).getParameter(captor.capture());
+        assertEquals("/careconnect/prod/api-key", captor.getValue().name());
+        assertTrue(captor.getValue().withDecryption());
+    }
+
+    @Test
+    @DisplayName("getParameter_withoutDecryption_sendsWithDecryptionFalse")
+    void getParameter_withoutDecryption_sendsWithDecryptionFalse() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("plain-value").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        String result = ssmParameterService.getParameter("/careconnect/prod/setting", false);
+
+        assertEquals("plain-value", result);
+
+        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        verify(ssmClient).getParameter(captor.capture());
+        assertFalse(captor.getValue().withDecryption());
+    }
+
+    @Test
+    @DisplayName("getParameter_parameterNotFound_returnsNull")
+    void getParameter_parameterNotFound_returnsNull() {
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
+
+        String result = ssmParameterService.getParameter("/careconnect/prod/missing-key", true);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("getParameter_generalException_returnsNull")
+    void getParameter_generalException_returnsNull() {
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenThrow(new RuntimeException("Connection error"));
+
+        String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("getParameter_cachedValue_returnsCachedWithoutCallingSSM")
+    void getParameter_cachedValue_returnsCachedWithoutCallingSSM() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("cached-value").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        // First call - should go to SSM
+        String result1 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        assertEquals("cached-value", result1);
+
+        // Second call - should use cache
+        String result2 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        assertEquals("cached-value", result2);
+
+        // SSM should only be called once
+        verify(ssmClient, times(1)).getParameter(any(GetParameterRequest.class));
+    }
+
+    @Test
+    @DisplayName("getParameter_differentDecryptionFlags_cachedSeparately")
+    void getParameter_differentDecryptionFlags_cachedSeparately() {
+        GetParameterResponse response1 = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("decrypted-value").build())
+                .build();
+        GetParameterResponse response2 = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("plain-value").build())
+                .build();
+
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenReturn(response1)
+                .thenReturn(response2);
+
+        // Call with decryption true
+        String result1 = ssmParameterService.getParameter("/param", true);
+        assertEquals("decrypted-value", result1);
+
+        // Call with decryption false - different cache key
+        String result2 = ssmParameterService.getParameter("/param", false);
+        assertEquals("plain-value", result2);
+
+        // SSM should be called twice (different cache keys)
+        verify(ssmClient, times(2)).getParameter(any(GetParameterRequest.class));
+    }
+
+    // ── getParameter(String) ──
+
+    @Test
+    @DisplayName("getParameter_singleArgOverload_callsWithDecryptionTrue")
+    void getParameter_singleArgOverload_callsWithDecryptionTrue() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("auto-decrypted").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        String result = ssmParameterService.getParameter("/careconnect/prod/secret");
+
+        assertEquals("auto-decrypted", result);
+
+        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        verify(ssmClient).getParameter(captor.capture());
+        assertTrue(captor.getValue().withDecryption());
+    }
+
+    @Test
+    @DisplayName("getParameter_singleArgNotFound_returnsNull")
+    void getParameter_singleArgNotFound_returnsNull() {
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
+
+        String result = ssmParameterService.getParameter("/missing");
+
+        assertNull(result);
+    }
+
+    // ── getParameterOrDefault ──
+
+    @Test
+    @DisplayName("getParameterOrDefault_parameterExists_returnsParameterValue")
+    void getParameterOrDefault_parameterExists_returnsParameterValue() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("real-value").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        String result = ssmParameterService.getParameterOrDefault("/param", "default-value");
+
+        assertEquals("real-value", result);
+    }
+
+    @Test
+    @DisplayName("getParameterOrDefault_parameterNotFound_returnsDefaultValue")
+    void getParameterOrDefault_parameterNotFound_returnsDefaultValue() {
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
+
+        String result = ssmParameterService.getParameterOrDefault("/missing-param", "fallback");
+
+        assertEquals("fallback", result);
+    }
+
+    @Test
+    @DisplayName("getParameterOrDefault_generalException_returnsDefaultValue")
+    void getParameterOrDefault_generalException_returnsDefaultValue() {
+        when(ssmClient.getParameter(any(GetParameterRequest.class)))
+                .thenThrow(new RuntimeException("Connection error"));
+
+        String result = ssmParameterService.getParameterOrDefault("/error-param", "safe-default");
+
+        assertEquals("safe-default", result);
+    }
+
+    // ── clearCache ──
+
+    @Test
+    @DisplayName("clearCache_afterCaching_forcesNextCallToSSM")
+    void clearCache_afterCaching_forcesNextCallToSSM() {
+        GetParameterResponse response = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("value1").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
+
+        // First call - goes to SSM
+        ssmParameterService.getParameter("/param", true);
+
+        // Clear cache
+        ssmParameterService.clearCache();
+
+        // Second call after cache clear - should go to SSM again
+        GetParameterResponse response2 = GetParameterResponse.builder()
+                .parameter(Parameter.builder().value("value2").build())
+                .build();
+        when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response2);
+
+        String result = ssmParameterService.getParameter("/param", true);
+        assertEquals("value2", result);
+
+        // SSM should be called twice (once before cache clear, once after)
+        verify(ssmClient, times(2)).getParameter(any(GetParameterRequest.class));
+    }
+
+    @Test
+    @DisplayName("clearCache_emptyCache_doesNotThrow")
+    void clearCache_emptyCache_doesNotThrow() {
+        assertDoesNotThrow(() -> ssmParameterService.clearCache());
+    }
+
+    // ── Constructor ──
+
+    @Test
+    @DisplayName("constructor_validSsmClient_createsServiceSuccessfully")
+    void constructor_validSsmClient_createsServiceSuccessfully() {
+        SsmParameterService service = new SsmParameterService(ssmClient);
+        assertNotNull(service);
+    }
+}
