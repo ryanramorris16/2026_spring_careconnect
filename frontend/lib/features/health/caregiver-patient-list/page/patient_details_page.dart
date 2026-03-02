@@ -43,6 +43,7 @@ import 'package:care_connect_app/features/dashboards/dashboards_screen.dart';
 import 'package:care_connect_app/features/evv/presentation/pages/incident_report_screens.dart';
 import 'incident_report_history_screen.dart';
 import '../../../audit/audit_log_screen.dart';
+import '../../../../widgets/post_call_telemetry_summary_screen.dart';
 
 class PatientDetailsPage extends StatefulWidget {
   final String patientId;
@@ -100,6 +101,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   List<VirtualCheckIn> _virtualCheckIns = [];
   List<Map<String, dynamic>> _callHistoryEvents = [];
   bool _isDeletingCallHistory = false;
+  int _callHistoryPatientUserId = 0;
 
   int _currentPain = 0;
   String _painLocation = 'Not provided';
@@ -210,7 +212,43 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     );
 
     if (!mounted) return;
+    await _refreshCallHistoryAfterCall();
+  }
+
+  Future<void> _refreshCallHistoryAfterCall() async {
     await _loadPatientData();
+    if (!mounted) return;
+
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
+
+    try {
+      final telemetryData = await ApiService.getMyCallTelemetry();
+      if (!mounted) return;
+
+      setState(() {
+        _applyCallHistoryData(
+          patientUserId: _callHistoryPatientUserId,
+          telemetryData: telemetryData,
+        );
+      });
+    } catch (_) {
+      // Keep the immediate refresh result if follow-up call fails.
+    }
+  }
+
+  Future<void> _openCallHistoryDetail(String callId) async {
+    final trimmedCallId = callId.trim();
+    if (trimmedCallId.isEmpty || !mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PostCallTelemetrySummaryScreen(
+          callId: trimmedCallId,
+          recipientName: _patientName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -301,6 +339,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       _applyMoodData(moodData);
       _applySymptomData(symptomData);
       _applyVirtualCheckIns(detailsPayload);
+      _callHistoryPatientUserId = moodUserId;
       _applyCallHistoryData(
         patientUserId: moodUserId,
         telemetryData: telemetryData,
@@ -1238,7 +1277,9 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       final message = failedCalls == 0
           ? 'Deleted $deletedEvents telemetry event(s) in dev mode.'
           : 'Deleted $deletedEvents event(s); failed to delete $failedCalls call(s). ${firstFailureMessage ?? ''}';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -2081,20 +2122,15 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                               relationship: _emergencyRelationship,
                               phone: _emergencyPhone,
                             ),
-<<<<<<< HEAD
                             _buildPersonalizationCard(),
-                            CommunicationHistoryCard(
-                              events: _callHistoryEvents,
-                              onCallTap: (callId) {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => PostCallTelemetrySummaryScreen(
-                                      callId: callId,
-                                      recipientName: _patientName,
-=======
                             if (_canDeleteCallHistoryInThisBuild)
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  4,
+                                ),
                                 child: Align(
                                   alignment: Alignment.centerRight,
                                   child: OutlinedButton.icon(
@@ -2106,13 +2142,14 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                                       _isDeletingCallHistory
                                           ? 'Deleting call history...'
                                           : 'Delete Call History (Dev)',
->>>>>>> f084bedd (Improve call UX, recording controls, and dev telemetry cleanup)
                                     ),
                                   ),
                                 ),
                               ),
+                            _buildPersonalizationCard(),
                             CommunicationHistoryCard(
                               events: _callHistoryEvents,
+                              onCallTap: _openCallHistoryDetail,
                             ),
                           ],
                         ),

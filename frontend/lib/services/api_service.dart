@@ -1273,6 +1273,29 @@ class ApiService {
     return const [];
   }
 
+  static Future<int> deleteCallTelemetryDev(String callId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.delete(
+      Uri.parse('${ApiConstants._host}/api/v3/calls/$callId/telemetry'),
+      headers: headers,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'deleteCallTelemetryDev failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      final deleted = decoded['deletedEvents'];
+      if (deleted is int) return deleted;
+      return int.tryParse(deleted?.toString() ?? '') ?? 0;
+    }
+
+    return 0;
+  }
+
 
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
