@@ -4,6 +4,8 @@ import com.careconnect.model.EmailCredential;
 import com.careconnect.repository.EmailCredentialRepository;
 import com.careconnect.security.TokenCryptor;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -19,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class GoogleOAuthServiceTest {
 
@@ -27,11 +29,13 @@ class GoogleOAuthServiceTest {
     private GoogleOAuthService service;
     private AtomicReference<EmailCredential> savedRef;
     private MockRestServiceServer server;
+    private AtomicReference<EmailCredential> existingCredRef;
 
     @BeforeEach
     void setUp() {
         tokenCryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
         savedRef = new AtomicReference<>();
+        existingCredRef = new AtomicReference<>();
 
         RestTemplate rt = new RestTemplate();
         server = MockRestServiceServer.createServer(rt);
@@ -42,57 +46,489 @@ class GoogleOAuthServiceTest {
         service.redirectUri = "http://localhost/oauth/callback";
     }
 
-    @Test
-    void ensureFreshTokenReturnsCurrentWhenStillValid() {
-        EmailCredential credential = new EmailCredential();
-        credential.setAccessTokenEnc(tokenCryptor.encrypt("existing"));
-        credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-123"));
-        credential.setExpiresAt(Instant.now().plusSeconds(600));
+    // -----------------------------------------------------------------------
+    // exchange() tests
+    // -----------------------------------------------------------------------
 
-        EmailCredential result = service.ensureFreshToken(credential);
+    @Nested
+    @DisplayName("exchange() method")
+    class ExchangeTests {
 
-        assertSame(credential, result);
-        assertNull(savedRef.get(), "Repository save should not be invoked");
+        @Test
+        @DisplayName("exchange succeeds with access token and refresh token")
+        void exchangeSucceedsWithAccessAndRefreshToken() {
+            String json = "{\"access_token\": \"access-abc\",\"refresh_token\":" +
+            "\"refresh-xyz\",\"expires_in\": 3600}";
 
-        // No HTTP expectations set, verify that no unexpected calls were made
-        server.verify();
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("grant_type=authorization_code")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("code=auth-code-123")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("client_id=test-client")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("client_secret=test-secret")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("redirect_uri=http%3A%2F%2Flocalhost%2Foauth%2Fcallback")))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-1", "auth-code-123");
+
+            EmailCredential saved = savedRef.get();
+            assertNotNull(saved, "Credential should be saved");
+            assertEquals("user-1", saved.getUserId());
+            assertEquals(EmailCredential.Provider.GMAIL, saved.getProvider());
+            assertEquals("access-abc", tokenCryptor.decrypt(saved.getAccessTokenEnc()));
+            assertEquals("refresh-xyz", tokenCryptor.decrypt(saved.getRefreshTokenEnc()));
+            assertNotNull(saved.getExpiresAt());
+            assertTrue(saved.getExpiresAt().isAfter(Instant.now()));
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("exchange succeeds without refresh token and no existing credential")
+        void exchangeSucceedsWithoutRefreshTokenNoExisting() {
+            String json = "{\"access_token\": \"access-only\"," +
+                      "\"expires_in\": 3600}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-2", "auth-code-456");
+
+            EmailCredential saved = savedRef.get();
+            assertNotNull(saved);
+            assertEquals("access-only", tokenCryptor.decrypt(saved.getAccessTokenEnc()));
+            assertNull(saved.getRefreshTokenEnc(), "No refresh token should be set when none returned and none existing");
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("exchange succeeds without refresh token but reuses existing refresh token")
+        void exchangeSucceedsWithoutRefreshTokenReusesExisting() {
+            // Set up existing credential with a refresh token
+            EmailCredential existing = new EmailCredential();
+            existing.setUserId("user-3");
+            existing.setProvider(EmailCredential.Provider.GMAIL);
+            existing.setRefreshTokenEnc(tokenCryptor.encrypt("old-refresh-token"));
+            existingCredRef.set(existing);
+
+            String json = "{\"access_token\": \"new-access\"," +
+                      "\"expires_in\": 7200}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-3", "auth-code-789");
+
+            EmailCredential saved = savedRef.get();
+            assertNotNull(saved);
+            assertEquals("new-access", tokenCryptor.decrypt(saved.getAccessTokenEnc()));
+            assertEquals("old-refresh-token", tokenCryptor.decrypt(saved.getRefreshTokenEnc()),
+                    "Should reuse existing refresh token");
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("exchange throws RuntimeException when token response is null (non-2xx)")
+        void exchangeThrowsWhenTokenResponseIsNull() {
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess("null", MediaType.APPLICATION_JSON));
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> service.exchange("user-4", "bad-code"));
+
+            assertTrue(ex.getMessage().contains("Google OAuth token exchange failed"));
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("exchange throws RuntimeException when access token is null")
+        void exchangeThrowsWhenAccessTokenIsNull() {
+            String json = "{\"refresh_token\": \"refresh-only\"," +
+                      "\"expires_in\": 3600}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> service.exchange("user-5", "no-access-code"));
+
+            assertTrue(ex.getMessage().contains("Google OAuth token exchange failed"));
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("exchange wraps any exception in RuntimeException")
+        void exchangeWrapsExceptionInRuntimeException() {
+            // Simulate a server error which will cause RestTemplate to throw
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withServerError());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> service.exchange("user-6", "error-code"));
+
+            assertTrue(ex.getMessage().contains("Google OAuth token exchange failed"));
+
+            server.verify();
+        }
     }
 
-    @Test
-    void ensureFreshTokenRefreshesWhenExpired() {
-        EmailCredential credential = new EmailCredential();
-        credential.setAccessTokenEnc(tokenCryptor.encrypt("stale"));
-        credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-321"));
-        credential.setExpiresAt(Instant.now().minusSeconds(5));
+    // -----------------------------------------------------------------------
+    // ensureFreshToken() tests
+    // -----------------------------------------------------------------------
 
-        String json = """
-                {
-                  "access_token": "new-access-token",
-                  "expires_in": 3600
-                }
-                """;
+    @Nested
+    @DisplayName("ensureFreshToken() method")
+    class EnsureFreshTokenTests {
 
-        server.expect(requestTo("https://oauth2.googleapis.com/token"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE))
-                .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("grant_type=refresh_token")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("client_id=test-client")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("client_secret=test-secret")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("refresh_token=refresh-321")))
-                .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+        @Test
+        @DisplayName("returns current credential when token is still valid")
+        void returnsCurrentWhenStillValid() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("existing"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-123"));
+            credential.setExpiresAt(Instant.now().plusSeconds(600));
 
-        EmailCredential result = service.ensureFreshToken(credential);
+            EmailCredential result = service.ensureFreshToken(credential);
 
-        assertSame(credential, result);
-        EmailCredential persisted = savedRef.get();
-        assertNotNull(persisted, "Repository save should capture entity");
-        assertSame(credential, persisted, "Service should update the same credential instance");
-        assertEquals("new-access-token", tokenCryptor.decrypt(persisted.getAccessTokenEnc()));
-        assertTrue(persisted.getExpiresAt().isAfter(Instant.now()));
+            assertSame(credential, result);
+            assertNull(savedRef.get(), "Repository save should not be invoked");
+            server.verify();
+        }
 
-        server.verify();
+        @Test
+        @DisplayName("refreshes token when expired")
+        void refreshesWhenExpired() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("stale"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-321"));
+            credential.setExpiresAt(Instant.now().minusSeconds(5));
+
+            String json = "{\"access_token\": \"new-access-token\"," +
+                      "\"expires_in\": 3600}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andExpect(header("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE))
+                    .andExpect(content().contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("grant_type=refresh_token")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("client_id=test-client")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("client_secret=test-secret")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("refresh_token=refresh-321")))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            EmailCredential persisted = savedRef.get();
+            assertNotNull(persisted, "Repository save should capture entity");
+            assertSame(credential, persisted, "Service should update the same credential instance");
+            assertEquals("new-access-token", tokenCryptor.decrypt(persisted.getAccessTokenEnc()));
+            assertTrue(persisted.getExpiresAt().isAfter(Instant.now()));
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("refreshes token when expiresAt is null")
+        void refreshesWhenExpiresAtIsNull() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("stale"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-null-exp"));
+            credential.setExpiresAt(null);
+
+            String json = "{\"access_token\": \"refreshed-access\"," +
+                      "\"expires_in\": 1800}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertEquals("refreshed-access", tokenCryptor.decrypt(result.getAccessTokenEnc()));
+            assertNotNull(savedRef.get());
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("refreshes token when expiry is within 120 seconds")
+        void refreshesWhenExpiryWithinBuffer() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("almost-stale"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-buffer"));
+            // Expires in 60 seconds - within the 120-second buffer
+            credential.setExpiresAt(Instant.now().plusSeconds(60));
+
+            String json = "{\"access_token\": \"fresh-access\"," +
+                      "\"expires_in\": 3600}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertEquals("fresh-access", tokenCryptor.decrypt(result.getAccessTokenEnc()));
+            assertNotNull(savedRef.get());
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("returns current credential when decrypted refresh token is null")
+        void returnsCurrentWhenRefreshTokenDecryptsToNull() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("stale"));
+            // Set refreshTokenEnc to null so decrypt returns null
+            credential.setRefreshTokenEnc(null);
+            credential.setExpiresAt(Instant.now().minusSeconds(5));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertNull(savedRef.get(), "Should not save when refresh token is unavailable");
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("returns current credential when decrypted refresh token is blank")
+        void returnsCurrentWhenRefreshTokenIsBlank() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("stale"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("   "));
+            credential.setExpiresAt(Instant.now().minusSeconds(5));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertNull(savedRef.get(), "Should not save when refresh token is blank");
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("does not update credential when refresh response has no access token")
+        void doesNotUpdateWhenRefreshResponseHasNoAccessToken() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("old-access"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-no-result"));
+            credential.setExpiresAt(Instant.now().minusSeconds(5));
+
+            // Return a response with no access_token
+            String json = "{\"expires_in\": 3600}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertNull(savedRef.get(), "Should not save when access token is null in response");
+            // The original access token enc should remain unchanged
+            assertEquals("old-access", tokenCryptor.decrypt(result.getAccessTokenEnc()));
+
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("does not update credential when refresh returns null body")
+        void doesNotUpdateWhenRefreshReturnsNullBody() {
+            EmailCredential credential = new EmailCredential();
+            credential.setAccessTokenEnc(tokenCryptor.encrypt("old-access"));
+            credential.setRefreshTokenEnc(tokenCryptor.encrypt("refresh-null-body"));
+            credential.setExpiresAt(Instant.now().minusSeconds(5));
+
+            // Return a "null" literal which deserializes to null
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess("null", MediaType.APPLICATION_JSON));
+
+            EmailCredential result = service.ensureFreshToken(credential);
+
+            assertSame(credential, result);
+            assertNull(savedRef.get(), "Should not save when token response is null");
+
+            server.verify();
+        }
     }
+
+    // -----------------------------------------------------------------------
+    // postForToken() non-2xx branch
+    // -----------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("postForToken() non-2xx handling")
+    class PostForTokenNon2xxTests {
+
+        @Test
+        @DisplayName("exchange throws when token endpoint returns non-2xx status")
+        void exchangeThrowsOnNon2xxFromTokenEndpoint() {
+            // 4xx client errors cause RestTemplate to throw, which triggers catch block
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withBadRequest());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> service.exchange("user-non2xx", "code-non2xx"));
+
+            assertTrue(ex.getMessage().contains("Google OAuth token exchange failed"));
+
+            server.verify();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // safeId() private method coverage
+    // -----------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("safeId() private method via exchange")
+    class SafeIdTests {
+
+        @Test
+        @DisplayName("safeId truncates long client IDs (length > 12)")
+        void safeIdTruncatesLongId() {
+            // Set clientId to a long string (>12 chars) to cover the truncation branch
+            service.clientId = "a]very-long-client-id-for-testing";
+
+            String json = "{" +
+                      "\"access_token\": \"token-abc\"," +
+                      "\"refresh_token\": \"refresh-abc\"," +
+                      "\"expires_in\": 3600" +
+                    "}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-long-id", "code-long-id");
+
+            assertNotNull(savedRef.get());
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("safeId returns short client IDs as-is (length <= 12)")
+        void safeIdReturnsShortIdAsIs() {
+            // Set clientId to a short string (<=12 chars)
+            service.clientId = "short-id";
+
+            String json = 
+                    "{" +
+                      "\"access_token\": \"token-short\"," +
+                      "\"refresh_token\": \"refresh-short\"," +
+                      "\"expires_in\": 3600" +
+                    "}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-short-id", "code-short-id");
+
+            assertNotNull(savedRef.get());
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("safeId handles null client ID")
+        void safeIdHandlesNullId() {
+            service.clientId = null;
+
+            String json = 
+                    "{" +
+                      "\"access_token\": \"token-null-id\"," +
+                      "\"refresh_token\": \"refresh-null-id\"," +
+                      "\"expires_in\": 3600" +
+                    "}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-null-id", "code-null-id");
+
+            assertNotNull(savedRef.get());
+            server.verify();
+        }
+
+        @Test
+        @DisplayName("safeId handles exactly 12-character client ID")
+        void safeIdHandlesExactly12CharId() {
+            service.clientId = "123456789012"; // exactly 12 chars
+
+            String json = 
+                    "{" +
+                      "\"access_token\": \"token-12\"," +
+                      "\"refresh_token\": \"refresh-12\"," +
+                      "\"expires_in\": 3600" +
+                    "}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-12-id", "code-12-id");
+
+            assertNotNull(savedRef.get());
+            server.verify();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Edge cases
+    // -----------------------------------------------------------------------
+
+    @Nested
+    @DisplayName("Edge cases")
+    class EdgeCaseTests {
+
+        @Test
+        @DisplayName("exchange with existing credential that has null refreshTokenEnc")
+        void exchangeWithExistingCredentialNullRefreshEnc() {
+            // Existing credential with null refreshTokenEnc
+            EmailCredential existing = new EmailCredential();
+            existing.setUserId("user-edge");
+            existing.setProvider(EmailCredential.Provider.GMAIL);
+            existing.setRefreshTokenEnc(null);
+            existingCredRef.set(existing);
+
+            String json =
+                    "{" +
+                      "\"access_token\": \"access-edge\"," +
+                      "\"expires_in\": 3600" +
+                    "}";
+
+            server.expect(requestTo("https://oauth2.googleapis.com/token"))
+                    .andExpect(method(HttpMethod.POST))
+                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+
+            service.exchange("user-edge", "code-edge");
+
+            EmailCredential saved = savedRef.get();
+            assertNotNull(saved);
+            assertNull(saved.getRefreshTokenEnc(),
+                    "No refresh token should be set when none returned and existing has null");
+
+            server.verify();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Repository stub
+    // -----------------------------------------------------------------------
 
     private EmailCredentialRepository createRepositoryStub() {
         InvocationHandler handler = new InvocationHandler() {
@@ -114,6 +550,10 @@ class GoogleOAuthServiceTest {
                         return entity;
                     }
                     case "findFirstByUserIdAndProvider", "findFirstByUserIdAndProviderOrderByIdDesc" -> {
+                        EmailCredential existing = existingCredRef.get();
+                        if (existing != null) {
+                            return Optional.of(existing);
+                        }
                         return Optional.empty();
                     }
                     default -> throw new UnsupportedOperationException("Method " + name + " not supported in stub");
