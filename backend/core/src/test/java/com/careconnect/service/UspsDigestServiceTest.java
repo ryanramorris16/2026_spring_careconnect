@@ -15,7 +15,6 @@ import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -867,15 +866,6 @@ class USPSDigestServiceTest {
                     handler
             );
         }
-    }
-
-    private GoogleOAuthService googleOAuthServiceStub() {
-        return new GoogleOAuthService(null, null, cryptor) {
-            @Override
-            public EmailCredential ensureFreshToken(EmailCredential current) {
-                return current;
-            }
-        };
     }
 
     /**
