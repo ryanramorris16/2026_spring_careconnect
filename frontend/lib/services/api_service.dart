@@ -1922,36 +1922,6 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> getCallRecordingExtractInfo({
-    required String callId,
-    required int patientUserId,
-  }) async {
-    try {
-      final headers = await AuthTokenManager.getAuthHeaders();
-      final response = await _httpClient
-          .get(
-            Uri.parse(
-              '${ApiConstants.callsV3}/$callId/recording/extract?patientUserId=$patientUserId',
-            ),
-            headers: headers,
-          )
-          .timeout(const Duration(seconds: 30));
-
-      if (response.statusCode != 200) {
-        return null;
-      }
-
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map) {
-        return null;
-      }
-
-      return Map<String, dynamic>.from(decoded);
-    } catch (_) {
-      return null;
-    }
-  }
-
   static Future<List<Map<String, dynamic>>> getMyCallTelemetry() async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
