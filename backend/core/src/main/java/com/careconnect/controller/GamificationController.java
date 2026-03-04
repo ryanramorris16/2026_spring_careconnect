@@ -1,8 +1,10 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.*;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.GamificationService;
-import org.springframework.security.core.Authentication;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,15 +16,24 @@ import java.util.*;
 public class GamificationController {
 
     private final GamificationService gamificationService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     @Autowired
-    public GamificationController(GamificationService gamificationService) {
+    public GamificationController(GamificationService gamificationService,
+                                  SecurityUtil securityUtil,
+                                  AuthorizationService authorizationService) {
         this.gamificationService = gamificationService;
+        this.securityUtil = securityUtil;
+        this.authorizationService = authorizationService;
     }
 
     // 1. Award XP to user
     @PostMapping("/award-xp")
-    public ResponseEntity<?> awardXp(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> awardXp(@RequestBody Map<String, Object> body) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
+
         Long userId = Long.valueOf(body.get("userId").toString());
         int amount = Integer.parseInt(body.get("amount").toString());
 
@@ -31,15 +42,9 @@ public class GamificationController {
     }
 
     @GetMapping("/progress/{userId}")
-    public ResponseEntity<?> getXpProgress(@PathVariable Long userId, Authentication authentication) {
-        // JWT-based authentication - get user from security context
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).body("Authentication required");
-        }
-
-        // For JWT, you can get user details from authentication
-        String userEmail = authentication.getName();
-        // Additional validation can be added here if needed
+    public ResponseEntity<?> getXpProgress(@PathVariable Long userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, userId);
 
         return gamificationService.getXpProgress(userId)
                 .map(ResponseEntity::ok)
@@ -48,7 +53,10 @@ public class GamificationController {
 
     // 3. Get earned achievements for a user
     @GetMapping("/achievements/{userId}")
-    public ResponseEntity<List<UserAchievement>> getUserAchievements(@PathVariable Long userId) {
+    public ResponseEntity<List<UserAchievement>> getUserAchievements(@PathVariable Long userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, userId);
+
         return ResponseEntity.ok(gamificationService.getUserAchievements(userId));
     }
 

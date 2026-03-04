@@ -6,7 +6,10 @@ import com.careconnect.model.User;
 import com.careconnect.repository.FriendRequestRepository;
 import com.careconnect.repository.FriendshipRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.GamificationService;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,12 @@ import java.util.*;
 @RestController
 @RequestMapping("/v1/api/friends")
 public class FriendController {
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @Autowired
     private GamificationService gamificationService;
@@ -32,9 +41,12 @@ public class FriendController {
 
     // ✅ 1. Send friend request
     @PostMapping("/request")
-    public ResponseEntity<?> sendFriendRequest(@RequestBody Map<String, Long> payload) {
+    public ResponseEntity<?> sendFriendRequest(@RequestBody Map<String, Long> payload) throws UnauthorizedException {
         Long fromUserId = payload.get("fromUserId");
         Long toUserId = payload.get("toUserId");
+
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, fromUserId);
 
         boolean exists = friendRequestRepo.existsByFromUserIdAndToUserId(fromUserId, toUserId);
         if (exists) {
@@ -53,7 +65,10 @@ public class FriendController {
 
     // ✅ 2. Get all pending friend requests TO a user
     @GetMapping("/requests/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getPendingRequests(@PathVariable Long userId) {
+    public ResponseEntity<List<Map<String, Object>>> getPendingRequests(@PathVariable Long userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, userId);
+
         List<FriendRequest> requests = friendRequestRepo.findByToUserIdAndStatus(userId, "pending");
 
         List<Map<String, Object>> result = new ArrayList<>();
@@ -78,13 +93,17 @@ public class FriendController {
 
     // ✅ 3. Accept a friend request
     @PostMapping("/accept")
-    public ResponseEntity<?> acceptFriendRequest(@RequestBody Map<String, Long> body) {
+    public ResponseEntity<?> acceptFriendRequest(@RequestBody Map<String, Long> body) throws UnauthorizedException {
         Long requestId = body.get("requestId");
 
         Optional<FriendRequest> opt = friendRequestRepo.findById(requestId);
         if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
 
         FriendRequest req = opt.get();
+
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, req.getToUserId());
+
         if (!"pending".equals(req.getStatus())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Request already handled");
         }
@@ -123,13 +142,17 @@ public class FriendController {
 
     // ✅ 4. Reject a friend request
     @PostMapping("/reject")
-    public ResponseEntity<?> rejectFriendRequest(@RequestBody Map<String, Long> body) {
+    public ResponseEntity<?> rejectFriendRequest(@RequestBody Map<String, Long> body) throws UnauthorizedException {
         Long requestId = body.get("requestId");
 
         Optional<FriendRequest> opt = friendRequestRepo.findById(requestId);
         if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request not found");
 
         FriendRequest req = opt.get();
+
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, req.getToUserId());
+
         if (!"pending".equals(req.getStatus())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Request already handled");
         }
@@ -141,7 +164,10 @@ public class FriendController {
     }
 
     @GetMapping("/list/{userId}")
-    public ResponseEntity<List<Map<String, Object>>> getFriends(@PathVariable Long userId) {
+    public ResponseEntity<List<Map<String, Object>>> getFriends(@PathVariable Long userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, userId);
+
         List<FriendRequest> acceptedRequests = friendRequestRepo.findByStatus("accepted");
 
         List<Long> friendIds = new ArrayList<>();

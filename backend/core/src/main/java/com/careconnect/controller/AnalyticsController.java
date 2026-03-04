@@ -4,7 +4,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import lombok.RequiredArgsConstructor;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -50,10 +53,11 @@ import java.util.concurrent.*;
 public class AnalyticsController {
     // ...existing code...
 
-
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     @Autowired
-    private final UserRepository userRepository;  
+    private final UserRepository userRepository;
 
 
     @Autowired
@@ -78,7 +82,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
     @GetMapping("/dashboard")
     public DashboardDTO dashboard(
             @RequestParam Long patientId,
-            @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(defaultValue = "7") int days) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         if (days < 1) days = 1;
         return analyticsService.getDashboard(patientId, Period.ofDays(days));
     }
@@ -94,7 +100,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
     @GetMapping("/export/vitals/csv")
     public ResponseEntity<byte[]> exportVitalsCsv(
         @RequestParam Long patientId,
-        @RequestParam(defaultValue = "7") int days) {
+        @RequestParam(defaultValue = "7") int days) throws UnauthorizedException {
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdminOrCaregiver(currentUser);
     if (days < 1) days = 1;
     byte[] csv = analyticsService.exportVitalsCsv(patientId, Period.ofDays(days));
     return ResponseEntity.ok()
@@ -114,7 +122,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
     @GetMapping("/export/vitals/pdf")
     public ResponseEntity<byte[]> exportVitalsPdf(
         @RequestParam Long patientId,
-        @RequestParam(defaultValue = "7") int days) {
+        @RequestParam(defaultValue = "7") int days) throws UnauthorizedException {
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdminOrCaregiver(currentUser);
     if (days < 1) days = 1;
     byte[] pdf = analyticsService.exportVitalsPdf(patientId, Period.ofDays(days));
     return ResponseEntity.ok()
@@ -124,7 +134,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
 }
 
     @GetMapping(value = "/live", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter live(@RequestParam Long patientId) {
+    public SseEmitter live(@RequestParam Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         SseEmitter emitter = new SseEmitter(30 * 60 * 1000L); // 30 min
         executor.submit(() -> {
             try {

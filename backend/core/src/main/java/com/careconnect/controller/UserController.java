@@ -3,7 +3,10 @@ package com.careconnect.controller;
 import com.careconnect.dto.UserResponse;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.UserPasswordService;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,12 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepo;
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     /**
      * Reset password for user (caregiver or patient) using username (email) and reset token
@@ -149,7 +158,10 @@ public class UserController {
     @GetMapping("/search")
     public ResponseEntity<List<UserResponse>> searchUsers(
             @RequestParam String query,
-            @RequestParam Long currentUserId) {
+            @RequestParam Long currentUserId) throws UnauthorizedException {
+
+        User authUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(authUser);
 
         List<User> users = userRepo.findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase(query, query);
 
