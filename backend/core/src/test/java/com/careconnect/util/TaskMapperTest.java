@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -73,6 +75,23 @@ class TaskMapperTest {
     }
 
     @Test
+    @DisplayName("serializeDays should throw RuntimeException when serialization fails")
+    @SuppressWarnings("unchecked")
+    void testSerializeDays_serializationFailure() {
+        List<Boolean> badList = mock(List.class);
+        when(badList.size()).thenReturn(1);
+        when(badList.iterator()).thenThrow(new RuntimeException("mock error"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> TaskMapper.serializeDays(badList));
+        assertTrue(ex.getMessage().contains("Failed to serialize daysOfWeek JSON"));
+    }
+
+    // --------------------------------------------------------------------------
+    // Round-Trip & Constructor Tests
+    // --------------------------------------------------------------------------
+
+    @Test
     @DisplayName("serializeDays and parseDays should be inverses (round-trip test)")
     void testRoundTrip_serializeAndParse() {
         List<Boolean> original = List.of(true, false, true, false, true, false, false);
@@ -81,5 +100,12 @@ class TaskMapperTest {
         List<Boolean> parsedBack = TaskMapper.parseDays(json);
 
         assertEquals(original, parsedBack);
+    }
+
+    @Test
+    @DisplayName("TaskMapper default constructor should be instantiable")
+    void testConstructor() {
+        TaskMapper mapper = new TaskMapper();
+        assertNotNull(mapper);
     }
 }
