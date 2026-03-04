@@ -31,6 +31,7 @@
         <sonar.sources>src/main</sonar.sources>
         <sonar.tests>src/test</sonar.tests>
         <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -398,9 +399,134 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.3</version>
                 <configuration>
-                    <!-- fork a JVM to run tests, allowing JaCoCo agent to instrument -->
                     <forkCount>1</forkCount>
-                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+            <!-- JaCoCo Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Checkstyle plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <configLocation>google_checks.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>10.14.2</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <!-- SpotBugs plugin -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.8.3.1</version>
+                <executions>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <effort>max</effort>
+                    <threshold>low</threshold>
+                    <failOnError>true</failOnError>
+                </configuration>
+            </plugin>
+
+            <!-- PMD plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.21.2</version>
+                <executions>
+                    <execution>
+                        <id>pmd-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>cpd-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnViolation>true</failOnViolation>
+                    <rulesets>
+                        <ruleset>rulesets/java/quickstart.xml</ruleset>
+                    </rulesets>
+                </configuration>
+            </plugin>
+
+            <!-- SonarQube Scanner Maven Plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
+                <configuration>
+                    <skip>false</skip>
+                    <skipDesign>false</skipDesign>
+                </configuration>
+            </plugin>
+
+            <!-- OWASP Dependency-Check plugin -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.10</version>
+                <configuration>
+                    <format>ALL</format>
+                    <prettyPrint>true</prettyPrint>
+                    <excludeFromPurge>org.springframework.boot,org.springframework.security</excludeFromPurge>
+                    <!-- Use local NVD API key (env or Maven property) -->
+                    <nvdApiKey>${nvd.api.key}</nvdApiKey>
+                    <!-- Enable NVD updates when key is provided -->
+                    <autoUpdate>${dependency-check.autoUpdate}</autoUpdate>
+                    <skipUpdate>${dependency-check.skipUpdate}</skipUpdate>
+                    <!-- Fail build only when CVSS threshold is set on command line -->
+                    <failBuildOnCVSS>${owasp.cvss.threshold}</failBuildOnCVSS>
+                    <failBuild>${dependency-check.failBuild}</failBuild>
+                    <nvdApiDelay>12000</nvdApiDelay>
+                    <nvdApiMaxRetries>10</nvdApiMaxRetries>
+                    <nvdApiRetryDelay>12000</nvdApiRetryDelay>
                 </configuration>
             </plugin>
         </plugins>
