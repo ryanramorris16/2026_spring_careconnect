@@ -11,7 +11,7 @@ class FriendRequestTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         FriendRequest req = new FriendRequest();
 
         assertThat(req).isNotNull();
@@ -25,7 +25,7 @@ class FriendRequestTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         FriendRequest req = new FriendRequest();
         Date now = new Date();
 
