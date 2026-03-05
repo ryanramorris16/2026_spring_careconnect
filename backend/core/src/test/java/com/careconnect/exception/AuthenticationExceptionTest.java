@@ -10,7 +10,7 @@ class AuthenticationExceptionTest {
 
     @Test
     @DisplayName("constructor with message sets message")
-    void messageConstructor_setsMessage() {
+    void messageConstructor_setsMessage() throws Exception {
         AuthenticationException ex = new AuthenticationException("bad creds");
         assertEquals("bad creds", ex.getMessage());
         assertInstanceOf(RuntimeException.class, ex);
@@ -18,7 +18,7 @@ class AuthenticationExceptionTest {
 
     @Test
     @DisplayName("constructor with message and cause sets both")
-    void messageAndCauseConstructor_setsBoth() {
+    void messageAndCauseConstructor_setsBoth() throws Exception {
         RuntimeException cause = new RuntimeException("root");
         AuthenticationException ex = new AuthenticationException("bad creds", cause);
         assertEquals("bad creds", ex.getMessage());
