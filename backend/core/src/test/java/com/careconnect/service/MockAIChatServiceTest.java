@@ -45,7 +45,7 @@ class MockAIChatServiceTest {
     private MockAIChatService mockAIChatService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         mockAIChatService = new MockAIChatService(
                 userAIConfigRepository,
@@ -94,7 +94,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_nullUserId_returnsErrorResponse")
-    void processChat_nullUserId_returnsErrorResponse() {
+    void processChat_nullUserId_returnsErrorResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(null);
         request.setMessage("Hello");
@@ -108,7 +108,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_nullMessage_returnsErrorResponse")
-    void processChat_nullMessage_returnsErrorResponse() {
+    void processChat_nullMessage_returnsErrorResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setMessage(null);
@@ -121,7 +121,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_emptyMessage_returnsErrorResponse")
-    void processChat_emptyMessage_returnsErrorResponse() {
+    void processChat_emptyMessage_returnsErrorResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setMessage("");
@@ -134,7 +134,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_blankMessage_returnsErrorResponse")
-    void processChat_blankMessage_returnsErrorResponse() {
+    void processChat_blankMessage_returnsErrorResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setMessage("   ");
@@ -151,7 +151,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_noConversationId_createsNewConversation")
-    void processChat_noConversationId_createsNewConversation() {
+    void processChat_noConversationId_createsNewConversation() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -190,7 +190,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_existingConversationId_usesExistingConversation")
-    void processChat_existingConversationId_usesExistingConversation() {
+    void processChat_existingConversationId_usesExistingConversation() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -218,7 +218,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_conversationIdNotFound_createsNewConversation")
-    void processChat_conversationIdNotFound_createsNewConversation() {
+    void processChat_conversationIdNotFound_createsNewConversation() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -249,7 +249,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_helloMessage_returnsMockGreeting")
-    void processChat_helloMessage_returnsMockGreeting() {
+    void processChat_helloMessage_returnsMockGreeting() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -272,7 +272,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_hiMessage_returnsMockGreeting")
-    void processChat_hiMessage_returnsMockGreeting() {
+    void processChat_hiMessage_returnsMockGreeting() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -294,7 +294,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_medicationMessage_returnsMedicationMockResponse")
-    void processChat_medicationMessage_returnsMedicationMockResponse() {
+    void processChat_medicationMessage_returnsMedicationMockResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -317,7 +317,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_medicineMessage_returnsMedicationMockResponse")
-    void processChat_medicineMessage_returnsMedicationMockResponse() {
+    void processChat_medicineMessage_returnsMedicationMockResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -339,7 +339,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_symptomMessage_returnsSymptomMockResponse")
-    void processChat_symptomMessage_returnsSymptomMockResponse() {
+    void processChat_symptomMessage_returnsSymptomMockResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -362,7 +362,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_painMessage_returnsSymptomMockResponse")
-    void processChat_painMessage_returnsSymptomMockResponse() {
+    void processChat_painMessage_returnsSymptomMockResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -384,7 +384,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_genericMessage_returnsDefaultMockResponse")
-    void processChat_genericMessage_returnsDefaultMockResponse() {
+    void processChat_genericMessage_returnsDefaultMockResponse() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -412,7 +412,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_longMessageNoTitle_titleTruncatedTo47PlusEllipsis")
-    void processChat_longMessageNoTitle_titleTruncatedTo47PlusEllipsis() {
+    void processChat_longMessageNoTitle_titleTruncatedTo47PlusEllipsis() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -442,7 +442,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_shortMessageNoTitle_titleIsFullMessage")
-    void processChat_shortMessageNoTitle_titleIsFullMessage() {
+    void processChat_shortMessageNoTitle_titleIsFullMessage() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -469,7 +469,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_requestWithTitle_usesProvidedTitle")
-    void processChat_requestWithTitle_usesProvidedTitle() {
+    void processChat_requestWithTitle_usesProvidedTitle() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(1L);
         request.setPatientId(10L);
@@ -501,7 +501,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getPatientConversations_patientWithConversations_returnsSummaries")
-    void getPatientConversations_patientWithConversations_returnsSummaries() {
+    void getPatientConversations_patientWithConversations_returnsSummaries() throws Exception {
         ChatConversation conv1 = buildConversation("conv-1", 10L, 1L, "Conversation 1");
         ChatConversation conv2 = buildConversation("conv-2", 10L, 1L, "Conversation 2");
 
@@ -523,7 +523,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getPatientConversations_noConversations_returnsEmptyList")
-    void getPatientConversations_noConversations_returnsEmptyList() {
+    void getPatientConversations_noConversations_returnsEmptyList() throws Exception {
         when(chatConversationRepository.findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(99L))
                 .thenReturn(List.of());
 
@@ -534,7 +534,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getPatientConversations_nullAiProvider_returnsNullProviderInSummary")
-    void getPatientConversations_nullAiProvider_returnsNullProviderInSummary() {
+    void getPatientConversations_nullAiProvider_returnsNullProviderInSummary() throws Exception {
         ChatConversation conv = buildConversation("conv-null", 10L, 1L, "No Provider");
         conv.setAiProviderUsed(null);
 
@@ -554,7 +554,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getConversationMessages_validConversationId_returnsMessages")
-    void getConversationMessages_validConversationId_returnsMessages() {
+    void getConversationMessages_validConversationId_returnsMessages() throws Exception {
         ChatConversation conversation = buildConversation("conv-msg", 10L, 1L, "Test");
         ChatMessage msg1 = buildMessage(1L, conversation, ChatMessage.MessageType.USER, "Hello");
         ChatMessage msg2 = buildMessage(2L, conversation, ChatMessage.MessageType.ASSISTANT, "Hi there");
@@ -579,7 +579,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getConversationMessages_conversationNotFound_throwsException")
-    void getConversationMessages_conversationNotFound_throwsException() {
+    void getConversationMessages_conversationNotFound_throwsException() throws Exception {
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue("nonexistent"))
                 .thenReturn(Optional.empty());
 
@@ -593,7 +593,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getRecentMessagesForUser_userWithConversations_returnsRecentMessages")
-    void getRecentMessagesForUser_userWithConversations_returnsRecentMessages() {
+    void getRecentMessagesForUser_userWithConversations_returnsRecentMessages() throws Exception {
         ChatConversation conv = buildConversation("recent-conv", 10L, 1L, "Recent");
         ChatMessage msg = buildMessage(1L, conv, ChatMessage.MessageType.USER, "Recent msg");
 
@@ -610,7 +610,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getRecentMessagesForUser_noConversations_returnsEmptyList")
-    void getRecentMessagesForUser_noConversations_returnsEmptyList() {
+    void getRecentMessagesForUser_noConversations_returnsEmptyList() throws Exception {
         when(chatConversationRepository.findByUserIdAndIsActiveTrueOrderByUpdatedAtDesc(99L))
                 .thenReturn(new ArrayList<>());
 
@@ -621,7 +621,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getRecentMessagesForUser_multipleConversations_usesFirstOne")
-    void getRecentMessagesForUser_multipleConversations_usesFirstOne() {
+    void getRecentMessagesForUser_multipleConversations_usesFirstOne() throws Exception {
         ChatConversation conv1 = buildConversation("conv-first", 10L, 1L, "First");
         ChatConversation conv2 = buildConversation("conv-second", 10L, 1L, "Second");
         ChatMessage msg = buildMessage(1L, conv1, ChatMessage.MessageType.USER, "From first");
@@ -645,7 +645,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("deactivateConversation_validConversationId_deactivatesConversation")
-    void deactivateConversation_validConversationId_deactivatesConversation() {
+    void deactivateConversation_validConversationId_deactivatesConversation() throws Exception {
         ChatConversation conversation = buildConversation("conv-deactivate", 10L, 1L, "To Deactivate");
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-deactivate"))
@@ -659,7 +659,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("deactivateConversation_conversationNotFound_throwsException")
-    void deactivateConversation_conversationNotFound_throwsException() {
+    void deactivateConversation_conversationNotFound_throwsException() throws Exception {
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue("nonexistent"))
                 .thenReturn(Optional.empty());
 
@@ -673,7 +673,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_errorResponse_containsRequestConversationIdAndMessage")
-    void processChat_errorResponse_containsRequestConversationIdAndMessage() {
+    void processChat_errorResponse_containsRequestConversationIdAndMessage() throws Exception {
         ChatRequest request = new ChatRequest();
         request.setUserId(null);
         request.setConversationId("error-conv");
@@ -693,7 +693,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getPatientConversations_allFieldsMapped_summaryContainsAllFields")
-    void getPatientConversations_allFieldsMapped_summaryContainsAllFields() {
+    void getPatientConversations_allFieldsMapped_summaryContainsAllFields() throws Exception {
         ChatConversation conv = buildConversation("conv-full", 10L, 1L, "Full Test");
         conv.setChatType(ChatConversation.ChatType.MEDICAL_CONSULTATION);
         conv.setTotalTokensUsed(150);
@@ -724,7 +724,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("getConversationMessages_allFieldsMapped_messageSummaryContainsAllFields")
-    void getConversationMessages_allFieldsMapped_messageSummaryContainsAllFields() {
+    void getConversationMessages_allFieldsMapped_messageSummaryContainsAllFields() throws Exception {
         ChatConversation conversation = buildConversation("conv-fields", 10L, 1L, "Field Test");
         ChatMessage msg = buildMessage(42L, conversation, ChatMessage.MessageType.ASSISTANT, "Full response");
 
@@ -752,7 +752,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_messageExactly50Chars_titleIsFullMessage")
-    void processChat_messageExactly50Chars_titleIsFullMessage() {
+    void processChat_messageExactly50Chars_titleIsFullMessage() throws Exception {
         // Exactly 50 characters: not > 50, so should use full message
         String msg50 = "12345678901234567890123456789012345678901234567890";
         assertThat(msg50.length()).isEqualTo(50);
@@ -783,7 +783,7 @@ class MockAIChatServiceTest {
 
     @Test
     @DisplayName("processChat_message51Chars_titleIsTruncated")
-    void processChat_message51Chars_titleIsTruncated() {
+    void processChat_message51Chars_titleIsTruncated() throws Exception {
         // 51 characters: > 50, so title should be truncated to 47 + "..."
         String msg51 = "123456789012345678901234567890123456789012345678901";
         assertThat(msg51.length()).isEqualTo(51);
