@@ -27,13 +27,13 @@ class CommentServiceTest {
     private CommentService commentService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     @DisplayName("getCommentsForPost returns a list of comments for the given post")
-    void getCommentsForPost_returnsList() {
+    void getCommentsForPost_returnsList() throws Exception {
         Long postId = 10L;
         Comment comment1 = new Comment();
         comment1.setPostId(postId);
@@ -54,7 +54,7 @@ class CommentServiceTest {
 
     @Test
     @DisplayName("getCommentsForPost returns an empty list when no comments exist")
-    void getCommentsForPost_returnsEmptyList() {
+    void getCommentsForPost_returnsEmptyList() throws Exception {
         Long postId = 99L;
         when(commentRepository.findByPostIdOrderByCreatedAtAsc(eq(postId)))
                 .thenReturn(Collections.emptyList());
@@ -68,7 +68,7 @@ class CommentServiceTest {
 
     @Test
     @DisplayName("addComment creates a Comment with correct fields and saves it")
-    void addComment_savesAndReturnsComment() {
+    void addComment_savesAndReturnsComment() throws Exception {
         Long postId = 5L;
         Long userId = 42L;
         String username = "testuser";
@@ -93,7 +93,7 @@ class CommentServiceTest {
 
     @Test
     @DisplayName("addComment returns the same object that repository.save returns")
-    void addComment_returnsSavedComment() {
+    void addComment_returnsSavedComment() throws Exception {
         Comment savedComment = new Comment();
         savedComment.setPostId(7L);
         savedComment.setContent("saved");
