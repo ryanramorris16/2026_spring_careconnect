@@ -12,7 +12,7 @@ class CaregiverPatientLinkTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_setsDefaults() {
+    void defaultConstructor_setsDefaults() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
 
         assertThat(link).isNotNull();
@@ -24,7 +24,7 @@ class CaregiverPatientLinkTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         User caregiver = new User();
         User patient = new User();
         User createdBy = new User();
@@ -49,7 +49,7 @@ class CaregiverPatientLinkTest {
     // ─── 4-arg constructor ────────────────────────────────────────────────────
 
     @Test
-    void fourArgConstructor_setsFields() {
+    void fourArgConstructor_setsFields() throws Exception {
         User caregiver = new User();
         User patient = new User();
         User createdBy = new User();
@@ -66,7 +66,7 @@ class CaregiverPatientLinkTest {
     // ─── isActive() ──────────────────────────────────────────────────────────
 
     @Test
-    void isActive_statusActive_noExpiry_returnsTrue() {
+    void isActive_statusActive_noExpiry_returnsTrue() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(null);
@@ -75,7 +75,7 @@ class CaregiverPatientLinkTest {
     }
 
     @Test
-    void isActive_statusPending_returnsFalse() {
+    void isActive_statusPending_returnsFalse() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.PENDING);
 
@@ -83,7 +83,7 @@ class CaregiverPatientLinkTest {
     }
 
     @Test
-    void isActive_statusActive_expiredDate_returnsFalse() {
+    void isActive_statusActive_expiredDate_returnsFalse() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().minusDays(1));
@@ -92,7 +92,7 @@ class CaregiverPatientLinkTest {
     }
 
     @Test
-    void isActive_statusActive_futureExpiry_returnsTrue() {
+    void isActive_statusActive_futureExpiry_returnsTrue() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().plusDays(10));
@@ -103,21 +103,21 @@ class CaregiverPatientLinkTest {
     // ─── isExpired() ─────────────────────────────────────────────────────────
 
     @Test
-    void isExpired_nullExpiresAt_returnsFalse() {
+    void isExpired_nullExpiresAt_returnsFalse() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(null);
         assertThat(link.isExpired()).isFalse();
     }
 
     @Test
-    void isExpired_pastExpiresAt_returnsTrue() {
+    void isExpired_pastExpiresAt_returnsTrue() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(LocalDateTime.now().minusDays(1));
         assertThat(link.isExpired()).isTrue();
     }
 
     @Test
-    void isExpired_futureExpiresAt_returnsFalse() {
+    void isExpired_futureExpiresAt_returnsFalse() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(LocalDateTime.now().plusDays(5));
         assertThat(link.isExpired()).isFalse();
@@ -126,7 +126,7 @@ class CaregiverPatientLinkTest {
     // ─── setStatus() updates updatedAt ───────────────────────────────────────
 
     @Test
-    void setStatus_updatesUpdatedAt() {
+    void setStatus_updatesUpdatedAt() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.REVOKED);
 
@@ -164,7 +164,7 @@ class CaregiverPatientLinkTest {
     // ─── LinkStatus enum ─────────────────────────────────────────────────────
 
     @Test
-    void linkStatusEnum_containsAllValues() {
+    void linkStatusEnum_containsAllValues() throws Exception {
         assertThat(CaregiverPatientLink.LinkStatus.values()).containsExactly(
                 CaregiverPatientLink.LinkStatus.PENDING,
                 CaregiverPatientLink.LinkStatus.ACTIVE,
@@ -178,7 +178,7 @@ class CaregiverPatientLinkTest {
     // ─── LinkType enum ────────────────────────────────────────────────────────
 
     @Test
-    void linkTypeEnum_containsAllValues() {
+    void linkTypeEnum_containsAllValues() throws Exception {
         assertThat(CaregiverPatientLink.LinkType.values()).containsExactly(
                 CaregiverPatientLink.LinkType.PERMANENT,
                 CaregiverPatientLink.LinkType.TEMPORARY,
@@ -189,7 +189,7 @@ class CaregiverPatientLinkTest {
     // ─── Remaining setters ────────────────────────────────────────────────────
 
     @Test
-    void remainingSetters_updateFields() {
+    void remainingSetters_updateFields() throws Exception {
         CaregiverPatientLink link = new CaregiverPatientLink();
         User caregiver = new User();
         User patient = new User();
