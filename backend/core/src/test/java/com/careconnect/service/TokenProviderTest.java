@@ -22,7 +22,7 @@ class TokenProviderTest {
     private TokenProvider tokenProvider;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         tokenProvider = new TokenProvider();
     }
 
@@ -32,21 +32,21 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: returns a non-null value")
-    void testGenerateToken_notNull() {
+    void testGenerateToken_notNull() throws Exception {
         // The method must never return null, even on the first invocation.
         assertNotNull(tokenProvider.generateToken());
     }
 
     @Test
     @DisplayName("generateToken: returns a non-empty string")
-    void testGenerateToken_notEmpty() {
+    void testGenerateToken_notEmpty() throws Exception {
         // An empty string would be useless as a token; the result must have content.
         assertFalse(tokenProvider.generateToken().isBlank());
     }
 
     @Test
     @DisplayName("generateToken: token length equals the standard UUID string length (36)")
-    void testGenerateToken_correctLength() {
+    void testGenerateToken_correctLength() throws Exception {
         // A canonical UUID string is always exactly 36 characters
         // (32 hex digits + 4 hyphens).
         assertEquals(36, tokenProvider.generateToken().length());
@@ -54,7 +54,7 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: token matches the standard UUID format (8-4-4-4-12)")
-    void testGenerateToken_validUuidFormat() {
+    void testGenerateToken_validUuidFormat() throws Exception {
         // The value must be parseable as a UUID — invalid formats would cause
         // UUID.fromString() to throw IllegalArgumentException.
         String token = tokenProvider.generateToken();
@@ -64,7 +64,7 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: token contains exactly four hyphens at the correct positions")
-    void testGenerateToken_hyphenPositions() {
+    void testGenerateToken_hyphenPositions() throws Exception {
         // UUID canonical format places hyphens at indices 8, 13, 18, and 23.
         String token = tokenProvider.generateToken();
         assertEquals('-', token.charAt(8));
@@ -75,7 +75,7 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: token contains only hex characters and hyphens")
-    void testGenerateToken_onlyHexAndHyphens() {
+    void testGenerateToken_onlyHexAndHyphens() throws Exception {
         // Every character must be a lowercase hex digit or a hyphen separator.
         String token = tokenProvider.generateToken();
         assertTrue(token.matches("[0-9a-f\\-]+"),
@@ -88,7 +88,7 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: two successive calls return different tokens")
-    void testGenerateToken_twoCallsDiffer() {
+    void testGenerateToken_twoCallsDiffer() throws Exception {
         // Tokens are used for identity/security; the same value must not be
         // returned on back-to-back calls.
         String first  = tokenProvider.generateToken();
@@ -98,7 +98,7 @@ class TokenProviderTest {
 
     @Test
     @DisplayName("generateToken: 1000 successive calls all produce distinct tokens")
-    void testGenerateToken_bulkUniqueness() {
+    void testGenerateToken_bulkUniqueness() throws Exception {
         // A large sample confirms statistical uniqueness — collisions here would
         // indicate a broken UUID source rather than an expected probability event.
         Set<String> seen = new HashSet<>();
