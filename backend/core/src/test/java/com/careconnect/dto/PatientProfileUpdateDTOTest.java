@@ -22,7 +22,7 @@ class PatientProfileUpdateDTOTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
 
         assertThat(dto).isNotNull();
@@ -39,56 +39,56 @@ class PatientProfileUpdateDTOTest {
     // ─── Setters and Getters ──────────────────────────────────────────────────
 
     @Test
-    void setFirstName_getFirstName_roundTrips() {
+    void setFirstName_getFirstName_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setFirstName("Alice");
         assertThat(dto.getFirstName()).isEqualTo("Alice");
     }
 
     @Test
-    void setLastName_getLastName_roundTrips() {
+    void setLastName_getLastName_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setLastName("Smith");
         assertThat(dto.getLastName()).isEqualTo("Smith");
     }
 
     @Test
-    void setPhone_getPhone_roundTrips() {
+    void setPhone_getPhone_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setPhone("555-1234");
         assertThat(dto.getPhone()).isEqualTo("555-1234");
     }
 
     @Test
-    void setDob_getDob_roundTrips() {
+    void setDob_getDob_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setDob("1990-05-15");
         assertThat(dto.getDob()).isEqualTo("1990-05-15");
     }
 
     @Test
-    void setGender_getGender_roundTrips() {
+    void setGender_getGender_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setGender(Gender.FEMALE);
         assertThat(dto.getGender()).isEqualTo(Gender.FEMALE);
     }
 
     @Test
-    void setAddress_getAddress_roundTrips() {
+    void setAddress_getAddress_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setAddress(mockAddress);
         assertThat(dto.getAddress()).isEqualTo(mockAddress);
     }
 
     @Test
-    void setRelationship_getRelationship_roundTrips() {
+    void setRelationship_getRelationship_roundTrips() throws Exception {
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setRelationship("Spouse");
         assertThat(dto.getRelationship()).isEqualTo("Spouse");
     }
 
     @Test
-    void setAllergies_getAllergies_roundTrips() {
+    void setAllergies_getAllergies_roundTrips() throws Exception {
         List<AllergyDTO> allergies = List.of(mockAllergy);
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
         dto.setAllergies(allergies);
@@ -98,7 +98,7 @@ class PatientProfileUpdateDTOTest {
     // ─── All fields set together ──────────────────────────────────────────────
 
     @Test
-    void allSetters_allFieldsUpdated() {
+    void allSetters_allFieldsUpdated() throws Exception {
         List<AllergyDTO> allergies = List.of(mockAllergy);
         PatientProfileUpdateDTO dto = new PatientProfileUpdateDTO();
 
