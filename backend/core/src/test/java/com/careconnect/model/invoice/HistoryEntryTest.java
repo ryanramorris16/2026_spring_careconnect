@@ -12,7 +12,7 @@ class HistoryEntryTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         HistoryEntry entry = new HistoryEntry();
 
         assertThat(entry).isNotNull();
@@ -29,7 +29,7 @@ class HistoryEntryTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Invoice invoice = Invoice.builder().id("INV-100").build();
         OffsetDateTime timestamp = OffsetDateTime.of(2025, 5, 1, 10, 0, 0, 0, ZoneOffset.UTC);
 
@@ -51,7 +51,7 @@ class HistoryEntryTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         HistoryEntry entry = new HistoryEntry();
         Invoice invoice = Invoice.builder().id("INV-200").build();
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -78,7 +78,7 @@ class HistoryEntryTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
         HistoryEntry e2 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
 
@@ -87,7 +87,7 @@ class HistoryEntryTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
         HistoryEntry e2 = new HistoryEntry(2L, null, 2, null, "user-2", "UPDATE", null, null);
 
@@ -95,13 +95,13 @@ class HistoryEntryTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         HistoryEntry entry = new HistoryEntry();
         assertThat(entry).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         HistoryEntry entry = new HistoryEntry();
         assertThat(entry).isNotEqualTo("a string");
     }
