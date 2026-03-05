@@ -1,7 +1,9 @@
 package com.careconnect.controller;
 
 import com.careconnect.dto.MedicationDTO;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.MedicationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +22,8 @@ import static org.mockito.Mockito.*;
 class MedicationControllerTest {
 
     @Mock private MedicationService medicationService;
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private MedicationController controller;
@@ -36,7 +40,7 @@ class MedicationControllerTest {
     // ─── getAllMedications ─────────────────────────────────────────────────────
 
     @Test
-    void getAllMedications_returnsListFromService() {
+    void getAllMedications_returnsListFromService() throws Exception {
         List<MedicationDTO> meds = List.of(dto("Med-A"), dto("Med-B"));
         when(medicationService.getAllMedicationsForPatient(PATIENT_ID)).thenReturn(meds);
 
@@ -47,7 +51,7 @@ class MedicationControllerTest {
     }
 
     @Test
-    void getAllMedications_emptyList_returnsOkWithEmptyBody() {
+    void getAllMedications_emptyList_returnsOkWithEmptyBody() throws Exception {
         when(medicationService.getAllMedicationsForPatient(PATIENT_ID)).thenReturn(List.of());
 
         ResponseEntity<List<MedicationDTO>> response = controller.getAllMedications(PATIENT_ID);
@@ -59,7 +63,7 @@ class MedicationControllerTest {
     // ─── getActiveMedications ─────────────────────────────────────────────────
 
     @Test
-    void getActiveMedications_returnsActiveList() {
+    void getActiveMedications_returnsActiveList() throws Exception {
         List<MedicationDTO> active = List.of(dto("Active-Med"));
         when(medicationService.getActiveMedicationsForPatient(PATIENT_ID)).thenReturn(active);
 
@@ -70,7 +74,7 @@ class MedicationControllerTest {
     }
 
     @Test
-    void getActiveMedications_emptyList_returnsOk() {
+    void getActiveMedications_emptyList_returnsOk() throws Exception {
         when(medicationService.getActiveMedicationsForPatient(PATIENT_ID)).thenReturn(List.of());
 
         ResponseEntity<List<MedicationDTO>> response = controller.getActiveMedications(PATIENT_ID);
@@ -82,7 +86,7 @@ class MedicationControllerTest {
     // ─── getPendingMedications ────────────────────────────────────────────────
 
     @Test
-    void getPendingMedications_returnsPendingList() {
+    void getPendingMedications_returnsPendingList() throws Exception {
         List<MedicationDTO> pending = List.of(dto("Pending-Med"));
         when(medicationService.getPendingMedications(PATIENT_ID)).thenReturn(pending);
 
@@ -93,7 +97,7 @@ class MedicationControllerTest {
     }
 
     @Test
-    void getPendingMedications_emptyList_returnsOk() {
+    void getPendingMedications_emptyList_returnsOk() throws Exception {
         when(medicationService.getPendingMedications(PATIENT_ID)).thenReturn(List.of());
 
         ResponseEntity<List<MedicationDTO>> response = controller.getPendingMedications(PATIENT_ID);
@@ -105,7 +109,7 @@ class MedicationControllerTest {
     // ─── addMedication ────────────────────────────────────────────────────────
 
     @Test
-    void addMedication_delegatesToServiceAndReturnsCreated() {
+    void addMedication_delegatesToServiceAndReturnsCreated() throws Exception {
         MedicationDTO input = dto("New-Med");
         MedicationDTO created = dto("New-Med");
         when(medicationService.addMedication(PATIENT_ID, input)).thenReturn(created);
@@ -120,7 +124,7 @@ class MedicationControllerTest {
     // ─── approveMedication ────────────────────────────────────────────────────
 
     @Test
-    void approveMedication_returnsOkWithMessageAndApprovedDto() {
+    void approveMedication_returnsOkWithMessageAndApprovedDto() throws Exception {
         MedicationDTO approved = dto("Approved-Med");
         when(medicationService.approveMedication(PATIENT_ID, MEDICATION_ID)).thenReturn(approved);
 
@@ -138,7 +142,7 @@ class MedicationControllerTest {
     // ─── deleteMedication ─────────────────────────────────────────────────────
 
     @Test
-    void deleteMedication_deactivatesAndReturnsMessage() {
+    void deleteMedication_deactivatesAndReturnsMessage() throws Exception {
         doNothing().when(medicationService).deactivateMedication(PATIENT_ID, MEDICATION_ID);
 
         ResponseEntity<?> response = controller.deleteMedication(PATIENT_ID, MEDICATION_ID);
@@ -154,7 +158,7 @@ class MedicationControllerTest {
     // ─── deleteMedicationByCaregiver ──────────────────────────────────────────
 
     @Test
-    void deleteMedicationByCaregiver_hardDeletesAndReturnsMessage() {
+    void deleteMedicationByCaregiver_hardDeletesAndReturnsMessage() throws Exception {
         doNothing().when(medicationService).hardDeleteMedication(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
 
         ResponseEntity<?> response = controller.deleteMedicationByCaregiver(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
