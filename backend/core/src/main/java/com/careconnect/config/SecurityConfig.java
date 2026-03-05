@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.context.annotation.Profile;
 
+import java.util.concurrent.TimeUnit;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -68,6 +70,13 @@ public class SecurityConfig {
                 return http
                                 .csrf(AbstractHttpConfigurer::disable)
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                                .headers(headers -> headers
+                                                .contentTypeOptions(contentType -> {
+                                                })
+                                                .frameOptions(frame -> frame.deny())
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .includeSubDomains(true)
+                                                                .maxAgeInSeconds(TimeUnit.DAYS.toSeconds(365))))
                                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .httpBasic(basic -> basic.authenticationEntryPoint(
                                                 (req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED,
@@ -98,49 +107,28 @@ public class SecurityConfig {
                                                                 "/api/auth/**",
                                                                 "/v1/api/users/reset-password",
                                                                 "/v1/api/users/setup-password",
-                                                                                "/v1/api/email-test/**",
-                                                                                "/v1/api/test/**",
-                                                                                "/oauth/**",
-                                                                                "/ws/**")
+                                                                "/v1/api/email-test/**",
+                                                                "/v1/api/test/**",
+                                                                "/oauth/**",
+                                                                "/ws/**")
                                                 .permitAll()
                                                 .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                                .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**", "/api/v3/calls/**")
+                                                .requestMatchers(
+                                                                "/v1/api/**",
+                                                                "/v2/api/**",
+                                                                "/v3/api/**",
+                                                                "/api/v3/calls/**",
+                                                                "/api/patient/**",
+                                                                "/api/ai/**")
                                                 .authenticated()
                                                 .anyRequest().denyAll())
                                 .build();
         }
 
-<<<<<<< HEAD
         @Bean
         public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
                 return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
         }
 }
-=======
-                        .requestMatchers(
-                                "/v1/api/auth/**",
-                                "/api/v1/auth/**",
-                                "/api/auth/**",
-                                "/v1/api/users/reset-password",
-                                "/v1/api/users/setup-password",
-                                "/v1/api/email-test/**",
-                                "/v1/api/test/**",
-                                "/oauth/**",
-                                "/ws/**"
-                        ).permitAll()
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**", "/api/v3/calls/**", "/api/patient/**", "/api/ai/**").authenticated()
-                        .anyRequest().denyAll()
-                )
-                .build();
-    }
-
-    @Bean
-    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-        return new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
-    }
-}
->>>>>>> 0f5af0c9 (Checkpoint: stabilize calls/sentiment and vendor Chime web SDK)
