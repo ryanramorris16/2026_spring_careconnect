@@ -12,7 +12,7 @@ class MailPieceTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         MailPiece piece = new MailPiece();
 
         assertThat(piece).isNotNull();
@@ -27,7 +27,7 @@ class MailPieceTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         ActionLinks links = ActionLinks.builder().build();
 
@@ -44,7 +44,7 @@ class MailPieceTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         MailPiece piece = MailPiece.builder()
@@ -65,7 +65,7 @@ class MailPieceTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         MailPiece piece = new MailPiece();
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         ActionLinks links = new ActionLinks();
