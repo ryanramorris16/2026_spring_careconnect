@@ -13,7 +13,7 @@ class SummaryMetricTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstanceWithNullFields() {
+    void noArgConstructor_createsInstanceWithNullFields() throws Exception {
         SummaryMetric m = new SummaryMetric();
 
         assertThat(m).isNotNull();
@@ -28,7 +28,7 @@ class SummaryMetricTest {
     // ─── All-args constructor ─────────────────────────────────────────────────
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         Patient patient = new Patient();
         Instant start = Instant.now().minusSeconds(3600);
         Instant end = Instant.now();
@@ -46,7 +46,7 @@ class SummaryMetricTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         Patient patient = new Patient();
         Instant start = Instant.now().minusSeconds(3600);
         Instant end = Instant.now();
@@ -69,7 +69,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void builder_defaults_allNull() {
+    void builder_defaults_allNull() throws Exception {
         SummaryMetric m = SummaryMetric.builder().build();
 
         assertThat(m.getId()).isNull();
@@ -83,7 +83,7 @@ class SummaryMetricTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateAllFields() {
+    void setters_updateAllFields() throws Exception {
         SummaryMetric m = new SummaryMetric();
         Patient patient = new Patient();
         Instant now = Instant.now();
@@ -106,7 +106,7 @@ class SummaryMetricTest {
     // ─── equals and hashCode (@Data + @EqualsAndHashCode) ─────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Patient patient = new Patient();
         Instant start = Instant.parse("2025-01-01T00:00:00Z");
         Instant end = Instant.parse("2025-01-02T00:00:00Z");
@@ -123,7 +123,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void equals_differentId_returnsNotEqual() {
+    void equals_differentId_returnsNotEqual() throws Exception {
         SummaryMetric m1 = SummaryMetric.builder().id(1L).build();
         SummaryMetric m2 = SummaryMetric.builder().id(2L).build();
 
@@ -131,7 +131,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void equals_differentAdherenceRate_returnsNotEqual() {
+    void equals_differentAdherenceRate_returnsNotEqual() throws Exception {
         SummaryMetric m1 = SummaryMetric.builder().adherenceRate(0.5).build();
         SummaryMetric m2 = SummaryMetric.builder().adherenceRate(0.9).build();
 
@@ -139,25 +139,25 @@ class SummaryMetricTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isNotEqualTo("not a SummaryMetric");
     }
 
     @Test
-    void equals_self_returnsTrue() {
+    void equals_self_returnsTrue() throws Exception {
         SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isEqualTo(m);
     }
 
     @Test
-    void hashCode_consistentForSameObject() {
+    void hashCode_consistentForSameObject() throws Exception {
         SummaryMetric m = SummaryMetric.builder().id(1L).adherenceRate(0.5).build();
         assertThat(m.hashCode()).isEqualTo(m.hashCode());
     }
@@ -165,7 +165,7 @@ class SummaryMetricTest {
     // ─── toString (@Data) ─────────────────────────────────────────────────────
 
     @Test
-    void toString_containsFieldNames() {
+    void toString_containsFieldNames() throws Exception {
         SummaryMetric m = SummaryMetric.builder()
                 .id(1L)
                 .adherenceRate(0.85)
@@ -180,7 +180,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void toString_nullFields_handlesGracefully() {
+    void toString_nullFields_handlesGracefully() throws Exception {
         SummaryMetric m = new SummaryMetric();
         String str = m.toString();
         assertThat(str).contains("SummaryMetric");
@@ -190,14 +190,14 @@ class SummaryMetricTest {
     // ─── canEqual (@EqualsAndHashCode) ────────────────────────────────────────
 
     @Test
-    void canEqual_sameType_returnsTrue() {
+    void canEqual_sameType_returnsTrue() throws Exception {
         SummaryMetric m1 = new SummaryMetric();
         SummaryMetric m2 = new SummaryMetric();
         assertThat(m1.canEqual(m2)).isTrue();
     }
 
     @Test
-    void canEqual_differentType_returnsFalse() {
+    void canEqual_differentType_returnsFalse() throws Exception {
         SummaryMetric m = new SummaryMetric();
         assertThat(m.canEqual("string")).isFalse();
     }
@@ -205,7 +205,7 @@ class SummaryMetricTest {
     // ─── Auditable inherited fields ───────────────────────────────────────────
 
     @Test
-    void auditableFields_gettersAndSetters() {
+    void auditableFields_gettersAndSetters() throws Exception {
         SummaryMetric m = new SummaryMetric();
         LocalDateTime now = LocalDateTime.now();
 
@@ -217,7 +217,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void onCreate_setsTimestamps() {
+    void onCreate_setsTimestamps() throws Exception {
         SummaryMetric m = new SummaryMetric();
         assertThat(m.getCreatedAt()).isNull();
         assertThat(m.getUpdatedAt()).isNull();
@@ -229,7 +229,7 @@ class SummaryMetricTest {
     }
 
     @Test
-    void onUpdate_setsUpdatedAt() {
+    void onUpdate_setsUpdatedAt() throws Exception {
         SummaryMetric m = new SummaryMetric();
         m.onCreate();
         LocalDateTime originalCreatedAt = m.getCreatedAt();
@@ -243,7 +243,7 @@ class SummaryMetricTest {
     // ─── getGeneratedAt() – recursive method ──────────────────────────────────
 
     @Test
-    void getGeneratedAt_throwsStackOverflowError() {
+    void getGeneratedAt_throwsStackOverflowError() throws Exception {
         SummaryMetric m = new SummaryMetric();
 
         assertThatThrownBy(m::getGeneratedAt)
