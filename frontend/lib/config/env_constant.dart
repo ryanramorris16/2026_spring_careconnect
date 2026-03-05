@@ -54,6 +54,11 @@ String getFitbitClientSecret() {
 String _getUnifiedWebSocketBaseUrl() {
   // Prefer explicit environment variable
   if (_wsOverrideUrl.isNotEmpty) {
+    if (!kDebugMode && !_wsOverrideUrl.startsWith('wss://')) {
+      throw Exception(
+        'WEBSOCKET_SERVER_URL must use wss:// in release builds.',
+      );
+    }
     return _wsOverrideUrl;
   }
 
@@ -61,9 +66,17 @@ String _getUnifiedWebSocketBaseUrl() {
   if (base.startsWith('https://')) {
     return base.replaceFirst('https://', 'wss://');
   } else if (base.startsWith('http://')) {
+    if (!kDebugMode) {
+      throw Exception(
+        'In release builds, BACKEND_URL must use https:// and WebSocket must use wss://.',
+      );
+    }
     return base.replaceFirst('http://', 'ws://');
   }
   // Fallback
+  if (!kDebugMode) {
+    throw Exception('Unable to derive secure WebSocket URL for release build.');
+  }
   return 'ws://localhost:8080';
 }
 
@@ -92,6 +105,11 @@ String getBackendBaseUrl() {
   if (_backendBaseUrl.isEmpty) {
     throw Exception('BACKEND_URL not set via --dart-define');
   }
+
+  if (!kDebugMode && !_backendBaseUrl.startsWith('https://')) {
+    throw Exception('BACKEND_URL must use https:// in release builds.');
+  }
+
   return _backendBaseUrl;
 }
 
