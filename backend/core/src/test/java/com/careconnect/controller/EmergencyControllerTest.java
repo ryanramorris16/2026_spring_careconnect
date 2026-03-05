@@ -250,21 +250,21 @@ class EmergencyControllerTest {
     class HealthCheck {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             ResponseEntity<String> response = controller.healthCheck();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
-        void bodyConfirmsServiceIsOperational() {
+        void bodyConfirmsServiceIsOperational() throws Exception {
             ResponseEntity<String> response = controller.healthCheck();
 
             assertThat(response.getBody()).isEqualTo("Emergency PDF service is operational");
         }
 
         @Test
-        void doesNotInteractWithPdfService() {
+        void doesNotInteractWithPdfService() throws Exception {
             controller.healthCheck();
 
             verifyNoInteractions(vialOfLifePdfService);
@@ -297,21 +297,21 @@ class EmergencyControllerTest {
         }
 
         @Test
-        void returns400_whenEmergencyIdDoesNotStartWithVial() {
+        void returns400_whenEmergencyIdDoesNotStartWithVial() throws Exception {
             ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @Test
-        void bodyDescribesInvalidFormat_whenPrefixIsWrong() {
+        void bodyDescribesInvalidFormat_whenPrefixIsWrong() throws Exception {
             ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
 
             assertThat(response.getBody()).contains("Invalid emergency ID format");
         }
 
         @Test
-        void returns400_whenSuffixAfterVialIsNotNumeric() {
+        void returns400_whenSuffixAfterVialIsNotNumeric() throws Exception {
             // "VIALabcdef" → starts with VIAL but "abcdef" is not a Long
             ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
 
@@ -319,7 +319,7 @@ class EmergencyControllerTest {
         }
 
         @Test
-        void bodyDescribesParseFailure_whenSuffixIsNotNumeric() {
+        void bodyDescribesParseFailure_whenSuffixIsNotNumeric() throws Exception {
             ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
 
             assertThat(response.getBody()).contains("Could not parse patient ID");
@@ -358,14 +358,14 @@ class EmergencyControllerTest {
         }
 
         @Test
-        void doesNotCallService_whenPrefixIsInvalid() {
+        void doesNotCallService_whenPrefixIsInvalid() throws Exception {
             controller.debugPatientData("BADPREFIX123");
 
             verifyNoInteractions(vialOfLifePdfService);
         }
 
         @Test
-        void doesNotCallService_whenSuffixIsNotNumeric() {
+        void doesNotCallService_whenSuffixIsNotNumeric() throws Exception {
             controller.debugPatientData("VIALnotanumber");
 
             verifyNoInteractions(vialOfLifePdfService);
@@ -378,7 +378,7 @@ class EmergencyControllerTest {
          * the outer catch, returning 500 with an "Unexpected error" body.
          */
         @Test
-        void returns500_whenNullEmergencyIdTriggersOuterCatch() {
+        void returns500_whenNullEmergencyIdTriggersOuterCatch() throws Exception {
             ResponseEntity<String> response = controller.debugPatientData(null);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
