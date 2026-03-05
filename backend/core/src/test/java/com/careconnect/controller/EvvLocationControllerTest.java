@@ -4,7 +4,9 @@ import com.careconnect.dto.evv.EvvLocationRequest;
 import com.careconnect.dto.evv.EvvLocationResponse;
 import com.careconnect.model.evv.EvvLocationRole;
 import com.careconnect.model.evv.EvvLocationType;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.evv.EvvLocationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,10 @@ class EvvLocationControllerTest {
 
     @Mock
     private EvvLocationService locationService;
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
 
     @InjectMocks
     private EvvLocationController controller;
@@ -37,7 +43,7 @@ class EvvLocationControllerTest {
     // ── shared helpers ────────────────────────────────────────────────────────
 
     /** PATIENT_ADDRESS type — validate() passes without coords. */
-    private EvvLocationRequest patientAddressRequest() {
+    private EvvLocationRequest patientAddressRequest() throws Exception {
         return EvvLocationRequest.builder()
                 .evvRecordId(EVV_RECORD_ID)
                 .role(EvvLocationRole.CHECK_IN)
@@ -46,7 +52,7 @@ class EvvLocationControllerTest {
     }
 
     /** GPS type with fully-populated coords — validate() passes. */
-    private EvvLocationRequest gpsRequestWithValidCoords() {
+    private EvvLocationRequest gpsRequestWithValidCoords() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
                 .lat(new BigDecimal("38.9072"))
                 .lng(new BigDecimal("-77.0369"))
@@ -68,7 +74,7 @@ class EvvLocationControllerTest {
         // ── happy path: PATIENT_ADDRESS (no coords required) ─────────────────
 
         @Test
-        void returns200_whenPatientAddressType() {
+        void returns200_whenPatientAddressType() throws Exception {
             EvvLocationRequest request = patientAddressRequest();
             when(locationService.saveLocation(request)).thenReturn(new EvvLocationResponse());
 
@@ -78,7 +84,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returnsServiceResult_whenPatientAddressType() {
+        void returnsServiceResult_whenPatientAddressType() throws Exception {
             EvvLocationRequest request = patientAddressRequest();
             EvvLocationResponse locationResponse = EvvLocationResponse.builder()
                     .evvRecordId(EVV_RECORD_ID)
@@ -92,7 +98,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithRequest_whenPatientAddressType() {
+        void callsServiceWithRequest_whenPatientAddressType() throws Exception {
             EvvLocationRequest request = patientAddressRequest();
             when(locationService.saveLocation(request)).thenReturn(new EvvLocationResponse());
 
@@ -104,7 +110,7 @@ class EvvLocationControllerTest {
         // ── happy path: GPS with valid coords ────────────────────────────────
 
         @Test
-        void returns200_whenGpsTypeWithValidCoords() {
+        void returns200_whenGpsTypeWithValidCoords() throws Exception {
             EvvLocationRequest request = gpsRequestWithValidCoords();
             when(locationService.saveLocation(request)).thenReturn(new EvvLocationResponse());
 
@@ -114,7 +120,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithRequest_whenGpsTypeWithValidCoords() {
+        void callsServiceWithRequest_whenGpsTypeWithValidCoords() throws Exception {
             EvvLocationRequest request = gpsRequestWithValidCoords();
             when(locationService.saveLocation(request)).thenReturn(new EvvLocationResponse());
 
@@ -128,7 +134,7 @@ class EvvLocationControllerTest {
         // there is no try-catch in the controller, so the exception propagates.
 
         @Test
-        void throwsIllegalArgumentException_whenGpsTypeAndCoordsIsNull() {
+        void throwsIllegalArgumentException_whenGpsTypeAndCoordsIsNull() throws Exception {
             EvvLocationRequest request = EvvLocationRequest.builder()
                     .evvRecordId(EVV_RECORD_ID)
                     .role(EvvLocationRole.CHECK_IN)
@@ -142,7 +148,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void throwsIllegalArgumentException_whenGpsTypeAndLatIsNull() {
+        void throwsIllegalArgumentException_whenGpsTypeAndLatIsNull() throws Exception {
             EvvLocationRequest.CoordinatesDto noLat = EvvLocationRequest.CoordinatesDto.builder()
                     .lat(null)
                     .lng(new BigDecimal("-77.0369"))
@@ -160,7 +166,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void throwsIllegalArgumentException_whenGpsTypeAndLngIsNull() {
+        void throwsIllegalArgumentException_whenGpsTypeAndLngIsNull() throws Exception {
             EvvLocationRequest.CoordinatesDto noLng = EvvLocationRequest.CoordinatesDto.builder()
                     .lat(new BigDecimal("38.9072"))
                     .lng(null)
@@ -178,7 +184,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void doesNotCallService_whenValidationFails() {
+        void doesNotCallService_whenValidationFails() throws Exception {
             EvvLocationRequest request = EvvLocationRequest.builder()
                     .evvRecordId(EVV_RECORD_ID)
                     .role(EvvLocationRole.CHECK_IN)
@@ -198,7 +204,7 @@ class EvvLocationControllerTest {
     class GetLocationsForRecord {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             when(locationService.getLocationsForRecord(EVV_RECORD_ID)).thenReturn(List.of());
 
             ResponseEntity<List<EvvLocationResponse>> response =
@@ -208,7 +214,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returnsListFromService() {
+        void returnsListFromService() throws Exception {
             EvvLocationResponse loc = new EvvLocationResponse();
             when(locationService.getLocationsForRecord(EVV_RECORD_ID)).thenReturn(List.of(loc));
 
@@ -219,7 +225,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returnsEmptyList_whenNoLocationsExist() {
+        void returnsEmptyList_whenNoLocationsExist() throws Exception {
             when(locationService.getLocationsForRecord(EVV_RECORD_ID)).thenReturn(List.of());
 
             ResponseEntity<List<EvvLocationResponse>> response =
@@ -229,7 +235,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithEvvRecordId() {
+        void callsServiceWithEvvRecordId() throws Exception {
             when(locationService.getLocationsForRecord(EVV_RECORD_ID)).thenReturn(List.of());
 
             controller.getLocationsForRecord(EVV_RECORD_ID);
@@ -244,7 +250,7 @@ class EvvLocationControllerTest {
     class GetLocationByRole {
 
         @Test
-        void returns200_forCheckIn() {
+        void returns200_forCheckIn() throws Exception {
             when(locationService.getLocationByRole(EVV_RECORD_ID, EvvLocationRole.CHECK_IN))
                     .thenReturn(new EvvLocationResponse());
 
@@ -255,7 +261,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returns200_forCheckOut() {
+        void returns200_forCheckOut() throws Exception {
             when(locationService.getLocationByRole(EVV_RECORD_ID, EvvLocationRole.CHECK_OUT))
                     .thenReturn(new EvvLocationResponse());
 
@@ -266,7 +272,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returnsServiceResult_forCheckIn() {
+        void returnsServiceResult_forCheckIn() throws Exception {
             EvvLocationResponse locationResponse = EvvLocationResponse.builder()
                     .evvRecordId(EVV_RECORD_ID)
                     .role(EvvLocationRole.CHECK_IN)
@@ -281,7 +287,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returnsServiceResult_forCheckOut() {
+        void returnsServiceResult_forCheckOut() throws Exception {
             EvvLocationResponse locationResponse = EvvLocationResponse.builder()
                     .evvRecordId(EVV_RECORD_ID)
                     .role(EvvLocationRole.CHECK_OUT)
@@ -296,7 +302,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithCorrectArguments_forCheckIn() {
+        void callsServiceWithCorrectArguments_forCheckIn() throws Exception {
             when(locationService.getLocationByRole(EVV_RECORD_ID, EvvLocationRole.CHECK_IN))
                     .thenReturn(new EvvLocationResponse());
 
@@ -306,7 +312,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithCorrectArguments_forCheckOut() {
+        void callsServiceWithCorrectArguments_forCheckOut() throws Exception {
             when(locationService.getLocationByRole(EVV_RECORD_ID, EvvLocationRole.CHECK_OUT))
                     .thenReturn(new EvvLocationResponse());
 
@@ -322,7 +328,7 @@ class EvvLocationControllerTest {
     class DeleteLocation {
 
         @Test
-        void returns204NoContent_forCheckIn() {
+        void returns204NoContent_forCheckIn() throws Exception {
             ResponseEntity<Void> response =
                     controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_IN);
 
@@ -330,7 +336,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void returns204NoContent_forCheckOut() {
+        void returns204NoContent_forCheckOut() throws Exception {
             ResponseEntity<Void> response =
                     controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_OUT);
 
@@ -338,7 +344,7 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void bodyIsNull() {
+        void bodyIsNull() throws Exception {
             ResponseEntity<Void> response =
                     controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_IN);
 
@@ -346,21 +352,21 @@ class EvvLocationControllerTest {
         }
 
         @Test
-        void callsServiceWithCorrectArguments_forCheckIn() {
+        void callsServiceWithCorrectArguments_forCheckIn() throws Exception {
             controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_IN);
 
             verify(locationService).deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_IN);
         }
 
         @Test
-        void callsServiceWithCorrectArguments_forCheckOut() {
+        void callsServiceWithCorrectArguments_forCheckOut() throws Exception {
             controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_OUT);
 
             verify(locationService).deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_OUT);
         }
 
         @Test
-        void callsServiceExactlyOnce() {
+        void callsServiceExactlyOnce() throws Exception {
             controller.deleteLocation(EVV_RECORD_ID, EvvLocationRole.CHECK_IN);
 
             verify(locationService, times(1)).deleteLocation(any(), any());
