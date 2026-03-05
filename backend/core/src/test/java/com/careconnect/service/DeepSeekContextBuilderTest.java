@@ -33,7 +33,7 @@ class DeepSeekContextBuilderTest {
                     .withZone(ZoneId.systemDefault());
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         builder = new DeepSeekContextBuilder();
     }
 
@@ -47,21 +47,21 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildAllergyContext_nullList_returnsNoKnownAllergies")
-        void buildAllergyContext_nullList_returnsNoKnownAllergies() {
+        void buildAllergyContext_nullList_returnsNoKnownAllergies() throws Exception {
             String result = builder.buildAllergyContext(1L, null);
             assertThat(result).isEqualTo("The patient has no known recorded drug allergies.");
         }
 
         @Test
         @DisplayName("buildAllergyContext_emptyList_returnsNoKnownAllergies")
-        void buildAllergyContext_emptyList_returnsNoKnownAllergies() {
+        void buildAllergyContext_emptyList_returnsNoKnownAllergies() throws Exception {
             String result = builder.buildAllergyContext(1L, Collections.emptyList());
             assertThat(result).isEqualTo("The patient has no known recorded drug allergies.");
         }
 
         @Test
         @DisplayName("buildAllergyContext_singleAllergy_returnsFormattedContext")
-        void buildAllergyContext_singleAllergy_returnsFormattedContext() {
+        void buildAllergyContext_singleAllergy_returnsFormattedContext() throws Exception {
             Allergy allergy = Allergy.builder()
                     .allergen("Penicillin")
                     .allergyType(AllergyType.MEDICATION)
@@ -83,7 +83,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildAllergyContext_multipleAllergies_returnsAllEntriesFormatted")
-        void buildAllergyContext_multipleAllergies_returnsAllEntriesFormatted() {
+        void buildAllergyContext_multipleAllergies_returnsAllEntriesFormatted() throws Exception {
             Allergy allergy1 = Allergy.builder()
                     .allergen("Penicillin")
                     .allergyType(AllergyType.MEDICATION)
@@ -114,7 +114,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildAllergyContext_nullFields_returnsNullStringsInOutput")
-        void buildAllergyContext_nullFields_returnsNullStringsInOutput() {
+        void buildAllergyContext_nullFields_returnsNullStringsInOutput() throws Exception {
             Allergy allergy = Allergy.builder()
                     .allergen(null)
                     .allergyType(null)
@@ -135,7 +135,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildAllergyContext_nullPatientId_stillBuildsContext")
-        void buildAllergyContext_nullPatientId_stillBuildsContext() {
+        void buildAllergyContext_nullPatientId_stillBuildsContext() throws Exception {
             Allergy allergy = Allergy.builder()
                     .allergen("Dust")
                     .allergyType(AllergyType.ENVIRONMENTAL)
@@ -160,21 +160,21 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullList_returnsNoSymptomEntries")
-        void buildSymptomContext_nullList_returnsNoSymptomEntries() {
+        void buildSymptomContext_nullList_returnsNoSymptomEntries() throws Exception {
             String result = builder.buildSymptomContext(1L, null);
             assertThat(result).isEqualTo("No prior symptom entries on record.");
         }
 
         @Test
         @DisplayName("buildSymptomContext_emptyList_returnsNoSymptomEntries")
-        void buildSymptomContext_emptyList_returnsNoSymptomEntries() {
+        void buildSymptomContext_emptyList_returnsNoSymptomEntries() throws Exception {
             String result = builder.buildSymptomContext(1L, Collections.emptyList());
             assertThat(result).isEqualTo("No prior symptom entries on record.");
         }
 
         @Test
         @DisplayName("buildSymptomContext_singleSymptom_returnsFormattedContext")
-        void buildSymptomContext_singleSymptom_returnsFormattedContext() {
+        void buildSymptomContext_singleSymptom_returnsFormattedContext() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("headache")
@@ -198,7 +198,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_multipleSymptoms_returnsAllEntriesFormatted")
-        void buildSymptomContext_multipleSymptoms_returnsAllEntriesFormatted() {
+        void buildSymptomContext_multipleSymptoms_returnsAllEntriesFormatted() throws Exception {
             Instant t1 = Instant.parse("2025-01-15T10:30:00Z");
             Instant t2 = Instant.parse("2025-01-16T14:00:00Z");
 
@@ -230,7 +230,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullSymptomKey_returnsEmptyString")
-        void buildSymptomContext_nullSymptomKey_returnsEmptyString() {
+        void buildSymptomContext_nullSymptomKey_returnsEmptyString() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey(null)
@@ -249,7 +249,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullSymptomValue_returnsEmptyString")
-        void buildSymptomContext_nullSymptomValue_returnsEmptyString() {
+        void buildSymptomContext_nullSymptomValue_returnsEmptyString() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("fever")
@@ -267,7 +267,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullSeverity_returnsEmptyStringForSeverity")
-        void buildSymptomContext_nullSeverity_returnsEmptyStringForSeverity() {
+        void buildSymptomContext_nullSeverity_returnsEmptyStringForSeverity() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("nausea")
@@ -285,7 +285,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullCompleted_returnsFalse")
-        void buildSymptomContext_nullCompleted_returnsFalse() {
+        void buildSymptomContext_nullCompleted_returnsFalse() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("fatigue")
@@ -303,7 +303,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_completedFalse_returnsFalse")
-        void buildSymptomContext_completedFalse_returnsFalse() {
+        void buildSymptomContext_completedFalse_returnsFalse() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("dizziness")
@@ -320,7 +320,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_nullPatientId_stillBuildsContext")
-        void buildSymptomContext_nullPatientId_stillBuildsContext() {
+        void buildSymptomContext_nullPatientId_stillBuildsContext() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("cough")
@@ -337,7 +337,7 @@ class DeepSeekContextBuilderTest {
 
         @Test
         @DisplayName("buildSymptomContext_allFieldsNull_handlesGracefully")
-        void buildSymptomContext_allFieldsNull_handlesGracefully() {
+        void buildSymptomContext_allFieldsNull_handlesGracefully() throws Exception {
             Instant now = Instant.now();
             SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey(null)
