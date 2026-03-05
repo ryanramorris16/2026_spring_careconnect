@@ -3,7 +3,9 @@ package com.careconnect.controller;
 import com.careconnect.dto.PatientNoteDTO;
 import com.careconnect.dto.PatientNotetakerConfigDTO;
 import com.careconnect.exception.AppException;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.PatientNotetakerService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,20 +25,25 @@ class PatientNotetakerControllerTest {
     @Mock
     private PatientNotetakerService patientNotetakerService;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private PatientNotetakerController controller;
 
     private static final Long PATIENT_ID = 1L;
     private static final Long NOTE_ID    = 10L;
 
-    private PatientNotetakerConfigDTO configDTO() {
+    private PatientNotetakerConfigDTO configDTO() throws Exception {
         PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
         dto.setPatientId(PATIENT_ID);
         dto.setIsEnabled(true);
         return dto;
     }
 
-    private PatientNoteDTO noteDTO() {
+    private PatientNoteDTO noteDTO() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO();
         dto.setPatientId(PATIENT_ID);
         dto.setNote("Test note content");
@@ -46,7 +53,7 @@ class PatientNotetakerControllerTest {
     // ─── getPatientNoteTakerConfig ────────────────────────────────────────────
 
     @Test
-    void getPatientNoteTakerConfig_success_returnsOkWithConfig() {
+    void getPatientNoteTakerConfig_success_returnsOkWithConfig() throws Exception {
         PatientNotetakerConfigDTO config = configDTO();
         when(patientNotetakerService.getNotetakerConfigByPatientId(PATIENT_ID)).thenReturn(config);
 
@@ -58,7 +65,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void getPatientNoteTakerConfig_appException_returnsInternalServerError() {
+    void getPatientNoteTakerConfig_appException_returnsInternalServerError() throws Exception {
         when(patientNotetakerService.getNotetakerConfigByPatientId(PATIENT_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
@@ -71,7 +78,7 @@ class PatientNotetakerControllerTest {
     // ─── updatePatientNoteTakerConfig ─────────────────────────────────────────
 
     @Test
-    void updatePatientNoteTakerConfig_success_returnsOkWithUpdatedConfig() {
+    void updatePatientNoteTakerConfig_success_returnsOkWithUpdatedConfig() throws Exception {
         PatientNotetakerConfigDTO input   = configDTO();
         PatientNotetakerConfigDTO updated = configDTO();
         when(patientNotetakerService.createOrUpdatePatientNotetakerConfig(PATIENT_ID, input)).thenReturn(updated);
@@ -84,7 +91,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void updatePatientNoteTakerConfig_appException_returnsInternalServerError() {
+    void updatePatientNoteTakerConfig_appException_returnsInternalServerError() throws Exception {
         PatientNotetakerConfigDTO input = configDTO();
         when(patientNotetakerService.createOrUpdatePatientNotetakerConfig(PATIENT_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
@@ -98,7 +105,7 @@ class PatientNotetakerControllerTest {
     // ─── createPatientNote ────────────────────────────────────────────────────
 
     @Test
-    void createPatientNote_success_returnsCreatedWithNote() {
+    void createPatientNote_success_returnsCreatedWithNote() throws Exception {
         PatientNoteDTO input   = noteDTO();
         PatientNoteDTO created = noteDTO();
         when(patientNotetakerService.createNoteForPatient(PATIENT_ID, input)).thenReturn(created);
@@ -111,7 +118,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void createPatientNote_appException_returnsInternalServerError() {
+    void createPatientNote_appException_returnsInternalServerError() throws Exception {
         PatientNoteDTO input = noteDTO();
         when(patientNotetakerService.createNoteForPatient(PATIENT_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
@@ -125,7 +132,7 @@ class PatientNotetakerControllerTest {
     // ─── updatePatientNote ────────────────────────────────────────────────────
 
     @Test
-    void updatePatientNote_success_returnsOkWithUpdatedNote() {
+    void updatePatientNote_success_returnsOkWithUpdatedNote() throws Exception {
         PatientNoteDTO input   = noteDTO();
         PatientNoteDTO updated = noteDTO();
         when(patientNotetakerService.updateNoteForPatient(PATIENT_ID, NOTE_ID, input)).thenReturn(updated);
@@ -138,7 +145,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void updatePatientNote_appException_returnsInternalServerError() {
+    void updatePatientNote_appException_returnsInternalServerError() throws Exception {
         PatientNoteDTO input = noteDTO();
         when(patientNotetakerService.updateNoteForPatient(PATIENT_ID, NOTE_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
@@ -152,7 +159,7 @@ class PatientNotetakerControllerTest {
     // ─── getPatientNote ───────────────────────────────────────────────────────
 
     @Test
-    void getPatientNote_success_returnsOkWithNote() {
+    void getPatientNote_success_returnsOkWithNote() throws Exception {
         PatientNoteDTO note = noteDTO();
         when(patientNotetakerService.getNoteById(PATIENT_ID, NOTE_ID)).thenReturn(note);
 
@@ -164,7 +171,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void getPatientNote_appException_returnsInternalServerError() {
+    void getPatientNote_appException_returnsInternalServerError() throws Exception {
         when(patientNotetakerService.getNoteById(PATIENT_ID, NOTE_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
@@ -177,7 +184,7 @@ class PatientNotetakerControllerTest {
     // ─── getAllNotesForPatient ─────────────────────────────────────────────────
 
     @Test
-    void getAllNotesForPatient_success_returnsOkWithNoteList() {
+    void getAllNotesForPatient_success_returnsOkWithNoteList() throws Exception {
         List<PatientNoteDTO> notes = List.of(noteDTO(), noteDTO());
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID)).thenReturn(notes);
 
@@ -189,7 +196,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void getAllNotesForPatient_emptyList_returnsOkWithEmptyBody() {
+    void getAllNotesForPatient_emptyList_returnsOkWithEmptyBody() throws Exception {
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID)).thenReturn(List.of());
 
         ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
@@ -199,7 +206,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void getAllNotesForPatient_appException_returnsInternalServerError() {
+    void getAllNotesForPatient_appException_returnsInternalServerError() throws Exception {
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
@@ -212,7 +219,7 @@ class PatientNotetakerControllerTest {
     // ─── deletePatientNote ────────────────────────────────────────────────────
 
     @Test
-    void deletePatientNote_success_returnsNoContent() {
+    void deletePatientNote_success_returnsNoContent() throws Exception {
         doNothing().when(patientNotetakerService).deleteNoteById(NOTE_ID);
 
         ResponseEntity<Void> response = controller.deletePatientNote(PATIENT_ID, NOTE_ID);
@@ -222,7 +229,7 @@ class PatientNotetakerControllerTest {
     }
 
     @Test
-    void deletePatientNote_appException_returnsInternalServerError() {
+    void deletePatientNote_appException_returnsInternalServerError() throws Exception {
         doThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"))
                 .when(patientNotetakerService).deleteNoteById(NOTE_ID);
 
