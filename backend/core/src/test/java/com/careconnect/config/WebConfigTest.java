@@ -33,7 +33,7 @@ class WebConfigTest {
 
     @SuppressWarnings("unchecked")
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Build the configurer bean and drive addCorsMappings() to populate a real
         // CorsRegistry, then extract the resulting CorsConfiguration for "/**"
         // using ReflectionTestUtils because getCorsConfigurations() is package-private.
@@ -49,20 +49,20 @@ class WebConfigTest {
     }
 
     @Test
-    void corsConfigurer_IsNotNull() {
+    void corsConfigurer_IsNotNull() throws Exception {
         // Verifies that corsConfigurer() returns a non-null WebMvcConfigurer bean.
         assertNotNull(corsConfigurer);
     }
 
     @Test
-    void corsConfigurer_MapsAllPaths() {
+    void corsConfigurer_MapsAllPaths() throws Exception {
         // Verifies that a CORS configuration is registered under the "/**" wildcard,
         // meaning all application paths are subject to the CORS policy.
         assertNotNull(config, "Expected CORS configuration for '/**' path mapping");
     }
 
     @Test
-    void corsConfigurer_HasCorrectAllowedOrigins() {
+    void corsConfigurer_HasCorrectAllowedOrigins() throws Exception {
         // Verifies that the five explicit localhost origins (covering common dev ports
         // and both hostname variants) are all present in the allowed-origins list.
         List<String> expected = List.of(
@@ -76,7 +76,7 @@ class WebConfigTest {
     }
 
     @Test
-    void corsConfigurer_HasCorrectAllowedOriginPatterns() {
+    void corsConfigurer_HasCorrectAllowedOriginPatterns() throws Exception {
         // Verifies that wildcard port patterns are registered in addition to the
         // explicit origins, allowing any port on localhost or 127.0.0.1 (e.g. for
         // dev servers that pick a random port).
@@ -88,7 +88,7 @@ class WebConfigTest {
     }
 
     @Test
-    void corsConfigurer_AllowsCorrectMethods() {
+    void corsConfigurer_AllowsCorrectMethods() throws Exception {
         // Verifies that the standard RESTful HTTP methods plus OPTIONS (for browser
         // preflight requests) are all permitted by the CORS policy.
         List<String> methods = config.getAllowedMethods();
@@ -98,7 +98,7 @@ class WebConfigTest {
     }
 
     @Test
-    void corsConfigurer_AllowsCredentials() {
+    void corsConfigurer_AllowsCredentials() throws Exception {
         // Verifies that credentialed requests (carrying cookies or Authorization headers)
         // are permitted, which is required for JWT cookie-based authentication.
         assertTrue(config.getAllowCredentials());
