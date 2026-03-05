@@ -1,7 +1,9 @@
 package com.careconnect.controller;
 
 import com.careconnect.dto.NotificationSettingDTO;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.NotificationSettingService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +21,9 @@ import static org.mockito.Mockito.*;
 class NotificationSettingControllerTest {
 
     @Mock private NotificationSettingService notificationSettingService;
+
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private NotificationSettingController controller;
@@ -43,7 +48,7 @@ class NotificationSettingControllerTest {
     // ─── getSettings ──────────────────────────────────────────────────────────
 
     @Test
-    void getSettings_returns200_withDto() {
+    void getSettings_returns200_withDto() throws Exception {
         NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
@@ -54,7 +59,7 @@ class NotificationSettingControllerTest {
     }
 
     @Test
-    void getSettings_returns200_withAllFieldsIntact() {
+    void getSettings_returns200_withAllFieldsIntact() throws Exception {
         NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
@@ -69,7 +74,7 @@ class NotificationSettingControllerTest {
     }
 
     @Test
-    void getSettings_delegatesToServiceWithCorrectUserId() {
+    void getSettings_delegatesToServiceWithCorrectUserId() throws Exception {
         NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
@@ -81,7 +86,7 @@ class NotificationSettingControllerTest {
     // ─── createOrUpdate ───────────────────────────────────────────────────────
 
     @Test
-    void createOrUpdate_returns200_withSavedDto() {
+    void createOrUpdate_returns200_withSavedDto() throws Exception {
         NotificationSettingDTO input = makeDto(USER_ID);
         NotificationSettingDTO saved = makeDto(USER_ID);
         when(notificationSettingService.createOrUpdate(input)).thenReturn(saved);
@@ -93,7 +98,7 @@ class NotificationSettingControllerTest {
     }
 
     @Test
-    void createOrUpdate_delegatesToServiceWithInput() {
+    void createOrUpdate_delegatesToServiceWithInput() throws Exception {
         NotificationSettingDTO input = makeDto(USER_ID);
         when(notificationSettingService.createOrUpdate(input)).thenReturn(input);
 
@@ -103,7 +108,7 @@ class NotificationSettingControllerTest {
     }
 
     @Test
-    void createOrUpdate_withAllFalseSettings_returns200() {
+    void createOrUpdate_withAllFalseSettings_returns200() throws Exception {
         NotificationSettingDTO allFalse = NotificationSettingDTO.builder()
                 .id(null)
                 .userId(USER_ID)
