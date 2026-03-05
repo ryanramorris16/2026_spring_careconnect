@@ -47,7 +47,7 @@ class EvvLocationServiceTest {
     // =========== saveLocation tests ===========
 
     @Test
-    void saveLocation_evvRecordNotFound_throwsAppException() {
+    void saveLocation_evvRecordNotFound_throwsAppException() throws Exception {
         EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(99L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -66,7 +66,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void saveLocation_GPS_withCoords_newLocation_savesAndReturnsResponse() {
+    void saveLocation_GPS_withCoords_newLocation_savesAndReturnsResponse() throws Exception {
         EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
@@ -119,7 +119,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void saveLocation_GPS_withCoords_existingLocation_updatesAndReturnsResponse() {
+    void saveLocation_GPS_withCoords_existingLocation_updatesAndReturnsResponse() throws Exception {
         EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
@@ -177,7 +177,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void saveLocation_PATIENT_ADDRESS_patientNull_throwsAppException() {
+    void saveLocation_PATIENT_ADDRESS_patientNull_throwsAppException() throws Exception {
         EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
@@ -209,7 +209,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void saveLocation_PATIENT_ADDRESS_patientAddressNull_throwsAppException() {
+    void saveLocation_PATIENT_ADDRESS_patientAddressNull_throwsAppException() throws Exception {
         Patient patient = Patient.builder()
                 .id(5L)
                 .firstName("Jane")
@@ -248,7 +248,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void saveLocation_PATIENT_ADDRESS_withAddress_savesAndReturnsResponse() {
+    void saveLocation_PATIENT_ADDRESS_withAddress_savesAndReturnsResponse() throws Exception {
         Address address = Address.builder()
                 .line1("123 Main St")
                 .line2("Apt 4")
@@ -309,7 +309,7 @@ class EvvLocationServiceTest {
     // =========== getLocationsForRecord tests ===========
 
     @Test
-    void getLocationsForRecord_recordNotFound_throwsAppException() {
+    void getLocationsForRecord_recordNotFound_throwsAppException() throws Exception {
         when(evvRecordRepository.existsById(99L)).thenReturn(false);
 
         assertThatThrownBy(() -> evvLocationService.getLocationsForRecord(99L))
@@ -318,7 +318,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void getLocationsForRecord_found_returnsMappedList() {
+    void getLocationsForRecord_found_returnsMappedList() throws Exception {
         when(evvRecordRepository.existsById(1L)).thenReturn(true);
 
         EvvRecordLocation location = EvvRecordLocation.builder()
@@ -342,7 +342,7 @@ class EvvLocationServiceTest {
     // =========== getLocationByRole tests ===========
 
     @Test
-    void getLocationByRole_notFound_throwsAppException() {
+    void getLocationByRole_notFound_throwsAppException() throws Exception {
         when(locationRepository.findByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_IN))
                 .thenReturn(Optional.empty());
 
@@ -352,7 +352,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void getLocationByRole_found_returnsResponse() {
+    void getLocationByRole_found_returnsResponse() throws Exception {
         EvvRecordLocation location = EvvRecordLocation.builder()
                 .id(UUID.randomUUID())
                 .evvRecordId(1L)
@@ -376,7 +376,7 @@ class EvvLocationServiceTest {
     // =========== deleteLocation tests ===========
 
     @Test
-    void deleteLocation_notFound_throwsAppException() {
+    void deleteLocation_notFound_throwsAppException() throws Exception {
         when(locationRepository.existsByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_OUT))
                 .thenReturn(false);
 
@@ -386,7 +386,7 @@ class EvvLocationServiceTest {
     }
 
     @Test
-    void deleteLocation_found_deletesSuccessfully() {
+    void deleteLocation_found_deletesSuccessfully() throws Exception {
         when(locationRepository.existsByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_OUT))
                 .thenReturn(true);
         doNothing().when(locationRepository).deleteByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_OUT);
