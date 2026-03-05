@@ -10,7 +10,7 @@ class PatientNotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor with Long formats message with patientId")
-    void longConstructor_formatsMessage() {
+    void longConstructor_formatsMessage() throws Exception {
         PatientNotFoundException ex = new PatientNotFoundException(99L);
         assertEquals("Patient not found: id=99", ex.getMessage());
         assertInstanceOf(NotFoundException.class, ex);
@@ -18,7 +18,7 @@ class PatientNotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor with String sets custom message")
-    void stringConstructor_setsMessage() {
+    void stringConstructor_setsMessage() throws Exception {
         PatientNotFoundException ex = new PatientNotFoundException("custom msg");
         assertEquals("custom msg", ex.getMessage());
     }
