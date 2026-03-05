@@ -9,7 +9,7 @@ class RecommendedActionTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         RecommendedAction action = new RecommendedAction();
 
         assertThat(action).isNotNull();
@@ -21,7 +21,7 @@ class RecommendedActionTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Invoice invoice = Invoice.builder().id("INV-001").build();
 
         RecommendedAction action = new RecommendedAction(1L, invoice, "Review billing codes");
@@ -34,7 +34,7 @@ class RecommendedActionTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         RecommendedAction action = new RecommendedAction();
         Invoice invoice = Invoice.builder().id("INV-002").build();
 
@@ -50,7 +50,7 @@ class RecommendedActionTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
         RecommendedAction a2 = new RecommendedAction(1L, null, "Action A");
 
@@ -59,7 +59,7 @@ class RecommendedActionTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
         RecommendedAction a2 = new RecommendedAction(2L, null, "Action B");
 
@@ -67,13 +67,13 @@ class RecommendedActionTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         RecommendedAction action = new RecommendedAction();
         assertThat(action).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         RecommendedAction action = new RecommendedAction();
         assertThat(action).isNotEqualTo("a string");
     }
