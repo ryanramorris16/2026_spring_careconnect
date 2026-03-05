@@ -3,8 +3,10 @@ package com.careconnect.controller;
 import com.careconnect.dto.*;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
 import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.util.SecurityUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +44,14 @@ class CaregiverPatientLinkControllerTest {
     @MockBean
     private UserRepository userRepository;
 
+    @MockBean
+    private SecurityUtil securityUtil;
+
+    @MockBean
+    private AuthorizationService authorizationService;
+
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
