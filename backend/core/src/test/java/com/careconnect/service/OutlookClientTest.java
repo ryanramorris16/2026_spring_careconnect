@@ -17,7 +17,7 @@ class OutlookClientTest {
     private OutlookClient client;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         client = new OutlookClient();
     }
@@ -26,7 +26,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchLatestDigest_anyToken_returnsEmpty")
-    void fetchLatestDigest_anyToken_returnsEmpty() {
+    void fetchLatestDigest_anyToken_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("some-access-token");
 
         assertTrue(result.isEmpty(), "stub should return Optional.empty()");
@@ -34,7 +34,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchLatestDigest_nullToken_returnsEmpty")
-    void fetchLatestDigest_nullToken_returnsEmpty() {
+    void fetchLatestDigest_nullToken_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest(null);
 
         assertTrue(result.isEmpty());
@@ -42,7 +42,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchLatestDigest_blankToken_returnsEmpty")
-    void fetchLatestDigest_blankToken_returnsEmpty() {
+    void fetchLatestDigest_blankToken_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("");
 
         assertTrue(result.isEmpty());
@@ -52,7 +52,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchDigestForDate_anyTokenAndDate_returnsEmpty")
-    void fetchDigestForDate_anyTokenAndDate_returnsEmpty() {
+    void fetchDigestForDate_anyTokenAndDate_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate("token-123", LocalDate.of(2026, 2, 27));
 
@@ -61,7 +61,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchDigestForDate_nullToken_returnsEmpty")
-    void fetchDigestForDate_nullToken_returnsEmpty() {
+    void fetchDigestForDate_nullToken_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate(null, LocalDate.of(2026, 1, 15));
 
@@ -70,7 +70,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchDigestForDate_nullDate_returnsEmpty")
-    void fetchDigestForDate_nullDate_returnsEmpty() {
+    void fetchDigestForDate_nullDate_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate("token", null);
 
@@ -79,7 +79,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("fetchDigestForDate_bothNull_returnsEmpty")
-    void fetchDigestForDate_bothNull_returnsEmpty() {
+    void fetchDigestForDate_bothNull_returnsEmpty() throws Exception {
         Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate(null, null);
 
@@ -90,7 +90,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_constructor_storesAllFields")
-    void outlookRaw_constructor_storesAllFields() {
+    void outlookRaw_constructor_storesAllFields() throws Exception {
         Instant now = Instant.now();
         Map<String, String> cids = Map.of("cid1", "data:image/png;base64,abc");
 
@@ -103,7 +103,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_nullFields_returnsNulls")
-    void outlookRaw_nullFields_returnsNulls() {
+    void outlookRaw_nullFields_returnsNulls() throws Exception {
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(null, null, null);
 
         assertNull(raw.html());
@@ -113,7 +113,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_emptyValues_returnsEmptyValues")
-    void outlookRaw_emptyValues_returnsEmptyValues() {
+    void outlookRaw_emptyValues_returnsEmptyValues() throws Exception {
         Instant now = Instant.parse("2026-02-27T12:00:00Z");
         Map<String, String> emptyCids = Map.of();
 
@@ -126,7 +126,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_identicalRecords_areEqual")
-    void outlookRaw_identicalRecords_areEqual() {
+    void outlookRaw_identicalRecords_areEqual() throws Exception {
         Instant now = Instant.parse("2026-01-01T00:00:00Z");
         Map<String, String> cids = Map.of("k", "v");
 
@@ -139,7 +139,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_differentRecords_notEqual")
-    void outlookRaw_differentRecords_notEqual() {
+    void outlookRaw_differentRecords_notEqual() throws Exception {
         Instant now = Instant.now();
 
         OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html1", Map.of(), now);
@@ -150,7 +150,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_toString_containsFieldValues")
-    void outlookRaw_toString_containsFieldValues() {
+    void outlookRaw_toString_containsFieldValues() throws Exception {
         Instant now = Instant.parse("2026-02-27T10:00:00Z");
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("<b>test</b>", Map.of(), now);
 
@@ -161,7 +161,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_differentCidMaps_notEqual")
-    void outlookRaw_differentCidMaps_notEqual() {
+    void outlookRaw_differentCidMaps_notEqual() throws Exception {
         Instant now = Instant.now();
         OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", Map.of("k", "v1"), now);
         OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", Map.of("k", "v2"), now);
@@ -171,7 +171,7 @@ class OutlookClientTest {
 
     @Test
     @DisplayName("outlookRaw_differentReceivedInstant_notEqual")
-    void outlookRaw_differentReceivedInstant_notEqual() {
+    void outlookRaw_differentReceivedInstant_notEqual() throws Exception {
         Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
         Instant t2 = Instant.parse("2026-01-02T00:00:00Z");
 
