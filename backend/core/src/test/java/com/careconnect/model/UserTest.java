@@ -13,7 +13,7 @@ class UserTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         User user = new User();
 
         assertThat(user).isNotNull();
@@ -30,7 +30,7 @@ class UserTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults() {
+    void builder_defaults() throws Exception {
         User user = User.builder()
                 .email("test@example.com")
                 .password("pass")
@@ -46,7 +46,7 @@ class UserTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         LocalDate today = LocalDate.now();
 
@@ -87,7 +87,7 @@ class UserTest {
     // ─── isActive() ───────────────────────────────────────────────────────────
 
     @Test
-    void isActive_activeStatus_returnsTrue() {
+    void isActive_activeStatus_returnsTrue() throws Exception {
         User user = new User();
         user.setStatus("ACTIVE");
 
@@ -95,7 +95,7 @@ class UserTest {
     }
 
     @Test
-    void isActive_inactiveStatus_returnsFalse() {
+    void isActive_inactiveStatus_returnsFalse() throws Exception {
         User user = new User();
         user.setStatus("INACTIVE");
 
@@ -103,7 +103,7 @@ class UserTest {
     }
 
     @Test
-    void isActive_caseInsensitive_returnsTrue() {
+    void isActive_caseInsensitive_returnsTrue() throws Exception {
         User user = new User();
         user.setStatus("active");
 
@@ -113,7 +113,7 @@ class UserTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         User user = new User();
 
         user.setId(2L);
