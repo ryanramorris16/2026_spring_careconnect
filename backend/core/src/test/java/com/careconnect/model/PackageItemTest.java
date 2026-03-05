@@ -12,7 +12,7 @@ class PackageItemTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PackageItem item = new PackageItem();
 
         assertThat(item).isNotNull();
@@ -25,7 +25,7 @@ class PackageItemTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         OffsetDateTime deliveryDate = OffsetDateTime.of(2025, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
         ActionLinks links = ActionLinks.builder().build();
 
@@ -40,7 +40,7 @@ class PackageItemTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
 
         PackageItem item = PackageItem.builder()
@@ -57,7 +57,7 @@ class PackageItemTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PackageItem item = new PackageItem();
         OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
         ActionLinks links = new ActionLinks();
