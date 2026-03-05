@@ -5,6 +5,9 @@ import com.careconnect.model.Message;
 import com.careconnect.model.User;
 import com.careconnect.repository.MessageRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +29,8 @@ class MessageControllerTest {
 
     @Mock private MessageRepository messageRepo;
     @Mock private UserRepository userRepo;
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private MessageController controller;
@@ -54,7 +59,7 @@ class MessageControllerTest {
     // ─── sendMessage ──────────────────────────────────────────────────────────
 
     @Test
-    void sendMessage_setsTimestampAndIsRead_thenSaves() {
+    void sendMessage_setsTimestampAndIsRead_thenSaves() throws Exception {
         Message inbound = new Message();
         inbound.setSenderId(SENDER_ID);
         inbound.setReceiverId(RECEIVER_ID);
@@ -74,7 +79,9 @@ class MessageControllerTest {
     // ─── getConversation ──────────────────────────────────────────────────────
 
     @Test
-    void getConversation_returns200_withMessages() {
+    void getConversation_returns200_withMessages() throws Exception {
+        User currentUser = User.builder().id(SENDER_ID).email("sender@test.com").role(Role.PATIENT).password("p").status("ACTIVE").build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(currentUser);
         Message msg = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hi");
         when(messageRepo.findConversation(SENDER_ID, RECEIVER_ID)).thenReturn(List.of(msg));
 
@@ -85,7 +92,9 @@ class MessageControllerTest {
     }
 
     @Test
-    void getConversation_returns200_emptyConversation() {
+    void getConversation_returns200_emptyConversation() throws Exception {
+        User currentUser = User.builder().id(SENDER_ID).email("sender@test.com").role(Role.PATIENT).password("p").status("ACTIVE").build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(currentUser);
         when(messageRepo.findConversation(SENDER_ID, RECEIVER_ID)).thenReturn(List.of());
 
         ResponseEntity<List<Message>> response = controller.getConversation(SENDER_ID, RECEIVER_ID);
@@ -97,7 +106,7 @@ class MessageControllerTest {
     // ─── getInbox ─────────────────────────────────────────────────────────────
 
     @Test
-    void getInbox_noMessages_returnsEmptyList() {
+    void getInbox_noMessages_returnsEmptyList() throws Exception {
         when(messageRepo.findAllUserMessages(SENDER_ID)).thenReturn(List.of());
 
         ResponseEntity<List<InboxMessageDto>> response = controller.getInbox(SENDER_ID);
@@ -107,7 +116,7 @@ class MessageControllerTest {
     }
 
     @Test
-    void getInbox_userIsSender_peerIsReceiver() {
+    void getInbox_userIsSender_peerIsReceiver() throws Exception {
         Message msg = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hey");
         when(messageRepo.findAllUserMessages(SENDER_ID)).thenReturn(List.of(msg));
         User peer = makeUser(RECEIVER_ID, "Bob", "bob@test.com");
@@ -125,7 +134,7 @@ class MessageControllerTest {
     }
 
     @Test
-    void getInbox_userIsReceiver_peerIsSender() {
+    void getInbox_userIsReceiver_peerIsSender() throws Exception {
         Message msg = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hi from sender");
         when(messageRepo.findAllUserMessages(RECEIVER_ID)).thenReturn(List.of(msg));
         User peer = makeUser(SENDER_ID, "Alice", "alice@test.com");
@@ -140,7 +149,7 @@ class MessageControllerTest {
     }
 
     @Test
-    void getInbox_peerNotFoundInRepo_skipsEntry() {
+    void getInbox_peerNotFoundInRepo_skipsEntry() throws Exception {
         Message msg = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hello");
         when(messageRepo.findAllUserMessages(SENDER_ID)).thenReturn(List.of(msg));
         when(userRepo.findById(RECEIVER_ID)).thenReturn(Optional.empty());
@@ -152,7 +161,7 @@ class MessageControllerTest {
     }
 
     @Test
-    void getInbox_multipleMsgsFromSamePeer_onlyFirstKept() {
+    void getInbox_multipleMsgsFromSamePeer_onlyFirstKept() throws Exception {
         // Two messages from same peer — inbox should only show the most recent (first in list)
         Message msg1 = makeMessage(1L, SENDER_ID, RECEIVER_ID, "First");
         Message msg2 = makeMessage(2L, SENDER_ID, RECEIVER_ID, "Second");
@@ -168,7 +177,7 @@ class MessageControllerTest {
     }
 
     @Test
-    void getInbox_multipleDistinctPeers_allIncluded() {
+    void getInbox_multipleDistinctPeers_allIncluded() throws Exception {
         Long peer2Id = 3L;
         Message msg1 = makeMessage(1L, SENDER_ID, RECEIVER_ID, "To Peer1");
         Message msg2 = makeMessage(2L, SENDER_ID, peer2Id, "To Peer2");
