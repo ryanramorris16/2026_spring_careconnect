@@ -17,7 +17,7 @@ class CheckInTest {
     // ─── No-arg constructor / Builder defaults ────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         CheckIn checkIn = new CheckIn();
 
         assertThat(checkIn).isNotNull();
@@ -26,7 +26,7 @@ class CheckInTest {
     }
 
     @Test
-    void builder_defaults_createdAtNotNull() {
+    void builder_defaults_createdAtNotNull() throws Exception {
         CheckIn checkIn = CheckIn.builder()
                 .patient(new Patient())
                 .build();
@@ -39,7 +39,7 @@ class CheckInTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -61,7 +61,7 @@ class CheckInTest {
     // ─── addSelectedQuestion / removeSelectedQuestion ─────────────────────────
 
     @Test
-    void addSelectedQuestion_addsAndSetsReference() {
+    void addSelectedQuestion_addsAndSetsReference() throws Exception {
         CheckIn checkIn = CheckIn.builder().build();
         CheckInQuestion cq = new CheckInQuestion();
 
@@ -72,7 +72,7 @@ class CheckInTest {
     }
 
     @Test
-    void removeSelectedQuestion_removesAndNullsReference() {
+    void removeSelectedQuestion_removesAndNullsReference() throws Exception {
         CheckIn checkIn = CheckIn.builder().build();
         CheckInQuestion cq = new CheckInQuestion();
         checkIn.addSelectedQuestion(cq);
