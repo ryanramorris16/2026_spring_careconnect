@@ -28,7 +28,7 @@ class CorsFilterConfigTest {
     private CorsFilterConfig corsFilterConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         corsFilterConfig = new CorsFilterConfig();
 
         // Inject allowed origins manually (since @Value won't run without a Spring context)
@@ -40,7 +40,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfigurationSource_IsCreated() {
+    void corsConfigurationSource_IsCreated() throws Exception {
         // Verifies that corsFilter() returns a non-null UrlBasedCorsConfigurationSource,
         // which is the expected concrete type used to map CORS rules to URL patterns.
         CorsConfigurationSource source = corsFilterConfig.corsFilter();
@@ -49,7 +49,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfiguration_HasCorrectAllowedOrigins() {
+    void corsConfiguration_HasCorrectAllowedOrigins() throws Exception {
         // Verifies that the injected origins are registered as allowed origin patterns
         // on the CORS configuration mapped to "/**" (all paths).
         CorsConfigurationSource source = corsFilterConfig.corsFilter();
@@ -67,7 +67,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfiguration_AllowsCredentials() {
+    void corsConfiguration_AllowsCredentials() throws Exception {
         // Verifies that credentials (cookies, Authorization headers) are permitted,
         // which is required for JWT cookie-based authentication flows.
         UrlBasedCorsConfigurationSource source =
@@ -80,7 +80,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfiguration_AllowsAllHeaders() {
+    void corsConfiguration_AllowsAllHeaders() throws Exception {
         // Verifies that both allowedHeaders and exposedHeaders are set to "*", meaning
         // any request header is accepted and any response header is visible to the client.
         UrlBasedCorsConfigurationSource source =
@@ -94,7 +94,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfiguration_HasCorrectAllowedMethods() {
+    void corsConfiguration_HasCorrectAllowedMethods() throws Exception {
         // Verifies that the five standard HTTP methods required by the API are listed,
         // including OPTIONS which is needed for preflight CORS requests from browsers.
         UrlBasedCorsConfigurationSource source =
@@ -110,7 +110,7 @@ class CorsFilterConfigTest {
     }
 
     @Test
-    void corsConfiguration_IsRegisteredForAllPaths() {
+    void corsConfiguration_IsRegisteredForAllPaths() throws Exception {
         // Verifies that the CORS policy is applied globally (mapped to "/**"),
         // ensuring no endpoint is inadvertently left without CORS protection.
         UrlBasedCorsConfigurationSource source =
