@@ -48,22 +48,22 @@ class InvoiceSpecsTest {
     // ─── search() ────────────────────────────────────────────────────────────
 
     @Test
-    void search_null_returnsNull() {
+    void search_null_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.search(null)).isNull();
     }
 
     @Test
-    void search_empty_returnsNull() {
+    void search_empty_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.search("")).isNull();
     }
 
     @Test
-    void search_blank_returnsNull() {
+    void search_blank_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.search("   ")).isNull();
     }
 
     @Test
-    void search_validQuery_buildsOrPredicateWithThreeLikes() {
+    void search_validQuery_buildsOrPredicateWithThreeLikes() throws Exception {
         String q    = "John";
         String like = "%" + q.toLowerCase() + "%";
 
@@ -84,17 +84,17 @@ class InvoiceSpecsTest {
     // ─── providerName() ──────────────────────────────────────────────────────
 
     @Test
-    void providerName_null_returnsNull() {
+    void providerName_null_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.providerName(null)).isNull();
     }
 
     @Test
-    void providerName_empty_returnsNull() {
+    void providerName_empty_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.providerName("")).isNull();
     }
 
     @Test
-    void providerName_valid_buildsEqualPredicate() {
+    void providerName_valid_buildsEqualPredicate() throws Exception {
         String p = "Dr. Smith";
 
         when(root.get("providerName")).thenReturn(path);
@@ -110,17 +110,17 @@ class InvoiceSpecsTest {
     // ─── patientName() ───────────────────────────────────────────────────────
 
     @Test
-    void patientName_null_returnsNull() {
+    void patientName_null_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.patientName(null)).isNull();
     }
 
     @Test
-    void patientName_empty_returnsNull() {
+    void patientName_empty_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.patientName("")).isNull();
     }
 
     @Test
-    void patientName_valid_buildsEqualPredicate() {
+    void patientName_valid_buildsEqualPredicate() throws Exception {
         String p = "Jane Doe";
 
         when(root.get("patientName")).thenReturn(path);
@@ -136,17 +136,17 @@ class InvoiceSpecsTest {
     // ─── statuses() ──────────────────────────────────────────────────────────
 
     @Test
-    void statuses_null_returnsNull() {
+    void statuses_null_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.statuses(null)).isNull();
     }
 
     @Test
-    void statuses_emptySet_returnsNull() {
+    void statuses_emptySet_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.statuses(Set.of())).isNull();
     }
 
     @Test
-    void statuses_nonEmpty_buildsInPredicate() {
+    void statuses_nonEmpty_buildsInPredicate() throws Exception {
         Set<PaymentStatus> ss = EnumSet.of(PaymentStatus.pending, PaymentStatus.overdue);
 
         when(root.get("paymentStatus")).thenReturn(path);
@@ -162,17 +162,17 @@ class InvoiceSpecsTest {
     // ─── dueBetween() ────────────────────────────────────────────────────────
 
     @Test
-    void dueBetween_nullStart_returnsNull() {
+    void dueBetween_nullStart_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.dueBetween(null, OffsetDateTime.now())).isNull();
     }
 
     @Test
-    void dueBetween_nullEnd_returnsNull() {
+    void dueBetween_nullEnd_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.dueBetween(OffsetDateTime.now(), null)).isNull();
     }
 
     @Test
-    void dueBetween_bothValid_buildsBetweenPredicate() {
+    void dueBetween_bothValid_buildsBetweenPredicate() throws Exception {
         OffsetDateTime start = OffsetDateTime.of(2024, 1,  1,  0,  0,  0, 0, ZoneOffset.UTC);
         OffsetDateTime end   = OffsetDateTime.of(2024, 12, 31, 23, 59, 59, 0, ZoneOffset.UTC);
 
@@ -189,17 +189,17 @@ class InvoiceSpecsTest {
     // ─── amountBetween() ─────────────────────────────────────────────────────
 
     @Test
-    void amountBetween_nullMin_returnsNull() {
+    void amountBetween_nullMin_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.amountBetween(null, BigDecimal.TEN)).isNull();
     }
 
     @Test
-    void amountBetween_nullMax_returnsNull() {
+    void amountBetween_nullMax_returnsNull() throws Exception {
         assertThat(InvoiceSpecs.amountBetween(BigDecimal.ONE, null)).isNull();
     }
 
     @Test
-    void amountBetween_bothValid_buildsBetweenPredicate() {
+    void amountBetween_bothValid_buildsBetweenPredicate() throws Exception {
         BigDecimal min = BigDecimal.valueOf(10);
         BigDecimal max = BigDecimal.valueOf(500);
 
