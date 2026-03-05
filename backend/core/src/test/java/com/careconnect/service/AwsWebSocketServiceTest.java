@@ -30,7 +30,7 @@ class AwsWebSocketServiceTest {
     private AwsWebSocketService awsWebSocketService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(awsWebSocketService, "apiGatewayEndpoint", "https://api.example.com/ws");
         ReflectionTestUtils.setField(awsWebSocketService, "awsRegion", "us-east-1");
@@ -41,7 +41,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("registerConnection_validInput_savesConnection")
-    void registerConnection_validInput_savesConnection() {
+    void registerConnection_validInput_savesConnection() throws Exception {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
@@ -53,7 +53,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("registerConnection_nullEmailAndMetadata_savesConnectionWithNulls")
-    void registerConnection_nullEmailAndMetadata_savesConnectionWithNulls() {
+    void registerConnection_nullEmailAndMetadata_savesConnectionWithNulls() throws Exception {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
@@ -64,7 +64,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("registerConnection_repositoryThrows_throwsRuntimeException")
-    void registerConnection_repositoryThrows_throwsRuntimeException() {
+    void registerConnection_repositoryThrows_throwsRuntimeException() throws Exception {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -78,7 +78,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("deregisterConnection_connectionExists_deactivates")
-    void deregisterConnection_connectionExists_deactivates() {
+    void deregisterConnection_connectionExists_deactivates() throws Exception {
         when(connectionRepository.deactivateByConnectionId("conn123")).thenReturn(1);
 
         awsWebSocketService.deregisterConnection("conn123");
@@ -88,7 +88,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("deregisterConnection_connectionNotFound_logsWarning")
-    void deregisterConnection_connectionNotFound_logsWarning() {
+    void deregisterConnection_connectionNotFound_logsWarning() throws Exception {
         when(connectionRepository.deactivateByConnectionId("connXYZ")).thenReturn(0);
 
         awsWebSocketService.deregisterConnection("connXYZ");
@@ -98,7 +98,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("deregisterConnection_repositoryThrows_handlesGracefully")
-    void deregisterConnection_repositoryThrows_handlesGracefully() {
+    void deregisterConnection_repositoryThrows_handlesGracefully() throws Exception {
         when(connectionRepository.deactivateByConnectionId(anyString()))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -110,7 +110,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToConnection_connectionNotFound_returnsFalse")
-    void sendMessageToConnection_connectionNotFound_returnsFalse() {
+    void sendMessageToConnection_connectionNotFound_returnsFalse() throws Exception {
         when(connectionRepository.findByConnectionId("conn123")).thenReturn(Optional.empty());
 
         boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
@@ -120,7 +120,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToConnection_connectionInactive_returnsFalse")
-    void sendMessageToConnection_connectionInactive_returnsFalse() {
+    void sendMessageToConnection_connectionInactive_returnsFalse() throws Exception {
         WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(false)
@@ -138,7 +138,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToConnection_connectionExpired_returnsFalse")
-    void sendMessageToConnection_connectionExpired_returnsFalse() {
+    void sendMessageToConnection_connectionExpired_returnsFalse() throws Exception {
         WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(true)
@@ -156,7 +156,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToConnection_activeConnection_callsPostToConnection")
-    void sendMessageToConnection_activeConnection_callsPostToConnection() {
+    void sendMessageToConnection_activeConnection_callsPostToConnection() throws Exception {
         WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(true)
@@ -178,7 +178,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendEmailVerificationNotification_noActiveConnection_returnsFalse")
-    void sendEmailVerificationNotification_noActiveConnection_returnsFalse() {
+    void sendEmailVerificationNotification_noActiveConnection_returnsFalse() throws Exception {
         when(connectionRepository
                 .findFirstByUserEmailAndSubscriptionTypeAndIsActiveTrueOrderByConnectedAtDesc(
                         "user@example.com", "email-verification"))
@@ -191,7 +191,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendEmailVerificationNotification_connectionFound_attemptsSend")
-    void sendEmailVerificationNotification_connectionFound_attemptsSend() {
+    void sendEmailVerificationNotification_connectionFound_attemptsSend() throws Exception {
         WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .userEmail("user@example.com")
@@ -215,7 +215,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendEmailVerificationNotification_exceptionThrown_returnsFalse")
-    void sendEmailVerificationNotification_exceptionThrown_returnsFalse() {
+    void sendEmailVerificationNotification_exceptionThrown_returnsFalse() throws Exception {
         when(connectionRepository
                 .findFirstByUserEmailAndSubscriptionTypeAndIsActiveTrueOrderByConnectedAtDesc(
                         anyString(), anyString()))
@@ -230,7 +230,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToUser_multipleConnections_sendsToAll")
-    void sendMessageToUser_multipleConnections_sendsToAll() {
+    void sendMessageToUser_multipleConnections_sendsToAll() throws Exception {
         WebSocketConnection conn1 = WebSocketConnection.builder()
                 .connectionId("conn1")
                 .isActive(true)
@@ -258,7 +258,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToUser_noConnections_returnsZero")
-    void sendMessageToUser_noConnections_returnsZero() {
+    void sendMessageToUser_noConnections_returnsZero() throws Exception {
         when(connectionRepository.findByUserEmailAndIsActiveTrue("user@example.com"))
                 .thenReturn(List.of());
 
@@ -269,7 +269,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("sendMessageToUser_exceptionThrown_returnsZero")
-    void sendMessageToUser_exceptionThrown_returnsZero() {
+    void sendMessageToUser_exceptionThrown_returnsZero() throws Exception {
         when(connectionRepository.findByUserEmailAndIsActiveTrue(anyString()))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -282,7 +282,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("updateLastActivity_validConnectionId_updatesTimestamp")
-    void updateLastActivity_validConnectionId_updatesTimestamp() {
+    void updateLastActivity_validConnectionId_updatesTimestamp() throws Exception {
         awsWebSocketService.updateLastActivity("conn123");
 
         verify(connectionRepository).updateLastActivity(eq("conn123"), any(LocalDateTime.class));
@@ -292,7 +292,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredConnections_expiredExist_deactivatesAndDeletes")
-    void cleanupExpiredConnections_expiredExist_deactivatesAndDeletes() {
+    void cleanupExpiredConnections_expiredExist_deactivatesAndDeletes() throws Exception {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class))).thenReturn(5);
         when(connectionRepository.deleteInactiveConnectionsOlderThan(any(LocalDateTime.class))).thenReturn(3);
 
@@ -305,7 +305,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredConnections_noneExpired_returnsZero")
-    void cleanupExpiredConnections_noneExpired_returnsZero() {
+    void cleanupExpiredConnections_noneExpired_returnsZero() throws Exception {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class))).thenReturn(0);
         when(connectionRepository.deleteInactiveConnectionsOlderThan(any(LocalDateTime.class))).thenReturn(0);
 
@@ -316,7 +316,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredConnections_exceptionThrown_returnsZero")
-    void cleanupExpiredConnections_exceptionThrown_returnsZero() {
+    void cleanupExpiredConnections_exceptionThrown_returnsZero() throws Exception {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -329,7 +329,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("getActiveConnectionCount_returnsCount")
-    void getActiveConnectionCount_returnsCount() {
+    void getActiveConnectionCount_returnsCount() throws Exception {
         when(connectionRepository.countByConnectionTypeAndIsActiveTrue("aws")).thenReturn(10L);
 
         long count = awsWebSocketService.getActiveConnectionCount();
@@ -339,7 +339,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("getActiveConnectionCount_noConnections_returnsZero")
-    void getActiveConnectionCount_noConnections_returnsZero() {
+    void getActiveConnectionCount_noConnections_returnsZero() throws Exception {
         when(connectionRepository.countByConnectionTypeAndIsActiveTrue("aws")).thenReturn(0L);
 
         long count = awsWebSocketService.getActiveConnectionCount();
@@ -351,7 +351,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("registerConnection_withMetadata_serializesMetadata")
-    void registerConnection_withMetadata_serializesMetadata() {
+    void registerConnection_withMetadata_serializesMetadata() throws Exception {
         Map<String, Object> metadata = Map.of("deviceType", "mobile", "appVersion", "2.0");
 
         when(connectionRepository.save(any(WebSocketConnection.class)))
@@ -364,7 +364,7 @@ class AwsWebSocketServiceTest {
 
     @Test
     @DisplayName("registerConnection_uppercaseEmail_convertsToLowercase")
-    void registerConnection_uppercaseEmail_convertsToLowercase() {
+    void registerConnection_uppercaseEmail_convertsToLowercase() throws Exception {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenAnswer(inv -> {
                     WebSocketConnection saved = inv.getArgument(0);
