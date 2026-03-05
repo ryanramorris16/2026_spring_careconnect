@@ -1,7 +1,11 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.ConnectionRequest;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.ConnectionRequestService;
+import com.careconnect.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -23,15 +27,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Tag(name = "Connection Requests", description = "Manage caregiver-patient connection requests")
 public class ConnectionRequestController {
-    
+
     private final ConnectionRequestService connectionRequestService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
     
     @PostMapping("/create")
     @Operation(
         summary = "Create connection request",
         description = "Create a new connection request from caregiver to patient by email"
     )
-    public ResponseEntity<?> createConnectionRequest(@RequestBody ConnectionRequestDto request) {
+    public ResponseEntity<?> createConnectionRequest(@RequestBody ConnectionRequestDto request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireCaregiver(currentUser);
         try {
             ConnectionRequest createdRequest = connectionRequestService.createRequest(
                 request.getCaregiverId(),

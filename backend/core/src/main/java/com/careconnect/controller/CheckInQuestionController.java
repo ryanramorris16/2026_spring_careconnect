@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(path = {"/api/checkins", "/v1/api/checkins"}) // <- supports both
+@RequestMapping(path = {"/api/checkins", "/v1/api/checkins"})
 public class CheckInQuestionController {
 
     private final QuestionService questionService;
