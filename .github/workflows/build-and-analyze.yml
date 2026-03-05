@@ -41,7 +41,7 @@
 #   3) Update .env: SCAN_ROOT=.
 # ==========================================================
 
-name: Build and Analyze (New Gate Engine)
+name: Build and Analyze
 
 # ----------------------------------------------------------
 # Trigger Conditions
@@ -701,7 +701,6 @@ jobs:
             echo '[]' > "${OUT}"
           fi
 
-
       # ------------------------------------------------------
       # Diagnostic — Check NVD API Key presence
       # ------------------------------------------------------
@@ -717,30 +716,42 @@ jobs:
           NVD_KEY: ${{ secrets.NVD_API_KEY }}
 
       # ------------------------------------------------------
+      # Cache: OWASP Dependency-Check NVD database
+      # ------------------------------------------------------
+      - name: Cache Dependency-Check data
+        uses: actions/cache@v4
+        with:
+          path: quality/analysis/dc-data
+          key: dependency-check-${{ runner.os }}
+
+      # ------------------------------------------------------
       # Tool: OWASP Dependency-Check (SCA)
       # ----------------------------------------------------------
       # Output: quality/analysis/raw/dependency-check-report.json
       # ------------------------------------------------------
       - name: Run OWASP Dependency-Check (SCA)
         shell: bash
+        env:
+          NVD_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           set -euo pipefail
           ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
           OUT_DIR="${GITHUB_WORKSPACE}/quality/analysis/raw"
           DATA_DIR="${GITHUB_WORKSPACE}/quality/analysis/dc-data"
           mkdir -p "${OUT_DIR}" "${DATA_DIR}"
-
+      
           curl -sSL -o dc.zip \
             https://github.com/jeremylong/DependencyCheck/releases/download/v9.2.0/dependency-check-9.2.0-release.zip
           unzip -q dc.zip
-
+      
           if ! ./dependency-check/bin/dependency-check.sh \
             --project "careconnect-scan" \
             --scan "${ROOT}" \
             --format JSON \
             --out "${OUT_DIR}" \
             --data "${DATA_DIR}" \
-            --nvdApiKey "${{ secrets.NVD_API_KEY }}" ; then
+            --nvdApiKey "${NVD_KEY}" \
+            --failOnCVSS 7 ; then
 
             echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
             ./dependency-check/bin/dependency-check.sh \
@@ -750,7 +761,8 @@ jobs:
               --out "${OUT_DIR}" \
               --data "${DATA_DIR}" \
               --noupdate \
-              --disableAssembly || true
+              --disableAssembly \
+              --failOnCVSS 7 || true
           fi
 
           [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
