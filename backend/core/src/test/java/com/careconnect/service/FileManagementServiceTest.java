@@ -37,7 +37,7 @@ class FileManagementServiceTest {
     private User user;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         fileManagementService = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
@@ -158,7 +158,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("uploadFile - empty file - throws RuntimeException wrapping IllegalArgumentException")
-    void uploadFile_emptyFile_throwsRuntimeException() {
+    void uploadFile_emptyFile_throwsRuntimeException() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
@@ -168,7 +168,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("uploadFile - file too large - throws RuntimeException")
-    void uploadFile_fileTooLarge_throwsRuntimeException() {
+    void uploadFile_fileTooLarge_throwsRuntimeException() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(false);
         when(multipartFile.getSize()).thenReturn(20L * 1024 * 1024); // 20MB
 
@@ -179,7 +179,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("uploadFile - null content type - throws RuntimeException")
-    void uploadFile_nullContentType_throwsRuntimeException() {
+    void uploadFile_nullContentType_throwsRuntimeException() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(false);
         when(multipartFile.getSize()).thenReturn(1024L);
         when(multipartFile.getContentType()).thenReturn(null);
@@ -311,7 +311,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getFile - active file exists - returns DTO")
-    void getFile_activeFileExists_returnsDTO() {
+    void getFile_activeFileExists_returnsDTO() throws Exception {
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(databaseStorageService.getFileUrl("db://files/10")).thenReturn("http://localhost/files/10");
 
@@ -324,7 +324,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getFile - file not found - returns empty")
-    void getFile_fileNotFound_returnsEmpty() {
+    void getFile_fileNotFound_returnsEmpty() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
         Optional<UserFileDTO> result = fileManagementService.getFile(99L);
@@ -334,7 +334,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getFile - inactive file - returns empty")
-    void getFile_inactiveFile_returnsEmpty() {
+    void getFile_inactiveFile_returnsEmpty() throws Exception {
         userFile.setIsActive(false);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
@@ -345,7 +345,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getFile - S3 file with s3Service available - returns S3 URL")
-    void getFile_s3FileWithS3Service_returnsS3Url() {
+    void getFile_s3FileWithS3Service_returnsS3Url() throws Exception {
         userFile.setStorageType(UserFile.StorageType.S3);
         userFile.setS3Path("s3://bucket/report.pdf");
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
@@ -359,7 +359,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getFile - S3 file with null s3Service - returns unavailable URL")
-    void getFile_s3FileNullS3Service_returnsUnavailableUrl() {
+    void getFile_s3FileNullS3Service_returnsUnavailableUrl() throws Exception {
         FileManagementService serviceNoS3 = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
                 databaseStorageService, null);
@@ -379,7 +379,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("downloadFile - database file - returns file data")
-    void downloadFile_databaseFile_returnsFileData() {
+    void downloadFile_databaseFile_returnsFileData() throws Exception {
         userFile.setFileData(new byte[]{1, 2, 3});
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
@@ -390,7 +390,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("downloadFile - S3 file - delegates to S3 service")
-    void downloadFile_s3File_delegatesToS3Service() {
+    void downloadFile_s3File_delegatesToS3Service() throws Exception {
         userFile.setStorageType(UserFile.StorageType.S3);
         userFile.setS3Path("s3://bucket/report.pdf");
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
@@ -403,7 +403,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("downloadFile - S3 file with null S3 service - throws RuntimeException")
-    void downloadFile_s3FileNullS3Service_throwsRuntimeException() {
+    void downloadFile_s3FileNullS3Service_throwsRuntimeException() throws Exception {
         FileManagementService serviceNoS3 = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
                 databaseStorageService, null);
@@ -420,7 +420,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("downloadFile - file not found - throws RuntimeException")
-    void downloadFile_fileNotFound_throwsRuntimeException() {
+    void downloadFile_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
@@ -430,7 +430,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("downloadFile - inactive file - throws RuntimeException")
-    void downloadFile_inactiveFile_throwsRuntimeException() {
+    void downloadFile_inactiveFile_throwsRuntimeException() throws Exception {
         userFile.setIsActive(false);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
@@ -443,7 +443,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - with category - filters by category")
-    void listUserFiles_withCategory_filtersByCategory() {
+    void listUserFiles_withCategory_filtersByCategory() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.MEDICAL_RECORD))
                 .thenReturn(List.of(userFile));
@@ -456,7 +456,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - null category - returns all files for user")
-    void listUserFiles_nullCategory_returnsAllFilesForUser() {
+    void listUserFiles_nullCategory_returnsAllFilesForUser() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(1L, UserFile.OwnerType.PATIENT))
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
@@ -468,7 +468,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - empty category - returns all files for user")
-    void listUserFiles_emptyCategory_returnsAllFilesForUser() {
+    void listUserFiles_emptyCategory_returnsAllFilesForUser() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(1L, UserFile.OwnerType.PATIENT))
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
@@ -482,7 +482,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listFilesForPatient - with category - filters by category")
-    void listFilesForPatient_withCategory_filtersByCategory() {
+    void listFilesForPatient_withCategory_filtersByCategory() throws Exception {
         when(userFileRepository.findByPatientIdAndFileCategory(1L, UserFile.FileCategory.MEDICAL_RECORD))
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
@@ -494,7 +494,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listFilesForPatient - null category - returns all accessible files")
-    void listFilesForPatient_nullCategory_returnsAllAccessibleFiles() {
+    void listFilesForPatient_nullCategory_returnsAllAccessibleFiles() throws Exception {
         when(userFileRepository.findFilesAccessibleByPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
@@ -505,7 +505,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listFilesForPatient - empty category - returns all accessible files")
-    void listFilesForPatient_emptyCategory_returnsAllAccessibleFiles() {
+    void listFilesForPatient_emptyCategory_returnsAllAccessibleFiles() throws Exception {
         when(userFileRepository.findFilesAccessibleByPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
@@ -518,7 +518,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listFilesForCaregiverPatient - with category - filters by category")
-    void listFilesForCaregiverPatient_withCategory_filtersByCategory() {
+    void listFilesForCaregiverPatient_withCategory_filtersByCategory() throws Exception {
         when(userFileRepository.findByPatientIdAndFileCategory(1L, UserFile.FileCategory.PRESCRIPTION))
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
@@ -530,7 +530,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listFilesForCaregiverPatient - null category - returns all caregiver accessible files")
-    void listFilesForCaregiverPatient_nullCategory_returnsAllCaregiverAccessibleFiles() {
+    void listFilesForCaregiverPatient_nullCategory_returnsAllCaregiverAccessibleFiles() throws Exception {
         when(userFileRepository.findFilesAccessibleByCaregiverForPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
@@ -543,7 +543,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("deleteFile - existing file - soft deletes file")
-    void deleteFile_existingFile_softDeletesFile() {
+    void deleteFile_existingFile_softDeletesFile() throws Exception {
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
         fileManagementService.deleteFile(10L, 1L);
@@ -554,7 +554,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("deleteFile - profile image - clears user profile image URL")
-    void deleteFile_profileImage_clearsUserProfileImageUrl() {
+    void deleteFile_profileImage_clearsUserProfileImageUrl() throws Exception {
         userFile.setFileCategory(UserFile.FileCategory.PROFILE_IMAGE);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -568,7 +568,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("deleteFile - profile image user not found - does not throw")
-    void deleteFile_profileImageUserNotFound_doesNotThrow() {
+    void deleteFile_profileImageUserNotFound_doesNotThrow() throws Exception {
         userFile.setFileCategory(UserFile.FileCategory.PROFILE_IMAGE);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
@@ -578,7 +578,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("deleteFile - file not found - throws RuntimeException")
-    void deleteFile_fileNotFound_throwsRuntimeException() {
+    void deleteFile_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
@@ -590,7 +590,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getUserProfileImage - profile image exists - returns DTO")
-    void getUserProfileImage_profileImageExists_returnsDTO() {
+    void getUserProfileImage_profileImageExists_returnsDTO() throws Exception {
         when(userFileRepository.findFirstByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.PROFILE_IMAGE))
                 .thenReturn(Optional.of(userFile));
@@ -603,7 +603,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("getUserProfileImage - no profile image - returns empty")
-    void getUserProfileImage_noProfileImage_returnsEmpty() {
+    void getUserProfileImage_noProfileImage_returnsEmpty() throws Exception {
         when(userFileRepository.findFirstByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.PROFILE_IMAGE))
                 .thenReturn(Optional.empty());
@@ -617,7 +617,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - PROFILE category - maps to PROFILE_IMAGE")
-    void listUserFiles_profileCategory_mapsToProfileImage() {
+    void listUserFiles_profileCategory_mapsToProfileImage() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.PROFILE_IMAGE))
                 .thenReturn(List.of(userFile));
@@ -630,7 +630,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - CLINICAL category - maps to CLINICAL_NOTE")
-    void listUserFiles_clinicalCategory_mapsToClinicalNote() {
+    void listUserFiles_clinicalCategory_mapsToClinicalNote() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.CLINICAL_NOTE))
                 .thenReturn(List.of());
@@ -643,7 +643,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - LAB category - maps to LAB_RESULT")
-    void listUserFiles_labCategory_mapsToLabResult() {
+    void listUserFiles_labCategory_mapsToLabResult() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.LAB_RESULT))
                 .thenReturn(List.of());
@@ -655,7 +655,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - INSURANCE category - maps to INSURANCE_DOCUMENT")
-    void listUserFiles_insuranceCategory_mapsToInsuranceDocument() {
+    void listUserFiles_insuranceCategory_mapsToInsuranceDocument() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.INSURANCE_DOCUMENT))
                 .thenReturn(List.of());
@@ -667,7 +667,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - CONSENT category - maps to CONSENT_FORM")
-    void listUserFiles_consentCategory_mapsToConsentForm() {
+    void listUserFiles_consentCategory_mapsToConsentForm() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.CONSENT_FORM))
                 .thenReturn(List.of());
@@ -679,7 +679,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - CARE category - maps to CARE_PLAN")
-    void listUserFiles_careCategory_mapsToCarePlan() {
+    void listUserFiles_careCategory_mapsToCarePlan() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.CARE_PLAN))
                 .thenReturn(List.of());
@@ -691,7 +691,7 @@ class FileManagementServiceTest {
 
     @Test
     @DisplayName("listUserFiles - unknown category - maps to OTHER_DOCUMENT")
-    void listUserFiles_unknownCategory_mapsToOtherDocument() {
+    void listUserFiles_unknownCategory_mapsToOtherDocument() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndFileCategoryAndIsActiveTrue(
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.OTHER_DOCUMENT))
                 .thenReturn(List.of());
