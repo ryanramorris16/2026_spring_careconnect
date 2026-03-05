@@ -9,7 +9,7 @@ class PatientInfoTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         PatientInfo patient = PatientInfo.builder()
                 .name("Jane Doe")
                 .address("789 Elm St, Boston, MA")
@@ -24,7 +24,7 @@ class PatientInfoTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         PatientInfo patient = PatientInfo.builder().build();
 
         assertThat(patient.getName()).isNull();
@@ -36,7 +36,7 @@ class PatientInfoTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientInfo patient = PatientInfo.builder().build();
 
         patient.setName("John Smith");
@@ -53,7 +53,7 @@ class PatientInfoTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         PatientInfo p1 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
         PatientInfo p2 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
 
@@ -62,7 +62,7 @@ class PatientInfoTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         PatientInfo p1 = PatientInfo.builder().name("Jane Doe").build();
         PatientInfo p2 = PatientInfo.builder().name("John Smith").build();
 
@@ -70,7 +70,7 @@ class PatientInfoTest {
     }
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         PatientInfo patient = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
 
         assertThat(patient.toString()).contains("Jane Doe");
