@@ -46,7 +46,7 @@ class TaskServiceTest {
     private Task task;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         patient = Patient.builder().id(1L).firstName("Jane").lastName("Doe").build();
         task = Task.builder().id(1L).name("Check Vitals").date("2025-06-01")
@@ -59,7 +59,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getTaskById: returns the task entity when the ID exists")
-    void testGetTaskById_found() {
+    void testGetTaskById_found() throws Exception {
         // The repository finds the task; the service must return it unchanged.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
@@ -73,7 +73,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getTaskById: throws AppException(NOT_FOUND) when the ID does not exist")
-    void testGetTaskById_notFound() {
+    void testGetTaskById_notFound() throws Exception {
         // A missing task must surface as a 404 AppException, not a null return.
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -90,7 +90,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getTasksByPatient: returns the full list when tasks exist for the patient")
-    void testGetTasksByPatient_returnsList() {
+    void testGetTasksByPatient_returnsList() throws Exception {
         // Both entities must be present in the returned list in order.
         Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
         when(taskRepository.findByPatientId(1L)).thenReturn(Optional.of(List.of(task, t2)));
@@ -105,7 +105,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getTasksByPatient: returns an empty (non-null) list when no tasks exist")
-    void testGetTasksByPatient_noTasks_returnsEmptyList() {
+    void testGetTasksByPatient_noTasks_returnsEmptyList() throws Exception {
         // Optional.empty() from the repository must produce an empty list, not throw.
         when(taskRepository.findByPatientId(99L)).thenReturn(Optional.empty());
 
@@ -117,7 +117,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getTasksByPatient: returns an empty list when the repository wraps an empty list")
-    void testGetTasksByPatient_emptyList_returnsEmptyList() {
+    void testGetTasksByPatient_emptyList_returnsEmptyList() throws Exception {
         // An Optional containing an empty list must also produce an empty result.
         when(taskRepository.findByPatientId(2L)).thenReturn(Optional.of(new ArrayList<>()));
 
@@ -133,7 +133,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("createTask: saves new task and returns persisted entity with all mapped fields")
-    void testCreateTask_happyPath() {
+    void testCreateTask_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, every field must
         // be transferred to the saved entity and the persisted task returned.
         TaskDto dto = TaskDto.builder()
@@ -176,7 +176,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("createTask: throws AppException(NOT_FOUND) when the patient does not exist")
-    void testCreateTask_patientNotFound_throws() {
+    void testCreateTask_patientNotFound_throws() throws Exception {
         // No task may be created without a valid owning patient.
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -192,7 +192,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("createTask: links the correct patient entity to the new task")
-    void testCreateTask_correctPatientLinked() {
+    void testCreateTask_correctPatientLinked() throws Exception {
         // The task's patient relationship must reference the exact entity
         // returned by the patient repository lookup.
         TaskDto dto = TaskDto.builder()
@@ -212,7 +212,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("updateTask: overwrites all fields on the existing entity and saves")
-    void testUpdateTask_updatesAllFields() {
+    void testUpdateTask_updatesAllFields() throws Exception {
         // Every field in the DTO must replace the corresponding value on the
         // stored task; the service must delegate to save and return the result.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
@@ -248,7 +248,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("updateTask: throws AppException(NOT_FOUND) when the task does not exist")
-    void testUpdateTask_taskNotFound_throws() {
+    void testUpdateTask_taskNotFound_throws() throws Exception {
         // getTaskById is called internally; a missing task must propagate
         // as a 404 AppException before any save is attempted.
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
@@ -265,7 +265,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("updateTask: returns the saved entity (not just the modified local object)")
-    void testUpdateTask_returnsSavedEntity() {
+    void testUpdateTask_returnsSavedEntity() throws Exception {
         // The save call may return a different instance (e.g., with DB-generated
         // fields); the service must return what the repository gives back.
         Task savedTask = Task.builder().id(1L).name("Saved Name").patient(patient).build();
@@ -287,7 +287,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("deleteTask: deletes the task and returns true when it exists")
-    void testDeleteTask_exists_returnsTrue() {
+    void testDeleteTask_exists_returnsTrue() throws Exception {
         // The happy path: the task is found, deleted, and the method returns true.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
@@ -299,7 +299,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("deleteTask: throws AppException(NOT_FOUND) when the task does not exist")
-    void testDeleteTask_notFound_throws() {
+    void testDeleteTask_notFound_throws() throws Exception {
         // A delete on a non-existent task must fail before calling delete().
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -312,7 +312,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("deleteTask: delegates to repository.delete with the exact task entity")
-    void testDeleteTask_passesCorrectEntityToRepository() {
+    void testDeleteTask_passesCorrectEntityToRepository() throws Exception {
         // The correct Task object (not just by ID) must be passed to delete().
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
@@ -327,7 +327,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("existsById: returns true when the task is present in the repository")
-    void testExistsById_true() {
+    void testExistsById_true() throws Exception {
         // findById returning a value must cause existsById to return true.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
@@ -336,7 +336,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("existsById: returns false when no task matches the given ID")
-    void testExistsById_false() {
+    void testExistsById_false() throws Exception {
         // findById returning empty must cause existsById to return false.
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -349,7 +349,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getAllTasks: returns all persisted task entities when tasks exist")
-    void testGetAllTasks_returnsList() {
+    void testGetAllTasks_returnsList() throws Exception {
         // The full list from the repository must be returned without modification.
         Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
         when(taskRepository.findAll()).thenReturn(List.of(task, t2));
@@ -364,7 +364,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getAllTasks: throws AppException(NOT_FOUND) when the repository is empty")
-    void testGetAllTasks_emptyRepository_throws() {
+    void testGetAllTasks_emptyRepository_throws() throws Exception {
         // An empty task table is treated as a not-found error condition.
         when(taskRepository.findAll()).thenReturn(List.of());
 
@@ -376,7 +376,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("getAllTasks: returns a single-item list when exactly one task exists")
-    void testGetAllTasks_singleTask() {
+    void testGetAllTasks_singleTask() throws Exception {
         // Edge case: exactly one task must not trigger the empty-check exception.
         when(taskRepository.findAll()).thenReturn(List.of(task));
 
