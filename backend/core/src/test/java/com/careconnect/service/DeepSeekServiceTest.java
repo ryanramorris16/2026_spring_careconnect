@@ -41,7 +41,7 @@ class DeepSeekServiceTest {
     private RestClient.ResponseSpec mockRetrieve;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Construct with a dummy key/url so RestClient.builder() succeeds
         service = new DeepSeekService("test-api-key", "https://api.deepseek.com/v1");
 
@@ -65,7 +65,7 @@ class DeepSeekServiceTest {
     // Helper methods
     // ═══════════════════════════════════════════════════════════════════════
 
-    private DeepSeekChatRequest basicRequest() {
+    private DeepSeekChatRequest basicRequest() throws Exception {
         DeepSeekChatRequest req = new DeepSeekChatRequest();
         req.setModel("deepseek-chat");
         req.setMessages(List.of(new Message("user", "hello")));
@@ -75,7 +75,7 @@ class DeepSeekServiceTest {
         return req;
     }
 
-    private DeepSeekResponse buildResponse() {
+    private DeepSeekResponse buildResponse() throws Exception {
         Message msg = new Message("assistant", "Hello, how can I help?");
         Choice choice = new Choice();
         choice.setIndex(0);
@@ -107,7 +107,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_nullApiKey_throwsIllegalStateException")
-        void sendChatRequest_nullApiKey_throwsIllegalStateException() {
+        void sendChatRequest_nullApiKey_throwsIllegalStateException() throws Exception {
             ReflectionTestUtils.setField(service, "apiKey", null);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
@@ -117,7 +117,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_emptyApiKey_throwsIllegalStateException")
-        void sendChatRequest_emptyApiKey_throwsIllegalStateException() {
+        void sendChatRequest_emptyApiKey_throwsIllegalStateException() throws Exception {
             ReflectionTestUtils.setField(service, "apiKey", "");
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
@@ -127,7 +127,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_blankApiKey_throwsIllegalStateException")
-        void sendChatRequest_blankApiKey_throwsIllegalStateException() {
+        void sendChatRequest_blankApiKey_throwsIllegalStateException() throws Exception {
             ReflectionTestUtils.setField(service, "apiKey", "   ");
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
@@ -146,7 +146,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_validRequest_returnsDeepSeekResponse")
-        void sendChatRequest_validRequest_returnsDeepSeekResponse() {
+        void sendChatRequest_validRequest_returnsDeepSeekResponse() throws Exception {
             DeepSeekResponse expected = buildResponse();
             when(mockRetrieve.body(DeepSeekResponse.class)).thenReturn(expected);
 
@@ -163,7 +163,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_validRequest_callsRestClientPost")
-        void sendChatRequest_validRequest_callsRestClientPost() {
+        void sendChatRequest_validRequest_callsRestClientPost() throws Exception {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenReturn(buildResponse());
 
             service.sendChatRequest(basicRequest());
@@ -184,7 +184,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_httpError_throwsDeepSeekExceptionWithStatusCode")
-        void sendChatRequest_httpError_throwsDeepSeekExceptionWithStatusCode() {
+        void sendChatRequest_httpError_throwsDeepSeekExceptionWithStatusCode() throws Exception {
             RestClientResponseException httpEx = new RestClientResponseException(
                     "Bad Request",
                     HttpStatusCode.valueOf(400),
@@ -203,7 +203,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_serverError_throwsDeepSeekExceptionWith500")
-        void sendChatRequest_serverError_throwsDeepSeekExceptionWith500() {
+        void sendChatRequest_serverError_throwsDeepSeekExceptionWith500() throws Exception {
             RestClientResponseException serverEx = new RestClientResponseException(
                     "Internal Server Error",
                     HttpStatusCode.valueOf(500),
@@ -222,7 +222,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_unauthorizedError_throwsDeepSeekExceptionWith401")
-        void sendChatRequest_unauthorizedError_throwsDeepSeekExceptionWith401() {
+        void sendChatRequest_unauthorizedError_throwsDeepSeekExceptionWith401() throws Exception {
             RestClientResponseException authEx = new RestClientResponseException(
                     "Unauthorized",
                     HttpStatusCode.valueOf(401),
@@ -249,7 +249,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_unexpectedException_throwsDeepSeekException")
-        void sendChatRequest_unexpectedException_throwsDeepSeekException() {
+        void sendChatRequest_unexpectedException_throwsDeepSeekException() throws Exception {
             RuntimeException unexpected = new RuntimeException("connection timeout");
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(unexpected);
 
@@ -261,7 +261,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("sendChatRequest_nullPointerException_throwsDeepSeekException")
-        void sendChatRequest_nullPointerException_throwsDeepSeekException() {
+        void sendChatRequest_nullPointerException_throwsDeepSeekException() throws Exception {
             NullPointerException npe = new NullPointerException("null response");
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(npe);
 
@@ -282,7 +282,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("buildChatRequest_validPrompts_returnsCorrectlyConfiguredRequest")
-        void buildChatRequest_validPrompts_returnsCorrectlyConfiguredRequest() {
+        void buildChatRequest_validPrompts_returnsCorrectlyConfiguredRequest() throws Exception {
             DeepSeekChatRequest result = service.buildChatRequest(
                     "You are a medical assistant.",
                     "What causes headaches?"
@@ -297,7 +297,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("buildChatRequest_validPrompts_systemMessageFirst")
-        void buildChatRequest_validPrompts_systemMessageFirst() {
+        void buildChatRequest_validPrompts_systemMessageFirst() throws Exception {
             DeepSeekChatRequest result = service.buildChatRequest(
                     "system prompt here",
                     "user prompt here"
@@ -310,7 +310,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("buildChatRequest_validPrompts_userMessageSecond")
-        void buildChatRequest_validPrompts_userMessageSecond() {
+        void buildChatRequest_validPrompts_userMessageSecond() throws Exception {
             DeepSeekChatRequest result = service.buildChatRequest(
                     "system prompt",
                     "What should I eat?"
@@ -323,7 +323,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("buildChatRequest_emptyPrompts_setsEmptyStrings")
-        void buildChatRequest_emptyPrompts_setsEmptyStrings() {
+        void buildChatRequest_emptyPrompts_setsEmptyStrings() throws Exception {
             DeepSeekChatRequest result = service.buildChatRequest("", "");
 
             assertThat(result.getMessages().get(0).getContent()).isEmpty();
@@ -332,7 +332,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("buildChatRequest_nullPrompts_setsNullContent")
-        void buildChatRequest_nullPrompts_setsNullContent() {
+        void buildChatRequest_nullPrompts_setsNullContent() throws Exception {
             DeepSeekChatRequest result = service.buildChatRequest(null, null);
 
             assertThat(result.getMessages().get(0).getContent()).isNull();
@@ -350,14 +350,14 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("deepSeekChatRequest_defaultStream_isFalse")
-        void deepSeekChatRequest_defaultStream_isFalse() {
+        void deepSeekChatRequest_defaultStream_isFalse() throws Exception {
             DeepSeekChatRequest req = new DeepSeekChatRequest();
             assertThat(req.getStream()).isFalse();
         }
 
         @Test
         @DisplayName("deepSeekChatRequest_settersAndGetters_workCorrectly")
-        void deepSeekChatRequest_settersAndGetters_workCorrectly() {
+        void deepSeekChatRequest_settersAndGetters_workCorrectly() throws Exception {
             DeepSeekChatRequest req = new DeepSeekChatRequest();
             req.setModel("test-model");
             req.setMessages(List.of(new Message("user", "hi")));
@@ -374,7 +374,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("message_noArgsConstructor_createsEmptyMessage")
-        void message_noArgsConstructor_createsEmptyMessage() {
+        void message_noArgsConstructor_createsEmptyMessage() throws Exception {
             Message msg = new Message();
             assertThat(msg.getRole()).isNull();
             assertThat(msg.getContent()).isNull();
@@ -382,7 +382,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("message_allArgsConstructor_setsFields")
-        void message_allArgsConstructor_setsFields() {
+        void message_allArgsConstructor_setsFields() throws Exception {
             Message msg = new Message("assistant", "Hello");
             assertThat(msg.getRole()).isEqualTo("assistant");
             assertThat(msg.getContent()).isEqualTo("Hello");
@@ -390,7 +390,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("message_settersAndGetters_workCorrectly")
-        void message_settersAndGetters_workCorrectly() {
+        void message_settersAndGetters_workCorrectly() throws Exception {
             Message msg = new Message();
             msg.setRole("system");
             msg.setContent("Be helpful");
@@ -400,7 +400,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("deepSeekResponse_noArgsConstructor_createsEmptyResponse")
-        void deepSeekResponse_noArgsConstructor_createsEmptyResponse() {
+        void deepSeekResponse_noArgsConstructor_createsEmptyResponse() throws Exception {
             DeepSeekResponse resp = new DeepSeekResponse();
             assertThat(resp.getId()).isNull();
             assertThat(resp.getObject()).isNull();
@@ -412,7 +412,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("deepSeekResponse_settersAndGetters_workCorrectly")
-        void deepSeekResponse_settersAndGetters_workCorrectly() {
+        void deepSeekResponse_settersAndGetters_workCorrectly() throws Exception {
             DeepSeekResponse resp = new DeepSeekResponse();
             resp.setId("r-1");
             resp.setObject("chat.completion");
@@ -431,7 +431,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("choice_settersAndGetters_workCorrectly")
-        void choice_settersAndGetters_workCorrectly() {
+        void choice_settersAndGetters_workCorrectly() throws Exception {
             Choice choice = new Choice();
             choice.setIndex(0);
             choice.setMessage(new Message("assistant", "OK"));
@@ -444,7 +444,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("usage_settersAndGetters_workCorrectly")
-        void usage_settersAndGetters_workCorrectly() {
+        void usage_settersAndGetters_workCorrectly() throws Exception {
             Usage usage = new Usage();
             usage.setPromptTokens(10);
             usage.setCompletionTokens(20);
@@ -457,7 +457,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("deepSeekException_constructorWithCause_setsMessageAndCause")
-        void deepSeekException_constructorWithCause_setsMessageAndCause() {
+        void deepSeekException_constructorWithCause_setsMessageAndCause() throws Exception {
             RuntimeException cause = new RuntimeException("root cause");
             DeepSeekException ex = new DeepSeekException("test message", cause);
 
@@ -467,7 +467,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("deepSeekException_isRuntimeException")
-        void deepSeekException_isRuntimeException() {
+        void deepSeekException_isRuntimeException() throws Exception {
             DeepSeekException ex = new DeepSeekException("msg", new RuntimeException());
             assertThat(ex).isInstanceOf(RuntimeException.class);
         }
@@ -483,14 +483,14 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("constructor_withValidKeyAndUrl_createsServiceSuccessfully")
-        void constructor_withValidKeyAndUrl_createsServiceSuccessfully() {
+        void constructor_withValidKeyAndUrl_createsServiceSuccessfully() throws Exception {
             DeepSeekService svc = new DeepSeekService("my-key", "https://api.example.com/v1");
             assertThat(svc).isNotNull();
         }
 
         @Test
         @DisplayName("constructor_withNullApiKey_createsServiceWithEmptyBearerToken")
-        void constructor_withNullApiKey_createsServiceWithEmptyBearerToken() {
+        void constructor_withNullApiKey_createsServiceWithEmptyBearerToken() throws Exception {
             // The constructor handles null apiKey by using empty string in the header
             DeepSeekService svc = new DeepSeekService(null, "https://api.example.com/v1");
             assertThat(svc).isNotNull();
@@ -498,7 +498,7 @@ class DeepSeekServiceTest {
 
         @Test
         @DisplayName("constructor_withEmptyApiKey_createsServiceSuccessfully")
-        void constructor_withEmptyApiKey_createsServiceSuccessfully() {
+        void constructor_withEmptyApiKey_createsServiceSuccessfully() throws Exception {
             DeepSeekService svc = new DeepSeekService("", "https://api.example.com/v1");
             assertThat(svc).isNotNull();
         }
