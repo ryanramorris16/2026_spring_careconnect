@@ -41,7 +41,7 @@ class FamilyMemberServiceTest {
     private FamilyMemberLink link;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         familyMemberService = new FamilyMemberService(
@@ -98,7 +98,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - null email - throws BAD_REQUEST")
-    void registerFamilyMember_nullEmail_throwsBadRequest() {
+    void registerFamilyMember_nullEmail_throwsBadRequest() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", null, "555", null, "Son", 1L);
         AppException ex = assertThrows(AppException.class,
@@ -108,7 +108,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - empty email - throws BAD_REQUEST")
-    void registerFamilyMember_emptyEmail_throwsBadRequest() {
+    void registerFamilyMember_emptyEmail_throwsBadRequest() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "  ", "555", null, "Son", 1L);
         AppException ex = assertThrows(AppException.class,
@@ -118,7 +118,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - null firstName - throws BAD_REQUEST")
-    void registerFamilyMember_nullFirstName_throwsBadRequest() {
+    void registerFamilyMember_nullFirstName_throwsBadRequest() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 null, "Doe", "email@test.com", "555", null, "Son", 1L);
         AppException ex = assertThrows(AppException.class,
@@ -128,7 +128,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - null lastName - throws BAD_REQUEST")
-    void registerFamilyMember_nullLastName_throwsBadRequest() {
+    void registerFamilyMember_nullLastName_throwsBadRequest() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", null, "email@test.com", "555", null, "Son", 1L);
         AppException ex = assertThrows(AppException.class,
@@ -138,7 +138,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - null relationship - throws BAD_REQUEST")
-    void registerFamilyMember_nullRelationship_throwsBadRequest() {
+    void registerFamilyMember_nullRelationship_throwsBadRequest() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "email@test.com", "555", null, null, 1L);
         AppException ex = assertThrows(AppException.class,
@@ -148,7 +148,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - patient not found - throws NOT_FOUND")
-    void registerFamilyMember_patientNotFound_throwsNotFound() {
+    void registerFamilyMember_patientNotFound_throwsNotFound() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "email@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
@@ -160,7 +160,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - granter not found - throws NOT_FOUND")
-    void registerFamilyMember_granterNotFound_throwsNotFound() {
+    void registerFamilyMember_granterNotFound_throwsNotFound() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "email@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -173,7 +173,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - existing user already linked - throws CONFLICT")
-    void registerFamilyMember_existingUserAlreadyLinked_throwsConflict() {
+    void registerFamilyMember_existingUserAlreadyLinked_throwsConflict() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "family@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -189,7 +189,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - existing user not linked and is first link - creates link and unlocks achievement")
-    void registerFamilyMember_existingUserNotLinkedFirstLink_createsLinkAndUnlocksAchievement() {
+    void registerFamilyMember_existingUserNotLinkedFirstLink_createsLinkAndUnlocksAchievement() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "family@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -212,7 +212,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - existing user not linked and not first link - no achievement")
-    void registerFamilyMember_existingUserNotLinkedNotFirstLink_noAchievement() {
+    void registerFamilyMember_existingUserNotLinkedNotFirstLink_noAchievement() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "family@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -235,7 +235,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - existing user not linked, patient profile not found - throws NOT_FOUND")
-    void registerFamilyMember_existingUserNotLinkedPatientProfileNotFound_throwsNotFound() {
+    void registerFamilyMember_existingUserNotLinkedPatientProfileNotFound_throwsNotFound() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "family@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -252,7 +252,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - new user without address - creates user and family member")
-    void registerFamilyMember_newUserWithoutAddress_createsUserAndFamilyMember() {
+    void registerFamilyMember_newUserWithoutAddress_createsUserAndFamilyMember() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "new@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -274,7 +274,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - new user with address - creates user with address")
-    void registerFamilyMember_newUserWithAddress_createsUserWithAddress() {
+    void registerFamilyMember_newUserWithAddress_createsUserWithAddress() throws Exception {
         AddressDto addressDto = new AddressDto("123 Main St", "Apt 2", "Springfield", "IL", "62701", "555-5555");
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "new@test.com", "555", addressDto, "Son", 1L);
@@ -294,7 +294,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("registerFamilyMember - password encoder returns null - throws INTERNAL_SERVER_ERROR")
-    void registerFamilyMember_passwordEncoderReturnsNull_throwsInternalServerError() {
+    void registerFamilyMember_passwordEncoderReturnsNull_throwsInternalServerError() throws Exception {
         FamilyMemberRegistration reg = new FamilyMemberRegistration(
                 "Jane", "Doe", "new@test.com", "555", null, "Son", 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -309,7 +309,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getAccessiblePatients - with active links and patient found - returns patient data")
-    void getAccessiblePatients_withActiveLinksPatientFound_returnsPatientData() {
+    void getAccessiblePatients_withActiveLinksPatientFound_returnsPatientData() throws Exception {
         when(familyMemberLinkRepository.findActivePatientsByFamilyMember(eq(2L), any(LocalDateTime.class)))
                 .thenReturn(List.of(link));
         when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
@@ -326,7 +326,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getAccessiblePatients - patient profile not found - uses email as name")
-    void getAccessiblePatients_patientProfileNotFound_usesEmailAsName() {
+    void getAccessiblePatients_patientProfileNotFound_usesEmailAsName() throws Exception {
         when(familyMemberLinkRepository.findActivePatientsByFamilyMember(eq(2L), any(LocalDateTime.class)))
                 .thenReturn(List.of(link));
         when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
@@ -342,7 +342,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getAccessiblePatients - no links - returns empty list")
-    void getAccessiblePatients_noLinks_returnsEmptyList() {
+    void getAccessiblePatients_noLinks_returnsEmptyList() throws Exception {
         when(familyMemberLinkRepository.findActivePatientsByFamilyMember(eq(2L), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
@@ -353,7 +353,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getPatientData - valid access - returns patient data")
-    void getPatientData_validAccess_returnsPatientData() {
+    void getPatientData_validAccess_returnsPatientData() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
         when(familyMemberLinkRepository.findByFamilyUserAndPatientUserAndStatus(
@@ -371,7 +371,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getPatientData - family member not found - throws NOT_FOUND")
-    void getPatientData_familyMemberNotFound_throwsNotFound() {
+    void getPatientData_familyMemberNotFound_throwsNotFound() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -381,7 +381,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getPatientData - patient not found - throws NOT_FOUND")
-    void getPatientData_patientNotFound_throwsNotFound() {
+    void getPatientData_patientNotFound_throwsNotFound() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -392,7 +392,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getPatientData - no active link - throws FORBIDDEN")
-    void getPatientData_noActiveLink_throwsForbidden() {
+    void getPatientData_noActiveLink_throwsForbidden() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
         when(familyMemberLinkRepository.findByFamilyUserAndPatientUserAndStatus(
@@ -405,7 +405,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getFamilyMembersByPatient - with results - returns link responses")
-    void getFamilyMembersByPatient_withResults_returnsLinkResponses() {
+    void getFamilyMembersByPatient_withResults_returnsLinkResponses() throws Exception {
         when(familyMemberLinkRepository.findActiveFamilyMembersByPatient(eq(1L), any(LocalDateTime.class)))
                 .thenReturn(List.of(link));
         when(familyMemberRepository.findByUser(familyUser)).thenReturn(Optional.of(familyMember));
@@ -420,7 +420,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getFamilyMembersByPatient - empty list - returns empty")
-    void getFamilyMembersByPatient_emptyList_returnsEmpty() {
+    void getFamilyMembersByPatient_emptyList_returnsEmpty() throws Exception {
         when(familyMemberLinkRepository.findActiveFamilyMembersByPatient(eq(1L), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
@@ -431,7 +431,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("revokeFamilyMemberAccess - link found - revokes link")
-    void revokeFamilyMemberAccess_linkFound_revokesLink() {
+    void revokeFamilyMemberAccess_linkFound_revokesLink() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
         familyMemberService.revokeFamilyMemberAccess(100L, 3L);
@@ -442,7 +442,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("revokeFamilyMemberAccess - link not found - throws NOT_FOUND")
-    void revokeFamilyMemberAccess_linkNotFound_throwsNotFound() {
+    void revokeFamilyMemberAccess_linkNotFound_throwsNotFound() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -452,7 +452,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("hasAccessToPatient - both users found and link exists - returns true")
-    void hasAccessToPatient_bothUsersFoundAndLinkExists_returnsTrue() {
+    void hasAccessToPatient_bothUsersFoundAndLinkExists_returnsTrue() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
         when(familyMemberLinkRepository.existsActiveNonExpiredLink(eq(familyUser), eq(patientUser), any(LocalDateTime.class)))
@@ -463,7 +463,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("hasAccessToPatient - family user not found - returns false")
-    void hasAccessToPatient_familyUserNotFound_returnsFalse() {
+    void hasAccessToPatient_familyUserNotFound_returnsFalse() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
 
@@ -472,7 +472,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("hasAccessToPatient - patient user not found - returns false")
-    void hasAccessToPatient_patientUserNotFound_returnsFalse() {
+    void hasAccessToPatient_patientUserNotFound_returnsFalse() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -481,7 +481,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("hasAccessToPatient - no active link - returns false")
-    void hasAccessToPatient_noActiveLink_returnsFalse() {
+    void hasAccessToPatient_noActiveLink_returnsFalse() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
         when(familyMemberLinkRepository.existsActiveNonExpiredLink(eq(familyUser), eq(patientUser), any(LocalDateTime.class)))
@@ -492,7 +492,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("createTemporaryLink - valid inputs - creates temporary link")
-    void createTemporaryLink_validInputs_createsTemporaryLink() {
+    void createTemporaryLink_validInputs_createsTemporaryLink() throws Exception {
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(7);
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
@@ -512,7 +512,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("createTemporaryLink - family member not found - throws NOT_FOUND")
-    void createTemporaryLink_familyMemberNotFound_throwsNotFound() {
+    void createTemporaryLink_familyMemberNotFound_throwsNotFound() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -523,7 +523,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("createTemporaryLink - active link already exists - throws CONFLICT")
-    void createTemporaryLink_activeLinkExists_throwsConflict() {
+    void createTemporaryLink_activeLinkExists_throwsConflict() throws Exception {
         when(userRepository.findById(2L)).thenReturn(Optional.of(familyUser));
         when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
         when(userRepository.findById(3L)).thenReturn(Optional.of(grantedByUser));
@@ -538,7 +538,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("updateFamilyMemberLink - all fields set - updates all fields")
-    void updateFamilyMemberLink_allFieldsSet_updatesAllFields() {
+    void updateFamilyMemberLink_allFieldsSet_updatesAllFields() throws Exception {
         UpdateLinkRequest request = new UpdateLinkRequest("SUSPENDED", "TEMPORARY",
                 LocalDateTime.now().plusDays(7), "Test notes");
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -556,7 +556,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("updateFamilyMemberLink - null fields - no changes")
-    void updateFamilyMemberLink_nullFields_noChanges() {
+    void updateFamilyMemberLink_nullFields_noChanges() throws Exception {
         UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, null);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any(FamilyMemberLink.class))).thenReturn(link);
@@ -571,7 +571,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("updateFamilyMemberLink - link not found - throws NOT_FOUND")
-    void updateFamilyMemberLink_linkNotFound_throwsNotFound() {
+    void updateFamilyMemberLink_linkNotFound_throwsNotFound() throws Exception {
         UpdateLinkRequest request = new UpdateLinkRequest("SUSPENDED", null, null, null);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.empty());
 
@@ -582,7 +582,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("suspendFamilyMemberAccess - link found - suspends link")
-    void suspendFamilyMemberAccess_linkFound_suspendsLink() {
+    void suspendFamilyMemberAccess_linkFound_suspendsLink() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any(FamilyMemberLink.class))).thenReturn(link);
         when(familyMemberRepository.findByUser(familyUser)).thenReturn(Optional.of(familyMember));
@@ -596,7 +596,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("suspendFamilyMemberAccess - link not found - throws NOT_FOUND")
-    void suspendFamilyMemberAccess_linkNotFound_throwsNotFound() {
+    void suspendFamilyMemberAccess_linkNotFound_throwsNotFound() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -606,7 +606,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("reactivateFamilyMemberAccess - suspended link - reactivates link")
-    void reactivateFamilyMemberAccess_suspendedLink_reactivatesLink() {
+    void reactivateFamilyMemberAccess_suspendedLink_reactivatesLink() throws Exception {
         link.setStatus(FamilyMemberLink.LinkStatus.SUSPENDED);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any(FamilyMemberLink.class))).thenReturn(link);
@@ -621,7 +621,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("reactivateFamilyMemberAccess - not suspended - throws BAD_REQUEST")
-    void reactivateFamilyMemberAccess_notSuspended_throwsBadRequest() {
+    void reactivateFamilyMemberAccess_notSuspended_throwsBadRequest() throws Exception {
         link.setStatus(FamilyMemberLink.LinkStatus.ACTIVE);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
@@ -632,7 +632,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("reactivateFamilyMemberAccess - link not found - throws NOT_FOUND")
-    void reactivateFamilyMemberAccess_linkNotFound_throwsNotFound() {
+    void reactivateFamilyMemberAccess_linkNotFound_throwsNotFound() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -642,7 +642,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredFamilyMemberLinks - active and expired links - marks expired links")
-    void cleanupExpiredFamilyMemberLinks_activeAndExpiredLinks_marksExpiredLinks() {
+    void cleanupExpiredFamilyMemberLinks_activeAndExpiredLinks_marksExpiredLinks() throws Exception {
         FamilyMemberLink expiredLink = new FamilyMemberLink();
         expiredLink.setStatus(FamilyMemberLink.LinkStatus.ACTIVE);
         expiredLink.setExpiresAt(LocalDateTime.now().minusDays(1));
@@ -668,7 +668,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredFamilyMemberLinks - no links - does nothing")
-    void cleanupExpiredFamilyMemberLinks_noLinks_doesNothing() {
+    void cleanupExpiredFamilyMemberLinks_noLinks_doesNothing() throws Exception {
         when(familyMemberLinkRepository.findAll()).thenReturn(List.of());
 
         familyMemberService.cleanupExpiredFamilyMemberLinks();
@@ -678,7 +678,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("toFamilyMemberLinkResponse - grantedBy null - shows System")
-    void toFamilyMemberLinkResponse_grantedByNull_showsSystem() {
+    void toFamilyMemberLinkResponse_grantedByNull_showsSystem() throws Exception {
         FamilyMemberLink linkNoGrantor = new FamilyMemberLink(familyUser, patientUser, null, "Son");
         linkNoGrantor.setId(200L);
         when(familyMemberLinkRepository.findById(200L)).thenReturn(Optional.of(linkNoGrantor));
@@ -693,7 +693,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("toFamilyMemberLinkResponse - family member not in repo - uses email")
-    void toFamilyMemberLinkResponse_familyMemberNotInRepo_usesEmail() {
+    void toFamilyMemberLinkResponse_familyMemberNotInRepo_usesEmail() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any())).thenReturn(link);
         when(familyMemberRepository.findByUser(familyUser)).thenReturn(Optional.empty());
@@ -706,7 +706,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("toFamilyMemberLinkResponse - patient not in repo - uses email")
-    void toFamilyMemberLinkResponse_patientNotInRepo_usesEmail() {
+    void toFamilyMemberLinkResponse_patientNotInRepo_usesEmail() throws Exception {
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any())).thenReturn(link);
         when(familyMemberRepository.findByUser(familyUser)).thenReturn(Optional.of(familyMember));
@@ -719,7 +719,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getUserName - FAMILY_MEMBER role grantedBy - returns family member name")
-    void getUserName_familyMemberRoleGrantedBy_returnsFamilyMemberName() {
+    void getUserName_familyMemberRoleGrantedBy_returnsFamilyMemberName() throws Exception {
         grantedByUser.setRole(Role.FAMILY_MEMBER);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any())).thenReturn(link);
@@ -734,7 +734,7 @@ class FamilyMemberServiceTest {
 
     @Test
     @DisplayName("getUserName - CAREGIVER role grantedBy - returns email")
-    void getUserName_caregiverRoleGrantedBy_returnsEmail() {
+    void getUserName_caregiverRoleGrantedBy_returnsEmail() throws Exception {
         grantedByUser.setRole(Role.CAREGIVER);
         when(familyMemberLinkRepository.findById(100L)).thenReturn(Optional.of(link));
         when(familyMemberLinkRepository.save(any())).thenReturn(link);
