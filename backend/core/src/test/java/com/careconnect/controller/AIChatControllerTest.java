@@ -29,6 +29,7 @@ import com.careconnect.dto.ChatMessageSummary;
 import com.careconnect.dto.ChatRequest;
 import com.careconnect.dto.ChatResponse;
 import com.careconnect.dto.UserAIConfigDTO;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.model.ChatConversation.ChatType;
 import com.careconnect.model.ChatMessage;
 import com.careconnect.model.UserAIConfig.AIProvider;
@@ -36,6 +37,9 @@ import com.careconnect.repository.ChatConversationRepository;
 import com.careconnect.service.AIChatService;
 import com.careconnect.service.ChatCleanupService;
 import com.careconnect.service.UserAIConfigService;
+import com.careconnect.model.User;
+import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -81,6 +85,12 @@ class AIChatControllerTest {
     @MockitoBean
     private ChatCleanupService chatCleanupService;
 
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -94,8 +104,16 @@ class AIChatControllerTest {
     private UserAIConfigDTO sampleConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         objectMapper.registerModule(new JavaTimeModule());
+
+        // Stub securityUtil.resolveCurrentUser() so that controller-level
+        // role checks (e.g. isFamilyMember()) do not NPE.
+        User mockUser = new User();
+        mockUser.setId(1L);
+        mockUser.setEmail("testuser@test.com");
+        mockUser.setRole(Role.PATIENT);
+        Mockito.when(securityUtil.resolveCurrentUser()).thenReturn(mockUser);
 
         sampleRequest = ChatRequest.builder()
                 .userId(1L)
