@@ -9,7 +9,9 @@ import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.Role;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.FeedService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,9 @@ class FeedControllerTest {
     @Mock private Authentication authentication;
     @Mock private SecurityContext securityContext;
 
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
+
     @InjectMocks
     private FeedController controller;
 
@@ -51,18 +57,18 @@ class FeedControllerTest {
     private static final Long   USER_ID = 10L;
 
     @BeforeEach
-    void setUpSecurityContext() {
+    void setUpSecurityContext() throws Exception {
         /*
          * getUserFeed, getFriendsFeed, and createPost all resolve the caller
          * via SecurityContextHolder → authentication.getName() (email).
          */
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(EMAIL);
+        lenient().when(authentication.getName()).thenReturn(EMAIL);
     }
 
     @AfterEach
-    void clearSecurityContext() {
+    void clearSecurityContext() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
@@ -74,7 +80,7 @@ class FeedControllerTest {
         return u;
     }
 
-    private Post makeSavedPost() {
+    private Post makeSavedPost() throws Exception {
         Post p = new Post();
         p.setId(1L);
         p.setUserId(USER_ID);
@@ -86,7 +92,7 @@ class FeedControllerTest {
     // ── getGlobalFeed() ───────────────────────────────────────────────────────
 
     @Test
-    void getGlobalFeed_returns200_withAllPosts() {
+    void getGlobalFeed_returns200_withAllPosts() throws Exception {
         /*
          * No authentication check — delegates directly to feedService.
          * No branches to cover.
@@ -103,7 +109,7 @@ class FeedControllerTest {
     // ── getUserFeed() ─────────────────────────────────────────────────────────
 
     @Test
-    void getUserFeed_returns403_whenUserNotFound() {
+    void getUserFeed_returns403_whenUserNotFound() throws Exception {
         /*
          * Covers: userRepository.findByEmail() returns empty → user == null → 403.
          */
@@ -115,7 +121,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void getUserFeed_returns403_whenDifferentUserAndNotAdmin() {
+    void getUserFeed_returns403_whenDifferentUserAndNotAdmin() throws Exception {
         /*
          * Covers: user found, user.getId() != userId AND role != ADMIN → 403.
          */
@@ -128,7 +134,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void getUserFeed_returns200_whenSameUser() {
+    void getUserFeed_returns200_whenSameUser() throws Exception {
         /*
          * Covers: user.getId().equals(userId) → condition false → proceeds to service.
          */
@@ -143,7 +149,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void getUserFeed_returns200_whenAdmin() {
+    void getUserFeed_returns200_whenAdmin() throws Exception {
         /*
          * Covers: user.getId() != userId but role == ADMIN
          * → !user.getId().equals(userId) && !isAdmin → false → proceeds.
@@ -161,7 +167,7 @@ class FeedControllerTest {
     // ── getFriendsFeed() ──────────────────────────────────────────────────────
 
     @Test
-    void getFriendsFeed_returns403_whenUserNotFound() {
+    void getFriendsFeed_returns403_whenUserNotFound() throws Exception {
         /*
          * Covers: userRepository.findByEmail() returns empty → user == null → 403.
          */
@@ -173,7 +179,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void getFriendsFeed_returns200_whenUserFound() {
+    void getFriendsFeed_returns200_whenUserFound() throws Exception {
         /*
          * Covers: user found → delegates to feedService.getPostsByUserAndFriends().
          */
@@ -197,7 +203,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns403_whenUserNotFound() {
+    void createPost_returns403_whenUserNotFound() throws Exception {
         /*
          * Covers: userRepository.findByEmail() returns empty → user == null → 403.
          */
@@ -209,7 +215,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns403_whenUserIdMismatch() {
+    void createPost_returns403_whenUserIdMismatch() throws Exception {
         /*
          * Covers: user.getId() != postData.getUserId() → 403.
          */
@@ -224,7 +230,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns201_withPatientDisplayName_whenPatientFound() {
+    void createPost_returns201_withPatientDisplayName_whenPatientFound() throws Exception {
         /*
          * Covers: resolveDisplayName → PATIENT role → patientRepository found
          * → firstName + " " + lastName.
@@ -246,7 +252,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns201_withEmailFallback_whenPatientNotFound() {
+    void createPost_returns201_withEmailFallback_whenPatientNotFound() throws Exception {
         /*
          * Covers: resolveDisplayName → PATIENT role → patientRepository empty
          * → falls back to user.getEmail().
@@ -264,7 +270,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns201_withCaregiverDisplayName_whenCaregiverFound() {
+    void createPost_returns201_withCaregiverDisplayName_whenCaregiverFound() throws Exception {
         /*
          * Covers: resolveDisplayName → CAREGIVER role → caregiverRepository found
          * → firstName + " " + lastName.
@@ -286,7 +292,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns201_withEmailFallback_whenCaregiverNotFound() {
+    void createPost_returns201_withEmailFallback_whenCaregiverNotFound() throws Exception {
         /*
          * Covers: resolveDisplayName → CAREGIVER role → caregiverRepository empty
          * → falls back to user.getEmail().
@@ -304,7 +310,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns201_withEmailDisplayName_forOtherRole() {
+    void createPost_returns201_withEmailDisplayName_forOtherRole() throws Exception {
         /*
          * Covers: resolveDisplayName → else branch (ADMIN or FAMILY_MEMBER)
          * → returns user.getEmail() directly.
@@ -321,7 +327,7 @@ class FeedControllerTest {
     }
 
     @Test
-    void createPost_returns500_whenServiceThrowsException() {
+    void createPost_returns500_whenServiceThrowsException() throws Exception {
         /*
          * Covers: feedService.createPost() throws Exception
          * → caught by catch block → 500 with error message.
