@@ -11,7 +11,7 @@ class PaymentTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Payment payment = new Payment();
 
         assertThat(payment).isNotNull();
@@ -26,7 +26,7 @@ class PaymentTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Subscription subscription = new Subscription();
         User user = new User();
         Instant now = Instant.now();
@@ -57,7 +57,7 @@ class PaymentTest {
     // ─── Explicit setters ────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Payment payment = new Payment();
         User user = new User();
 
@@ -77,7 +77,7 @@ class PaymentTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Payment p1 = Payment.builder().id(1L).status("SUCCEEDED").build();
         Payment p2 = Payment.builder().id(1L).status("SUCCEEDED").build();
 
