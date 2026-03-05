@@ -60,7 +60,7 @@ class AnalyticsServiceTest {
     private User testUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         testUser = new User();
@@ -83,7 +83,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_withRecentSummaryMetric_shouldUseAggregatedValues")
-        void getDashboard_withRecentSummaryMetric_shouldUseAggregatedValues() {
+        void getDashboard_withRecentSummaryMetric_shouldUseAggregatedValues() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -125,7 +125,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_withNullSummaryMetric_shouldComputeFromRawData")
-        void getDashboard_withNullSummaryMetric_shouldComputeFromRawData() {
+        void getDashboard_withNullSummaryMetric_shouldComputeFromRawData() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -159,7 +159,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_withZeroTotalSymptoms_shouldReturnZeroAdherence")
-        void getDashboard_withZeroTotalSymptoms_shouldReturnZeroAdherence() {
+        void getDashboard_withZeroTotalSymptoms_shouldReturnZeroAdherence() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -189,7 +189,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_patientNotFound_shouldThrowAppException")
-        void getDashboard_patientNotFound_shouldThrowAppException() {
+        void getDashboard_patientNotFound_shouldThrowAppException() throws Exception {
             Long patientId = 999L;
             Period period = Period.ofDays(7);
 
@@ -205,7 +205,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_withNullHeartRateAvg_shouldReturnZero")
-        void getDashboard_withNullHeartRateAvg_shouldReturnZero() {
+        void getDashboard_withNullHeartRateAvg_shouldReturnZero() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -233,7 +233,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getDashboard_avgOrZeroThrowsException_shouldReturnZero")
-        void getDashboard_avgOrZeroThrowsException_shouldReturnZero() {
+        void getDashboard_avgOrZeroThrowsException_shouldReturnZero() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -270,7 +270,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withWearableAndMoodPainData_shouldMergeAndSort")
-        void getVitals_withWearableAndMoodPainData_shouldMergeAndSort() {
+        void getVitals_withWearableAndMoodPainData_shouldMergeAndSort() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
@@ -312,7 +312,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withNoData_shouldReturnEmptyList")
-        void getVitals_withNoData_shouldReturnEmptyList() {
+        void getVitals_withNoData_shouldReturnEmptyList() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -330,7 +330,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_patientNotFound_shouldThrowAppException")
-        void getVitals_patientNotFound_shouldThrowAppException() {
+        void getVitals_patientNotFound_shouldThrowAppException() throws Exception {
             Long patientId = 999L;
             Period period = Period.ofDays(7);
 
@@ -343,7 +343,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withBloodPressure_shouldMapSystolicAndDiastolicAsIntegers")
-        void getVitals_withBloodPressure_shouldMapSystolicAndDiastolicAsIntegers() {
+        void getVitals_withBloodPressure_shouldMapSystolicAndDiastolicAsIntegers() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
@@ -375,7 +375,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withEmptyMoodPainList_shouldHaveNullMoodAndPain")
-        void getVitals_withEmptyMoodPainList_shouldHaveNullMoodAndPain() {
+        void getVitals_withEmptyMoodPainList_shouldHaveNullMoodAndPain() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
@@ -401,7 +401,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withDuplicateMetricTypes_shouldLastWin")
-        void getVitals_withDuplicateMetricTypes_shouldLastWin() {
+        void getVitals_withDuplicateMetricTypes_shouldLastWin() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
@@ -439,7 +439,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("createSignedExportLink_validPath_shouldDelegateToExportSigner")
-        void createSignedExportLink_validPath_shouldDelegateToExportSigner() {
+        void createSignedExportLink_validPath_shouldDelegateToExportSigner() throws Exception {
             String path = "/exports/vitals.csv";
             ExportLinkDTO expected = new ExportLinkDTO();
             expected.setUrl("https://files.careconnect.ai/exports/vitals.csv?sig=mock123");
@@ -462,7 +462,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("exportVitalsCsv_withData_shouldReturnCsvBytes")
-        void exportVitalsCsv_withData_shouldReturnCsvBytes() {
+        void exportVitalsCsv_withData_shouldReturnCsvBytes() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts = Instant.parse("2025-01-01T10:00:00Z");
@@ -489,7 +489,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("exportVitalsCsv_withNoData_shouldReturnHeaderOnly")
-        void exportVitalsCsv_withNoData_shouldReturnHeaderOnly() {
+        void exportVitalsCsv_withNoData_shouldReturnHeaderOnly() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -514,7 +514,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("exportVitalsPdf_withData_shouldReturnPdfBytes")
-        void exportVitalsPdf_withData_shouldReturnPdfBytes() {
+        void exportVitalsPdf_withData_shouldReturnPdfBytes() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts = Instant.parse("2025-01-01T10:00:00Z");
@@ -542,7 +542,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("exportVitalsPdf_withEmptyData_shouldReturnValidPdf")
-        void exportVitalsPdf_withEmptyData_shouldReturnValidPdf() {
+        void exportVitalsPdf_withEmptyData_shouldReturnValidPdf() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
 
@@ -567,7 +567,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withMoodPainLogsAtSameTimestamp_shouldPickLatest")
-        void getVitals_withMoodPainLogsAtSameTimestamp_shouldPickLatest() {
+        void getVitals_withMoodPainLogsAtSameTimestamp_shouldPickLatest() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             LocalDateTime logTime = LocalDateTime.of(2025, 1, 1, 10, 0);
@@ -601,7 +601,7 @@ class AnalyticsServiceTest {
 
         @Test
         @DisplayName("getVitals_withWeightMetric_shouldMapWeightValue")
-        void getVitals_withWeightMetric_shouldMapWeightValue() {
+        void getVitals_withWeightMetric_shouldMapWeightValue() throws Exception {
             Long patientId = 10L;
             Period period = Period.ofDays(7);
             Instant ts = Instant.parse("2025-01-01T10:00:00Z");
