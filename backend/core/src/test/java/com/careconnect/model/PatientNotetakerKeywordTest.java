@@ -9,7 +9,7 @@ class PatientNotetakerKeywordTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
 
         assertThat(keyword).isNotNull();
@@ -20,7 +20,7 @@ class PatientNotetakerKeywordTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         PatientNotetakerKeyword keyword = new PatientNotetakerKeyword(
                 "chest pain", PatientNotetakerKeyword.EventType.ALERT);
 
@@ -31,7 +31,7 @@ class PatientNotetakerKeywordTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         PatientNotetakerKeyword keyword = PatientNotetakerKeyword.builder()
                 .keyword("schedule follow-up")
                 .eventType(PatientNotetakerKeyword.EventType.TASK)
@@ -44,7 +44,7 @@ class PatientNotetakerKeywordTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
 
         keyword.setKeyword("shortness of breath");
@@ -57,7 +57,7 @@ class PatientNotetakerKeywordTest {
     // ─── EventType enum ───────────────────────────────────────────────────────
 
     @Test
-    void eventTypeEnum_containsAllValues() {
+    void eventTypeEnum_containsAllValues() throws Exception {
         assertThat(PatientNotetakerKeyword.EventType.values()).containsExactly(
                 PatientNotetakerKeyword.EventType.ALERT,
                 PatientNotetakerKeyword.EventType.TASK
