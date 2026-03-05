@@ -7,9 +7,11 @@ import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
 import com.careconnect.service.AllergyService;
 import com.careconnect.service.CaregiverService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +80,12 @@ class AllergyControllerTest {
     @MockBean
     private CaregiverService caregiverService;
 
+    @MockBean
+    private SecurityUtil securityUtil;
+
+    @MockBean
+    private AuthorizationService authorizationService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -90,7 +98,7 @@ class AllergyControllerTest {
     private Patient patient;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         sampleAllergy = AllergyDTO.builder()
                 .id(1L)
                 .patientId(10L)
@@ -119,7 +127,7 @@ class AllergyControllerTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
@@ -132,7 +140,7 @@ class AllergyControllerTest {
      * principal is the admin user.  An admin always passes the
      * {@code hasAccessToPatient()} check inside the controller.
      */
-    private void mockAdminSecurityContext() {
+    private void mockAdminSecurityContext() throws Exception {
         mockSecurityContext("admin@test.com", adminUser);
         when(patientRepository.findById(10L)).thenReturn(Optional.of(patient));
     }
@@ -142,7 +150,7 @@ class AllergyControllerTest {
      * principal is the patient user whose ID matches the patient's linked
      * user — self-access is allowed.
      */
-    private void mockPatientSelfAccessContext() {
+    private void mockPatientSelfAccessContext() throws Exception {
         mockSecurityContext("patient@test.com", patientUser);
         when(patientRepository.findById(10L)).thenReturn(Optional.of(patient));
     }
@@ -152,7 +160,7 @@ class AllergyControllerTest {
      * principal is a different patient user whose ID does NOT match the
      * patient — the controller should deny access with a 403.
      */
-    private void mockForbiddenSecurityContext() {
+    private void mockForbiddenSecurityContext() throws Exception {
         User other = new User();
         other.setId(99L);
         other.setEmail("other@test.com");
