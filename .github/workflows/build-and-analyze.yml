@@ -41,7 +41,7 @@
 #   3) Update .env: SCAN_ROOT=.
 # ==========================================================
 
-name: Build and Analyze (New Gate Engine)
+name: Build and Analyze
 
 # ----------------------------------------------------------
 # Trigger Conditions
