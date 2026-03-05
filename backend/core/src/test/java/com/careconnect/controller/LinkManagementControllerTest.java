@@ -4,7 +4,9 @@ import com.careconnect.dto.CaregiverPatientLinkResponse;
 import com.careconnect.dto.FamilyMemberLinkResponse;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.service.CaregiverPatientLinkService;
 import com.careconnect.service.FamilyMemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +54,12 @@ class LinkManagementControllerTest {
 
     @MockitoBean
     private UserRepository userRepository;
+
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
 
     private User user(Long id, Role role) {
         User u = new User();
