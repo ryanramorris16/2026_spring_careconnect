@@ -750,7 +750,8 @@ jobs:
             --format JSON \
             --out "${OUT_DIR}" \
             --data "${DATA_DIR}" \
-            --nvdApiKey "${NVD_KEY}" ; then
+            --nvdApiKey "${NVD_KEY}" \
+            --failOnCVSS 7 ; then
 
             echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
             ./dependency-check/bin/dependency-check.sh \
@@ -760,7 +761,8 @@ jobs:
               --out "${OUT_DIR}" \
               --data "${DATA_DIR}" \
               --noupdate \
-              --disableAssembly || true
+              --disableAssembly \
+              --failOnCVSS 7 || true
           fi
 
           [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
