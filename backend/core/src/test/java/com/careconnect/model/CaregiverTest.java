@@ -9,7 +9,7 @@ class CaregiverTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Caregiver caregiver = new Caregiver();
 
         assertThat(caregiver).isNotNull();
@@ -29,7 +29,7 @@ class CaregiverTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         Address address = new Address("1 Main St", null, "Annapolis", "MD", "21401");
         ProfessionalInfo pro = new ProfessionalInfo("LIC-001", "MD", 5);
         User user = new User();
@@ -64,7 +64,7 @@ class CaregiverTest {
     // ─── getCaregiverType / setCaregiverType ──────────────────────────────────
 
     @Test
-    void setCaregiverType_updatesField() {
+    void setCaregiverType_updatesField() throws Exception {
         Caregiver caregiver = new Caregiver();
         caregiver.setCaregiverType("CNA");
         assertThat(caregiver.getCaregiverType()).isEqualTo("CNA");
