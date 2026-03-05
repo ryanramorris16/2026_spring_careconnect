@@ -19,7 +19,7 @@ class AllergyTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Allergy allergy = new Allergy();
 
         assertThat(allergy).isNotNull();
@@ -35,7 +35,7 @@ class AllergyTest {
     // ─── All-args constructor ─────────────────────────────────────────────────
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         Instant now = Instant.now();
         Allergy allergy = new Allergy(
                 1L, patient, "Peanuts",
@@ -59,7 +59,7 @@ class AllergyTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults_isActiveTrue() {
+    void builder_defaults_isActiveTrue() throws Exception {
         Allergy allergy = Allergy.builder()
                 .allergen("Peanuts")
                 .allergyType(Allergy.AllergyType.FOOD)
@@ -71,7 +71,7 @@ class AllergyTest {
     // ─── Builder: all fields ──────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         Instant now = Instant.now();
 
         Allergy allergy = Allergy.builder()
@@ -102,7 +102,7 @@ class AllergyTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void lombokSetters_idPatientTimestamps() {
+    void lombokSetters_idPatientTimestamps() throws Exception {
         Instant now = Instant.now();
         Allergy allergy = new Allergy();
 
@@ -118,7 +118,7 @@ class AllergyTest {
     }
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Allergy allergy = new Allergy();
 
         allergy.setAllergen("Shellfish");
@@ -141,7 +141,7 @@ class AllergyTest {
     // ─── toString() ───────────────────────────────────────────────────────────
 
     @Test
-    void toString_containsAllergenField() {
+    void toString_containsAllergenField() throws Exception {
         Allergy allergy = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
         assertThat(allergy.toString()).isNotNull().contains("Peanuts");
     }
@@ -201,58 +201,58 @@ class AllergyTest {
     // ─── AllergyType.fromJson() ───────────────────────────────────────────────
 
     @Test
-    void allergyTypeFromJson_null_returnsOther() {
+    void allergyTypeFromJson_null_returnsOther() throws Exception {
         assertThat(Allergy.AllergyType.fromJson(null)).isEqualTo(Allergy.AllergyType.OTHER);
     }
 
     @Test
-    void allergyTypeFromJson_drug_returnsMedication() {
+    void allergyTypeFromJson_drug_returnsMedication() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("DRUG")).isEqualTo(Allergy.AllergyType.MEDICATION);
     }
 
     @Test
-    void allergyTypeFromJson_medication_returnsMedication() {
+    void allergyTypeFromJson_medication_returnsMedication() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("medication")).isEqualTo(Allergy.AllergyType.MEDICATION);
     }
 
     @Test
-    void allergyTypeFromJson_food_returnsFood() {
+    void allergyTypeFromJson_food_returnsFood() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("food")).isEqualTo(Allergy.AllergyType.FOOD);
     }
 
     @Test
-    void allergyTypeFromJson_environmental_returnsEnvironmental() {
+    void allergyTypeFromJson_environmental_returnsEnvironmental() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("ENVIRONMENTAL")).isEqualTo(Allergy.AllergyType.ENVIRONMENTAL);
     }
 
     @Test
-    void allergyTypeFromJson_contact_returnsContact() {
+    void allergyTypeFromJson_contact_returnsContact() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("contact")).isEqualTo(Allergy.AllergyType.CONTACT);
     }
 
     @Test
-    void allergyTypeFromJson_seasonal_returnsSeasonal() {
+    void allergyTypeFromJson_seasonal_returnsSeasonal() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("seasonal")).isEqualTo(Allergy.AllergyType.SEASONAL);
     }
 
     @Test
-    void allergyTypeFromJson_other_returnsOther() {
+    void allergyTypeFromJson_other_returnsOther() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("other")).isEqualTo(Allergy.AllergyType.OTHER);
     }
 
     @Test
-    void allergyTypeFromJson_unknown_returnsOther() {
+    void allergyTypeFromJson_unknown_returnsOther() throws Exception {
         assertThat(Allergy.AllergyType.fromJson("UNKNOWN_TYPE")).isEqualTo(Allergy.AllergyType.OTHER);
     }
 
     @Test
-    void allergyTypeToJson_returnsName() {
+    void allergyTypeToJson_returnsName() throws Exception {
         assertThat(Allergy.AllergyType.FOOD.toJson()).isEqualTo("FOOD");
         assertThat(Allergy.AllergyType.MEDICATION.toJson()).isEqualTo("MEDICATION");
     }
 
     @Test
-    void allergyTypeGetDisplayName_returnsDisplayName() {
+    void allergyTypeGetDisplayName_returnsDisplayName() throws Exception {
         assertThat(Allergy.AllergyType.FOOD.getDisplayName()).isEqualTo("Food Allergy");
         assertThat(Allergy.AllergyType.MEDICATION.getDisplayName()).isEqualTo("Medication Allergy");
         assertThat(Allergy.AllergyType.ENVIRONMENTAL.getDisplayName()).isEqualTo("Environmental Allergy");
@@ -264,44 +264,44 @@ class AllergyTest {
     // ─── AllergySeverity.fromJson() ───────────────────────────────────────────
 
     @Test
-    void allergySeverityFromJson_null_returnsMild() {
+    void allergySeverityFromJson_null_returnsMild() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson(null)).isEqualTo(Allergy.AllergySeverity.MILD);
     }
 
     @Test
-    void allergySeverityFromJson_mild_returnsMild() {
+    void allergySeverityFromJson_mild_returnsMild() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson("mild")).isEqualTo(Allergy.AllergySeverity.MILD);
     }
 
     @Test
-    void allergySeverityFromJson_moderate_returnsModerate() {
+    void allergySeverityFromJson_moderate_returnsModerate() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson("MODERATE")).isEqualTo(Allergy.AllergySeverity.MODERATE);
     }
 
     @Test
-    void allergySeverityFromJson_severe_returnsSevere() {
+    void allergySeverityFromJson_severe_returnsSevere() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson("severe")).isEqualTo(Allergy.AllergySeverity.SEVERE);
     }
 
     @Test
-    void allergySeverityFromJson_lifeThreatening_returnsLifeThreatening() {
+    void allergySeverityFromJson_lifeThreatening_returnsLifeThreatening() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson("LIFE_THREATENING"))
                 .isEqualTo(Allergy.AllergySeverity.LIFE_THREATENING);
     }
 
     @Test
-    void allergySeverityFromJson_unknown_returnsMild() {
+    void allergySeverityFromJson_unknown_returnsMild() throws Exception {
         assertThat(Allergy.AllergySeverity.fromJson("CRITICAL")).isEqualTo(Allergy.AllergySeverity.MILD);
     }
 
     @Test
-    void allergySeverityToJson_returnsName() {
+    void allergySeverityToJson_returnsName() throws Exception {
         assertThat(Allergy.AllergySeverity.SEVERE.toJson()).isEqualTo("SEVERE");
         assertThat(Allergy.AllergySeverity.MILD.toJson()).isEqualTo("MILD");
     }
 
     @Test
-    void allergySeverityGetDisplayName_returnsDisplayName() {
+    void allergySeverityGetDisplayName_returnsDisplayName() throws Exception {
         assertThat(Allergy.AllergySeverity.MILD.getDisplayName()).isEqualTo("Mild");
         assertThat(Allergy.AllergySeverity.MODERATE.getDisplayName()).isEqualTo("Moderate");
         assertThat(Allergy.AllergySeverity.SEVERE.getDisplayName()).isEqualTo("Severe");
@@ -311,7 +311,7 @@ class AllergyTest {
     // ─── equals() and hashCode() (patient excluded) ───────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
         Allergy a2 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
 
@@ -320,13 +320,13 @@ class AllergyTest {
     }
 
     @Test
-    void equals_sameReference_returnsTrue() {
+    void equals_sameReference_returnsTrue() throws Exception {
         Allergy a = Allergy.builder().id(1L).build();
         assertThat(a).isEqualTo(a);
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").build();
         Allergy a2 = Allergy.builder().id(2L).allergen("Shellfish").build();
 
@@ -334,13 +334,13 @@ class AllergyTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         Allergy allergy = new Allergy();
         assertThat(allergy).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         Allergy allergy = new Allergy();
         assertThat(allergy).isNotEqualTo("a string");
     }
