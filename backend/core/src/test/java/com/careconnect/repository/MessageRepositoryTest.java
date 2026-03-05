@@ -19,7 +19,7 @@ class MessageRepositoryTest {
 
     @Test
     @DisplayName("test() prints initialization message to stdout")
-    void test_printsInitializationMessage() {
+    void test_printsInitializationMessage() throws Exception {
         PrintStream original = System.out;
         ByteArrayOutputStream capture = new ByteArrayOutputStream();
         System.setOut(new PrintStream(capture));
