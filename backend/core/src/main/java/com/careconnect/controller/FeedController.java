@@ -2,7 +2,10 @@ package com.careconnect.controller;
 import com.careconnect.dto.PostWithCommentCountDto;
 import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.PatientRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Value;
 import com.careconnect.model.Post;
 import com.careconnect.service.FeedService;
@@ -38,6 +41,12 @@ import java.util.UUID;
 @SecurityRequirement(name = "JWT Authentication")
 public class FeedController {
 
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @Autowired
     private FeedService feedService;

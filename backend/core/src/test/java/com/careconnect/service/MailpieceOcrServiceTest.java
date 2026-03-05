@@ -31,7 +31,7 @@ class MailpieceOcrServiceTest {
     private MailpieceOcrService mailpieceOcrService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -84,14 +84,14 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - null imageBytes - returns empty")
-    void extractTopLeftLabel_nullImageBytes_returnsEmpty() {
+    void extractTopLeftLabel_nullImageBytes_returnsEmpty() throws Exception {
         Optional<String> result = mailpieceOcrService.extractTopLeftLabel(null, "meta");
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("extractTopLeftLabel - empty imageBytes - returns empty")
-    void extractTopLeftLabel_emptyImageBytes_returnsEmpty() {
+    void extractTopLeftLabel_emptyImageBytes_returnsEmpty() throws Exception {
         Optional<String> result = mailpieceOcrService.extractTopLeftLabel(new byte[0], "meta");
         assertThat(result).isEmpty();
     }
@@ -102,7 +102,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - no line blocks after filtering - returns empty")
-    void extractTopLeftLabel_noLineBlocks_returnsEmpty() {
+    void extractTopLeftLabel_noLineBlocks_returnsEmpty() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(wordBlock("Some word")));
 
@@ -113,7 +113,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - line blocks with no geometry filtered out - returns empty if none remain")
-    void extractTopLeftLabel_lineBlocksNoGeometry_returnsEmpty() {
+    void extractTopLeftLabel_lineBlocksNoGeometry_returnsEmpty() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlockNoGeometry("No geometry"),
@@ -130,7 +130,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - textract throws exception - returns empty")
-    void extractTopLeftLabel_textractThrows_returnsEmpty() {
+    void extractTopLeftLabel_textractThrows_returnsEmpty() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenThrow(new RuntimeException("AWS error"));
 
@@ -145,7 +145,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - valid sender in top left - returns sender name")
-    void extractTopLeftLabel_validSender_returnsSenderName() {
+    void extractTopLeftLabel_validSender_returnsSenderName() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("USPS Headquarters", 0.05, 0.05),
@@ -159,7 +159,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - multiple blocks in top region - returns first valid sender")
-    void extractTopLeftLabel_multipleTopBlocks_returnsFirstValidSender() {
+    void extractTopLeftLabel_multipleTopBlocks_returnsFirstValidSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("ABC Corporation", 0.02, 0.10),
@@ -178,7 +178,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - all valid blocks below threshold - returns empty when none pass looksLikeSender")
-    void extractTopLeftLabel_allBlocksBelowThreshold_returnsEmpty() {
+    void extractTopLeftLabel_allBlocksBelowThreshold_returnsEmpty() throws Exception {
         // Single block at top that does not look like a sender (too short)
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
@@ -195,7 +195,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - blank text in top region - filtered by looksLikeSender")
-    void extractTopLeftLabel_blankText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_blankText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("   ", 0.02, 0.02)));
@@ -207,7 +207,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text shorter than 3 chars - filtered by looksLikeSender")
-    void extractTopLeftLabel_shortText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_shortText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("AB", 0.02, 0.02)));
@@ -219,7 +219,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text starts with 'learn more' - filtered by looksLikeSender")
-    void extractTopLeftLabel_learnMoreText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_learnMoreText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Learn More about us", 0.02, 0.02)));
@@ -231,7 +231,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text contains 'click' - filtered by looksLikeSender")
-    void extractTopLeftLabel_clickText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_clickText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Click here for details", 0.02, 0.02)));
@@ -243,7 +243,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text contains 'visit' - filtered by looksLikeSender")
-    void extractTopLeftLabel_visitText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_visitText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Visit our website today", 0.02, 0.02)));
@@ -255,7 +255,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text contains 'ridealong' - filtered by looksLikeSender")
-    void extractTopLeftLabel_ridealongText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_ridealongText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Special ridealong offer", 0.02, 0.02)));
@@ -267,7 +267,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text contains 'ride along' - filtered by looksLikeSender")
-    void extractTopLeftLabel_rideAlongText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_rideAlongText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Some ride along text here", 0.02, 0.02)));
@@ -279,7 +279,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text equals 'campaign' - filtered by looksLikeSender")
-    void extractTopLeftLabel_campaignText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_campaignText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("campaign", 0.02, 0.02)));
@@ -291,7 +291,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text equals 'mail' - filtered by looksLikeSender")
-    void extractTopLeftLabel_mailText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_mailText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("mail", 0.02, 0.02)));
@@ -303,7 +303,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - text equals 'image' - filtered by looksLikeSender")
-    void extractTopLeftLabel_imageText_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_imageText_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("image", 0.02, 0.02)));
@@ -315,7 +315,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - purely numeric text - filtered by looksLikeSender (no letters)")
-    void extractTopLeftLabel_purelyNumeric_filteredByLooksLikeSender() {
+    void extractTopLeftLabel_purelyNumeric_filteredByLooksLikeSender() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("123456789", 0.02, 0.02)));
@@ -331,7 +331,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - top-left sorting selects correct block - returns leftmost among topmost")
-    void extractTopLeftLabel_topLeftSorting_returnsLeftmostAmongTopmost() {
+    void extractTopLeftLabel_topLeftSorting_returnsLeftmostAmongTopmost() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("Right Sender", 0.02, 0.60),
@@ -346,7 +346,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - first candidate fails looksLikeSender but second passes - returns second")
-    void extractTopLeftLabel_firstFailsSecondPasses_returnsSecond() {
+    void extractTopLeftLabel_firstFailsSecondPasses_returnsSecond() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("123", 0.01, 0.01), // no letters
@@ -360,7 +360,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - null metadata - still works correctly")
-    void extractTopLeftLabel_nullMetadata_stillWorks() {
+    void extractTopLeftLabel_nullMetadata_stillWorks() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenThrow(new RuntimeException("error"));
 
@@ -371,7 +371,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - lines list empty after geometry filter - returns empty")
-    void extractTopLeftLabel_emptyLinesAfterFilter_returnsEmpty() {
+    void extractTopLeftLabel_emptyLinesAfterFilter_returnsEmpty() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(DetectDocumentTextResponse.builder()
                         .blocks(Collections.emptyList())
@@ -384,7 +384,7 @@ class MailpieceOcrServiceTest {
 
     @Test
     @DisplayName("extractTopLeftLabel - all top candidates fail looksLikeSender - returns empty")
-    void extractTopLeftLabel_allTopCandidatesFail_returnsEmpty() {
+    void extractTopLeftLabel_allTopCandidatesFail_returnsEmpty() throws Exception {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(
                         lineBlock("AB", 0.01, 0.01), // too short

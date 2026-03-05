@@ -40,7 +40,7 @@ class AiSymptomServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         // Inject real ObjectMapper
         try {
@@ -77,7 +77,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_validJsonResponse_returnsPopulatedResult")
-    void analyze_validJsonResponse_returnsPopulatedResult() {
+    void analyze_validJsonResponse_returnsPopulatedResult() throws Exception {
         String json = "{\"symptomKey\":\"headache\",\"symptomValue\":\"throbbing pain\",\"severity\":\"MODERATE\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("allergy ctx");
@@ -96,7 +96,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_mildSeverity_normalizesMild")
-    void analyze_mildSeverity_normalizesMild() {
+    void analyze_mildSeverity_normalizesMild() throws Exception {
         String json = "{\"symptomKey\":\"cough\",\"symptomValue\":\"dry cough\",\"severity\":\"mild\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -112,7 +112,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_severeSeverity_normalizesSevere")
-    void analyze_severeSeverity_normalizesSevere() {
+    void analyze_severeSeverity_normalizesSevere() throws Exception {
         String json = "{\"symptomKey\":\"chest pain\",\"symptomValue\":\"sharp\",\"severity\":\"SEVERE\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -130,7 +130,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_nonJsonContent_fallsBackWithWarning")
-    void analyze_nonJsonContent_fallsBackWithWarning() {
+    void analyze_nonJsonContent_fallsBackWithWarning() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(contextBuilder.buildSymptomContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
@@ -149,7 +149,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_emptyContent_keepsDefaultValues")
-    void analyze_emptyContent_keepsDefaultValues() {
+    void analyze_emptyContent_keepsDefaultValues() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(contextBuilder.buildSymptomContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
@@ -168,7 +168,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_nullText_notesIsEmptyString")
-    void analyze_nullText_notesIsEmptyString() {
+    void analyze_nullText_notesIsEmptyString() throws Exception {
         String json = "{\"symptomKey\":\"nausea\",\"symptomValue\":\"mild\",\"severity\":\"MILD\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -187,7 +187,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_withContext_passesContextToPrompt")
-    void analyze_withContext_passesContextToPrompt() {
+    void analyze_withContext_passesContextToPrompt() throws Exception {
         String json = "{\"symptomKey\":\"fever\",\"symptomValue\":\"101F\",\"severity\":\"MODERATE\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("allergy ctx");
@@ -207,7 +207,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_withAllergyAndSymptomHistory_passesHistoryToBuilder")
-    void analyze_withAllergyAndSymptomHistory_passesHistoryToBuilder() {
+    void analyze_withAllergyAndSymptomHistory_passesHistoryToBuilder() throws Exception {
         Allergy allergy = Allergy.builder()
                 .allergen("Pollen").severity(Allergy.AllergySeverity.MILD).build();
         SymptomEntry symptom = SymptomEntry.builder()
@@ -231,7 +231,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_nullChoicesInResponse_keepsDefaults")
-    void analyze_nullChoicesInResponse_keepsDefaults() {
+    void analyze_nullChoicesInResponse_keepsDefaults() throws Exception {
         DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(null);
 
@@ -251,7 +251,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_jsonMissingFields_returnsEmptyStrings")
-    void analyze_jsonMissingFields_returnsEmptyStrings() {
+    void analyze_jsonMissingFields_returnsEmptyStrings() throws Exception {
         String json = "{\"symptomKey\":\"anxiety\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -269,7 +269,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_jsonWithUnknownSeverity_returnsEmptySeverity")
-    void analyze_jsonWithUnknownSeverity_returnsEmptySeverity() {
+    void analyze_jsonWithUnknownSeverity_returnsEmptySeverity() throws Exception {
         String json = "{\"symptomKey\":\"rash\",\"symptomValue\":\"red\",\"severity\":\"UNKNOWN\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -287,7 +287,7 @@ class AiSymptomServiceTest {
 
     @Test
     @DisplayName("analyze_blankContent_keepsDefaults")
-    void analyze_blankContent_keepsDefaults() {
+    void analyze_blankContent_keepsDefaults() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(contextBuilder.buildSymptomContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());

@@ -37,7 +37,7 @@ class VialOfLifePdfServiceTest {
     private VialOfLifePdfService vialOfLifePdfService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -109,7 +109,7 @@ class VialOfLifePdfServiceTest {
 
     @Test
     @DisplayName("generateVialOfLifePdf_patientNotFound_throwsIllegalArgumentException")
-    void generateVialOfLifePdf_patientNotFound_throwsIllegalArgumentException() {
+    void generateVialOfLifePdf_patientNotFound_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientProfile(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -119,7 +119,7 @@ class VialOfLifePdfServiceTest {
 
     @Test
     @DisplayName("generateVialOfLifePdf_invalidEmergencyIdFormat_throwsIllegalArgumentException")
-    void generateVialOfLifePdf_invalidEmergencyIdFormat_throwsIllegalArgumentException() {
+    void generateVialOfLifePdf_invalidEmergencyIdFormat_throwsIllegalArgumentException() throws Exception {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> vialOfLifePdfService.generateVialOfLifePdf("INVALID123"));
         assertTrue(ex.getMessage().contains("Invalid emergency ID format"));
@@ -127,7 +127,7 @@ class VialOfLifePdfServiceTest {
 
     @Test
     @DisplayName("generateVialOfLifePdf_emergencyIdWithNonNumericSuffix_throwsIllegalArgumentException")
-    void generateVialOfLifePdf_emergencyIdWithNonNumericSuffix_throwsIllegalArgumentException() {
+    void generateVialOfLifePdf_emergencyIdWithNonNumericSuffix_throwsIllegalArgumentException() throws Exception {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> vialOfLifePdfService.generateVialOfLifePdf("VIALABC"));
         assertTrue(ex.getMessage().contains("Invalid emergency ID format"));

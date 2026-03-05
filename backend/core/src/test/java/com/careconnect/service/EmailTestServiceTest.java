@@ -36,7 +36,7 @@ class EmailTestServiceTest {
     private MimeMessage mimeMessage;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         mimeMessage = mock(MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -63,7 +63,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testEmailConfiguration_consoleProvider_returnsSuccessResult")
-        void testEmailConfiguration_consoleProvider_returnsSuccessResult() {
+        void testEmailConfiguration_consoleProvider_returnsSuccessResult() throws Exception {
             Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
 
             assertThat(result.get("testEmail")).isEqualTo("test@example.com");
@@ -77,7 +77,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testEmailConfiguration_smtpProviderSuccess_returnsSuccessResult")
-        void testEmailConfiguration_smtpProviderSuccess_returnsSuccessResult() {
+        void testEmailConfiguration_smtpProviderSuccess_returnsSuccessResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
             Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
@@ -88,7 +88,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testEmailConfiguration_smtpProviderThrowsMessagingException_returnsFailureResult")
-        void testEmailConfiguration_smtpProviderThrowsMessagingException_returnsFailureResult() {
+        void testEmailConfiguration_smtpProviderThrowsMessagingException_returnsFailureResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             doThrow(new RuntimeException("SMTP connection refused"))
                     .when(mailSender).send(any(MimeMessage.class));
@@ -102,7 +102,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testEmailConfiguration_nullMailSenderConsole_returnsSuccess")
-        void testEmailConfiguration_nullMailSenderConsole_returnsSuccess() {
+        void testEmailConfiguration_nullMailSenderConsole_returnsSuccess() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
             Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
@@ -121,7 +121,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_consoleProvider_returnsValidConfig")
-        void getEmailConfiguration_consoleProvider_returnsValidConfig() {
+        void getEmailConfiguration_consoleProvider_returnsValidConfig() throws Exception {
             Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("provider")).isEqualTo("console");
@@ -135,7 +135,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_sendgridProviderWithKey_returnsConfigured")
-        void getEmailConfiguration_sendgridProviderWithKey_returnsConfigured() {
+        void getEmailConfiguration_sendgridProviderWithKey_returnsConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", "SG.testkey");
 
@@ -147,7 +147,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_sendgridProviderEmptyKey_returnsNotConfigured")
-        void getEmailConfiguration_sendgridProviderEmptyKey_returnsNotConfigured() {
+        void getEmailConfiguration_sendgridProviderEmptyKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", "");
 
@@ -159,7 +159,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_sendgridProviderNullKey_returnsNotConfigured")
-        void getEmailConfiguration_sendgridProviderNullKey_returnsNotConfigured() {
+        void getEmailConfiguration_sendgridProviderNullKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", null);
 
@@ -171,7 +171,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_resendProviderWithKey_returnsConfigured")
-        void getEmailConfiguration_resendProviderWithKey_returnsConfigured() {
+        void getEmailConfiguration_resendProviderWithKey_returnsConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", "re_testkey");
 
@@ -183,7 +183,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_resendProviderEmptyKey_returnsNotConfigured")
-        void getEmailConfiguration_resendProviderEmptyKey_returnsNotConfigured() {
+        void getEmailConfiguration_resendProviderEmptyKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", "");
 
@@ -195,7 +195,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_resendProviderNullKey_returnsNotConfigured")
-        void getEmailConfiguration_resendProviderNullKey_returnsNotConfigured() {
+        void getEmailConfiguration_resendProviderNullKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", null);
 
@@ -207,7 +207,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_mailgunProviderWithKeysAndDomain_returnsConfigured")
-        void getEmailConfiguration_mailgunProviderWithKeysAndDomain_returnsConfigured() {
+        void getEmailConfiguration_mailgunProviderWithKeysAndDomain_returnsConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "mailgun");
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
@@ -220,7 +220,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_mailgunProviderEmptyKey_returnsNotConfigured")
-        void getEmailConfiguration_mailgunProviderEmptyKey_returnsNotConfigured() {
+        void getEmailConfiguration_mailgunProviderEmptyKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "mailgun");
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
@@ -233,7 +233,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_mailgunProviderNullKey_returnsNotConfigured")
-        void getEmailConfiguration_mailgunProviderNullKey_returnsNotConfigured() {
+        void getEmailConfiguration_mailgunProviderNullKey_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "mailgun");
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", null);
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
@@ -246,7 +246,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_mailgunProviderEmptyDomain_returnsNotConfigured")
-        void getEmailConfiguration_mailgunProviderEmptyDomain_returnsNotConfigured() {
+        void getEmailConfiguration_mailgunProviderEmptyDomain_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "mailgun");
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "");
@@ -259,7 +259,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_mailgunProviderNullDomain_returnsNotConfigured")
-        void getEmailConfiguration_mailgunProviderNullDomain_returnsNotConfigured() {
+        void getEmailConfiguration_mailgunProviderNullDomain_returnsNotConfigured() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "mailgun");
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", null);
@@ -272,7 +272,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_smtpProviderWithMailSender_returnsValidConfig")
-        void getEmailConfiguration_smtpProviderWithMailSender_returnsValidConfig() {
+        void getEmailConfiguration_smtpProviderWithMailSender_returnsValidConfig() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
             Map<String, Object> config = emailTestService.getEmailConfiguration();
@@ -282,7 +282,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_smtpProviderNullMailSender_returnsInvalidConfig")
-        void getEmailConfiguration_smtpProviderNullMailSender_returnsInvalidConfig() {
+        void getEmailConfiguration_smtpProviderNullMailSender_returnsInvalidConfig() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
@@ -293,7 +293,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_smtpProviderEmptyHost_returnsInvalidConfig")
-        void getEmailConfiguration_smtpProviderEmptyHost_returnsInvalidConfig() {
+        void getEmailConfiguration_smtpProviderEmptyHost_returnsInvalidConfig() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailHost", "");
 
@@ -304,7 +304,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_smtpProviderEmptyPort_returnsInvalidConfig")
-        void getEmailConfiguration_smtpProviderEmptyPort_returnsInvalidConfig() {
+        void getEmailConfiguration_smtpProviderEmptyPort_returnsInvalidConfig() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailPort", "");
 
@@ -315,7 +315,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_nullMailSender_showsNotAvailable")
-        void getEmailConfiguration_nullMailSender_showsNotAvailable() {
+        void getEmailConfiguration_nullMailSender_showsNotAvailable() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
             Map<String, Object> config = emailTestService.getEmailConfiguration();
@@ -325,7 +325,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("getEmailConfiguration_unknownProvider_noProviderSpecificKeys")
-        void getEmailConfiguration_unknownProvider_noProviderSpecificKeys() {
+        void getEmailConfiguration_unknownProvider_noProviderSpecificKeys() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "customProvider");
 
             Map<String, Object> config = emailTestService.getEmailConfiguration();
@@ -378,7 +378,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("sendTestEmail_smtpProviderThrowsMessagingException_rethrowsException")
-        void sendTestEmail_smtpProviderThrowsMessagingException_rethrowsException() {
+        void sendTestEmail_smtpProviderThrowsMessagingException_rethrowsException() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             doThrow(new RuntimeException("SMTP error"))
                     .when(mailSender).send(any(MimeMessage.class));
@@ -399,7 +399,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_consoleProviderValidConfig_overallValid")
-        void validateEmailConfiguration_consoleProviderValidConfig_overallValid() {
+        void validateEmailConfiguration_consoleProviderValidConfig_overallValid() throws Exception {
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("providerSet")).isEqualTo(true);
@@ -415,7 +415,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_smtpProviderWithMailSender_overallValid")
-        void validateEmailConfiguration_smtpProviderWithMailSender_overallValid() {
+        void validateEmailConfiguration_smtpProviderWithMailSender_overallValid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -425,7 +425,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_smtpProviderNullMailSender_overallInvalid")
-        void validateEmailConfiguration_smtpProviderNullMailSender_overallInvalid() {
+        void validateEmailConfiguration_smtpProviderNullMailSender_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
@@ -439,7 +439,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_nullProvider_overallInvalid")
-        void validateEmailConfiguration_nullProvider_overallInvalid() {
+        void validateEmailConfiguration_nullProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", null);
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -453,7 +453,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_emptyProvider_overallInvalid")
-        void validateEmailConfiguration_emptyProvider_overallInvalid() {
+        void validateEmailConfiguration_emptyProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -464,7 +464,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_blankProvider_overallInvalid")
-        void validateEmailConfiguration_blankProvider_overallInvalid() {
+        void validateEmailConfiguration_blankProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "   ");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -474,7 +474,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_nullFromEmail_invalidFromEmail")
-        void validateEmailConfiguration_nullFromEmail_invalidFromEmail() {
+        void validateEmailConfiguration_nullFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", null);
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -487,7 +487,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_emptyFromEmail_invalidFromEmail")
-        void validateEmailConfiguration_emptyFromEmail_invalidFromEmail() {
+        void validateEmailConfiguration_emptyFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -497,7 +497,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_fromEmailNoAt_invalidFromEmail")
-        void validateEmailConfiguration_fromEmailNoAt_invalidFromEmail() {
+        void validateEmailConfiguration_fromEmailNoAt_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "invalidemail");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -507,7 +507,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_blankFromEmail_invalidFromEmail")
-        void validateEmailConfiguration_blankFromEmail_invalidFromEmail() {
+        void validateEmailConfiguration_blankFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "   ");
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -517,7 +517,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_emptyMailHost_smtpConfigInvalid")
-        void validateEmailConfiguration_emptyMailHost_smtpConfigInvalid() {
+        void validateEmailConfiguration_emptyMailHost_smtpConfigInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailHost", "");
 
@@ -531,7 +531,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_emptyMailPort_smtpConfigInvalid")
-        void validateEmailConfiguration_emptyMailPort_smtpConfigInvalid() {
+        void validateEmailConfiguration_emptyMailPort_smtpConfigInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailPort", "");
 
@@ -545,7 +545,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_allInvalid_returnsAllRecommendations")
-        void validateEmailConfiguration_allInvalid_returnsAllRecommendations() {
+        void validateEmailConfiguration_allInvalid_returnsAllRecommendations() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", null);
             ReflectionTestUtils.setField(emailTestService, "fromEmail", null);
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
@@ -565,7 +565,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("validateEmailConfiguration_consoleProviderNullMailSender_stillValid")
-        void validateEmailConfiguration_consoleProviderNullMailSender_stillValid() {
+        void validateEmailConfiguration_consoleProviderNullMailSender_stillValid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
             Map<String, Object> validation = emailTestService.validateEmailConfiguration();
@@ -585,7 +585,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testAllEmailTypes_consoleProvider_allSuccess")
-        void testAllEmailTypes_consoleProvider_allSuccess() {
+        void testAllEmailTypes_consoleProvider_allSuccess() throws Exception {
             Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
 
             assertThat(results.get("testEmail")).isEqualTo("test@example.com");
@@ -597,7 +597,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testAllEmailTypes_smtpProvider_allSuccess")
-        void testAllEmailTypes_smtpProvider_allSuccess() {
+        void testAllEmailTypes_smtpProvider_allSuccess() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
             Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
@@ -610,7 +610,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testAllEmailTypes_smtpProviderMailSendFails_allFailed")
-        void testAllEmailTypes_smtpProviderMailSendFails_allFailed() {
+        void testAllEmailTypes_smtpProviderMailSendFails_allFailed() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             doThrow(new RuntimeException("SMTP down"))
                     .when(mailSender).send(any(MimeMessage.class));
@@ -624,7 +624,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testAllEmailTypes_nullMailSender_allSuccessViaConsoleFallback")
-        void testAllEmailTypes_nullMailSender_allSuccessViaConsoleFallback() {
+        void testAllEmailTypes_nullMailSender_allSuccessViaConsoleFallback() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
             Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
@@ -645,7 +645,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testSimpleEmail_consoleProvider_returnsSuccessResult")
-        void testSimpleEmail_consoleProvider_returnsSuccessResult() {
+        void testSimpleEmail_consoleProvider_returnsSuccessResult() throws Exception {
             Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
 
             assertThat(result.get("recipientEmail")).isEqualTo("test@example.com");
@@ -658,7 +658,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testSimpleEmail_smtpProviderSuccess_returnsSuccessResult")
-        void testSimpleEmail_smtpProviderSuccess_returnsSuccessResult() {
+        void testSimpleEmail_smtpProviderSuccess_returnsSuccessResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
             Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
@@ -669,7 +669,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testSimpleEmail_smtpProviderThrows_returnsFailureResult")
-        void testSimpleEmail_smtpProviderThrows_returnsFailureResult() {
+        void testSimpleEmail_smtpProviderThrows_returnsFailureResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             doThrow(new RuntimeException("SMTP connection refused"))
                     .when(mailSender).send(any(MimeMessage.class));
@@ -683,7 +683,7 @@ class EmailTestServiceTest {
 
         @Test
         @DisplayName("testSimpleEmail_nullMailSender_returnsSuccessViaConsoleFallback")
-        void testSimpleEmail_nullMailSender_returnsSuccessViaConsoleFallback() {
+        void testSimpleEmail_nullMailSender_returnsSuccessViaConsoleFallback() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
             Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");

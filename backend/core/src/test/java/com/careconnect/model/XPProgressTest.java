@@ -11,7 +11,7 @@ class XPProgressTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         XPProgress progress = new XPProgress();
 
         assertThat(progress).isNotNull();
@@ -25,7 +25,7 @@ class XPProgressTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         XPProgress progress = new XPProgress(1L, 500, 3, 42L, now);
 
@@ -39,7 +39,7 @@ class XPProgressTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         XPProgress progress = new XPProgress();
         LocalDateTime now = LocalDateTime.now();
 

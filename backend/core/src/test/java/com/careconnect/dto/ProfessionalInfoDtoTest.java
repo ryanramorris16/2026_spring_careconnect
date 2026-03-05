@@ -12,7 +12,7 @@ class ProfessionalInfoDtoTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto();
 
         assertThat(dto).isNotNull();
@@ -24,21 +24,21 @@ class ProfessionalInfoDtoTest {
     // ─── Setters and Getters ──────────────────────────────────────────────────
 
     @Test
-    void setLicenseNumber_getLicenseNumber_roundTrips() {
+    void setLicenseNumber_getLicenseNumber_roundTrips() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setLicenseNumber("LIC-12345");
         assertThat(dto.getLicenseNumber()).isEqualTo("LIC-12345");
     }
 
     @Test
-    void setIssuingState_getIssuingState_roundTrips() {
+    void setIssuingState_getIssuingState_roundTrips() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setIssuingState("Maryland");
         assertThat(dto.getIssuingState()).isEqualTo("Maryland");
     }
 
     @Test
-    void setYearsExperience_getYearsExperience_roundTrips() {
+    void setYearsExperience_getYearsExperience_roundTrips() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setYearsExperience(10);
         assertThat(dto.getYearsExperience()).isEqualTo(10);
@@ -47,7 +47,7 @@ class ProfessionalInfoDtoTest {
     // ─── All fields set together ──────────────────────────────────────────────
 
     @Test
-    void allSetters_allFieldsUpdated() {
+    void allSetters_allFieldsUpdated() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto();
 
         dto.setLicenseNumber("RN-99999");

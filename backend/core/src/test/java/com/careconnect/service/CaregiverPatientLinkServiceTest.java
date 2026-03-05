@@ -57,7 +57,7 @@ class CaregiverPatientLinkServiceTest {
     private CaregiverPatientLink link;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         caregiverUser = new User();
@@ -106,7 +106,7 @@ class CaregiverPatientLinkServiceTest {
     // -------------------------------------------------------------------------
     // Helper: stub caregiver/patient repository to return names for response mapping
     // -------------------------------------------------------------------------
-    private void stubNameLookups() {
+    private void stubNameLookups() throws Exception {
         when(caregiverRepository.findByUser(caregiverUser)).thenReturn(Optional.of(caregiver));
         when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
     }
@@ -120,7 +120,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_validRequest_returnsResponse")
-        void createLink_validRequest_returnsResponse() {
+        void createLink_validRequest_returnsResponse() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, "notes");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
@@ -144,7 +144,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_temporaryWithExpiry_returnsResponseWithExpiry")
-        void createLink_temporaryWithExpiry_returnsResponseWithExpiry() {
+        void createLink_temporaryWithExpiry_returnsResponseWithExpiry() throws Exception {
             LocalDateTime expiry = LocalDateTime.now().plusDays(7);
             CreateLinkRequest request = new CreateLinkRequest(2L, "temporary", expiry, "temp access");
 
@@ -166,7 +166,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_caregiverNotFound_throwsAppException")
-        void createLink_caregiverNotFound_throwsAppException() {
+        void createLink_caregiverNotFound_throwsAppException() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -179,7 +179,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_patientNotFound_throwsAppException")
-        void createLink_patientNotFound_throwsAppException() {
+        void createLink_patientNotFound_throwsAppException() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
@@ -193,7 +193,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_creatorNotFound_throwsAppException")
-        void createLink_creatorNotFound_throwsAppException() {
+        void createLink_creatorNotFound_throwsAppException() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -208,7 +208,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_activeLinkAlreadyExists_throwsConflictException")
-        void createLink_activeLinkAlreadyExists_throwsConflictException() {
+        void createLink_activeLinkAlreadyExists_throwsConflictException() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -233,7 +233,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_allFieldsProvided_updatesAll")
-        void updateLink_allFieldsProvided_updatesAll() {
+        void updateLink_allFieldsProvided_updatesAll() throws Exception {
             LocalDateTime newExpiry = LocalDateTime.now().plusDays(30);
             UpdateLinkRequest request = new UpdateLinkRequest("SUSPENDED", "TEMPORARY", newExpiry, "updated notes");
 
@@ -253,7 +253,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_allFieldsNull_noChanges")
-        void updateLink_allFieldsNull_noChanges() {
+        void updateLink_allFieldsNull_noChanges() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -270,7 +270,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_onlyStatusProvided_updatesOnlyStatus")
-        void updateLink_onlyStatusProvided_updatesOnlyStatus() {
+        void updateLink_onlyStatusProvided_updatesOnlyStatus() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest("REVOKED", null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -286,7 +286,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_onlyLinkTypeProvided_updatesOnlyLinkType")
-        void updateLink_onlyLinkTypeProvided_updatesOnlyLinkType() {
+        void updateLink_onlyLinkTypeProvided_updatesOnlyLinkType() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest(null, "EMERGENCY", null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -302,7 +302,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_onlyExpiresAtProvided_updatesOnlyExpiry")
-        void updateLink_onlyExpiresAtProvided_updatesOnlyExpiry() {
+        void updateLink_onlyExpiresAtProvided_updatesOnlyExpiry() throws Exception {
             LocalDateTime newExpiry = LocalDateTime.now().plusDays(14);
             UpdateLinkRequest request = new UpdateLinkRequest(null, null, newExpiry, null);
 
@@ -318,7 +318,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_onlyNotesProvided_updatesOnlyNotes")
-        void updateLink_onlyNotesProvided_updatesOnlyNotes() {
+        void updateLink_onlyNotesProvided_updatesOnlyNotes() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, "new notes");
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -333,7 +333,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_linkNotFound_throwsAppException")
-        void updateLink_linkNotFound_throwsAppException() {
+        void updateLink_linkNotFound_throwsAppException() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest("ACTIVE", null, null, null);
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -354,7 +354,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("suspendLink_withValidUserId_suspendsLink")
-        void suspendLink_withValidUserId_suspendsLink() {
+        void suspendLink_withValidUserId_suspendsLink() throws Exception {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findById(3L)).thenReturn(Optional.of(creatorUser));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
@@ -370,7 +370,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("suspendLink_withValidEmail_suspendsLink")
-        void suspendLink_withValidEmail_suspendsLink() {
+        void suspendLink_withValidEmail_suspendsLink() throws Exception {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(creatorUser));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
@@ -385,7 +385,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("suspendLink_linkNotFound_throwsAppException")
-        void suspendLink_linkNotFound_throwsAppException() {
+        void suspendLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -397,7 +397,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("suspendLink_userIdNotFound_throwsAppException")
-        void suspendLink_userIdNotFound_throwsAppException() {
+        void suspendLink_userIdNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -410,7 +410,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("suspendLink_emailNotFound_throwsAppException")
-        void suspendLink_emailNotFound_throwsAppException() {
+        void suspendLink_emailNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
@@ -431,7 +431,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("reactivateLink_suspendedLink_reactivatesSuccessfully")
-        void reactivateLink_suspendedLink_reactivatesSuccessfully() {
+        void reactivateLink_suspendedLink_reactivatesSuccessfully() throws Exception {
             link.setStatus(CaregiverPatientLink.LinkStatus.SUSPENDED);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -448,7 +448,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("reactivateLink_linkNotFound_throwsAppException")
-        void reactivateLink_linkNotFound_throwsAppException() {
+        void reactivateLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -460,7 +460,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("reactivateLink_activeLink_throwsBadRequest")
-        void reactivateLink_activeLink_throwsBadRequest() {
+        void reactivateLink_activeLink_throwsBadRequest() throws Exception {
             link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
@@ -473,7 +473,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("reactivateLink_revokedLink_throwsBadRequest")
-        void reactivateLink_revokedLink_throwsBadRequest() {
+        void reactivateLink_revokedLink_throwsBadRequest() throws Exception {
             link.setStatus(CaregiverPatientLink.LinkStatus.REVOKED);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
@@ -485,7 +485,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("reactivateLink_expiredLink_throwsBadRequest")
-        void reactivateLink_expiredLink_throwsBadRequest() {
+        void reactivateLink_expiredLink_throwsBadRequest() throws Exception {
             link.setStatus(CaregiverPatientLink.LinkStatus.EXPIRED);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
@@ -505,7 +505,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("revokeLink_existingLink_revokesSuccessfully")
-        void revokeLink_existingLink_revokesSuccessfully() {
+        void revokeLink_existingLink_revokesSuccessfully() throws Exception {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
@@ -518,7 +518,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("revokeLink_linkNotFound_throwsAppException")
-        void revokeLink_linkNotFound_throwsAppException() {
+        void revokeLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -538,7 +538,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_hasLinks_returnsList")
-        void getPatientsByCaregiver_hasLinks_returnsList() {
+        void getPatientsByCaregiver_hasLinks_returnsList() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(caregiverPatientLinkRepository.findActivePatientsByCaregiver(eq(caregiverUser), any(LocalDateTime.class)))
                     .thenReturn(List.of(link));
@@ -553,7 +553,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_noLinks_returnsEmptyList")
-        void getPatientsByCaregiver_noLinks_returnsEmptyList() {
+        void getPatientsByCaregiver_noLinks_returnsEmptyList() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(caregiverPatientLinkRepository.findActivePatientsByCaregiver(eq(caregiverUser), any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
@@ -566,7 +566,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_caregiverNotFound_throwsAppException")
-        void getPatientsByCaregiver_caregiverNotFound_throwsAppException() {
+        void getPatientsByCaregiver_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -586,7 +586,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getCaregiversByPatient_hasLinks_returnsList")
-        void getCaregiversByPatient_hasLinks_returnsList() {
+        void getCaregiversByPatient_hasLinks_returnsList() throws Exception {
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.findActiveCaregiversByPatient(eq(patientUser), any(LocalDateTime.class)))
                     .thenReturn(List.of(link));
@@ -601,7 +601,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getCaregiversByPatient_noLinks_returnsEmptyList")
-        void getCaregiversByPatient_noLinks_returnsEmptyList() {
+        void getCaregiversByPatient_noLinks_returnsEmptyList() throws Exception {
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.findActiveCaregiversByPatient(eq(patientUser), any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
@@ -614,7 +614,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getCaregiversByPatient_patientNotFound_throwsAppException")
-        void getCaregiversByPatient_patientNotFound_throwsAppException() {
+        void getCaregiversByPatient_patientNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -634,7 +634,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_activeNonExpiredLink_returnsTrue")
-        void hasAccessToPatient_activeNonExpiredLink_returnsTrue() {
+        void hasAccessToPatient_activeNonExpiredLink_returnsTrue() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
@@ -647,7 +647,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_noActiveLink_returnsFalse")
-        void hasAccessToPatient_noActiveLink_returnsFalse() {
+        void hasAccessToPatient_noActiveLink_returnsFalse() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
@@ -660,7 +660,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_caregiverUserNull_returnsFalse")
-        void hasAccessToPatient_caregiverUserNull_returnsFalse() {
+        void hasAccessToPatient_caregiverUserNull_returnsFalse() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
 
@@ -671,7 +671,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_patientUserNull_returnsFalse")
-        void hasAccessToPatient_patientUserNull_returnsFalse() {
+        void hasAccessToPatient_patientUserNull_returnsFalse() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -682,7 +682,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_bothUsersNull_returnsFalse")
-        void hasAccessToPatient_bothUsersNull_returnsFalse() {
+        void hasAccessToPatient_bothUsersNull_returnsFalse() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -701,7 +701,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getAllLinks_hasLinks_returnsList")
-        void getAllLinks_hasLinks_returnsList() {
+        void getAllLinks_hasLinks_returnsList() throws Exception {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
@@ -713,7 +713,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("getAllLinks_noLinks_returnsEmptyList")
-        void getAllLinks_noLinks_returnsEmptyList() {
+        void getAllLinks_noLinks_returnsEmptyList() throws Exception {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(Collections.emptyList());
 
             List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
@@ -732,7 +732,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("cleanupExpiredLinks_expiredLinksExist_setsExpiredStatus")
-        void cleanupExpiredLinks_expiredLinksExist_setsExpiredStatus() {
+        void cleanupExpiredLinks_expiredLinksExist_setsExpiredStatus() throws Exception {
             CaregiverPatientLink expiredLink1 = new CaregiverPatientLink();
             expiredLink1.setId(200L);
             expiredLink1.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
@@ -753,7 +753,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("cleanupExpiredLinks_noExpiredLinks_noSaves")
-        void cleanupExpiredLinks_noExpiredLinks_noSaves() {
+        void cleanupExpiredLinks_noExpiredLinks_noSaves() throws Exception {
             when(caregiverPatientLinkRepository.findExpiredActiveLinks(any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
 
@@ -772,7 +772,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createPermanentLink_noExistingLink_createsLink")
-        void createPermanentLink_noExistingLink_createsLink() {
+        void createPermanentLink_noExistingLink_createsLink() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
@@ -785,7 +785,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createPermanentLink_existingActiveLink_doesNotCreateDuplicate")
-        void createPermanentLink_existingActiveLink_doesNotCreateDuplicate() {
+        void createPermanentLink_existingActiveLink_doesNotCreateDuplicate() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
@@ -798,7 +798,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createPermanentLink_caregiverNotFound_throwsAppException")
-        void createPermanentLink_caregiverNotFound_throwsAppException() {
+        void createPermanentLink_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -810,7 +810,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createPermanentLink_patientNotFound_throwsAppException")
-        void createPermanentLink_patientNotFound_throwsAppException() {
+        void createPermanentLink_patientNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -831,7 +831,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasActiveLink_linkExists_returnsTrue")
-        void hasActiveLink_linkExists_returnsTrue() {
+        void hasActiveLink_linkExists_returnsTrue() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsByCaregiverUserAndPatientUserAndStatus(
@@ -844,7 +844,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasActiveLink_noLink_returnsFalse")
-        void hasActiveLink_noLink_returnsFalse() {
+        void hasActiveLink_noLink_returnsFalse() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(caregiverPatientLinkRepository.existsByCaregiverUserAndPatientUserAndStatus(
@@ -857,7 +857,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasActiveLink_caregiverNotFound_throwsAppException")
-        void hasActiveLink_caregiverNotFound_throwsAppException() {
+        void hasActiveLink_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             AppException ex = assertThrows(AppException.class,
@@ -869,7 +869,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("hasActiveLink_patientNotFound_throwsAppException")
-        void hasActiveLink_patientNotFound_throwsAppException() {
+        void hasActiveLink_patientNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -890,7 +890,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByNull_showsSystem")
-        void toCaregiverPatientLinkResponse_createdByNull_showsSystem() {
+        void toCaregiverPatientLinkResponse_createdByNull_showsSystem() throws Exception {
             link.setCreatedBy(null);
 
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
@@ -904,7 +904,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByPatientRole_usesPatientName")
-        void toCaregiverPatientLinkResponse_createdByPatientRole_usesPatientName() {
+        void toCaregiverPatientLinkResponse_createdByPatientRole_usesPatientName() throws Exception {
             User patientCreator = new User();
             patientCreator.setId(10L);
             patientCreator.setEmail("patientcreator@example.com");
@@ -931,7 +931,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByCaregiverRole_usesCaregiverName")
-        void toCaregiverPatientLinkResponse_createdByCaregiverRole_usesCaregiverName() {
+        void toCaregiverPatientLinkResponse_createdByCaregiverRole_usesCaregiverName() throws Exception {
             User caregiverCreator = new User();
             caregiverCreator.setId(11L);
             caregiverCreator.setEmail("caregivercreator@example.com");
@@ -958,7 +958,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByAdminRole_usesEmail")
-        void toCaregiverPatientLinkResponse_createdByAdminRole_usesEmail() {
+        void toCaregiverPatientLinkResponse_createdByAdminRole_usesEmail() throws Exception {
             link.setCreatedBy(creatorUser); // creatorUser has ADMIN role
 
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
@@ -971,7 +971,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByFamilyMemberRole_usesEmail")
-        void toCaregiverPatientLinkResponse_createdByFamilyMemberRole_usesEmail() {
+        void toCaregiverPatientLinkResponse_createdByFamilyMemberRole_usesEmail() throws Exception {
             User familyUser = new User();
             familyUser.setId(20L);
             familyUser.setEmail("family@example.com");
@@ -990,7 +990,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_caregiverProfileNotFound_usesEmail")
-        void toCaregiverPatientLinkResponse_caregiverProfileNotFound_usesEmail() {
+        void toCaregiverPatientLinkResponse_caregiverProfileNotFound_usesEmail() throws Exception {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             when(caregiverRepository.findByUser(caregiverUser)).thenReturn(Optional.empty());
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
@@ -1002,7 +1002,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_patientProfileNotFound_usesEmail")
-        void toCaregiverPatientLinkResponse_patientProfileNotFound_usesEmail() {
+        void toCaregiverPatientLinkResponse_patientProfileNotFound_usesEmail() throws Exception {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             when(caregiverRepository.findByUser(caregiverUser)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
@@ -1014,7 +1014,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_mapsAllFields_correctly")
-        void toCaregiverPatientLinkResponse_mapsAllFields_correctly() {
+        void toCaregiverPatientLinkResponse_mapsAllFields_correctly() throws Exception {
             LocalDateTime now = LocalDateTime.now();
             LocalDateTime expiry = now.plusDays(30);
             link.setCreatedAt(now);
@@ -1051,7 +1051,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_creatorIsPatient_responseShowsPatientName")
-        void createLink_creatorIsPatient_responseShowsPatientName() {
+        void createLink_creatorIsPatient_responseShowsPatientName() throws Exception {
             User patientCreator = new User();
             patientCreator.setId(50L);
             patientCreator.setEmail("patcreator@example.com");
@@ -1084,7 +1084,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_creatorIsCaregiver_responseShowsCaregiverName")
-        void createLink_creatorIsCaregiver_responseShowsCaregiverName() {
+        void createLink_creatorIsCaregiver_responseShowsCaregiverName() throws Exception {
             User caregiverCreator = new User();
             caregiverCreator.setId(60L);
             caregiverCreator.setEmail("carecreator@example.com");
@@ -1125,7 +1125,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("createLink_lowercaseLinkType_convertsToUpperCase")
-        void createLink_lowercaseLinkType_convertsToUpperCase() {
+        void createLink_lowercaseLinkType_convertsToUpperCase() throws Exception {
             CreateLinkRequest request = new CreateLinkRequest(2L, "emergency", null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
@@ -1144,7 +1144,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_lowercaseStatus_convertsToUpperCase")
-        void updateLink_lowercaseStatus_convertsToUpperCase() {
+        void updateLink_lowercaseStatus_convertsToUpperCase() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest("suspended", null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
@@ -1159,7 +1159,7 @@ class CaregiverPatientLinkServiceTest {
 
         @Test
         @DisplayName("updateLink_lowercaseLinkType_convertsToUpperCase")
-        void updateLink_lowercaseLinkType_convertsToUpperCase() {
+        void updateLink_lowercaseLinkType_convertsToUpperCase() throws Exception {
             UpdateLinkRequest request = new UpdateLinkRequest(null, "temporary", null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));

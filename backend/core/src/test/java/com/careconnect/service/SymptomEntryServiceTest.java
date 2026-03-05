@@ -43,7 +43,7 @@ class SymptomEntryServiceTest {
     private Patient patient;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         patient = Patient.builder().id(1L).firstName("Jane").lastName("Doe").build();
     }
@@ -54,7 +54,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("createSymptom: persists a new entry and returns mapped DTO with all fields")
-    void testCreateSymptom_happyPath() {
+    void testCreateSymptom_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, the service must
         // save the entry and return a DTO that mirrors all input fields.
         Instant now = Instant.now();
@@ -89,7 +89,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("createSymptom: uses current time when takenAt is null in the DTO")
-    void testCreateSymptom_nullTakenAt_usesNow() {
+    void testCreateSymptom_nullTakenAt_usesNow() throws Exception {
         // When the caller omits takenAt, the service must substitute Instant.now()
         // so the saved entry always has a valid timestamp.
         SymptomEntryDTO dto = SymptomEntryDTO.builder()
@@ -118,7 +118,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("createSymptom: throws IllegalArgumentException when the patient does not exist")
-    void testCreateSymptom_patientNotFound_throws() {
+    void testCreateSymptom_patientNotFound_throws() throws Exception {
         // A symptom entry cannot exist without a valid patient reference;
         // the service must surface this as an IllegalArgumentException.
         SymptomEntryDTO dto = SymptomEntryDTO.builder()
@@ -138,7 +138,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("createSymptom: sets completed=true regardless of the DTO value")
-    void testCreateSymptom_alwaysSetsCompleted() {
+    void testCreateSymptom_alwaysSetsCompleted() throws Exception {
         // The service always marks a newly created entry as completed=true;
         // the DTO's completed field (if any) is not consulted.
         SymptomEntryDTO dto = SymptomEntryDTO.builder()
@@ -163,7 +163,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("getSymptomsForPatient: returns only entries belonging to the requested patient")
-    void testGetSymptomsForPatient_filtersCorrectly() {
+    void testGetSymptomsForPatient_filtersCorrectly() throws Exception {
         // The repository returns all entries; the service must filter to the
         // requested patient ID so unrelated entries are excluded.
         Patient other = Patient.builder().id(2L).build();
@@ -190,7 +190,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("getSymptomsForPatient: returns an empty list when no entries exist for the patient")
-    void testGetSymptomsForPatient_noMatches_returnsEmpty() {
+    void testGetSymptomsForPatient_noMatches_returnsEmpty() throws Exception {
         // If the patient has no recorded symptoms the result must be an empty
         // list, not null or an exception.
         Patient other = Patient.builder().id(2L).build();
@@ -208,7 +208,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("getSymptomsForPatient: returns all entries when every entry belongs to the patient")
-    void testGetSymptomsForPatient_multipleMatches_returnsAll() {
+    void testGetSymptomsForPatient_multipleMatches_returnsAll() throws Exception {
         // All three entries belong to patient 1; all must be included in order.
         SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
                 .symptomKey("headache").takenAt(Instant.now()).completed(true).build();
@@ -226,7 +226,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("getSymptomsForPatient: maps severity and symptomValue fields correctly into the DTO")
-    void testGetSymptomsForPatient_mapsAllDtoFields() {
+    void testGetSymptomsForPatient_mapsAllDtoFields() throws Exception {
         // Verify that the private mapToDTO helper correctly transfers all fields
         // by inspecting the returned DTO's individual properties.
         Instant ts = Instant.parse("2025-06-01T10:00:00Z");
@@ -254,7 +254,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("deleteSymptom: calls deleteById when the entry exists")
-    void testDeleteSymptom_exists_deletesEntry() {
+    void testDeleteSymptom_exists_deletesEntry() throws Exception {
         // The happy path: the entry is present, so the service must delegate
         // to the repository's deleteById without throwing.
         when(symptomEntryRepository.existsById(1L)).thenReturn(true);
@@ -266,7 +266,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("deleteSymptom: throws IllegalArgumentException when the entry does not exist")
-    void testDeleteSymptom_notFound_throws() {
+    void testDeleteSymptom_notFound_throws() throws Exception {
         // A delete request for a non-existent entry must fail fast with a
         // descriptive IllegalArgumentException before any delete is attempted.
         when(symptomEntryRepository.existsById(99L)).thenReturn(false);
@@ -281,7 +281,7 @@ class SymptomEntryServiceTest {
 
     @Test
     @DisplayName("deleteSymptom: does not call deleteById when the entry is absent")
-    void testDeleteSymptom_notFound_noDeletion() {
+    void testDeleteSymptom_notFound_noDeletion() throws Exception {
         // Verify no side effects occur beyond the exception when the entry is missing.
         when(symptomEntryRepository.existsById(42L)).thenReturn(false);
 

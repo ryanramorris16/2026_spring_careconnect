@@ -11,7 +11,7 @@ class UserAchievementTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         UserAchievement ua = new UserAchievement();
 
         assertThat(ua).isNotNull();
@@ -24,7 +24,7 @@ class UserAchievementTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Achievement achievement = new Achievement(5L, "First Login", "Earned on first login", null);
         LocalDateTime now = LocalDateTime.now();
 
@@ -39,7 +39,7 @@ class UserAchievementTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         UserAchievement ua = new UserAchievement();
         Achievement achievement = new Achievement(3L, "Streak", "Login streak", null);
         LocalDateTime now = LocalDateTime.now();

@@ -7,6 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
+
 import java.util.List;
 import java.util.Map;
 
@@ -18,11 +23,19 @@ public class MedicationController {
     @Autowired
     private MedicationService medicationService;
 
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
+
     // ================================================================
     // 1. Fetch all medications for a patient
     // ================================================================
     @GetMapping("/{patientId}/medications")
-    public ResponseEntity<List<MedicationDTO>> getAllMedications(@PathVariable Long patientId) {
+    public ResponseEntity<List<MedicationDTO>> getAllMedications(@PathVariable Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         List<MedicationDTO> allMeds = medicationService.getAllMedicationsForPatient(patientId);
         return ResponseEntity.ok(allMeds);
     }
@@ -31,7 +44,9 @@ public class MedicationController {
     // 1.1 Fetch only active medications
     // ================================================================
     @GetMapping("/{patientId}/medications/active")
-    public ResponseEntity<List<MedicationDTO>> getActiveMedications(@PathVariable Long patientId) {
+    public ResponseEntity<List<MedicationDTO>> getActiveMedications(@PathVariable Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         List<MedicationDTO> activeMeds = medicationService.getActiveMedicationsForPatient(patientId);
         return ResponseEntity.ok(activeMeds);
     }
@@ -40,7 +55,9 @@ public class MedicationController {
     // 1.2 Fetch pending medications (approval_status = 'PENDING')
     // ================================================================
     @GetMapping("/{patientId}/medications/pending")
-    public ResponseEntity<List<MedicationDTO>> getPendingMedications(@PathVariable Long patientId) {
+    public ResponseEntity<List<MedicationDTO>> getPendingMedications(@PathVariable Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         List<MedicationDTO> pending = medicationService.getPendingMedications(patientId);
         return ResponseEntity.ok(pending);
     }
@@ -51,8 +68,10 @@ public class MedicationController {
     @PostMapping("/{patientId}/medications")
     public ResponseEntity<MedicationDTO> addMedication(
             @PathVariable Long patientId,
-            @RequestBody MedicationDTO newMedication) {
+            @RequestBody MedicationDTO newMedication) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         MedicationDTO createdMedication = medicationService.addMedication(patientId, newMedication);
         return ResponseEntity.ok(createdMedication);
     }
@@ -63,8 +82,10 @@ public class MedicationController {
     @PutMapping("/{patientId}/medications/{medicationId}/approve")
     public ResponseEntity<?> approveMedication(
             @PathVariable Long patientId,
-            @PathVariable Long medicationId) {
+            @PathVariable Long medicationId) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         MedicationDTO approvedMedication = medicationService.approveMedication(patientId, medicationId);
         return ResponseEntity.ok(Map.of(
                 "message", "Medication approved successfully",
@@ -78,8 +99,10 @@ public class MedicationController {
     @DeleteMapping("/{patientId}/medications/{medicationId}")
     public ResponseEntity<?> deleteMedication(
             @PathVariable Long patientId,
-            @PathVariable Long medicationId) {
+            @PathVariable Long medicationId) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         medicationService.deactivateMedication(patientId, medicationId);
         return ResponseEntity.ok(Map.of(
                 "message", "Medication removed and notification sent"
@@ -93,8 +116,10 @@ public class MedicationController {
     public ResponseEntity<?> deleteMedicationByCaregiver(
             @PathVariable Long patientId,
             @PathVariable Long medicationId,
-            @PathVariable Long caregiverId) {
+            @PathVariable Long caregiverId) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         medicationService.hardDeleteMedication(patientId, medicationId, caregiverId);
         return ResponseEntity.ok(Map.of(
                 "message", "Medication deleted successfully"

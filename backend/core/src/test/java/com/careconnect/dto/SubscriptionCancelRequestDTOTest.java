@@ -12,7 +12,7 @@ class SubscriptionCancelRequestDTOTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
 
         assertThat(dto).isNotNull();
@@ -22,7 +22,7 @@ class SubscriptionCancelRequestDTOTest {
     // ─── Setter and Getter ────────────────────────────────────────────────────
 
     @Test
-    void setSubscriptionId_getSubscriptionId_roundTrips() {
+    void setSubscriptionId_getSubscriptionId_roundTrips() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
         dto.setSubscriptionId(42L);
         assertThat(dto.getSubscriptionId()).isEqualTo(42L);
@@ -31,14 +31,14 @@ class SubscriptionCancelRequestDTOTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameInstance_returnsTrue() {
+    void equals_sameInstance_returnsTrue() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
         dto.setSubscriptionId(1L);
         assertThat(dto).isEqualTo(dto);
     }
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         SubscriptionCancelRequestDTO dto1 = new SubscriptionCancelRequestDTO();
         dto1.setSubscriptionId(10L);
 
@@ -50,7 +50,7 @@ class SubscriptionCancelRequestDTOTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         SubscriptionCancelRequestDTO dto1 = new SubscriptionCancelRequestDTO();
         dto1.setSubscriptionId(1L);
 
@@ -61,13 +61,13 @@ class SubscriptionCancelRequestDTOTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
         assertThat(dto).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
         assertThat(dto).isNotEqualTo("a string");
     }
@@ -75,7 +75,7 @@ class SubscriptionCancelRequestDTOTest {
     // ─── toString() ───────────────────────────────────────────────────────────
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         SubscriptionCancelRequestDTO dto = new SubscriptionCancelRequestDTO();
         dto.setSubscriptionId(99L);
 

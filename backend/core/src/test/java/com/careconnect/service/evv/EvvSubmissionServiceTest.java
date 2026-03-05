@@ -28,34 +28,34 @@ class EvvSubmissionServiceTest {
 
     // The @InjectMocks injects `clients` as a List via field injection.
     // We need to set it explicitly since Spring normally auto-collects them.
-    private EvvSubmissionService serviceWithClients() {
+    private EvvSubmissionService serviceWithClients() throws Exception {
         return new EvvSubmissionService(List.of(client1), outbox, evvRecordRepository, audit);
     }
 
     // ─── destinationFor() ────────────────────────────────────────────────────
 
     @Test
-    void destinationFor_maryland_returnsMarylandInfoOnly() {
+    void destinationFor_maryland_returnsMarylandInfoOnly() throws Exception {
         assertThat(serviceWithClients().destinationFor("MD")).isEqualTo("maryland-info-only");
     }
 
     @Test
-    void destinationFor_dc_returnsDcSandata() {
+    void destinationFor_dc_returnsDcSandata() throws Exception {
         assertThat(serviceWithClients().destinationFor("DC")).isEqualTo("dc-sandata");
     }
 
     @Test
-    void destinationFor_virginia_returnsVirginiaMco() {
+    void destinationFor_virginia_returnsVirginiaMco() throws Exception {
         assertThat(serviceWithClients().destinationFor("VA")).isEqualTo("virginia-mco");
     }
 
     @Test
-    void destinationFor_lowercase_mapsCorrectly() {
+    void destinationFor_lowercase_mapsCorrectly() throws Exception {
         assertThat(serviceWithClients().destinationFor("md")).isEqualTo("maryland-info-only");
     }
 
     @Test
-    void destinationFor_unsupportedState_throwsIllegalArgument() {
+    void destinationFor_unsupportedState_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> serviceWithClients().destinationFor("TX"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unsupported state code: TX");
@@ -64,7 +64,7 @@ class EvvSubmissionServiceTest {
     // ─── queueForSubmission() ─────────────────────────────────────────────────
 
     @Test
-    void queueForSubmission_callsOutboxEnqueueAndAuditLog() {
+    void queueForSubmission_callsOutboxEnqueueAndAuditLog() throws Exception {
         EvvRecord record = mock(EvvRecord.class);
         when(record.getStateCode()).thenReturn("MD");
 

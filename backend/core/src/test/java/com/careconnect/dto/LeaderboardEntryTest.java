@@ -12,7 +12,7 @@ class LeaderboardEntryTest {
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     @Test
-    void constructor_setsAllFields() {
+    void constructor_setsAllFields() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(1L, "Smith", "John", 500, 3, "http://img.example.com/avatar.png");
 
         assertThat(entry.getUserId()).isEqualTo(1L);
@@ -22,7 +22,7 @@ class LeaderboardEntryTest {
     }
 
     @Test
-    void constructor_nullProfileImageUrl_isNull() {
+    void constructor_nullProfileImageUrl_isNull() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(2L, "Doe", "Jane", 100, 1, null);
 
         assertThat(entry.getProfileImageUrl()).isNull();
@@ -31,14 +31,14 @@ class LeaderboardEntryTest {
     // ─── getName: concatenates lastName + " " + firstName ─────────────────────
 
     @Test
-    void getName_concatenatesLastNameAndFirstName() {
+    void getName_concatenatesLastNameAndFirstName() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(3L, "Williams", "Mary", 250, 2, null);
 
         assertThat(entry.getName()).isEqualTo("Williams Mary");
     }
 
     @Test
-    void getName_withEmptyFirstName_concatenatesCorrectly() {
+    void getName_withEmptyFirstName_concatenatesCorrectly() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(4L, "Brown", "", 0, 0, null);
 
         assertThat(entry.getName()).isEqualTo("Brown ");
@@ -47,7 +47,7 @@ class LeaderboardEntryTest {
     // ─── XP and level edge cases ──────────────────────────────────────────────
 
     @Test
-    void constructor_zeroXpAndLevel_storesZero() {
+    void constructor_zeroXpAndLevel_storesZero() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(5L, "Green", "Tom", 0, 0, null);
 
         assertThat(entry.getXp()).isZero();
@@ -55,7 +55,7 @@ class LeaderboardEntryTest {
     }
 
     @Test
-    void constructor_highXpAndLevel_storesCorrectly() {
+    void constructor_highXpAndLevel_storesCorrectly() throws Exception {
         LeaderboardEntry entry = new LeaderboardEntry(6L, "Hall", "Anna", Integer.MAX_VALUE, 100, null);
 
         assertThat(entry.getXp()).isEqualTo(Integer.MAX_VALUE);

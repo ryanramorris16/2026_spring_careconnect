@@ -263,14 +263,14 @@ class AuthServiceTest {
     }
 
     @AfterAll
-    static void stopMockServer() {
+    static void stopMockServer() throws Exception {
         if (mockServer != null) {
             mockServer.stop(0);
         }
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         ReflectionTestUtils.setField(authService, "googleClientId", "test-client-id");
@@ -301,7 +301,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_invalidRole_shouldReturnBadRequest")
-        void register_invalidRole_shouldReturnBadRequest() {
+        void register_invalidRole_shouldReturnBadRequest() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("INVALID_ROLE");
             req.setEmail("test@test.com");
@@ -313,7 +313,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_existingUnverifiedUser_shouldResendVerification")
-        void register_existingUnverifiedUser_shouldResendVerification() {
+        void register_existingUnverifiedUser_shouldResendVerification() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("test@test.com");
@@ -336,7 +336,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_existingVerifiedUser_shouldReturnConflict")
-        void register_existingVerifiedUser_shouldReturnConflict() {
+        void register_existingVerifiedUser_shouldReturnConflict() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("test@test.com");
@@ -357,7 +357,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_newPatient_shouldCreateUserAndSendEmail")
-        void register_newPatient_shouldCreateUserAndSendEmail() {
+        void register_newPatient_shouldCreateUserAndSendEmail() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new@test.com");
@@ -388,7 +388,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_newPatientWithVerificationBaseUrl_shouldUseProvidedUrl")
-        void register_newPatientWithVerificationBaseUrl_shouldUseProvidedUrl() {
+        void register_newPatientWithVerificationBaseUrl_shouldUseProvidedUrl() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new@test.com");
@@ -418,7 +418,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_newCaregiver_shouldCreateCaregiverAndSendEmail")
-        void register_newCaregiver_shouldCreateCaregiverAndSendEmail() {
+        void register_newCaregiver_shouldCreateCaregiverAndSendEmail() throws Exception {
             CaregiverRegistration req = new CaregiverRegistration();
             req.setRole("CAREGIVER");
             req.setEmail("caregiver@test.com");
@@ -449,7 +449,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_unsupportedRole_shouldThrowAppException")
-        void register_unsupportedRole_shouldThrowAppException() {
+        void register_unsupportedRole_shouldThrowAppException() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("ADMIN");
             req.setEmail("admin@test.com");
@@ -465,7 +465,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_patientRoleWithCaregiverRegistration_shouldSkipPatientCreation")
-        void register_patientRoleWithCaregiverRegistration_shouldSkipPatientCreation() {
+        void register_patientRoleWithCaregiverRegistration_shouldSkipPatientCreation() throws Exception {
             CaregiverRegistration req = new CaregiverRegistration();
             req.setRole("PATIENT");
             req.setEmail("skip@test.com");
@@ -491,7 +491,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_caregiverRoleWithPatientRegistration_shouldSkipCaregiverCreation")
-        void register_caregiverRoleWithPatientRegistration_shouldSkipCaregiverCreation() {
+        void register_caregiverRoleWithPatientRegistration_shouldSkipCaregiverCreation() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("CAREGIVER");
             req.setEmail("skip2@test.com");
@@ -517,7 +517,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_newPatientWithEmptyVerificationBaseUrl_shouldUseBackendUrl")
-        void register_newPatientWithEmptyVerificationBaseUrl_shouldUseBackendUrl() {
+        void register_newPatientWithEmptyVerificationBaseUrl_shouldUseBackendUrl() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new2@test.com");
@@ -547,7 +547,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("register_familyMemberRole_shouldThrowAppException")
-        void register_familyMemberRole_shouldThrowAppException() {
+        void register_familyMemberRole_shouldThrowAppException() throws Exception {
             PatientRegistration req = new PatientRegistration();
             req.setRole("FAMILY_MEMBER");
             req.setEmail("fm@test.com");
@@ -570,7 +570,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateUser_validCredentials_shouldReturnUser")
-        void validateUser_validCredentials_shouldReturnUser() {
+        void validateUser_validCredentials_shouldReturnUser() throws Exception {
             when(userRepository.findByEmailAndRole("test@test.com", Role.PATIENT))
                     .thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
@@ -583,7 +583,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateUser_wrongPassword_shouldReturnEmpty")
-        void validateUser_wrongPassword_shouldReturnEmpty() {
+        void validateUser_wrongPassword_shouldReturnEmpty() throws Exception {
             when(userRepository.findByEmailAndRole("test@test.com", Role.PATIENT))
                     .thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
@@ -595,7 +595,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateUser_unverifiedUser_shouldThrowRuntimeException")
-        void validateUser_unverifiedUser_shouldThrowRuntimeException() {
+        void validateUser_unverifiedUser_shouldThrowRuntimeException() throws Exception {
             User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setPasswordHash("encodedPassword");
@@ -612,7 +612,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateUser_userNotFound_shouldReturnEmpty")
-        void validateUser_userNotFound_shouldReturnEmpty() {
+        void validateUser_userNotFound_shouldReturnEmpty() throws Exception {
             when(userRepository.findByEmailAndRole("unknown@test.com", Role.PATIENT))
                     .thenReturn(Optional.empty());
 
@@ -623,7 +623,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateUser_invalidRole_shouldReturnEmpty")
-        void validateUser_invalidRole_shouldReturnEmpty() {
+        void validateUser_invalidRole_shouldReturnEmpty() throws Exception {
             Optional<User> result = authService.validateUser("test@test.com", "password", "INVALID");
 
             assertTrue(result.isEmpty());
@@ -638,7 +638,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("verifyToken_validToken_shouldVerifyUser")
-        void verifyToken_validToken_shouldVerifyUser() {
+        void verifyToken_validToken_shouldVerifyUser() throws Exception {
             User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
@@ -656,7 +656,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("verifyToken_validTokenWithWebSocket_shouldSendNotification")
-        void verifyToken_validTokenWithWebSocket_shouldSendNotification() {
+        void verifyToken_validTokenWithWebSocket_shouldSendNotification() throws Exception {
             User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
@@ -672,7 +672,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("verifyToken_webSocketThrowsException_shouldStillVerify")
-        void verifyToken_webSocketThrowsException_shouldStillVerify() {
+        void verifyToken_webSocketThrowsException_shouldStillVerify() throws Exception {
             User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
@@ -690,7 +690,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("verifyToken_nullWebSocketHandler_shouldStillVerify")
-        void verifyToken_nullWebSocketHandler_shouldStillVerify() {
+        void verifyToken_nullWebSocketHandler_shouldStillVerify() throws Exception {
             ReflectionTestUtils.setField(authService, "webSocketHandler", null);
 
             User user = new User();
@@ -708,7 +708,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("verifyToken_invalidToken_shouldReturnBadRequest")
-        void verifyToken_invalidToken_shouldReturnBadRequest() {
+        void verifyToken_invalidToken_shouldReturnBadRequest() throws Exception {
             when(userRepository.findByVerificationToken("invalid-token")).thenReturn(Optional.empty());
 
             ResponseEntity<?> response = authService.verifyToken("invalid-token");
@@ -725,7 +725,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("resendVerificationEmail_userNotFound_shouldReturnOkForSecurity")
-        void resendVerificationEmail_userNotFound_shouldReturnOkForSecurity() {
+        void resendVerificationEmail_userNotFound_shouldReturnOkForSecurity() throws Exception {
             when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
             ResponseEntity<?> response = authService.resendVerificationEmail("unknown@test.com");
@@ -736,7 +736,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("resendVerificationEmail_alreadyVerified_shouldReturnBadRequest")
-        void resendVerificationEmail_alreadyVerified_shouldReturnBadRequest() {
+        void resendVerificationEmail_alreadyVerified_shouldReturnBadRequest() throws Exception {
             User verifiedUser = new User();
             verifiedUser.setEmail("test@test.com");
             verifiedUser.setIsVerified(true);
@@ -750,7 +750,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("resendVerificationEmail_unverifiedUser_shouldSendEmail")
-        void resendVerificationEmail_unverifiedUser_shouldSendEmail() {
+        void resendVerificationEmail_unverifiedUser_shouldSendEmail() throws Exception {
             User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setIsVerified(false);
@@ -773,7 +773,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("checkEmailVerificationStatus_userNotFound_shouldReturnFalse")
-        void checkEmailVerificationStatus_userNotFound_shouldReturnFalse() {
+        void checkEmailVerificationStatus_userNotFound_shouldReturnFalse() throws Exception {
             when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
             ResponseEntity<?> response = authService.checkEmailVerificationStatus("unknown@test.com");
@@ -787,7 +787,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("checkEmailVerificationStatus_verifiedUser_shouldReturnTrue")
-        void checkEmailVerificationStatus_verifiedUser_shouldReturnTrue() {
+        void checkEmailVerificationStatus_verifiedUser_shouldReturnTrue() throws Exception {
             User verifiedUser = new User();
             verifiedUser.setEmail("test@test.com");
             verifiedUser.setIsVerified(true);
@@ -805,7 +805,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("checkEmailVerificationStatus_unverifiedUser_shouldReturnFalse")
-        void checkEmailVerificationStatus_unverifiedUser_shouldReturnFalse() {
+        void checkEmailVerificationStatus_unverifiedUser_shouldReturnFalse() throws Exception {
             User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setIsVerified(false);
@@ -830,7 +830,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_patientWithRole_shouldReturnLoginResponse")
-        void loginV2_patientWithRole_shouldReturnLoginResponse() {
+        void loginV2_patientWithRole_shouldReturnLoginResponse() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
@@ -863,7 +863,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_caregiverWithRole_shouldReturnLoginResponse")
-        void loginV2_caregiverWithRole_shouldReturnLoginResponse() {
+        void loginV2_caregiverWithRole_shouldReturnLoginResponse() throws Exception {
             User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
@@ -900,7 +900,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_familyMember_shouldReturnLoginResponse")
-        void loginV2_familyMember_shouldReturnLoginResponse() {
+        void loginV2_familyMember_shouldReturnLoginResponse() throws Exception {
             User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
@@ -937,7 +937,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_admin_shouldReturnLoginResponse")
-        void loginV2_admin_shouldReturnLoginResponse() {
+        void loginV2_admin_shouldReturnLoginResponse() throws Exception {
             User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setEmail("admin@test.com");
@@ -966,7 +966,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_noRoleProvided_shouldFallbackToFindByEmail")
-        void loginV2_noRoleProvided_shouldFallbackToFindByEmail() {
+        void loginV2_noRoleProvided_shouldFallbackToFindByEmail() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
@@ -985,7 +985,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_emptyRoleProvided_shouldFallbackToFindByEmail")
-        void loginV2_emptyRoleProvided_shouldFallbackToFindByEmail() {
+        void loginV2_emptyRoleProvided_shouldFallbackToFindByEmail() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
@@ -1003,7 +1003,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_invalidRole_shouldThrowAuthenticationException")
-        void loginV2_invalidRole_shouldThrowAuthenticationException() {
+        void loginV2_invalidRole_shouldThrowAuthenticationException() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
@@ -1014,7 +1014,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_wrongPassword_shouldThrowAuthenticationException")
-        void loginV2_wrongPassword_shouldThrowAuthenticationException() {
+        void loginV2_wrongPassword_shouldThrowAuthenticationException() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("wrongPassword");
@@ -1029,7 +1029,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_suspendedAccount_shouldThrowAuthenticationException")
-        void loginV2_suspendedAccount_shouldThrowAuthenticationException() {
+        void loginV2_suspendedAccount_shouldThrowAuthenticationException() throws Exception {
             User suspendedUser = new User();
             suspendedUser.setId(1L);
             suspendedUser.setEmail("test@test.com");
@@ -1051,7 +1051,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_userNotFound_shouldThrowAuthenticationException")
-        void loginV2_userNotFound_shouldThrowAuthenticationException() {
+        void loginV2_userNotFound_shouldThrowAuthenticationException() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("unknown@test.com");
             req.setPassword("password");
@@ -1065,7 +1065,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_consecutiveDay_shouldIncrementLoginStreak")
-        void loginV2_consecutiveDay_shouldIncrementLoginStreak() {
+        void loginV2_consecutiveDay_shouldIncrementLoginStreak() throws Exception {
             testUser.setLastLoginDate(LocalDate.now().minusDays(1));
             testUser.setLoginStreak(4);
 
@@ -1088,7 +1088,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_nonConsecutiveDay_shouldResetLoginStreak")
-        void loginV2_nonConsecutiveDay_shouldResetLoginStreak() {
+        void loginV2_nonConsecutiveDay_shouldResetLoginStreak() throws Exception {
             testUser.setLastLoginDate(LocalDate.now().minusDays(3));
             testUser.setLoginStreak(4);
 
@@ -1110,7 +1110,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_nullLastLogin_shouldResetLoginStreak")
-        void loginV2_nullLastLogin_shouldResetLoginStreak() {
+        void loginV2_nullLastLogin_shouldResetLoginStreak() throws Exception {
             testUser.setLastLoginDate(null);
             testUser.setLoginStreak(null);
 
@@ -1132,7 +1132,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_patientNotFound_shouldReturnNullPatientId")
-        void loginV2_patientNotFound_shouldReturnNullPatientId() {
+        void loginV2_patientNotFound_shouldReturnNullPatientId() throws Exception {
             LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
@@ -1152,7 +1152,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_caregiverNotFound_shouldReturnNullCaregiverId")
-        void loginV2_caregiverNotFound_shouldReturnNullCaregiverId() {
+        void loginV2_caregiverNotFound_shouldReturnNullCaregiverId() throws Exception {
             User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
@@ -1181,7 +1181,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginV2_familyMemberNotFound_shouldReturnNullName")
-        void loginV2_familyMemberNotFound_shouldReturnNullName() {
+        void loginV2_familyMemberNotFound_shouldReturnNullName() throws Exception {
             User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
@@ -1217,7 +1217,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_patientUser_shouldReturnLoginResponse")
-        void loginOAuth_patientUser_shouldReturnLoginResponse() {
+        void loginOAuth_patientUser_shouldReturnLoginResponse() throws Exception {
             Patient patient = Patient.builder()
                     .id(10L)
                     .firstName("John")
@@ -1240,7 +1240,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_caregiverUser_shouldReturnLoginResponse")
-        void loginOAuth_caregiverUser_shouldReturnLoginResponse() {
+        void loginOAuth_caregiverUser_shouldReturnLoginResponse() throws Exception {
             User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
@@ -1267,7 +1267,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_familyMemberUser_shouldReturnLoginResponse")
-        void loginOAuth_familyMemberUser_shouldReturnLoginResponse() {
+        void loginOAuth_familyMemberUser_shouldReturnLoginResponse() throws Exception {
             User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
@@ -1295,7 +1295,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_adminUser_shouldReturnLoginResponse")
-        void loginOAuth_adminUser_shouldReturnLoginResponse() {
+        void loginOAuth_adminUser_shouldReturnLoginResponse() throws Exception {
             User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setEmail("admin@test.com");
@@ -1315,7 +1315,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_userNotFound_shouldThrowAuthenticationException")
-        void loginOAuth_userNotFound_shouldThrowAuthenticationException() {
+        void loginOAuth_userNotFound_shouldThrowAuthenticationException() throws Exception {
             when(users.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
             assertThrows(AuthenticationException.class,
@@ -1324,7 +1324,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_suspendedUser_shouldThrowAuthenticationException")
-        void loginOAuth_suspendedUser_shouldThrowAuthenticationException() {
+        void loginOAuth_suspendedUser_shouldThrowAuthenticationException() throws Exception {
             User suspendedUser = new User();
             suspendedUser.setId(1L);
             suspendedUser.setEmail("test@test.com");
@@ -1339,7 +1339,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_patientNotFound_shouldReturnNullPatientIdAndName")
-        void loginOAuth_patientNotFound_shouldReturnNullPatientIdAndName() {
+        void loginOAuth_patientNotFound_shouldReturnNullPatientIdAndName() throws Exception {
             when(users.findByEmail("test@test.com")).thenReturn(Optional.of(testUser));
             when(patients.findByUser(testUser)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("oauth-jwt-token");
@@ -1353,7 +1353,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_caregiverNotFound_shouldReturnNullCaregiverIdAndName")
-        void loginOAuth_caregiverNotFound_shouldReturnNullCaregiverIdAndName() {
+        void loginOAuth_caregiverNotFound_shouldReturnNullCaregiverIdAndName() throws Exception {
             User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
@@ -1374,7 +1374,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_familyMemberNotFound_shouldReturnNullCaregiverIdAndName")
-        void loginOAuth_familyMemberNotFound_shouldReturnNullCaregiverIdAndName() {
+        void loginOAuth_familyMemberNotFound_shouldReturnNullCaregiverIdAndName() throws Exception {
             User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
@@ -1395,7 +1395,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_consecutiveDay_shouldIncrementStreak")
-        void loginOAuth_consecutiveDay_shouldIncrementStreak() {
+        void loginOAuth_consecutiveDay_shouldIncrementStreak() throws Exception {
             testUser.setLastLoginDate(LocalDate.now().minusDays(1));
             testUser.setLoginStreak(4);
 
@@ -1411,7 +1411,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_nonConsecutiveDay_shouldResetStreak")
-        void loginOAuth_nonConsecutiveDay_shouldResetStreak() {
+        void loginOAuth_nonConsecutiveDay_shouldResetStreak() throws Exception {
             testUser.setLastLoginDate(LocalDate.now().minusDays(3));
             testUser.setLoginStreak(4);
 
@@ -1426,7 +1426,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_nullStreakAndLastLogin_shouldResetStreak")
-        void loginOAuth_nullStreakAndLastLogin_shouldResetStreak() {
+        void loginOAuth_nullStreakAndLastLogin_shouldResetStreak() throws Exception {
             testUser.setLastLoginDate(null);
             testUser.setLoginStreak(null);
 
@@ -1442,7 +1442,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_sameDay_shouldResetStreakToOne")
-        void loginOAuth_sameDay_shouldResetStreakToOne() {
+        void loginOAuth_sameDay_shouldResetStreakToOne() throws Exception {
             testUser.setLastLoginDate(LocalDate.now());
             testUser.setLoginStreak(3);
 
@@ -1457,7 +1457,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("loginOAuth_gamificationUnlockCalled")
-        void loginOAuth_gamificationUnlockCalled() {
+        void loginOAuth_gamificationUnlockCalled() throws Exception {
             when(users.findByEmail("test@test.com")).thenReturn(Optional.of(testUser));
             when(patients.findByUser(testUser)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("jwt-token");
@@ -1477,7 +1477,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("changePassword_validCurrentPassword_shouldChangePassword")
-        void changePassword_validCurrentPassword_shouldChangePassword() {
+        void changePassword_validCurrentPassword_shouldChangePassword() throws Exception {
             when(users.findByEmail("test@test.com")).thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("currentPwd", "encodedPassword")).thenReturn(true);
             when(passwordEncoder.encode("newPwd")).thenReturn("newEncodedPwd");
@@ -1490,7 +1490,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("changePassword_wrongCurrentPassword_shouldReturnBadRequest")
-        void changePassword_wrongCurrentPassword_shouldReturnBadRequest() {
+        void changePassword_wrongCurrentPassword_shouldReturnBadRequest() throws Exception {
             when(users.findByEmail("test@test.com")).thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("wrongPwd", "encodedPassword")).thenReturn(false);
 
@@ -1501,7 +1501,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("changePassword_userNotFound_shouldReturnInternalServerError")
-        void changePassword_userNotFound_shouldReturnInternalServerError() {
+        void changePassword_userNotFound_shouldReturnInternalServerError() throws Exception {
             when(users.findByEmail("unknown@test.com"))
                     .thenThrow(new AuthenticationException("User not found"));
 
@@ -1519,7 +1519,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("validateGoogleToken_anyToken_shouldThrowUnsupportedOperationException")
-        void validateGoogleToken_anyToken_shouldThrowUnsupportedOperationException() {
+        void validateGoogleToken_anyToken_shouldThrowUnsupportedOperationException() throws Exception {
             assertThrows(UnsupportedOperationException.class,
                     () -> authService.validateGoogleToken("some-token"));
         }
@@ -1533,7 +1533,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("setupPassword_validToken_shouldSetPasswordAndVerify")
-        void setupPassword_validToken_shouldSetPasswordAndVerify() {
+        void setupPassword_validToken_shouldSetPasswordAndVerify() throws Exception {
             User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
@@ -1553,7 +1553,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("setupPassword_invalidToken_shouldReturnBadRequest")
-        void setupPassword_invalidToken_shouldReturnBadRequest() {
+        void setupPassword_invalidToken_shouldReturnBadRequest() throws Exception {
             when(userRepository.findByVerificationToken("invalid-token")).thenReturn(Optional.empty());
 
             ResponseEntity<?> response = authService.setupPassword("invalid-token", "newPassword");
@@ -1570,7 +1570,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("buildGoogleOAuthUrl_shouldReturnFormattedUrl")
-        void buildGoogleOAuthUrl_shouldReturnFormattedUrl() {
+        void buildGoogleOAuthUrl_shouldReturnFormattedUrl() throws Exception {
             String url = authService.buildGoogleOAuthUrl();
 
             assertNotNull(url);
@@ -1589,7 +1589,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_validCodeAndEmail_shouldReturnLoginResponse")
-        void processGoogleOAuth_validCodeAndEmail_shouldReturnLoginResponse() {
+        void processGoogleOAuth_validCodeAndEmail_shouldReturnLoginResponse() throws Exception {
             // Set token URI to valid endpoint and user info URI to valid endpoint
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
@@ -1615,7 +1615,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_nullEmail_shouldThrowOAuthException")
-        void processGoogleOAuth_nullEmail_shouldThrowOAuthException() {
+        void processGoogleOAuth_nullEmail_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
@@ -1629,7 +1629,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_emptyEmail_shouldThrowOAuthException")
-        void processGoogleOAuth_emptyEmail_shouldThrowOAuthException() {
+        void processGoogleOAuth_emptyEmail_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
@@ -1642,7 +1642,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_oauthExceptionFromToken_shouldRethrow")
-        void processGoogleOAuth_oauthExceptionFromToken_shouldRethrow() {
+        void processGoogleOAuth_oauthExceptionFromToken_shouldRethrow() throws Exception {
             // Use a 400 invalid_grant endpoint which throws OAuthException from exchangeCodeForToken
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-grant");
@@ -1654,7 +1654,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_authenticationException_shouldWrapInOAuthException")
-        void processGoogleOAuth_authenticationException_shouldWrapInOAuthException() {
+        void processGoogleOAuth_authenticationException_shouldWrapInOAuthException() throws Exception {
             // Valid token exchange + valid user info, but loginOAuth throws AuthenticationException
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
@@ -1671,7 +1671,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("processGoogleOAuth_genericException_shouldWrapInOAuthException")
-        void processGoogleOAuth_genericException_shouldWrapInOAuthException() {
+        void processGoogleOAuth_genericException_shouldWrapInOAuthException() throws Exception {
             // Set token URI to a completely invalid URL to trigger a generic exception
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:1/nonexistent");
@@ -1692,7 +1692,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_validResponse_shouldReturnAccessToken")
-        void exchangeCodeForToken_validResponse_shouldReturnAccessToken() {
+        void exchangeCodeForToken_validResponse_shouldReturnAccessToken() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
 
@@ -1702,7 +1702,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_noAccessTokenInResponse_shouldThrowOAuthException")
-        void exchangeCodeForToken_noAccessTokenInResponse_shouldThrowOAuthException() {
+        void exchangeCodeForToken_noAccessTokenInResponse_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/no-access-token");
 
@@ -1715,7 +1715,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_400InvalidGrant_shouldThrowOAuthException")
-        void exchangeCodeForToken_400InvalidGrant_shouldThrowOAuthException() {
+        void exchangeCodeForToken_400InvalidGrant_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-grant");
 
@@ -1726,7 +1726,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_400InvalidClient_shouldThrowOAuthException")
-        void exchangeCodeForToken_400InvalidClient_shouldThrowOAuthException() {
+        void exchangeCodeForToken_400InvalidClient_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-client");
 
@@ -1737,7 +1737,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_400InvalidRequest_shouldThrowOAuthException")
-        void exchangeCodeForToken_400InvalidRequest_shouldThrowOAuthException() {
+        void exchangeCodeForToken_400InvalidRequest_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-request");
 
@@ -1748,7 +1748,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_400Generic_shouldThrowOAuthException")
-        void exchangeCodeForToken_400Generic_shouldThrowOAuthException() {
+        void exchangeCodeForToken_400Generic_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-generic");
 
@@ -1760,7 +1760,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_401_shouldThrowOAuthException")
-        void exchangeCodeForToken_401_shouldThrowOAuthException() {
+        void exchangeCodeForToken_401_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/401");
 
@@ -1771,7 +1771,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_500_shouldThrowOAuthException")
-        void exchangeCodeForToken_500_shouldThrowOAuthException() {
+        void exchangeCodeForToken_500_shouldThrowOAuthException() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/500");
 
@@ -1782,7 +1782,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_403_shouldThrowOAuthExceptionWithApiError")
-        void exchangeCodeForToken_403_shouldThrowOAuthExceptionWithApiError() {
+        void exchangeCodeForToken_403_shouldThrowOAuthExceptionWithApiError() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/403");
 
@@ -1793,7 +1793,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("exchangeCodeForToken_connectionRefused_shouldThrowOAuthExceptionNetworkError")
-        void exchangeCodeForToken_connectionRefused_shouldThrowOAuthExceptionNetworkError() {
+        void exchangeCodeForToken_connectionRefused_shouldThrowOAuthExceptionNetworkError() throws Exception {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:1/token");
 
@@ -1811,7 +1811,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_validResponse_shouldReturnUserInfo")
-        void getUserInfoFromGoogle_validResponse_shouldReturnUserInfo() {
+        void getUserInfoFromGoogle_validResponse_shouldReturnUserInfo() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/valid");
 
@@ -1824,7 +1824,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_401_shouldThrowOAuthExceptionInvalidToken")
-        void getUserInfoFromGoogle_401_shouldThrowOAuthExceptionInvalidToken() {
+        void getUserInfoFromGoogle_401_shouldThrowOAuthExceptionInvalidToken() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/401");
 
@@ -1835,7 +1835,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_403_shouldThrowOAuthExceptionInvalidScope")
-        void getUserInfoFromGoogle_403_shouldThrowOAuthExceptionInvalidScope() {
+        void getUserInfoFromGoogle_403_shouldThrowOAuthExceptionInvalidScope() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/403");
 
@@ -1846,7 +1846,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_500_shouldThrowOAuthExceptionTemporarilyUnavailable")
-        void getUserInfoFromGoogle_500_shouldThrowOAuthExceptionTemporarilyUnavailable() {
+        void getUserInfoFromGoogle_500_shouldThrowOAuthExceptionTemporarilyUnavailable() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/500");
 
@@ -1857,7 +1857,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_404_shouldThrowOAuthExceptionApiError")
-        void getUserInfoFromGoogle_404_shouldThrowOAuthExceptionApiError() {
+        void getUserInfoFromGoogle_404_shouldThrowOAuthExceptionApiError() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/404");
 
@@ -1868,7 +1868,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("getUserInfoFromGoogle_connectionRefused_shouldThrowOAuthExceptionNetworkError")
-        void getUserInfoFromGoogle_connectionRefused_shouldThrowOAuthExceptionNetworkError() {
+        void getUserInfoFromGoogle_connectionRefused_shouldThrowOAuthExceptionNetworkError() throws Exception {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:1/userinfo");
 
@@ -1886,7 +1886,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("handleLoginStreak_sameDay_shouldResetToOne")
-        void handleLoginStreak_sameDay_shouldResetToOne() {
+        void handleLoginStreak_sameDay_shouldResetToOne() throws Exception {
             testUser.setLastLoginDate(LocalDate.now());
             testUser.setLoginStreak(3);
 

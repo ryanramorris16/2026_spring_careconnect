@@ -10,6 +10,9 @@ import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.repository.PlanRepository;
 import com.careconnect.repository.SubscriptionRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -57,13 +60,15 @@ public class SubscriptionController {
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
-    
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
+
     @Value("${stripe.webhook-secret}")
     private String stripeWebhookSecret;
-    
+
     @Value("${frontend.base-url}")
     private String frontendBaseUrl;
-    
+
 
     public SubscriptionController(
         SubscriptionService subscriptionService,
@@ -71,7 +76,9 @@ public class SubscriptionController {
         SubscriptionEnrichmentService subscriptionEnrichmentService,
         UserRepository userRepository,
         PlanRepository planRepository,
-        SubscriptionRepository subscriptionRepository
+        SubscriptionRepository subscriptionRepository,
+        SecurityUtil securityUtil,
+        AuthorizationService authorizationService
         // @Value("${stripe.webhook-secret}") String stripeWebhookSecret
     ) {
         this.subscriptionService = subscriptionService;
@@ -80,7 +87,9 @@ public class SubscriptionController {
         this.userRepository = userRepository;
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
-        // this.stripeWebhookSecret = stripeWebhookSecret; 
+        this.securityUtil = securityUtil;
+        this.authorizationService = authorizationService;
+        // this.stripeWebhookSecret = stripeWebhookSecret;
     }
 	
     @GetMapping("/products")
@@ -101,8 +110,10 @@ public class SubscriptionController {
             @RequestParam String name,
             @RequestParam Integer priceCents,
             @RequestParam String billingPeriod,
-            @RequestParam(required = false) Boolean isActive) {
-        
+            @RequestParam(required = false) Boolean isActive) throws UnauthorizedException {
+
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         Plan plan = subscriptionService.createPlan(code, name, priceCents, billingPeriod, isActive);
         return ResponseEntity.ok(plan);
     }
@@ -116,7 +127,9 @@ public class SubscriptionController {
     @PostMapping("/plans/{planId}/sync-with-stripe")
     public ResponseEntity<?> syncPlanWithStripe(
             @PathVariable String planId,
-            @RequestParam(defaultValue = "true") boolean createIfMissing) {
+            @RequestParam(defaultValue = "true") boolean createIfMissing) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Plan plan = subscriptionService.syncPlanWithStripe(Long.parseLong(planId), createIfMissing);
             return ResponseEntity.ok(plan);
@@ -126,7 +139,9 @@ public class SubscriptionController {
     }
     
     @PostMapping("/sync-from-stripe/{stripeSubscriptionId}")
-    public ResponseEntity<?> syncSubscriptionFromStripe(@PathVariable String stripeSubscriptionId) {
+    public ResponseEntity<?> syncSubscriptionFromStripe(@PathVariable String stripeSubscriptionId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Subscription subscription = subscriptionService.syncSubscriptionFromStripe(stripeSubscriptionId);
             return ResponseEntity.ok(subscription);
@@ -136,13 +151,17 @@ public class SubscriptionController {
     }
     
     @GetMapping("/stripe/{customerId}/subscriptions")
-    public ResponseEntity<String> getStripeCustomerSubscriptions(@PathVariable String customerId) {
+    public ResponseEntity<String> getStripeCustomerSubscriptions(@PathVariable String customerId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String subs = stripeService.listSubscriptions(customerId);
         return ResponseEntity.ok(subs);
     }
     
     @GetMapping("/sync-all-from-stripe/{customerId}")
-    public ResponseEntity<?> syncAllCustomerSubscriptions(@PathVariable String customerId) {
+    public ResponseEntity<?> syncAllCustomerSubscriptions(@PathVariable String customerId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             List<Subscription> subscriptions = subscriptionService.syncAllSubscriptionsForCustomer(customerId);
             return ResponseEntity.ok(subscriptions);
@@ -152,13 +171,17 @@ public class SubscriptionController {
     }
 
     @GetMapping("/stripe/subscription/{subscriptionId}")
-    public ResponseEntity<String> getSubscription(@PathVariable String subscriptionId) {
+    public ResponseEntity<String> getSubscription(@PathVariable String subscriptionId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String sub = stripeService.getSubscription(subscriptionId);
         return ResponseEntity.ok(sub);
     }
 
     @GetMapping("/stripe/subscriptions/search")
-    public ResponseEntity<String> searchSubscriptions(@RequestParam String query) {
+    public ResponseEntity<String> searchSubscriptions(@RequestParam String query) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String result = stripeService.searchSubscriptions(query);
         return ResponseEntity.ok(result);
     }

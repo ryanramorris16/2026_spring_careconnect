@@ -14,7 +14,7 @@ class MetricsTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_fieldsAreNull() {
+    void noArgConstructor_fieldsAreNull() throws Exception {
         Metrics metrics = new Metrics();
 
         assertThat(metrics.getId()).isNull();
@@ -29,7 +29,7 @@ class MetricsTest {
     // ─── All-args constructor ─────────────────────────────────────────────────
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         LocalDateTime ts = LocalDateTime.of(2026, 3, 10, 8, 0);
 
         Metrics metrics = new Metrics(1L, "heart_rate", 72.0, "bpm", ts, 5L, "fitbit");
@@ -46,28 +46,28 @@ class MetricsTest {
     // ─── Lombok @Data setters/getters ─────────────────────────────────────────
 
     @Test
-    void setAndGetId_roundTrips() {
+    void setAndGetId_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setId(10L);
         assertThat(metrics.getId()).isEqualTo(10L);
     }
 
     @Test
-    void setAndGetValue_roundTrips() {
+    void setAndGetValue_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setValue(98.6);
         assertThat(metrics.getValue()).isEqualTo(98.6);
     }
 
     @Test
-    void setAndGetUnit_roundTrips() {
+    void setAndGetUnit_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setUnit("mmHg");
         assertThat(metrics.getUnit()).isEqualTo("mmHg");
     }
 
     @Test
-    void setAndGetPatientId_roundTrips() {
+    void setAndGetPatientId_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setPatientId(3L);
         assertThat(metrics.getPatientId()).isEqualTo(3L);
@@ -76,21 +76,21 @@ class MetricsTest {
     // ─── Explicit setters (override Lombok for compilation safety) ────────────
 
     @Test
-    void setMetricType_getMetricType_roundTrips() {
+    void setMetricType_getMetricType_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setMetricType("blood_pressure");
         assertThat(metrics.getMetricType()).isEqualTo("blood_pressure");
     }
 
     @Test
-    void setSource_getSource_roundTrips() {
+    void setSource_getSource_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         metrics.setSource("manual");
         assertThat(metrics.getSource()).isEqualTo("manual");
     }
 
     @Test
-    void setTimestamp_getTimestamp_roundTrips() {
+    void setTimestamp_getTimestamp_roundTrips() throws Exception {
         Metrics metrics = new Metrics();
         LocalDateTime ts = LocalDateTime.of(2026, 5, 20, 14, 45);
         metrics.setTimestamp(ts);
@@ -100,7 +100,7 @@ class MetricsTest {
     // ─── Lombok @Data equals / hashCode / toString ────────────────────────────
 
     @Test
-    void equals_sameValues_areEqual() {
+    void equals_sameValues_areEqual() throws Exception {
         LocalDateTime ts = LocalDateTime.of(2026, 1, 1, 0, 0);
         Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
         Metrics m2 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
@@ -110,7 +110,7 @@ class MetricsTest {
     }
 
     @Test
-    void equals_differentValues_areNotEqual() {
+    void equals_differentValues_areNotEqual() throws Exception {
         Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", null, 2L, "manual");
         Metrics m2 = new Metrics(2L, "steps", 10000.0, "count", null, 2L, "manual");
 
@@ -118,7 +118,7 @@ class MetricsTest {
     }
 
     @Test
-    void toString_containsMetricType() {
+    void toString_containsMetricType() throws Exception {
         Metrics metrics = new Metrics(1L, "oxygen_saturation", 98.0, "%", null, 4L, "pulse_ox");
         assertThat(metrics.toString()).contains("oxygen_saturation");
     }

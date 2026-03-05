@@ -9,7 +9,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("constructor - valid args - creates record with correct values")
-    void constructor_validArgs_createsRecordWithCorrectValues() {
+    void constructor_validArgs_createsRecordWithCorrectValues() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto("LIC123", "MD", 10);
 
         assertEquals("LIC123", dto.licenseNumber());
@@ -19,7 +19,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("constructor - null licenseNumber and issuingState - creates record with nulls")
-    void constructor_nullFields_createsRecordWithNulls() {
+    void constructor_nullFields_createsRecordWithNulls() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto(null, null, 0);
 
         assertNull(dto.licenseNumber());
@@ -29,7 +29,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("equals - same values - returns true")
-    void equals_sameValues_returnsTrue() {
+    void equals_sameValues_returnsTrue() throws Exception {
         ProfessionalInfoDto dto1 = new ProfessionalInfoDto("LIC123", "MD", 10);
         ProfessionalInfoDto dto2 = new ProfessionalInfoDto("LIC123", "MD", 10);
 
@@ -38,7 +38,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("equals - different values - returns false")
-    void equals_differentValues_returnsFalse() {
+    void equals_differentValues_returnsFalse() throws Exception {
         ProfessionalInfoDto dto1 = new ProfessionalInfoDto("LIC123", "MD", 10);
         ProfessionalInfoDto dto2 = new ProfessionalInfoDto("LIC456", "VA", 5);
 
@@ -47,7 +47,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("hashCode - same values - returns same hashCode")
-    void hashCode_sameValues_returnsSameHashCode() {
+    void hashCode_sameValues_returnsSameHashCode() throws Exception {
         ProfessionalInfoDto dto1 = new ProfessionalInfoDto("LIC123", "MD", 10);
         ProfessionalInfoDto dto2 = new ProfessionalInfoDto("LIC123", "MD", 10);
 
@@ -56,7 +56,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     @DisplayName("toString - valid record - contains field values")
-    void toString_validRecord_containsFieldValues() {
+    void toString_validRecord_containsFieldValues() throws Exception {
         ProfessionalInfoDto dto = new ProfessionalInfoDto("LIC123", "MD", 10);
 
         String str = dto.toString();

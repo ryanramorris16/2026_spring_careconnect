@@ -1,6 +1,10 @@
 package com.careconnect.controller;
 
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.WebSocketNotificationService;
+import com.careconnect.util.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -75,6 +78,8 @@ public class WebSocketController {
     }
 
     private final WebSocketNotificationService webSocketNotificationService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     @PostMapping("/call-invitation")
     @Operation(
@@ -87,7 +92,6 @@ public class WebSocketController {
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('PATIENT') or hasRole('CAREGIVER') or hasRole('FAMILY_MEMBER')")
     public ResponseEntity<Map<String, Object>> sendCallInvitation(
             @RequestBody Map<String, Object> request) {
         
@@ -129,7 +133,6 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    @PreAuthorize("hasRole('PATIENT') or hasRole('CAREGIVER') or hasRole('FAMILY_MEMBER')")
     public ResponseEntity<Map<String, Object>> sendSMSNotification(
             @RequestBody Map<String, Object> request) {
         
@@ -169,10 +172,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "403", description = "Access denied - Only caregivers can send medication reminders")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> sendMedicationReminder(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         try {
             String patientId = (String) request.get("patientId");
             String medicationName = (String) request.get("medicationName");
@@ -209,10 +213,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> sendVitalSignsAlert(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         try {
             String patientId = (String) request.get("patientId");
             String patientName = (String) request.get("patientName");
@@ -254,10 +259,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> sendEmergencyAlert(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         try {
             String patientId = (String) request.get("patientId");
             String patientName = (String) request.get("patientName");
@@ -297,10 +303,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> sendAppointmentReminder(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         try {
             String patientId = (String) request.get("patientId");
             String appointmentDetails = (String) request.get("appointmentDetails");
@@ -337,10 +344,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "400", description = "Invalid request data"),
         @ApiResponse(responseCode = "403", description = "Access denied - Admin only")
     })
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> broadcastSystemAnnouncement(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
+
         try {
             String title = (String) request.get("title");
             String message = (String) request.get("message");
@@ -373,8 +381,10 @@ public class WebSocketController {
         @ApiResponse(responseCode = "200", description = "Online users retrieved successfully"),
         @ApiResponse(responseCode = "403", description = "Access denied - Admin only")
     })
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> getOnlineUsers() {
+    public ResponseEntity<Map<String, Object>> getOnlineUsers() throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
+
         try {
             Map<String, String> onlineUsers = webSocketNotificationService.getOnlineUsers();
             int onlineCount = webSocketNotificationService.getOnlineUsersCount();
@@ -404,10 +414,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "200", description = "User status retrieved successfully"),
         @ApiResponse(responseCode = "403", description = "Access denied")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getUserOnlineStatus(
-            @Parameter(description = "User ID to check") @PathVariable String userId) {
-        
+            @Parameter(description = "User ID to check") @PathVariable String userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         try {
             boolean isOnline = webSocketNotificationService.isUserOnline(userId);
             
@@ -439,10 +450,11 @@ public class WebSocketController {
         @ApiResponse(responseCode = "403", description = "Access denied - Only patients can initiate SOS calls"),
         @ApiResponse(responseCode = "404", description = "Patient not found or no caregivers associated")
     })
-    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<Map<String, Object>> sendSOSCall(
-            @RequestBody Map<String, Object> request) {
-        
+            @RequestBody Map<String, Object> request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (!currentUser.isPatient()) throw new UnauthorizedException("Only patients can initiate SOS calls");
+
         try {
             String patientUserId = (String) request.get("patientUserId");
             String patientName = (String) request.get("patientName");

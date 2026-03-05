@@ -60,7 +60,7 @@ class PatientServiceTest {
     private Provider provider;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         user = User.builder()
@@ -105,7 +105,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getCaregiversByPatient_patientNotFound_throwsAppException")
-    void getCaregiversByPatient_patientNotFound_throwsAppException() {
+    void getCaregiversByPatient_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -115,7 +115,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getCaregiversByPatient_noActiveLinks_returnsEmptyList")
-    void getCaregiversByPatient_noActiveLinks_returnsEmptyList() {
+    void getCaregiversByPatient_noActiveLinks_returnsEmptyList() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(caregiverPatientLinkService.getCaregiversByPatient(100L)).thenReturn(Collections.emptyList());
 
@@ -125,7 +125,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getCaregiversByPatient_activeLinksExist_returnsCaregiverList")
-    void getCaregiversByPatient_activeLinksExist_returnsCaregiverList() {
+    void getCaregiversByPatient_activeLinksExist_returnsCaregiverList() throws Exception {
         User caregiverUser = User.builder().id(200L).name("Jane Caregiver")
                 .email("jane@test.com").password("pass")
                 .role(com.careconnect.security.Role.CAREGIVER).build();
@@ -149,7 +149,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getCaregiversByPatient_userNotFoundForLink_filtersOutMissing")
-    void getCaregiversByPatient_userNotFoundForLink_filtersOutMissing() {
+    void getCaregiversByPatient_userNotFoundForLink_filtersOutMissing() throws Exception {
         CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 999L, "Missing", "missing@test.com",
                 100L, "John Doe", "john@test.com",
@@ -165,7 +165,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getCaregiversByPatient_caregiverNotFoundForUser_filtersOutMissing")
-    void getCaregiversByPatient_caregiverNotFoundForUser_filtersOutMissing() {
+    void getCaregiversByPatient_caregiverNotFoundForUser_filtersOutMissing() throws Exception {
         User caregiverUser = User.builder().id(200L).name("Jane")
                 .email("jane@test.com").password("pass")
                 .role(com.careconnect.security.Role.CAREGIVER).build();
@@ -188,7 +188,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientById_patientExists_returnsPatient")
-    void getPatientById_patientExists_returnsPatient() {
+    void getPatientById_patientExists_returnsPatient() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
         Patient result = patientService.getPatientById(1L);
@@ -197,7 +197,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientById_patientNotFound_throwsAppException")
-    void getPatientById_patientNotFound_throwsAppException() {
+    void getPatientById_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -209,7 +209,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientByUserId_userAndPatientExist_returnsPatient")
-    void getPatientByUserId_userAndPatientExist_returnsPatient() {
+    void getPatientByUserId_userAndPatientExist_returnsPatient() throws Exception {
         when(userRepository.findById(100L)).thenReturn(Optional.of(user));
         when(patientRepository.findByUser(user)).thenReturn(Optional.of(patient));
 
@@ -219,7 +219,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientByUserId_userNotFound_throwsAppException")
-    void getPatientByUserId_userNotFound_throwsAppException() {
+    void getPatientByUserId_userNotFound_throwsAppException() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -229,7 +229,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientByUserId_patientNotFound_throwsAppException")
-    void getPatientByUserId_patientNotFound_throwsAppException() {
+    void getPatientByUserId_patientNotFound_throwsAppException() throws Exception {
         when(userRepository.findById(100L)).thenReturn(Optional.of(user));
         when(patientRepository.findByUser(user)).thenReturn(Optional.empty());
 
@@ -242,7 +242,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatient_patientExists_updatesAndReturnsPatient")
-    void updatePatient_patientExists_updatesAndReturnsPatient() {
+    void updatePatient_patientExists_updatesAndReturnsPatient() throws Exception {
         Patient updatedData = Patient.builder()
                 .firstName("Jane")
                 .lastName("Smith")
@@ -264,7 +264,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatient_patientNotFound_throwsAppException")
-    void updatePatient_patientNotFound_throwsAppException() {
+    void updatePatient_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -276,7 +276,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("existsByUserId_userExistsAndPatientExists_returnsTrue")
-    void existsByUserId_userExistsAndPatientExists_returnsTrue() {
+    void existsByUserId_userExistsAndPatientExists_returnsTrue() throws Exception {
         when(userRepository.findById(100L)).thenReturn(Optional.of(user));
         when(patientRepository.existsByUser(user)).thenReturn(true);
 
@@ -285,7 +285,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("existsByUserId_userNotFound_returnsFalse")
-    void existsByUserId_userNotFound_returnsFalse() {
+    void existsByUserId_userNotFound_returnsFalse() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertFalse(patientService.existsByUserId(99L));
@@ -293,7 +293,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("existsByUserId_userExistsButNoPatient_returnsFalse")
-    void existsByUserId_userExistsButNoPatient_returnsFalse() {
+    void existsByUserId_userExistsButNoPatient_returnsFalse() throws Exception {
         when(userRepository.findById(100L)).thenReturn(Optional.of(user));
         when(patientRepository.existsByUser(user)).thenReturn(false);
 
@@ -304,7 +304,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPrimaryProvider_patientHasProvider_returnsProviderMap")
-    void getPrimaryProvider_patientHasProvider_returnsProviderMap() {
+    void getPrimaryProvider_patientHasProvider_returnsProviderMap() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
         Map<String, Object> result = patientService.getPrimaryProvider(1L);
@@ -317,7 +317,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPrimaryProvider_patientHasNoProvider_returnsEmptyMap")
-    void getPrimaryProvider_patientHasNoProvider_returnsEmptyMap() {
+    void getPrimaryProvider_patientHasNoProvider_returnsEmptyMap() throws Exception {
         patient.setPrimaryCareProvider(null);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
@@ -327,7 +327,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPrimaryProvider_patientNotFound_throwsIllegalArgumentException")
-    void getPrimaryProvider_patientNotFound_throwsIllegalArgumentException() {
+    void getPrimaryProvider_patientNotFound_throwsIllegalArgumentException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -338,7 +338,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientProfile_patientExists_returnsProfileDTO")
-    void getPatientProfile_patientExists_returnsProfileDTO() {
+    void getPatientProfile_patientExists_returnsProfileDTO() throws Exception {
         List<AllergyDTO> allergies = List.of(AllergyDTO.builder().id(1L).allergen("Peanuts").build());
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(allergies);
@@ -353,7 +353,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientProfile_patientNotFound_returnsEmpty")
-    void getPatientProfile_patientNotFound_returnsEmpty() {
+    void getPatientProfile_patientNotFound_returnsEmpty() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         Optional<PatientProfileDTO> result = patientService.getPatientProfile(99L);
@@ -362,7 +362,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getPatientProfile_patientWithNullAddress_returnsNullAddress")
-    void getPatientProfile_patientWithNullAddress_returnsNullAddress() {
+    void getPatientProfile_patientWithNullAddress_returnsNullAddress() throws Exception {
         patient.setAddress(null);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(Collections.emptyList());
@@ -376,7 +376,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatientProfile_allFieldsProvided_updatesAllFields")
-    void updatePatientProfile_allFieldsProvided_updatesAllFields() {
+    void updatePatientProfile_allFieldsProvided_updatesAllFields() throws Exception {
         PatientProfileUpdateDTO updateDTO = new PatientProfileUpdateDTO();
         updateDTO.setFirstName("Jane");
         updateDTO.setLastName("Smith");
@@ -399,7 +399,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatientProfile_nullFieldsNotUpdated_keepsExistingValues")
-    void updatePatientProfile_nullFieldsNotUpdated_keepsExistingValues() {
+    void updatePatientProfile_nullFieldsNotUpdated_keepsExistingValues() throws Exception {
         PatientProfileUpdateDTO updateDTO = new PatientProfileUpdateDTO();
         // All fields are null by default
 
@@ -414,7 +414,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatientProfile_patientNotFound_throwsIllegalArgException")
-    void updatePatientProfile_patientNotFound_throwsIllegalArgException() {
+    void updatePatientProfile_patientNotFound_throwsIllegalArgException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -423,7 +423,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("updatePatientProfile_nullAddress_setsNullAddress")
-    void updatePatientProfile_nullAddress_setsNullAddress() {
+    void updatePatientProfile_nullAddress_setsNullAddress() throws Exception {
         PatientProfileUpdateDTO updateDTO = new PatientProfileUpdateDTO();
         updateDTO.setFirstName("Jane");
         // address is left null
@@ -441,7 +441,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_patientNotFound_returnsEmpty")
-    void getEnhancedPatientProfile_patientNotFound_returnsEmpty() {
+    void getEnhancedPatientProfile_patientNotFound_returnsEmpty() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         Optional<EnhancedPatientProfileDTO> result = patientService.getEnhancedPatientProfile(99L);
@@ -450,7 +450,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_fullData_returnsCompleteProfile")
-    void getEnhancedPatientProfile_fullData_returnsCompleteProfile() {
+    void getEnhancedPatientProfile_fullData_returnsCompleteProfile() throws Exception {
         Instant now = Instant.now();
         LocalDateTime nowLocal = LocalDateTime.now();
 
@@ -495,7 +495,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_noLinksExist_returnsNullIds")
-    void getEnhancedPatientProfile_noLinksExist_returnsNullIds() {
+    void getEnhancedPatientProfile_noLinksExist_returnsNullIds() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(Collections.emptyList());
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(Collections.emptyList());
@@ -514,7 +514,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_vitalSampleServiceThrows_latestVitalsNull")
-    void getEnhancedPatientProfile_vitalSampleServiceThrows_latestVitalsNull() {
+    void getEnhancedPatientProfile_vitalSampleServiceThrows_latestVitalsNull() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(Collections.emptyList());
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(Collections.emptyList());
@@ -530,7 +530,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_moodPainServiceThrows_latestMoodPainNull")
-    void getEnhancedPatientProfile_moodPainServiceThrows_latestMoodPainNull() {
+    void getEnhancedPatientProfile_moodPainServiceThrows_latestMoodPainNull() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(Collections.emptyList());
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(Collections.emptyList());
@@ -546,7 +546,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_patientNotInRepoForMoodPain_moodPainNull")
-    void getEnhancedPatientProfile_patientNotInRepoForMoodPain_moodPainNull() {
+    void getEnhancedPatientProfile_patientNotInRepoForMoodPain_moodPainNull() throws Exception {
         // First findById for the main method succeeds, but the one inside getLatestMoodPain returns empty
         when(patientRepository.findById(1L))
                 .thenReturn(Optional.of(patient))
@@ -566,7 +566,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_warningHeartRate_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_warningHeartRate_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_warningHeartRate_healthStatusNeedsAttention() throws Exception {
         Instant now = Instant.now();
         // Heart rate > 100 triggers warning
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 110.0, 98.0, 120, 80, 150.0, 7, 3);
@@ -586,7 +586,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_lowHeartRate_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_lowHeartRate_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_lowHeartRate_healthStatusNeedsAttention() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 50.0, 98.0, 120, 80, 150.0, 7, 3);
 
@@ -604,7 +604,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_highSystolic_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_highSystolic_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_highSystolic_healthStatusNeedsAttention() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 75.0, 98.0, 150, 80, 150.0, 7, 3);
 
@@ -622,7 +622,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_lowSystolic_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_lowSystolic_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_lowSystolic_healthStatusNeedsAttention() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 75.0, 98.0, 85, 80, 150.0, 7, 3);
 
@@ -640,7 +640,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_lowSpo2_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_lowSpo2_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_lowSpo2_healthStatusNeedsAttention() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 75.0, 90.0, 120, 80, 150.0, 7, 3);
 
@@ -658,7 +658,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_highPain_healthStatusNeedsAttention")
-    void getEnhancedPatientProfile_highPain_healthStatusNeedsAttention() {
+    void getEnhancedPatientProfile_highPain_healthStatusNeedsAttention() throws Exception {
         LocalDateTime nowLocal = LocalDateTime.now();
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(7).painValue(8).note("High pain")
@@ -678,7 +678,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_lowMood_healthStatusMonitorMood")
-    void getEnhancedPatientProfile_lowMood_healthStatusMonitorMood() {
+    void getEnhancedPatientProfile_lowMood_healthStatusMonitorMood() throws Exception {
         LocalDateTime nowLocal = LocalDateTime.now();
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(2).painValue(2).note("Low mood")
@@ -698,7 +698,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_normalVitalsAndMood_healthStatusStable")
-    void getEnhancedPatientProfile_normalVitalsAndMood_healthStatusStable() {
+    void getEnhancedPatientProfile_normalVitalsAndMood_healthStatusStable() throws Exception {
         Instant now = Instant.now();
         LocalDateTime nowLocal = LocalDateTime.now();
 
@@ -721,7 +721,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_noVitalsNoMood_healthStatusNoRecentData")
-    void getEnhancedPatientProfile_noVitalsNoMood_healthStatusNoRecentData() {
+    void getEnhancedPatientProfile_noVitalsNoMood_healthStatusNoRecentData() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(Collections.emptyList());
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(Collections.emptyList());
@@ -739,7 +739,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_onlyVitals_lastActivityDateFromVitals")
-    void getEnhancedPatientProfile_onlyVitals_lastActivityDateFromVitals() {
+    void getEnhancedPatientProfile_onlyVitals_lastActivityDateFromVitals() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 75.0, 98.0, 120, 80, 150.0, 7, 3);
 
@@ -758,7 +758,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_onlyMoodPain_lastActivityDateFromMoodPain")
-    void getEnhancedPatientProfile_onlyMoodPain_lastActivityDateFromMoodPain() {
+    void getEnhancedPatientProfile_onlyMoodPain_lastActivityDateFromMoodPain() throws Exception {
         LocalDateTime nowLocal = LocalDateTime.now();
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(7).painValue(2).note("Good")
@@ -779,7 +779,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_vitalTimestampNull_handledGracefully")
-    void getEnhancedPatientProfile_vitalTimestampNull_handledGracefully() {
+    void getEnhancedPatientProfile_vitalTimestampNull_handledGracefully() throws Exception {
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, null, 75.0, 98.0, 120, 80, 150.0, 7, 3);
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
@@ -796,7 +796,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_moodPainTimestampNull_handledGracefully")
-    void getEnhancedPatientProfile_moodPainTimestampNull_handledGracefully() {
+    void getEnhancedPatientProfile_moodPainTimestampNull_handledGracefully() throws Exception {
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(7).painValue(2).note("Good")
                 .timestamp(null).createdAt(null).build();
@@ -815,7 +815,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_vitalAfterMood_latestIsVitals")
-    void getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_vitalAfterMood_latestIsVitals() {
+    void getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_vitalAfterMood_latestIsVitals() throws Exception {
         // Vitals timestamp is more recent than mood/pain
         Instant vitalTime = Instant.now();
         LocalDateTime moodTime = LocalDateTime.now().minusDays(2);
@@ -840,7 +840,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_moodAfterVitals_latestIsMood")
-    void getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_moodAfterVitals_latestIsMood() {
+    void getEnhancedPatientProfile_bothVitalsAndMoodPainPresent_moodAfterVitals_latestIsMood() throws Exception {
         // Mood/pain timestamp is more recent
         Instant vitalTime = Instant.now().minus(3, ChronoUnit.DAYS);
         LocalDateTime moodTime = LocalDateTime.now();
@@ -867,7 +867,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_nullAllergiesAndMeds_summaryCountsZero")
-    void getEnhancedPatientProfile_nullAllergiesAndMeds_summaryCountsZero() {
+    void getEnhancedPatientProfile_nullAllergiesAndMeds_summaryCountsZero() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyService.getAllergiesForPatient(1L)).thenReturn(null);
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(null);
@@ -886,7 +886,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_vitalsWithNullHeartRateAndSystolicAndSpo2_stableStatus")
-    void getEnhancedPatientProfile_vitalsWithNullHeartRateAndSystolicAndSpo2_stableStatus() {
+    void getEnhancedPatientProfile_vitalsWithNullHeartRateAndSystolicAndSpo2_stableStatus() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, null, null, null, null, null, null, null);
 
@@ -904,7 +904,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_moodPainNullPainAndMoodValues_stable")
-    void getEnhancedPatientProfile_moodPainNullPainAndMoodValues_stable() {
+    void getEnhancedPatientProfile_moodPainNullPainAndMoodValues_stable() throws Exception {
         LocalDateTime nowLocal = LocalDateTime.now();
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(null).painValue(null).note("No values")
@@ -926,7 +926,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_oldVitals_hasRecentVitalsFalse")
-    void getEnhancedPatientProfile_oldVitals_hasRecentVitalsFalse() {
+    void getEnhancedPatientProfile_oldVitals_hasRecentVitalsFalse() throws Exception {
         Instant oldTime = Instant.now().minus(10, ChronoUnit.DAYS);
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, oldTime, 75.0, 98.0, 120, 80, 150.0, 7, 3);
 
@@ -944,7 +944,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_oldMoodPain_hasRecentMoodPainFalse")
-    void getEnhancedPatientProfile_oldMoodPain_hasRecentMoodPainFalse() {
+    void getEnhancedPatientProfile_oldMoodPain_hasRecentMoodPainFalse() throws Exception {
         LocalDateTime oldTime = LocalDateTime.now().minusDays(10);
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(7).painValue(2).note("Old")
@@ -964,7 +964,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_recentVitals_hasRecentVitalsTrue")
-    void getEnhancedPatientProfile_recentVitals_hasRecentVitalsTrue() {
+    void getEnhancedPatientProfile_recentVitals_hasRecentVitalsTrue() throws Exception {
         Instant now = Instant.now();
         VitalSampleDTO vitalSample = new VitalSampleDTO(1L, 1L, now, 75.0, 98.0, 120, 80, 150.0, 7, 3);
 
@@ -982,7 +982,7 @@ class PatientServiceTest {
 
     @Test
     @DisplayName("getEnhancedPatientProfile_recentMoodPain_hasRecentMoodPainTrue")
-    void getEnhancedPatientProfile_recentMoodPain_hasRecentMoodPainTrue() {
+    void getEnhancedPatientProfile_recentMoodPain_hasRecentMoodPainTrue() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         MoodPainLogResponse moodPain = MoodPainLogResponse.builder()
                 .id(1L).moodValue(7).painValue(2).note("Good")

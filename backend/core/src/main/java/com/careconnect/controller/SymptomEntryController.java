@@ -7,6 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
+
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +21,8 @@ import java.util.Map;
 public class SymptomEntryController {
 
     private final SymptomEntryService symptomEntryService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     /** Create a new symptom entry */
     @PostMapping
@@ -34,7 +41,9 @@ public class SymptomEntryController {
 
     /** Get all symptoms for a patient */
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<?> getSymptoms(@PathVariable Long patientId) {
+    public ResponseEntity<?> getSymptoms(@PathVariable Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         try {
             List<SymptomEntryDTO> list = symptomEntryService.getSymptomsForPatient(patientId);
             return ResponseEntity.ok(Map.of("data", list, "message", "Symptoms retrieved successfully"));

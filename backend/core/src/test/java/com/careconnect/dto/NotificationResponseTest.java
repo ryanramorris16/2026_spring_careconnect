@@ -12,7 +12,7 @@ class NotificationResponseTest {
     // ─── Builder: all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("Test message")
@@ -31,7 +31,7 @@ class NotificationResponseTest {
     // ─── Builder: static method ────────────────────────────────────────────────
 
     @Test
-    void builder_staticMethod_returnsBuilderInstance() {
+    void builder_staticMethod_returnsBuilderInstance() throws Exception {
         NotificationResponse.NotificationResponseBuilder builder = NotificationResponse.builder();
         assertThat(builder).isNotNull();
     }
@@ -39,7 +39,7 @@ class NotificationResponseTest {
     // ─── Static factory: success() ────────────────────────────────────────────
 
     @Test
-    void success_setsCorrectFields() {
+    void success_setsCorrectFields() throws Exception {
         long before = System.currentTimeMillis();
         NotificationResponse response = NotificationResponse.success("firebase-msg-id");
         long after = System.currentTimeMillis();
@@ -54,7 +54,7 @@ class NotificationResponseTest {
     // ─── Static factory: failure() ────────────────────────────────────────────
 
     @Test
-    void failure_setsCorrectFields() {
+    void failure_setsCorrectFields() throws Exception {
         long before = System.currentTimeMillis();
         NotificationResponse response = NotificationResponse.failure("Connection timeout");
         long after = System.currentTimeMillis();
@@ -69,7 +69,7 @@ class NotificationResponseTest {
     // ─── Setters (@Data) ──────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         NotificationResponse response = NotificationResponse.builder().build();
 
         response.setSuccess(true);
@@ -88,7 +88,7 @@ class NotificationResponseTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameInstance_returnsTrue() {
+    void equals_sameInstance_returnsTrue() throws Exception {
         NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
@@ -99,7 +99,7 @@ class NotificationResponseTest {
     }
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         NotificationResponse r1 = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
@@ -121,7 +121,7 @@ class NotificationResponseTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         NotificationResponse r1 = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
@@ -141,13 +141,13 @@ class NotificationResponseTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         NotificationResponse response = NotificationResponse.builder().build();
         assertThat(response).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         NotificationResponse response = NotificationResponse.builder().build();
         assertThat(response).isNotEqualTo("a string");
     }
@@ -155,7 +155,7 @@ class NotificationResponseTest {
     // ─── toString() ───────────────────────────────────────────────────────────
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("Notification sent successfully")

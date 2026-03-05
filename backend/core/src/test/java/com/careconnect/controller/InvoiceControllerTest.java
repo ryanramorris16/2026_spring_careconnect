@@ -7,7 +7,9 @@ import com.careconnect.dto.invoice.PaymentDto;
 import com.careconnect.model.invoice.Invoice;
 import com.careconnect.service.invoice.InvoiceService;
 import com.careconnect.service.invoice.LlmExtractionService;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.invoice.TextractService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,23 +37,25 @@ class InvoiceControllerTest {
     @Mock private TextractService textractService;
     @Mock private LlmExtractionService llmExtractionService;
     @Mock private InvoiceService invoiceService;
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Helper: controller with all services wired
-    private InvoiceController controller() {
-        return new InvoiceController(textractService, llmExtractionService, invoiceService, objectMapper);
+    private InvoiceController controller() throws Exception {
+        return new InvoiceController(textractService, llmExtractionService, invoiceService, objectMapper, securityUtil, authorizationService);
     }
 
     // Helper: controller with textract=null (AWS disabled)
-    private InvoiceController controllerNoTextract() {
-        return new InvoiceController(null, null, invoiceService, objectMapper);
+    private InvoiceController controllerNoTextract() throws Exception {
+        return new InvoiceController(null, null, invoiceService, objectMapper, securityUtil, authorizationService);
     }
 
     // ─── list ─────────────────────────────────────────────────────────────────
 
     @Test
-    void list_nullSort_returnsPageBody() {
+    void list_nullSort_returnsPageBody() throws Exception {
         InvoiceDto dto = new InvoiceDto();
         dto.id = "inv-1";
         Page<InvoiceDto> page = new PageImpl<>(List.of(dto));
@@ -75,7 +79,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void list_dueDescSort_delegatesCorrectly() {
+    void list_dueDescSort_delegatesCorrectly() throws Exception {
         Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -90,7 +94,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void list_dueAscSort_delegatesCorrectly() {
+    void list_dueAscSort_delegatesCorrectly() throws Exception {
         Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -103,7 +107,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void list_amountDescSort_delegatesCorrectly() {
+    void list_amountDescSort_delegatesCorrectly() throws Exception {
         Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -116,7 +120,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void list_amountAscSort_delegatesCorrectly() {
+    void list_amountAscSort_delegatesCorrectly() throws Exception {
         Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -129,7 +133,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void list_unknownSort_usesDefaultSort() {
+    void list_unknownSort_usesDefaultSort() throws Exception {
         Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
@@ -144,7 +148,7 @@ class InvoiceControllerTest {
     // ─── get ──────────────────────────────────────────────────────────────────
 
     @Test
-    void get_found_returnsDto() {
+    void get_found_returnsDto() throws Exception {
         InvoiceDto dto = new InvoiceDto();
         dto.id = "inv-42";
         when(invoiceService.get("inv-42")).thenReturn(Optional.of(dto));
@@ -156,7 +160,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void get_notFound_returns404() {
+    void get_notFound_returns404() throws Exception {
         when(invoiceService.get("missing")).thenReturn(Optional.empty());
 
         ResponseEntity<InvoiceDto> response = controller().get("missing");
@@ -167,7 +171,7 @@ class InvoiceControllerTest {
     // ─── create ───────────────────────────────────────────────────────────────
 
     @Test
-    void create_returnsCreatedWithDto() {
+    void create_returnsCreatedWithDto() throws Exception {
         InvoiceDto input = new InvoiceDto();
         InvoiceDto created = new InvoiceDto();
         created.id = "new-id";
@@ -182,7 +186,7 @@ class InvoiceControllerTest {
     // ─── update ───────────────────────────────────────────────────────────────
 
     @Test
-    void update_returnsOkWithUpdatedDto() {
+    void update_returnsOkWithUpdatedDto() throws Exception {
         InvoiceDto input = new InvoiceDto();
         InvoiceDto updated = new InvoiceDto();
         updated.id = "inv-1";
@@ -197,7 +201,7 @@ class InvoiceControllerTest {
     // ─── delete ───────────────────────────────────────────────────────────────
 
     @Test
-    void delete_returnsNoContent() {
+    void delete_returnsNoContent() throws Exception {
         doNothing().when(invoiceService).delete("inv-1");
 
         ResponseEntity<Void> response = controller().delete("inv-1");
@@ -209,7 +213,7 @@ class InvoiceControllerTest {
     // ─── addPayment ───────────────────────────────────────────────────────────
 
     @Test
-    void addPayment_withPrincipal_usesNameAsActor() {
+    void addPayment_withPrincipal_usesNameAsActor() throws Exception {
         PaymentDto dto = new PaymentDto();
         InvoiceDto updated = new InvoiceDto();
         Principal principal = () -> "user@example.com";
@@ -223,7 +227,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void addPayment_nullPrincipal_usesSystemAsActor() {
+    void addPayment_nullPrincipal_usesSystemAsActor() throws Exception {
         PaymentDto dto = new PaymentDto();
         InvoiceDto updated = new InvoiceDto();
         when(invoiceService.recordPayment("inv-1", dto, "system")).thenReturn(updated);
@@ -237,7 +241,7 @@ class InvoiceControllerTest {
     // ─── removePayment ────────────────────────────────────────────────────────
 
     @Test
-    void removePayment_returnsOkWithUpdatedDto() {
+    void removePayment_returnsOkWithUpdatedDto() throws Exception {
         InvoiceDto updated = new InvoiceDto();
         when(invoiceService.deletePayment("inv-1", "pay-1")).thenReturn(updated);
 
@@ -250,7 +254,7 @@ class InvoiceControllerTest {
     // ─── extractWithLlm ───────────────────────────────────────────────────────
 
     @Test
-    void extractWithLlm_nullFiles_returnsBadRequest() {
+    void extractWithLlm_nullFiles_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller().extractWithLlm(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -258,14 +262,14 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_emptyList_returnsBadRequest() {
+    void extractWithLlm_emptyList_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller().extractWithLlm(List.of());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void extractWithLlm_allEmptyFiles_returnsBadRequest() {
+    void extractWithLlm_allEmptyFiles_returnsBadRequest() throws Exception {
         MockMultipartFile emptyFile = new MockMultipartFile("files", new byte[0]);
 
         ResponseEntity<?> response = controller().extractWithLlm(List.of(emptyFile));
@@ -274,7 +278,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_textractUnavailable_returns503() {
+    void extractWithLlm_textractUnavailable_returns503() throws Exception {
         MockMultipartFile file = new MockMultipartFile("files", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
 
         ResponseEntity<?> response = controllerNoTextract().extractWithLlm(List.of(file));
@@ -388,40 +392,40 @@ class InvoiceControllerTest {
     // ─── JsonSanitizer ────────────────────────────────────────────────────────
 
     @Test
-    void jsonSanitizer_nullInput_returnsNull() {
+    void jsonSanitizer_nullInput_returnsNull() throws Exception {
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(null)).isNull();
     }
 
     @Test
-    void jsonSanitizer_noOpenBrace_returnsNull() {
+    void jsonSanitizer_noOpenBrace_returnsNull() throws Exception {
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject("no json here")).isNull();
     }
 
     @Test
-    void jsonSanitizer_simpleObject_extractsCorrectly() {
+    void jsonSanitizer_simpleObject_extractsCorrectly() throws Exception {
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject("{\"a\":1}")).isEqualTo("{\"a\":1}");
     }
 
     @Test
-    void jsonSanitizer_nestedObject_extractsOutermost() {
+    void jsonSanitizer_nestedObject_extractsOutermost() throws Exception {
         String input = "{\"outer\":{\"inner\":true}}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }
 
     @Test
-    void jsonSanitizer_escapedBackslash_handledCorrectly() {
+    void jsonSanitizer_escapedBackslash_handledCorrectly() throws Exception {
         String input = "{\"path\":\"C:\\\\Users\\\\test\"}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }
 
     @Test
-    void jsonSanitizer_fencedJsonWithNewline_stripsAndExtracts() {
+    void jsonSanitizer_fencedJsonWithNewline_stripsAndExtracts() throws Exception {
         String input = "```json\n{\"key\":\"value\"}\n```";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo("{\"key\":\"value\"}");
     }
 
     @Test
-    void jsonSanitizer_fencedJsonNoNewline_stripsAndExtracts() {
+    void jsonSanitizer_fencedJsonNoNewline_stripsAndExtracts() throws Exception {
         // ``` immediately followed by { (no newline after fence marker)
         String input = "```{\"key\":\"value\"}```";
         // firstNewline < 0 branch: t stays as the remainder after "```" trim
@@ -430,12 +434,12 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void jsonSanitizer_unclosedObject_returnsNull() {
+    void jsonSanitizer_unclosedObject_returnsNull() throws Exception {
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject("{\"a\":1")).isNull();
     }
 
     @Test
-    void jsonSanitizer_escapedQuoteInsideString_handledCorrectly() {
+    void jsonSanitizer_escapedQuoteInsideString_handledCorrectly() throws Exception {
         String input = "{\"msg\":\"say \\\"hello\\\"\"}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }

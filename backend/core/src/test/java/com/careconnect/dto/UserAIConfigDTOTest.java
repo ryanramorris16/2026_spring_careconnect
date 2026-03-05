@@ -13,7 +13,7 @@ class UserAIConfigDTOTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         UserAIConfigDTO dto = new UserAIConfigDTO();
 
         assertThat(dto).isNotNull();
@@ -26,7 +26,7 @@ class UserAIConfigDTOTest {
     // ─── Builder: defaults applied ────────────────────────────────────────────
 
     @Test
-    void builder_defaults_areApplied() {
+    void builder_defaults_areApplied() throws Exception {
         UserAIConfigDTO dto = UserAIConfigDTO.builder()
                 .userId(1L)
                 .aiProvider(AIProvider.OPENAI)
@@ -48,7 +48,7 @@ class UserAIConfigDTOTest {
     // ─── Builder: all fields overridden ──────────────────────────────────────
 
     @Test
-    void builder_allFieldsOverridden_setsCorrectly() {
+    void builder_allFieldsOverridden_setsCorrectly() throws Exception {
         UserAIConfigDTO dto = UserAIConfigDTO.builder()
                 .id(10L)
                 .patientId(20L)
@@ -89,7 +89,7 @@ class UserAIConfigDTOTest {
     // ─── Builder static method ────────────────────────────────────────────────
 
     @Test
-    void builder_staticMethod_returnsBuilderInstance() {
+    void builder_staticMethod_returnsBuilderInstance() throws Exception {
         UserAIConfigDTO.UserAIConfigDTOBuilder builder = UserAIConfigDTO.builder();
         assertThat(builder).isNotNull();
     }
@@ -97,7 +97,7 @@ class UserAIConfigDTOTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateAllFields() {
+    void setters_updateAllFields() throws Exception {
         UserAIConfigDTO dto = new UserAIConfigDTO();
 
         dto.setId(1L);

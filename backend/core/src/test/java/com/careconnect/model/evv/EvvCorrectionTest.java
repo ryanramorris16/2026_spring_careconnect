@@ -14,7 +14,7 @@ class EvvCorrectionTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         EvvCorrection ec = new EvvCorrection();
 
         assertThat(ec).isNotNull();
@@ -32,7 +32,7 @@ class EvvCorrectionTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         EvvRecord original = new EvvRecord();
         EvvRecord corrected = new EvvRecord();
         OffsetDateTime now = OffsetDateTime.now();
@@ -99,7 +99,7 @@ class EvvCorrectionTest {
     // ─── approve() ───────────────────────────────────────────────────────────
 
     @Test
-    void approve_setsApprovalFields() {
+    void approve_setsApprovalFields() throws Exception {
         EvvCorrection ec = new EvvCorrection();
 
         ec.approve(10L, "Looks correct");
@@ -112,7 +112,7 @@ class EvvCorrectionTest {
     // ─── reject() ────────────────────────────────────────────────────────────
 
     @Test
-    void reject_setsRejectionFields() {
+    void reject_setsRejectionFields() throws Exception {
         EvvCorrection ec = new EvvCorrection();
         ec.setApprovalRequired(true);
 

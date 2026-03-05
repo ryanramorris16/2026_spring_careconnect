@@ -39,12 +39,12 @@ class GmailParserTest {
     // ─── toDomain: null / blank inputs ───────────────────────────────────────
 
     @Test
-    void toDomain_nullPayload_returnsNull() {
+    void toDomain_nullPayload_returnsNull() throws Exception {
         assertNull(parser.toDomain(null));
     }
 
     @Test
-    void toDomain_nullHtmlBody_returnsNonNullEmptyDigest() {
+    void toDomain_nullHtmlBody_returnsNonNullEmptyDigest() throws Exception {
         GmailDigestPayload payload = new GmailDigestPayload(null, Map.of(), NOW);
         USPSDigest digest = parser.toDomain(payload);
         assertNotNull(digest);
@@ -53,7 +53,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_emptyHtmlBody_returnsEmptyDigest() {
+    void toDomain_emptyHtmlBody_returnsEmptyDigest() throws Exception {
         USPSDigest digest = parser.toDomain(p(""));
         assertNotNull(digest);
     }
@@ -77,7 +77,7 @@ class GmailParserTest {
     // ─── resolveDigestDate ────────────────────────────────────────────────────
 
     @Test
-    void toDomain_resolveDigestDate_fromTimeDatetimeAttr() {
+    void toDomain_resolveDigestDate_fromTimeDatetimeAttr() throws Exception {
         String html = "<html><body><time datetime='2025-01-15T08:00:00Z'>Jan 15</time></body></html>";
         // null receivedAt forces fallback path; datetime attr provides date
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
@@ -86,7 +86,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveDigestDate_fromTimeText_whenDatetimeAttrBlank() {
+    void toDomain_resolveDigestDate_fromTimeText_whenDatetimeAttrBlank() throws Exception {
         // <time datetime=""> — attr exists but blank → firstNonBlank uses text content instead
         String html = "<html><body><time datetime=''>2025-02-20T00:00:00Z</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
@@ -94,7 +94,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveDigestDate_fromMetaNameDate() {
+    void toDomain_resolveDigestDate_fromMetaNameDate() throws Exception {
         String html = "<html><head><meta name='date' content='2025-06-01T00:00:00Z'/></head><body></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
@@ -102,7 +102,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveDigestDate_fromDailyDigestHeading() {
+    void toDomain_resolveDigestDate_fromDailyDigestHeading() throws Exception {
         String html = "<html><body><h1>Daily Digest for 2025-03-10T00:00:00Z</h1></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
@@ -110,14 +110,14 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveDigestDate_noDateElements_usesFallback() {
+    void toDomain_resolveDigestDate_noDateElements_usesFallback() throws Exception {
         OffsetDateTime fallback = OffsetDateTime.of(2025, 4, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         USPSDigest digest = parser.toDomain(p("<html><body></body></html>", fallback));
         assertThat(digest.digestDate()).isEqualTo(fallback);
     }
 
     @Test
-    void toDomain_resolveDigestDate_noDateNoFallback_returnsNow() {
+    void toDomain_resolveDigestDate_noDateNoFallback_returnsNow() throws Exception {
         OffsetDateTime before = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(2);
         USPSDigest digest = parser.toDomain(p("<html><body></body></html>", (OffsetDateTime) null));
         assertThat(digest.digestDate()).isAfterOrEqualTo(before);
@@ -126,7 +126,7 @@ class GmailParserTest {
     // ─── parseToOffset: all six date formats ─────────────────────────────────
 
     @Test
-    void toDomain_parseToOffset_rfc1123Format() {
+    void toDomain_parseToOffset_rfc1123Format() throws Exception {
         // "Thu, 26 Feb 2026" is a real Thursday (today), so RFC_1123_DATE_TIME parses it correctly
         String html = "<html><body><time datetime='Thu, 26 Feb 2026 08:00:00 GMT'>Feb</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
@@ -135,7 +135,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parseToOffset_fullLocalDate_eeeeMMMMdYyyy() {
+    void toDomain_parseToOffset_fullLocalDate_eeeeMMMMdYyyy() throws Exception {
         String html = "<html><body><time datetime='Wednesday, January 15, 2025'>Jan</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
@@ -143,28 +143,28 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parseToOffset_shortLocalDate_MMMMdYyyy() {
+    void toDomain_parseToOffset_shortLocalDate_MMMMdYyyy() throws Exception {
         String html = "<html><body><time datetime='January 15, 2025'>Jan</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
     }
 
     @Test
-    void toDomain_parseToOffset_slashDate_MdYyyy() {
+    void toDomain_parseToOffset_slashDate_MdYyyy() throws Exception {
         String html = "<html><body><time datetime='1/15/2025'>Jan</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
     }
 
     @Test
-    void toDomain_parseToOffset_localDateTime_noZone() {
+    void toDomain_parseToOffset_localDateTime_noZone() throws Exception {
         String html = "<html><body><time datetime='2025-07-04T12:00:00'>Jul</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, (OffsetDateTime) null));
         assertThat(digest.digestDate().getYear()).isEqualTo(2025);
     }
 
     @Test
-    void toDomain_parseToOffset_unrecognisedString_fallsBackToFallback() {
+    void toDomain_parseToOffset_unrecognisedString_fallsBackToFallback() throws Exception {
         OffsetDateTime fallback = OffsetDateTime.of(2024, 7, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         String html = "<html><body><time datetime='not-a-date'>bad</time></body></html>";
         USPSDigest digest = parser.toDomain(p(html, fallback));
@@ -174,7 +174,7 @@ class GmailParserTest {
     // ─── parseMailCount ───────────────────────────────────────────────────────
 
     @Test
-    void toDomain_parseMailCount_fromTotalMailpiecesElement() {
+    void toDomain_parseMailCount_fromTotalMailpiecesElement() throws Exception {
         // count = 2, 1 real piece → triggers placeholder addition
         String html = "<html><body>"
                 + "<span id='total-mailpieces'>2</span>"
@@ -188,7 +188,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parseMailCount_fromYouHaveNMailpiece() {
+    void toDomain_parseMailCount_fromYouHaveNMailpiece() throws Exception {
         String html = "<html><body>"
                 + "<p>You have 1 mailpiece today</p>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -199,7 +199,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parseMailCount_fromMailPiecesHeader() {
+    void toDomain_parseMailCount_fromMailPiecesHeader() throws Exception {
         String html = "<html><body>"
                 + "<h2>Mail Pieces 1</h2>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -210,7 +210,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parseMailCount_invalidNumberInElement_treatedAsNegativeOne() {
+    void toDomain_parseMailCount_invalidNumberInElement_treatedAsNegativeOne() throws Exception {
         // parseIntSafe("abc") → -1; no count adjustment
         String html = "<html><body><span id='total-mailpieces'>abc</span></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
@@ -220,7 +220,7 @@ class GmailParserTest {
     // ─── parsePackageCount ────────────────────────────────────────────────────
 
     @Test
-    void toDomain_parsePackageCount_fromTotalPackagesElement() {
+    void toDomain_parsePackageCount_fromTotalPackagesElement() throws Exception {
         String html = "<html><body>"
                 + "<span id='total-packages'>1</span>"
                 + "<table><tr><td>FROM: Pkg Sender</td></tr>"
@@ -231,7 +231,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_parsePackageCount_fromTodayPackageItemNumber() {
+    void toDomain_parsePackageCount_fromTodayPackageItemNumber() throws Exception {
         // #today-package-item-number element (value = 0 → parsed >= 0 → returned)
         String html = "<html><body><span id='today-package-item-number'>0</span></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
@@ -241,7 +241,7 @@ class GmailParserTest {
     // ─── inlineCidImages ─────────────────────────────────────────────────────
 
     @Test
-    void toDomain_inlineCidImages_nullCidMap_noError() {
+    void toDomain_inlineCidImages_nullCidMap_noError() throws Exception {
         GmailDigestPayload payload = new GmailDigestPayload(
                 "<html><body><img src='cid:abc'></body></html>", null, NOW);
         USPSDigest digest = parser.toDomain(payload);
@@ -249,7 +249,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_inlineCidImages_replacesAllFourSrcAttributes() {
+    void toDomain_inlineCidImages_replacesAllFourSrcAttributes() throws Exception {
         // One img with all four cid: attrs → each branch inside dataUrl-found block is hit
         Map<String, String> cids = Map.of("abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
@@ -262,7 +262,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_inlineCidImages_unknownCidKey_thumbnailRemainsUnresolved() {
+    void toDomain_inlineCidImages_unknownCidKey_thumbnailRemainsUnresolved() throws Exception {
         Map<String, String> cids = Map.of("known", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='cid:unknown'><span class='sender'>S</span>"
@@ -275,7 +275,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveCidReference_caseInsensitiveLookup() {
+    void toDomain_resolveCidReference_caseInsensitiveLookup() throws Exception {
         // normalizeCid lowercases, so "ABC" img src matches "abc" in cidMap
         Map<String, String> cids = Map.of("abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
@@ -286,7 +286,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_resolveCidReference_nonCidSrc_returnedAsIs() {
+    void toDomain_resolveCidReference_nonCidSrc_returnedAsIs() throws Exception {
         // src is a normal https URL with a cidMap present — not replaced
         Map<String, String> cids = Map.of("abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
@@ -300,7 +300,7 @@ class GmailParserTest {
     // ─── extractPackages: structured selector ─────────────────────────────────
 
     @Test
-    void toDomain_package_extractedViaClassPackage() {
+    void toDomain_package_extractedViaClassPackage() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='sender'>My Vendor</span>"
@@ -312,7 +312,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_extractedViaArticleWithTrackingNumber() {
+    void toDomain_package_extractedViaArticleWithTrackingNumber() throws Exception {
         String html = "<html><body>"
                 + "<article>"
                 + "<span class='sender'>Article Vendor</span>"
@@ -323,7 +323,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_withTrackUrl() {
+    void toDomain_package_withTrackUrl() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='sender'>Track Vendor</span>"
@@ -336,7 +336,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_withExpectedDelivery_parsesDate() {
+    void toDomain_package_withExpectedDelivery_parsesDate() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='sender'>Express Co</span>"
@@ -349,7 +349,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_expectedDeliveryDayVariant() {
+    void toDomain_package_expectedDeliveryDayVariant() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='sender'>Quick Co</span>"
@@ -362,7 +362,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_expectedDeliveryViaPattern_fromPlainText() {
+    void toDomain_package_expectedDeliveryViaPattern_fromPlainText() throws Exception {
         // extractExpectedText fallback: EXPECTED_PATTERN.matcher(element.text())
         String html = "<html><body>"
                 + "<div class='package' data-tracking-number='9400123456789012345678'>"
@@ -374,7 +374,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_dataTrackingNumberAttribute() {
+    void toDomain_package_dataTrackingNumberAttribute() throws Exception {
         String html = "<html><body>"
                 + "<div class='package' data-tracking-number='9400123456789012345678'>"
                 + "<span class='sender'>Attr Vendor</span>"
@@ -385,7 +385,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderFromFromColonNode() {
+    void toDomain_package_senderFromFromColonNode() throws Exception {
         // extractPackageSender: fromNode = element matching "from:"
         String html = "<html><body>"
                 + "<div class='package' data-tracking-number='9400123456789012345678'>"
@@ -396,7 +396,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderFromFromNode_withBoldChild() {
+    void toDomain_package_senderFromFromNode_withBoldChild() throws Exception {
         // extractPackageSender: fromNode found, child element text used
         String html = "<html><body>"
                 + "<div class='package' data-tracking-number='9400123456789012345678'>"
@@ -407,7 +407,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderFromNearbySibling_previous() {
+    void toDomain_package_senderFromNearbySibling_previous() throws Exception {
         // extractNearbySender: previous sibling of trackingNode has FROM: text
         String html = "<html><body>"
                 + "<div>"
@@ -419,7 +419,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderFromNearbySibling_next() {
+    void toDomain_package_senderFromNearbySibling_next() throws Exception {
         // extractNearbySender: next sibling of trackingNode has FROM: text
         String html = "<html><body>"
                 + "<div>"
@@ -431,7 +431,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderFromParentOwnText() {
+    void toDomain_package_senderFromParentOwnText() throws Exception {
         // extractNearbySender: parent.ownText() has FROM: text
         String html = "<html><body>"
                 + "<div>FROM: Parent Sender"
@@ -442,7 +442,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_senderIsMarketing_replacedWithUspsPackage() {
+    void toDomain_package_senderIsMarketing_replacedWithUspsPackage() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='sender'>learn more about your mail</span>"
@@ -454,7 +454,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_blankSenderFallsBackToUspsPackage() {
+    void toDomain_package_blankSenderFallsBackToUspsPackage() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'>"
                 + "<span class='tracking-number'>940012345678901234</span>"
@@ -465,7 +465,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_duplicateTracking_onlyOneKept() {
+    void toDomain_package_duplicateTracking_onlyOneKept() throws Exception {
         String html = "<html><body>"
                 + "<div class='package'><span class='tracking-number'>940012345678</span></div>"
                 + "<div class='package'><span class='tracking-number'>940012345678</span></div>"
@@ -475,7 +475,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_marketingElement_skipped() {
+    void toDomain_package_marketingElement_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div class='package ridealong'>"
                 + "<span class='tracking-number'>940012345678901234</span>"
@@ -485,7 +485,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_shortTrackingNumber_normalizedToTrimmed() {
+    void toDomain_package_shortTrackingNumber_normalizedToTrimmed() throws Exception {
         // normalizeTracking: digitsOnly < 10 → returns value.trim()
         String html = "<html><body>"
                 + "<div class='package' data-tracking-number='12345'>"
@@ -497,7 +497,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_package_trackingFromHrefWhenRawTrackingBlank() {
+    void toDomain_package_trackingFromHrefWhenRawTrackingBlank() throws Exception {
         // rawTracking is blank → extract from TrackConfirmAction href
         String html = "<html><body>"
                 + "<div>"
@@ -511,7 +511,7 @@ class GmailParserTest {
     // ─── Package fallback: text-search paths ─────────────────────────────────
 
     @Test
-    void toDomain_packageFallback_textSearch_trackingNumberElement() {
+    void toDomain_packageFallback_textSearch_trackingNumberElement() throws Exception {
         // No .package element → falls back to text search "Tracking Number"
         String html = "<html><body>"
                 + "<div>"
@@ -523,7 +523,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_packageFallback_textSearch_marketingElementSkipped() {
+    void toDomain_packageFallback_textSearch_marketingElementSkipped() throws Exception {
         String html = "<html><body>"
                 + "<div class='ridealong'>"
                 + "<p>Tracking Number: 9400123456789012345678</p>"
@@ -533,7 +533,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_packageFallback_summaryText_expectedXItems() {
+    void toDomain_packageFallback_summaryText_expectedXItems() throws Exception {
         // Third fallback: "Expected Today 3 items" → creates 3 summary packages
         String html = "<html><body><p>Expected Today 3 items</p></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
@@ -541,7 +541,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_packageFallback_summaryText_secondSelector_expectedWithNumber() {
+    void toDomain_packageFallback_summaryText_secondSelector_expectedWithNumber() throws Exception {
         // Second summary selector: containsOwn(Expected) + matchesOwn(\d+), no "item"
         String html = "<html><body><p>Expected 2 deliveries</p></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
@@ -549,14 +549,14 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_packageFallback_summaryText_cappedAtFive() {
+    void toDomain_packageFallback_summaryText_cappedAtFive() throws Exception {
         String html = "<html><body><p>Expected Today 10 items</p></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
         assertThat(digest.packages()).hasSize(5);
     }
 
     @Test
-    void toDomain_packageFallback_expectedTextNoDigit_debugPath() {
+    void toDomain_packageFallback_expectedTextNoDigit_debugPath() throws Exception {
         // "Expected Tomorrow" has no digit → both summary selectors empty → debug log fires
         String html = "<html><body><p>Expected Tomorrow</p></body></html>";
         USPSDigest digest = parser.toDomain(p(html));
@@ -566,7 +566,7 @@ class GmailParserTest {
     // ─── Package count trimming ───────────────────────────────────────────────
 
     @Test
-    void toDomain_packages_trimmedWhenExceedExpectedCount() {
+    void toDomain_packages_trimmedWhenExceedExpectedCount() throws Exception {
         // 5 summary packages, expectedPackageCount = 2 → trim to 2
         String html = "<html><body>"
                 + "<span id='total-packages'>2</span>"
@@ -579,7 +579,7 @@ class GmailParserTest {
     // ─── Mail piece extraction: .mailpiece elements ───────────────────────────
 
     @Test
-    void toDomain_mailpiece_extractedWithSenderSpan() {
+    void toDomain_mailpiece_extractedWithSenderSpan() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA'>"
@@ -591,7 +591,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_withDataMailpieceId_usedAsId() {
+    void toDomain_mailpiece_withDataMailpieceId_usedAsId() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'>"
                 + "<div data-mailpiece-id='mp-42'>"
@@ -604,7 +604,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_senderFromAlt_fromPattern() {
+    void toDomain_mailpiece_senderFromAlt_fromPattern() throws Exception {
         // deriveSenderFromAlt: alt matches FROM_PATTERN → "Great Vendor"
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -616,7 +616,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_senderFromAlt_noFromPattern_returnsNull() {
+    void toDomain_mailpiece_senderFromAlt_noFromPattern_returnsNull() throws Exception {
         // deriveSenderFromAlt: alt present but no FROM: match → null from alt
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -629,7 +629,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_summaryFromAlt_imageOfStripped() {
+    void toDomain_mailpiece_summaryFromAlt_imageOfStripped() throws Exception {
         // deriveSummaryFromAlt: "image of a letter" → "a letter"
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -642,7 +642,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_deriveSenderFromContext_strongFrom() {
+    void toDomain_mailpiece_deriveSenderFromContext_strongFrom() throws Exception {
         // deriveSenderFromContext: <strong>From</strong> label
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -654,7 +654,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_deriveSenderFromContext_fromElementWithSibling() {
+    void toDomain_mailpiece_deriveSenderFromContext_fromElementWithSibling() throws Exception {
         // deriveSenderFromContext: fromElement "From:" with blank own candidate → sibling text used
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -666,7 +666,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_noImg_returnsNull_skipped() {
+    void toDomain_mailpiece_noImg_returnsNull_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
                 + "<span class='sender'>No Image</span>"
@@ -676,7 +676,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_receivedAtNull_usesDigestDate() {
+    void toDomain_mailpiece_receivedAtNull_usesDigestDate() throws Exception {
         // payload.receivedAt() == null → received = digestDate
         String html = "<html><body>"
                 + "<time datetime='2025-05-10T00:00:00Z'>May</time>"
@@ -692,7 +692,7 @@ class GmailParserTest {
     // ─── Mail piece trimming & placeholder addition ───────────────────────────
 
     @Test
-    void toDomain_mailPieces_trimmedWhenExceedExpectedCount() {
+    void toDomain_mailPieces_trimmedWhenExceedExpectedCount() throws Exception {
         // 2 pieces, expectedMailCount = 1 → trim to 1
         String html = "<html><body>"
                 + "<span id='total-mailpieces'>1</span>"
@@ -705,7 +705,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailPieces_expectedMailCountSet_whenPositiveAndPiecesFound() {
+    void toDomain_mailPieces_expectedMailCountSet_whenPositiveAndPiecesFound() throws Exception {
         // expectedMailCount <= 0 && !mailPieces.isEmpty() → set expectedMailCount = mailPieces.size()
         // (no #total-mailpieces element, 1 piece → expectedMailCount becomes 1, no trim/add)
         String html = "<html><body>"
@@ -719,7 +719,7 @@ class GmailParserTest {
     // ─── Ride-along image filtering ───────────────────────────────────────────
 
     @Test
-    void toDomain_mailpiece_rideAlongInAlt_skipped() {
+    void toDomain_mailpiece_rideAlongInAlt_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='ridealong advertisement'>"
                 + "</div></div></body></html>";
@@ -727,7 +727,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongSpacedInAlt_skipped() {
+    void toDomain_mailpiece_rideAlongSpacedInAlt_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='ride along ad'>"
                 + "</div></div></body></html>";
@@ -735,7 +735,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInId_skipped() {
+    void toDomain_mailpiece_rideAlongInId_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' id='ridealong-img'>"
                 + "</div></div></body></html>";
@@ -743,7 +743,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInId_skipped() {
+    void toDomain_mailpiece_rideAlongDashInId_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' id='ride-along-img'>"
                 + "</div></div></body></html>";
@@ -751,7 +751,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInClass_skipped() {
+    void toDomain_mailpiece_rideAlongInClass_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' class='ridealong'>"
                 + "</div></div></body></html>";
@@ -759,7 +759,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInClass_skipped() {
+    void toDomain_mailpiece_rideAlongDashInClass_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' class='ride-along'>"
                 + "</div></div></body></html>";
@@ -767,7 +767,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInParentClass_skipped() {
+    void toDomain_mailpiece_rideAlongInParentClass_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<div class='ridealong'><img src='data:image/jpeg;base64,AAAA'></div>"
                 + "</div></div></body></html>";
@@ -775,7 +775,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInParentClass_skipped() {
+    void toDomain_mailpiece_rideAlongDashInParentClass_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<div class='ride-along'><img src='data:image/jpeg;base64,AAAA'></div>"
                 + "</div></div></body></html>";
@@ -783,7 +783,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInDataInlineCid_skipped() {
+    void toDomain_mailpiece_rideAlongInDataInlineCid_skipped() throws Exception {
         // data-inline-cid starts with "content-" → isRideAlongImage true
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' data-inline-cid='content-12345'>"
@@ -792,7 +792,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongKeywordInDataInlineCid_skipped() {
+    void toDomain_mailpiece_rideAlongKeywordInDataInlineCid_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' data-inline-cid='img-ridealong-5'>"
                 + "</div></div></body></html>";
@@ -800,7 +800,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInDataInlineCid_skipped() {
+    void toDomain_mailpiece_rideAlongDashInDataInlineCid_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' data-inline-cid='img-ride-along-5'>"
                 + "</div></div></body></html>";
@@ -808,7 +808,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInCidSrcKey_skipped() {
+    void toDomain_mailpiece_rideAlongInCidSrcKey_skipped() throws Exception {
         // cid: src where the key starts with "content-"
         Map<String, String> cids = Map.of("content-12345", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
@@ -818,7 +818,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongKeywordInCidSrcKey_skipped() {
+    void toDomain_mailpiece_rideAlongKeywordInCidSrcKey_skipped() throws Exception {
         Map<String, String> cids = Map.of("img-ridealong-abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='cid:img-ridealong-abc'>"
@@ -827,7 +827,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInCidSrcKey_skipped() {
+    void toDomain_mailpiece_rideAlongDashInCidSrcKey_skipped() throws Exception {
         Map<String, String> cids = Map.of("img-ride-along-abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='cid:img-ride-along-abc'>"
@@ -836,7 +836,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongInHttpSrc_skipped() {
+    void toDomain_mailpiece_rideAlongInHttpSrc_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='https://example.com/ridealong-image.jpg'>"
                 + "</div></div></body></html>";
@@ -844,7 +844,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_rideAlongDashInHttpSrc_skipped() {
+    void toDomain_mailpiece_rideAlongDashInHttpSrc_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='https://example.com/ride-along-image.jpg'>"
                 + "</div></div></body></html>";
@@ -854,7 +854,7 @@ class GmailParserTest {
     // ─── Marketing element filtering ─────────────────────────────────────────
 
     @Test
-    void toDomain_mailpiece_marketingClassRidealong_skipped() {
+    void toDomain_mailpiece_marketingClassRidealong_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece ridealong'>"
                 + "<img src='data:image/jpeg;base64,AAAA'><span class='sender'>S</span>"
@@ -863,7 +863,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingClassPromo_skipped() {
+    void toDomain_mailpiece_marketingClassPromo_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece promo'>"
                 + "<img src='data:image/jpeg;base64,AAAA'><span class='sender'>S</span>"
@@ -872,7 +872,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingClassSat_skipped() {
+    void toDomain_mailpiece_marketingClassSat_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div id='mailpieces'><div class='mailpiece sat-delivery'>"
                 + "<img src='data:image/jpeg;base64,AAAA'><span class='sender'>S</span>"
@@ -881,7 +881,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingAncestorId_skipped() {
+    void toDomain_mailpiece_marketingAncestorId_skipped() throws Exception {
         String html = "<html><body>"
                 + "<div id='ridealong-section'>"
                 + "<div id='mailpieces'><div class='mailpiece'>"
@@ -893,7 +893,7 @@ class GmailParserTest {
     // ─── Marketing text filtering ─────────────────────────────────────────────
 
     @Test
-    void toDomain_mailpiece_marketingTextRidealong_inAlt_skipped() {
+    void toDomain_mailpiece_marketingTextRidealong_inAlt_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='ridealong promo'>"
                 + "</div></div></body></html>";
@@ -901,7 +901,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingTextPromotion_inAlt_skipped() {
+    void toDomain_mailpiece_marketingTextPromotion_inAlt_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='Special promotion offer'>"
                 + "</div></div></body></html>";
@@ -909,7 +909,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingTextLearnMoreAboutMail_inAlt_skipped() {
+    void toDomain_mailpiece_marketingTextLearnMoreAboutMail_inAlt_skipped() throws Exception {
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='Learn more about your mail'>"
                 + "</div></div></body></html>";
@@ -917,7 +917,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_mailpiece_marketingTextTruStage_inAlt_skipped() {
+    void toDomain_mailpiece_marketingTextTruStage_inAlt_skipped() throws Exception {
         // isMarketingText: lower.contains("tru") && lower.contains("stage")
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='TruStage insurance'>"
@@ -928,7 +928,7 @@ class GmailParserTest {
     // ─── normalizeSummary ─────────────────────────────────────────────────────
 
     @Test
-    void toDomain_normalizeSummary_campaignAlt_usesSender() {
+    void toDomain_normalizeSummary_campaignAlt_usesSender() throws Exception {
         // alt = "campaign" → normalizeSummary: lower.equals("campaign") → return sender
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='campaign'>"
@@ -940,7 +940,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_normalizeSummary_mailAlt_usesSender() {
+    void toDomain_normalizeSummary_mailAlt_usesSender() throws Exception {
         // alt = "mail" → sanitizeSender("mail") = null → summary stays "mail" → lower.equals("mail") → use sender
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='mail'>"
@@ -952,7 +952,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_normalizeSummary_imagePrefixAlt_usesSender() {
+    void toDomain_normalizeSummary_imagePrefixAlt_usesSender() throws Exception {
         // alt = "image something" → starts with "image" → return sender
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt='image something'>"
@@ -964,7 +964,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_normalizeSummary_blankSummaryBlankSender_returnsBlankSummary() {
+    void toDomain_normalizeSummary_blankSummaryBlankSender_returnsBlankSummary() throws Exception {
         // Both summary and sender are blank → returns blank summary
         String html = "<html><body><div id='mailpieces'><div class='mailpiece'>"
                 + "<img src='data:image/jpeg;base64,AAAA' alt=''>"
@@ -977,7 +977,7 @@ class GmailParserTest {
     // ─── sanitizeSender edge cases ────────────────────────────────────────────
 
     @Test
-    void toDomain_sanitizeSender_stripsTrackingNumberSuffix() {
+    void toDomain_sanitizeSender_stripsTrackingNumberSuffix() throws Exception {
         String html = "<html><body><div class='package'>"
                 + "<span class='sender'>Good Vendor Tracking Number 12345</span>"
                 + "<span class='tracking-number'>940012345678901234</span>"
@@ -988,7 +988,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_sanitizeSender_stripsExpectedDeliverySuffix() {
+    void toDomain_sanitizeSender_stripsExpectedDeliverySuffix() throws Exception {
         String html = "<html><body><div class='package'>"
                 + "<span class='sender'>Vendor Inc Expected Delivery tomorrow</span>"
                 + "<span class='tracking-number'>940012345678901234</span>"
@@ -1001,7 +1001,7 @@ class GmailParserTest {
     // ─── Campaign mail pieces ─────────────────────────────────────────────────
 
     @Test
-    void toDomain_campaignMailPieces_extractedFromMailSection() {
+    void toDomain_campaignMailPieces_extractedFromMailSection() throws Exception {
         Map<String, String> cids = Map.of("mailpiece-abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'><table class='mail'>"
                 + "<tr><td><img data-inline-cid='mailpiece-abc' src='cid:mailpiece-abc'></td></tr>"
@@ -1012,7 +1012,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_campaignMailPieces_extractedFromMailCampaignDiv() {
+    void toDomain_campaignMailPieces_extractedFromMailCampaignDiv() throws Exception {
         Map<String, String> cids = Map.of("mp-xyz", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'>"
                 + "<div id='mail-campaign-1'>"
@@ -1023,7 +1023,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_campaignMailPieces_duplicateCidKey_onlyOneExtracted() {
+    void toDomain_campaignMailPieces_duplicateCidKey_onlyOneExtracted() throws Exception {
         // Two campaign tables with the same CID → cidKey already in seenCids → second skipped
         Map<String, String> cids = Map.of("dup-img", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'>"
@@ -1035,7 +1035,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_campaignMailPieces_rideAlongImg_skipped() {
+    void toDomain_campaignMailPieces_rideAlongImg_skipped() throws Exception {
         Map<String, String> cids = Map.of("content-abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'><table class='mail'>"
                 + "<tr><td><img data-inline-cid='content-abc' src='cid:content-abc'></td></tr>"
@@ -1045,7 +1045,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_campaignMailPieces_blankResolvedSrc_skipped() {
+    void toDomain_campaignMailPieces_blankResolvedSrc_skipped() throws Exception {
         // img selected via data-inline-cid but has no src/data-src attrs → rawSrc null → blank resolved → skipped
         Map<String, String> cids = Map.of("other", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'><table class='mail'>"
@@ -1056,7 +1056,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_campaignMailPieces_withCampaignFromSpanId() {
+    void toDomain_campaignMailPieces_withCampaignFromSpanId() throws Exception {
         Map<String, String> cids = Map.of("camp-img", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mail-section'><table class='mail'>"
                 + "<tr><td><img data-inline-cid='camp-img' src='cid:camp-img'></td></tr>"
@@ -1069,7 +1069,7 @@ class GmailParserTest {
     // ─── Fallback: CID images in #mailpieces ─────────────────────────────────
 
     @Test
-    void toDomain_fallbackCidImages_extracted() {
+    void toDomain_fallbackCidImages_extracted() throws Exception {
         Map<String, String> cids = Map.of("mail-img-abc", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'>"
                 + "<img data-inline-cid='mail-img-abc' src='cid:mail-img-abc'>"
@@ -1080,7 +1080,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_fallbackImgElements_rideAlongAlt_skipped() {
+    void toDomain_fallbackImgElements_rideAlongAlt_skipped() throws Exception {
         Map<String, String> cids = Map.of("mail-img-2", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'>"
                 + "<img data-inline-cid='mail-img-2' src='cid:mail-img-2' alt='ridealong'>"
@@ -1089,7 +1089,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_fallbackImgElements_marketingElement_skipped() {
+    void toDomain_fallbackImgElements_marketingElement_skipped() throws Exception {
         // Fallback img inside a marketing element
         Map<String, String> cids = Map.of("mail-img-3", "data:image/jpeg;base64,AAAA");
         String html = "<html><body><div id='mailpieces'>"
@@ -1102,14 +1102,14 @@ class GmailParserTest {
     // ─── deduplicateMailPieces ────────────────────────────────────────────────
 
     @Test
-    void toDomain_dedup_emptyList_returnsEmpty() {
+    void toDomain_dedup_emptyList_returnsEmpty() throws Exception {
         // No mailpieces → extractMailPieces returns empty → dedup returns empty
         USPSDigest digest = parser.toDomain(p(""));
         assertThat(digest.mailpieces()).isEmpty();
     }
 
     @Test
-    void toDomain_dedup_duplicateDataMailpieceId_onlyOneKept() {
+    void toDomain_dedup_duplicateDataMailpieceId_onlyOneKept() throws Exception {
         String html = "<html><body><div id='mailpieces'>"
                 + "<div data-mailpiece-id='mp-1'>"
                 + "<img src='data:image/jpeg;base64,AAAA'><span class='sender'>S1</span></div>"
@@ -1121,7 +1121,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_dedup_contentKey_sameThumbSubjectSender_deduped() {
+    void toDomain_dedup_contentKey_sameThumbSubjectSender_deduped() throws Exception {
         // Two campaign tables with different CIDs but same resolved content
         // Use pieces with same sender+summary+thumbnail (no id) → content key dedup
         Map<String, String> cids = Map.of("cid-a", "data:image/jpeg;base64,SAME");
@@ -1139,7 +1139,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_dedup_placeholderCreatedAfterDedup_presentInFinalList() {
+    void toDomain_dedup_placeholderCreatedAfterDedup_presentInFinalList() throws Exception {
         // 1 real piece + expectedMailCount=3 → 2 placeholders added AFTER dedup
         // placeholders have id "mail-placeholder-X"
         String html = "<html><body>"
@@ -1157,7 +1157,7 @@ class GmailParserTest {
     }
 
     @Test
-    void toDomain_dedup_placeholderCreatedAfterDedup_receivedAtNullUsesNow() {
+    void toDomain_dedup_placeholderCreatedAfterDedup_receivedAtNullUsesNow() throws Exception {
         // payload.receivedAt() is null → received = digestDate (from now())
         String html = "<html><body>"
                 + "<span id='total-mailpieces'>2</span>"

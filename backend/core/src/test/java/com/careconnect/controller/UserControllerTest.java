@@ -7,7 +7,9 @@ import com.careconnect.dto.UserResponse;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.Role;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.UserPasswordService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,13 +35,18 @@ class UserControllerTest {
     @Mock
     private UserRepository userRepo;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private UserController controller;
 
     // ─── resetPassword ────────────────────────────────────────────────────────
 
     @Test
-    void resetPassword_success_returnsOkWithMessage() {
+    void resetPassword_success_returnsOkWithMessage() throws Exception {
         ResetPasswordRequest req = new ResetPasswordRequest();
         req.setUsername("user@test.com");
         req.setResetToken("token123");
@@ -55,7 +62,7 @@ class UserControllerTest {
     }
 
     @Test
-    void resetPassword_exception_returnsBadRequest() {
+    void resetPassword_exception_returnsBadRequest() throws Exception {
         ResetPasswordRequest req = new ResetPasswordRequest();
         req.setUsername("bad@test.com");
         req.setResetToken("bad-token");
@@ -74,7 +81,7 @@ class UserControllerTest {
     // ─── setupPassword ────────────────────────────────────────────────────────
 
     @Test
-    void setupPassword_success_returnsOkWithMessage() {
+    void setupPassword_success_returnsOkWithMessage() throws Exception {
         SetupPasswordRequest req = new SetupPasswordRequest("p@test.com", "verify-token", "MyPass1!");
         doNothing().when(userPasswordService).setupPasswordWithVerificationToken("p@test.com", "verify-token", "MyPass1!");
 
@@ -87,7 +94,7 @@ class UserControllerTest {
     }
 
     @Test
-    void setupPassword_exception_returnsBadRequest() {
+    void setupPassword_exception_returnsBadRequest() throws Exception {
         SetupPasswordRequest req = new SetupPasswordRequest("p@test.com", "bad-token", "pass");
         doThrow(new RuntimeException("Expired token"))
                 .when(userPasswordService).setupPasswordWithVerificationToken("p@test.com", "bad-token", "pass");
@@ -103,7 +110,7 @@ class UserControllerTest {
     // ─── searchUsers ──────────────────────────────────────────────────────────
 
     @Test
-    void searchUsers_currentUserNotFound_returnsBadRequest() {
+    void searchUsers_currentUserNotFound_returnsBadRequest() throws Exception {
         when(userRepo.findByNameContainingIgnoreCaseOrEmailContainingIgnoreCase("alice", "alice"))
                 .thenReturn(List.of());
         when(userRepo.findById(99L)).thenReturn(Optional.empty());
@@ -115,7 +122,7 @@ class UserControllerTest {
     }
 
     @Test
-    void searchUsers_excludesSelfAndReturnsList() {
+    void searchUsers_excludesSelfAndReturnsList() throws Exception {
         User self = User.builder().id(1L).name("Alice").email("alice@test.com")
                 .role(Role.PATIENT).password("p").status("ACTIVE").build();
         User other = User.builder().id(2L).name("Bob").email("bob@test.com")
@@ -134,7 +141,7 @@ class UserControllerTest {
     }
 
     @Test
-    void searchUsers_noMatchesSelf_returnsAllResults() {
+    void searchUsers_noMatchesSelf_returnsAllResults() throws Exception {
         User currentUser = User.builder().id(1L).name("Alice").email("alice@test.com")
                 .role(Role.PATIENT).password("p").status("ACTIVE").build();
         User other = User.builder().id(2L).name("Bob").email("bob@test.com")
@@ -153,7 +160,7 @@ class UserControllerTest {
     // ─── toggleLeaderboardOptIn ───────────────────────────────────────────────
 
     @Test
-    void toggleLeaderboardOptIn_missingOptIn_returnsBadRequest() {
+    void toggleLeaderboardOptIn_missingOptIn_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.toggleLeaderboardOptIn(1L, Collections.emptyMap());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -163,7 +170,7 @@ class UserControllerTest {
     }
 
     @Test
-    void toggleLeaderboardOptIn_userNotFound_returnsNotFound() {
+    void toggleLeaderboardOptIn_userNotFound_returnsNotFound() throws Exception {
         when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.toggleLeaderboardOptIn(99L, Map.of("optIn", true));
@@ -172,7 +179,7 @@ class UserControllerTest {
     }
 
     @Test
-    void toggleLeaderboardOptIn_success_updatesAndReturnsOk() {
+    void toggleLeaderboardOptIn_success_updatesAndReturnsOk() throws Exception {
         User user = User.builder().id(1L).email("u@test.com").role(Role.PATIENT).password("p").status("ACTIVE").build();
         when(userRepo.findById(1L)).thenReturn(Optional.of(user));
         when(userRepo.save(user)).thenReturn(user);
@@ -186,7 +193,7 @@ class UserControllerTest {
     // ─── getLeaderboard ───────────────────────────────────────────────────────
 
     @Test
-    void getLeaderboard_returnsOkWithEntries() {
+    void getLeaderboard_returnsOkWithEntries() throws Exception {
         List<LeaderboardEntry> entries = List.of(new LeaderboardEntry(1L, "Smith", "John", 100, 2, null));
         when(userRepo.findLeaderboard()).thenReturn(entries);
 
@@ -199,7 +206,7 @@ class UserControllerTest {
     // ─── checkEmailExists ─────────────────────────────────────────────────────
 
     @Test
-    void checkEmailExists_userFound_returnsExistsTrue() {
+    void checkEmailExists_userFound_returnsExistsTrue() throws Exception {
         User user = User.builder().id(5L).email("found@test.com").role(Role.PATIENT).password("p").status("ACTIVE").build();
         when(userRepo.findByEmail("found@test.com")).thenReturn(Optional.of(user));
 
@@ -214,7 +221,7 @@ class UserControllerTest {
     }
 
     @Test
-    void checkEmailExists_userNotFound_returnsExistsFalse() {
+    void checkEmailExists_userNotFound_returnsExistsFalse() throws Exception {
         when(userRepo.findByEmail("missing@test.com")).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.checkEmailExists("missing@test.com");

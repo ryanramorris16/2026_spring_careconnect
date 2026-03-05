@@ -38,7 +38,7 @@ class AiAllergyServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         // Inject the real ObjectMapper since @InjectMocks won't do it for final fields
         try {
@@ -75,7 +75,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_validJsonResponse_returnsPopulatedResult")
-    void analyze_validJsonResponse_returnsPopulatedResult() {
+    void analyze_validJsonResponse_returnsPopulatedResult() throws Exception {
         String json = "{\"allergen\":\"Penicillin\",\"reaction\":\"Hives\",\"severity\":\"SEVERE\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("No known allergies.");
@@ -92,7 +92,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_mildSeverityInJson_normalizesMild")
-    void analyze_mildSeverityInJson_normalizesMild() {
+    void analyze_mildSeverityInJson_normalizesMild() throws Exception {
         String json = "{\"allergen\":\"Dust\",\"reaction\":\"Sneezing\",\"severity\":\"mild\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -108,7 +108,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_moderateSeverityInJson_normalizesModerate")
-    void analyze_moderateSeverityInJson_normalizesModerate() {
+    void analyze_moderateSeverityInJson_normalizesModerate() throws Exception {
         String json = "{\"allergen\":\"Shellfish\",\"reaction\":\"Swelling\",\"severity\":\"MODERATE\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -125,7 +125,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_nonJsonContent_fallsBackToTranscript")
-    void analyze_nonJsonContent_fallsBackToTranscript() {
+    void analyze_nonJsonContent_fallsBackToTranscript() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
         when(deepSeekService.sendChatRequest(any())).thenReturn(buildResponse("I'm not sure about the allergy"));
@@ -142,7 +142,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_emptyContent_fallsBackToTranscript")
-    void analyze_emptyContent_fallsBackToTranscript() {
+    void analyze_emptyContent_fallsBackToTranscript() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
         when(deepSeekService.sendChatRequest(any())).thenReturn(buildResponse(""));
@@ -156,7 +156,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_nullText_fallsBackToEmptyString")
-    void analyze_nullText_fallsBackToEmptyString() {
+    void analyze_nullText_fallsBackToEmptyString() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
         when(deepSeekService.sendChatRequest(any())).thenReturn(buildResponse(""));
@@ -169,7 +169,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_nullTextWithNonJsonContent_fallsBackToEmptyString")
-    void analyze_nullTextWithNonJsonContent_fallsBackToEmptyString() {
+    void analyze_nullTextWithNonJsonContent_fallsBackToEmptyString() throws Exception {
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
         when(deepSeekService.buildChatRequest(anyString(), anyString())).thenReturn(new DeepSeekChatRequest());
         when(deepSeekService.sendChatRequest(any())).thenReturn(buildResponse("some non-json content"));
@@ -184,7 +184,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_jsonMissingFields_returnsEmptyStrings")
-    void analyze_jsonMissingFields_returnsEmptyStrings() {
+    void analyze_jsonMissingFields_returnsEmptyStrings() throws Exception {
         String json = "{\"allergen\":\"Pollen\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -201,7 +201,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_jsonWithUnknownSeverity_returnsEmptySeverity")
-    void analyze_jsonWithUnknownSeverity_returnsEmptySeverity() {
+    void analyze_jsonWithUnknownSeverity_returnsEmptySeverity() throws Exception {
         String json = "{\"allergen\":\"Eggs\",\"reaction\":\"Rash\",\"severity\":\"UNKNOWN\"}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");
@@ -218,7 +218,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_withAllergyHistory_passesHistoryToContextBuilder")
-    void analyze_withAllergyHistory_passesHistoryToContextBuilder() {
+    void analyze_withAllergyHistory_passesHistoryToContextBuilder() throws Exception {
         Allergy allergy = Allergy.builder()
                 .allergen("Aspirin")
                 .severity(Allergy.AllergySeverity.MODERATE)
@@ -243,7 +243,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_nullChoicesInResponse_fallsBackToTranscript")
-    void analyze_nullChoicesInResponse_fallsBackToTranscript() {
+    void analyze_nullChoicesInResponse_fallsBackToTranscript() throws Exception {
         DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(null);
 
@@ -259,7 +259,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_emptyChoicesInResponse_fallsBackToTranscript")
-    void analyze_emptyChoicesInResponse_fallsBackToTranscript() {
+    void analyze_emptyChoicesInResponse_fallsBackToTranscript() throws Exception {
         DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(Collections.emptyList());
 
@@ -275,7 +275,7 @@ class AiAllergyServiceTest {
 
     @Test
     @DisplayName("analyze_jsonWithNullSeverity_returnsEmptySeverity")
-    void analyze_jsonWithNullSeverity_returnsEmptySeverity() {
+    void analyze_jsonWithNullSeverity_returnsEmptySeverity() throws Exception {
         String json = "{\"allergen\":\"Milk\",\"reaction\":\"Cramps\",\"severity\":null}";
 
         when(contextBuilder.buildAllergyContext(any(), any())).thenReturn("ctx");

@@ -9,7 +9,7 @@ class CheckInQuestionTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         CheckInQuestion cq = new CheckInQuestion();
         assertThat(cq).isNotNull();
         assertThat(cq.getId()).isNull();
@@ -20,7 +20,7 @@ class CheckInQuestionTest {
     // ─── Parameterized constructor ────────────────────────────────────────────
 
     @Test
-    void parameterizedConstructor_setsFields() {
+    void parameterizedConstructor_setsFields() throws Exception {
         CheckIn checkIn = CheckIn.builder().id(1L).build();
         Question question = Question.builder().id(2L).prompt("How are you?").type(QuestionType.TEXT).build();
 
@@ -38,7 +38,7 @@ class CheckInQuestionTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         CheckInQuestion cq = new CheckInQuestion();
         CheckInQuestionId embeddedId = new CheckInQuestionId(5L, 10L);
         CheckIn checkIn = new CheckIn();

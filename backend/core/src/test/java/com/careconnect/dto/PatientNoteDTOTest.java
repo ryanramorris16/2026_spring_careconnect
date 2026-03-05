@@ -22,7 +22,7 @@ class PatientNoteDTOTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO();
 
         assertThat(dto).isNotNull();
@@ -37,7 +37,7 @@ class PatientNoteDTOTest {
     // ─── All-args constructor ─────────────────────────────────────────────────
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO(
                 1L, 2L, "note text", "ai summary", NOW, NOW.plusDays(1));
 
@@ -52,7 +52,7 @@ class PatientNoteDTOTest {
     // ─── PatientNote constructor: non-null ────────────────────────────────────
 
     @Test
-    void patientNoteConstructor_nonNull_copiesFields() {
+    void patientNoteConstructor_nonNull_copiesFields() throws Exception {
         when(mockNote.getId()).thenReturn(10L);
         when(mockNote.getPatientId()).thenReturn(20L);
         when(mockNote.getNote()).thenReturn("some note");
@@ -73,7 +73,7 @@ class PatientNoteDTOTest {
     // ─── PatientNote constructor: null ────────────────────────────────────────
 
     @Test
-    void patientNoteConstructor_null_setsAllFieldsToNull() {
+    void patientNoteConstructor_null_setsAllFieldsToNull() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO((PatientNote) null);
 
         assertThat(dto.getId()).isNull();
@@ -87,7 +87,7 @@ class PatientNoteDTOTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         PatientNoteDTO dto = PatientNoteDTO.builder()
                 .id(5L)
                 .patientId(6L)
@@ -106,7 +106,7 @@ class PatientNoteDTOTest {
     }
 
     @Test
-    void builder_staticMethod_returnsBuilderInstance() {
+    void builder_staticMethod_returnsBuilderInstance() throws Exception {
         PatientNoteDTO.PatientNoteDTOBuilder builder = PatientNoteDTO.builder();
         assertThat(builder).isNotNull();
     }
@@ -114,7 +114,7 @@ class PatientNoteDTOTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO();
 
         dto.setId(99L);
@@ -135,7 +135,7 @@ class PatientNoteDTOTest {
     // ─── toEntity() ───────────────────────────────────────────────────────────
 
     @Test
-    void toEntity_mapsAllFieldsCorrectly() {
+    void toEntity_mapsAllFieldsCorrectly() throws Exception {
         PatientNoteDTO dto = new PatientNoteDTO(
                 3L, 4L, "entity note", "entity summary", NOW, NOW.plusDays(1));
 

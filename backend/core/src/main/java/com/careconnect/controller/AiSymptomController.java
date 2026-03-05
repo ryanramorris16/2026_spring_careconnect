@@ -5,13 +5,18 @@ import com.careconnect.model.Allergy;
 import com.careconnect.model.SymptomEntry;
 import com.careconnect.repository.AllergyRepository;
 import com.careconnect.repository.SymptomEntryRepository;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.AiSymptomService;
+import com.careconnect.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,22 +31,29 @@ public class AiSymptomController {
 
     private final AiSymptomService aiSymptomService;
     private final AllergyRepository allergyRepository;
-    private final SymptomEntryRepository symptomEntryRepository; // NEW
+    private final SymptomEntryRepository symptomEntryRepository;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     @PostMapping(
             value = "/analyze/symptom",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<?> analyze(@Valid @RequestBody AiSymptomDTO.Request body) {
+    public ResponseEntity<?> analyze(@Valid @RequestBody AiSymptomDTO.Request body) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (currentUser.isFamilyMember()) {
+            throw new UnauthorizedException("This feature requires ADMIN, CAREGIVER, or PATIENT role");
+        }
+        Long pid = body.getPatientId();
+        if (pid != null) {
+            authorizationService.requirePatientAccess(currentUser, pid);
+        }
         try {
-            Long pid = body.getPatientId();
-
             List<Allergy> allergies = (pid == null)
                     ? List.of()
                     : allergyRepository.findActiveAllergiesByPatientId(pid);
 
-            // NEW: include recent symptom history (limit to 5 most recent)
             List<SymptomEntry> recentSymptoms = (pid == null)
                     ? List.of()
                     : symptomEntryRepository
@@ -50,7 +62,6 @@ public class AiSymptomController {
                     .limit(5)
                     .toList();
 
-            // UPDATED: pass recentSymptoms to the service so it can add context
             AiSymptomDTO.Result result = aiSymptomService.analyze(body, allergies, recentSymptoms);
 
             return ResponseEntity.ok(Map.of(

@@ -41,7 +41,7 @@ class GamificationServiceTest {
     private GamificationService gamificationService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -51,7 +51,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("awardXp_existingProgress_updatesXpAndLevel")
-    void awardXp_existingProgress_updatesXpAndLevel() {
+    void awardXp_existingProgress_updatesXpAndLevel() throws Exception {
         Long userId = 1L;
         int existingXp = 40;
         int amount = 20;
@@ -75,7 +75,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("awardXp_noExistingProgress_createsNewProgressAndAwardsXp")
-    void awardXp_noExistingProgress_createsNewProgressAndAwardsXp() {
+    void awardXp_noExistingProgress_createsNewProgressAndAwardsXp() throws Exception {
         Long userId = 2L;
         int amount = 10;
 
@@ -94,7 +94,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("awardXp_zeroAmount_xpUnchangedLevelStays")
-    void awardXp_zeroAmount_xpUnchangedLevelStays() {
+    void awardXp_zeroAmount_xpUnchangedLevelStays() throws Exception {
         Long userId = 3L;
 
         XPProgress existing = new XPProgress();
@@ -114,7 +114,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("awardXp_levelBoundary_levelIncreasesCorrectly")
-    void awardXp_levelBoundary_levelIncreasesCorrectly() {
+    void awardXp_levelBoundary_levelIncreasesCorrectly() throws Exception {
         Long userId = 4L;
 
         XPProgress existing = new XPProgress();
@@ -138,7 +138,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("grantAchievement_achievementNotFound_throwsRuntimeException")
-    void grantAchievement_achievementNotFound_throwsRuntimeException() {
+    void grantAchievement_achievementNotFound_throwsRuntimeException() throws Exception {
         Long userId = 1L;
         Long achievementId = 99L;
 
@@ -151,7 +151,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("grantAchievement_userAlreadyHasAchievement_doesNotSaveDuplicate")
-    void grantAchievement_userAlreadyHasAchievement_doesNotSaveDuplicate() {
+    void grantAchievement_userAlreadyHasAchievement_doesNotSaveDuplicate() throws Exception {
         Long userId = 1L;
         Long achievementId = 10L;
 
@@ -173,7 +173,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("grantAchievement_userDoesNotHaveAchievement_savesNewUserAchievement")
-    void grantAchievement_userDoesNotHaveAchievement_savesNewUserAchievement() {
+    void grantAchievement_userDoesNotHaveAchievement_savesNewUserAchievement() throws Exception {
         Long userId = 1L;
         Long achievementId = 10L;
 
@@ -197,7 +197,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("grantAchievement_userHasDifferentAchievement_savesNewOne")
-    void grantAchievement_userHasDifferentAchievement_savesNewOne() {
+    void grantAchievement_userHasDifferentAchievement_savesNewOne() throws Exception {
         Long userId = 1L;
         Long achievementId = 10L;
         Long otherAchievementId = 20L;
@@ -228,7 +228,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getAllAchievements_achievementsExist_returnsAll")
-    void getAllAchievements_achievementsExist_returnsAll() {
+    void getAllAchievements_achievementsExist_returnsAll() throws Exception {
         Achievement a1 = new Achievement();
         a1.setTitle("First Check-In");
         Achievement a2 = new Achievement();
@@ -244,7 +244,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getAllAchievements_noAchievements_returnsEmptyList")
-    void getAllAchievements_noAchievements_returnsEmptyList() {
+    void getAllAchievements_noAchievements_returnsEmptyList() throws Exception {
         when(achievementRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<Achievement> result = gamificationService.getAllAchievements();
@@ -258,7 +258,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getUserAchievements_userHasAchievements_returnsList")
-    void getUserAchievements_userHasAchievements_returnsList() {
+    void getUserAchievements_userHasAchievements_returnsList() throws Exception {
         Long userId = 1L;
 
         UserAchievement ua = new UserAchievement();
@@ -274,7 +274,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getUserAchievements_userHasNone_returnsEmptyList")
-    void getUserAchievements_userHasNone_returnsEmptyList() {
+    void getUserAchievements_userHasNone_returnsEmptyList() throws Exception {
         Long userId = 99L;
 
         when(userAchievementRepository.findByUserId(userId)).thenReturn(Collections.emptyList());
@@ -290,7 +290,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getXpProgress_progressExists_returnsOptionalWithValue")
-    void getXpProgress_progressExists_returnsOptionalWithValue() {
+    void getXpProgress_progressExists_returnsOptionalWithValue() throws Exception {
         Long userId = 1L;
         XPProgress progress = new XPProgress();
         progress.setUserId(userId);
@@ -306,7 +306,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("getXpProgress_noProgress_returnsEmptyOptional")
-    void getXpProgress_noProgress_returnsEmptyOptional() {
+    void getXpProgress_noProgress_returnsEmptyOptional() throws Exception {
         Long userId = 99L;
 
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.empty());
@@ -322,7 +322,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("unlockAchievement_achievementNotFoundByTitle_returnsEarlyWithoutSaving")
-    void unlockAchievement_achievementNotFoundByTitle_returnsEarlyWithoutSaving() {
+    void unlockAchievement_achievementNotFoundByTitle_returnsEarlyWithoutSaving() throws Exception {
         Long userId = 1L;
         String title = "Nonexistent";
 
@@ -337,7 +337,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("unlockAchievement_alreadyUnlocked_returnsEarlyWithoutSaving")
-    void unlockAchievement_alreadyUnlocked_returnsEarlyWithoutSaving() {
+    void unlockAchievement_alreadyUnlocked_returnsEarlyWithoutSaving() throws Exception {
         Long userId = 1L;
         Long achievementId = 5L;
         String title = "Streak Master";
@@ -357,7 +357,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("unlockAchievement_newUnlock_awardsXpAndSavesUserAchievement")
-    void unlockAchievement_newUnlock_awardsXpAndSavesUserAchievement() {
+    void unlockAchievement_newUnlock_awardsXpAndSavesUserAchievement() throws Exception {
         Long userId = 1L;
         Long achievementId = 5L;
         String title = "Streak Master";
@@ -394,7 +394,7 @@ class GamificationServiceTest {
 
     @Test
     @DisplayName("unlockAchievement_existingXpProgress_addsXpToExisting")
-    void unlockAchievement_existingXpProgress_addsXpToExisting() {
+    void unlockAchievement_existingXpProgress_addsXpToExisting() throws Exception {
         Long userId = 1L;
         Long achievementId = 7L;
         String title = "Health Hero";

@@ -43,7 +43,7 @@ class SsmPropertySourceInitializerTest {
     private MockEnvironment environment;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         // Use a GenericApplicationContext so we can set a MockEnvironment on it.
         // MockEnvironment allows programmatic control of active profiles and properties.
         initializer = new SsmPropertySourceInitializer();
@@ -57,7 +57,7 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
 
     @Test
-    void shouldNotInitializeIfNotProdProfile() {
+    void shouldNotInitializeIfNotProdProfile() throws Exception {
         // Verifies the profile guard: when the active profile is "dev" (not "prod"),
         // the initializer does not add the "ssmPropertySource" to the environment,
         // keeping local development free of AWS dependencies.
@@ -73,7 +73,7 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
 
     @Test
-    void shouldNotInitializeIfAwsDisabled() {
+    void shouldNotInitializeIfAwsDisabled() throws Exception {
         // Verifies the AWS-enabled guard: even on the "prod" profile, the initializer
         // skips SSM loading when careconnect.aws.enabled=false, supporting deployments
         // that run in production-like environments without AWS (e.g. Docker Compose).
@@ -157,7 +157,7 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
 
     @Test
-    void shouldNotInitializeWhenNoActiveProfilesSet() {
+    void shouldNotInitializeWhenNoActiveProfilesSet() throws Exception {
         // Verifies the profile guard with no profiles set at all (empty array).
         // MockEnvironment has no active profiles by default, so "prod" is absent.
         initializer.initialize(context);
@@ -170,7 +170,7 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
 
     @Test
-    void shouldNotInitializeWhenProfileIsTest() {
+    void shouldNotInitializeWhenProfileIsTest() throws Exception {
         // Verifies the profile guard works for any non-prod profile, not just "dev".
         environment.setActiveProfiles("test");
 
@@ -184,7 +184,7 @@ class SsmPropertySourceInitializerTest {
     // ==========================================
 
     @Test
-    void shouldNotCrashWhenProdAndAwsEnabledDefaultButNoRealAws() {
+    void shouldNotCrashWhenProdAndAwsEnabledDefaultButNoRealAws() throws Exception {
         // Verifies the outer try/catch in initialize(): when on "prod" with the default
         // careconnect.aws.enabled (not set → defaults to "true"), the initializer
         // attempts to contact AWS SSM. In a test environment without real AWS credentials
@@ -201,7 +201,7 @@ class SsmPropertySourceInitializerTest {
     }
 
     @Test
-    void shouldNotCrashWhenProdAndAwsEnabledExplicitlyTrueButNoRealAws() {
+    void shouldNotCrashWhenProdAndAwsEnabledExplicitlyTrueButNoRealAws() throws Exception {
         // Same as above but with careconnect.aws.enabled explicitly set to "true",
         // exercising the branch where the string comparison passes and the guard is
         // not triggered. Covers the prod+enabled code path in initialize().

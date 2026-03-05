@@ -9,7 +9,7 @@ class PermissionTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         Permission perm = new Permission();
         assertThat(perm).isNotNull();
         assertThat(perm.getId()).isNull();
@@ -20,7 +20,7 @@ class PermissionTest {
     // ─── Parameterized constructor ────────────────────────────────────────────
 
     @Test
-    void parameterizedConstructor_setsNameAndDescription() {
+    void parameterizedConstructor_setsNameAndDescription() throws Exception {
         Permission perm = new Permission("READ_VITALS", "Allows reading patient vitals");
 
         assertThat(perm.getName()).isEqualTo("READ_VITALS");
@@ -30,7 +30,7 @@ class PermissionTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         Permission perm = new Permission();
 
         perm.setId("perm-001");

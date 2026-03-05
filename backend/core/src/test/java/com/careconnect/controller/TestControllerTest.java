@@ -18,7 +18,7 @@ class TestControllerTest {
     private TestController controller;
 
     @Test
-    void healthCheck_returnsOkWithHealthyStatus() {
+    void healthCheck_returnsOkWithHealthyStatus() throws Exception {
         ResponseEntity<Map<String, Object>> response = controller.healthCheck();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -29,7 +29,7 @@ class TestControllerTest {
     }
 
     @Test
-    void swaggerInfo_returnsOkWithGuideContent() {
+    void swaggerInfo_returnsOkWithGuideContent() throws Exception {
         ResponseEntity<Map<String, Object>> response = controller.swaggerInfo();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

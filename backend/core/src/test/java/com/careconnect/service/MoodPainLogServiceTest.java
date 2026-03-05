@@ -50,7 +50,7 @@ class MoodPainLogServiceTest {
     private LocalDateTime pastTimestamp;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         testUser = User.builder().id(1L).email("test@test.com").build();
@@ -79,7 +79,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - valid request - returns saved response")
-    void createMoodPainLog_validRequest_returnsSavedResponse() {
+    void createMoodPainLog_validRequest_returnsSavedResponse() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.save(any(MoodPainLog.class))).thenReturn(testLog);
 
@@ -97,7 +97,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - patient not found - throws AppException")
-    void createMoodPainLog_patientNotFound_throwsAppException() {
+    void createMoodPainLog_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -108,7 +108,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - null mood value - throws AppException")
-    void createMoodPainLog_nullMoodValue_throwsAppException() {
+    void createMoodPainLog_nullMoodValue_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(null)
@@ -124,7 +124,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - mood value below 1 - throws AppException")
-    void createMoodPainLog_moodValueBelow1_throwsAppException() {
+    void createMoodPainLog_moodValueBelow1_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(0)
@@ -140,7 +140,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - mood value above 10 - throws AppException")
-    void createMoodPainLog_moodValueAbove10_throwsAppException() {
+    void createMoodPainLog_moodValueAbove10_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(11)
@@ -156,7 +156,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - null pain value - throws AppException")
-    void createMoodPainLog_nullPainValue_throwsAppException() {
+    void createMoodPainLog_nullPainValue_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(5)
@@ -172,7 +172,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - pain value below 0 - throws AppException")
-    void createMoodPainLog_painValueBelow0_throwsAppException() {
+    void createMoodPainLog_painValueBelow0_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(5)
@@ -188,7 +188,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - pain value above 10 - throws AppException")
-    void createMoodPainLog_painValueAbove10_throwsAppException() {
+    void createMoodPainLog_painValueAbove10_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(5)
@@ -204,7 +204,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - null timestamp - throws AppException")
-    void createMoodPainLog_nullTimestamp_throwsAppException() {
+    void createMoodPainLog_nullTimestamp_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(5)
@@ -220,7 +220,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - future timestamp - throws AppException")
-    void createMoodPainLog_futureTimestamp_throwsAppException() {
+    void createMoodPainLog_futureTimestamp_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         MoodPainLogRequest request = MoodPainLogRequest.builder()
                 .moodValue(5)
@@ -236,7 +236,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogs - logs exist - returns list of responses")
-    void getMoodPainLogs_logsExist_returnsListOfResponses() {
+    void getMoodPainLogs_logsExist_returnsListOfResponses() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(testPatient))
                 .thenReturn(Arrays.asList(testLog));
@@ -249,7 +249,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogs - no logs exist - returns empty list")
-    void getMoodPainLogs_noLogsExist_returnsEmptyList() {
+    void getMoodPainLogs_noLogsExist_returnsEmptyList() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(testPatient))
                 .thenReturn(Collections.emptyList());
@@ -261,7 +261,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogs - patient not found - throws AppException")
-    void getMoodPainLogs_patientNotFound_throwsAppException() {
+    void getMoodPainLogs_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -271,7 +271,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsWithPagination - valid request - returns paginated responses")
-    void getMoodPainLogsWithPagination_validRequest_returnsPaginatedResponses() {
+    void getMoodPainLogsWithPagination_validRequest_returnsPaginatedResponses() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         Pageable pageable = PageRequest.of(0, 10);
         Page<MoodPainLog> page = new PageImpl<>(Arrays.asList(testLog), pageable, 1);
@@ -286,7 +286,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsWithPagination - patient not found - throws AppException")
-    void getMoodPainLogsWithPagination_patientNotFound_throwsAppException() {
+    void getMoodPainLogsWithPagination_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -296,7 +296,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsByDateRange - valid range - returns matching logs")
-    void getMoodPainLogsByDateRange_validRange_returnsMatchingLogs() {
+    void getMoodPainLogsByDateRange_validRange_returnsMatchingLogs() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
@@ -311,7 +311,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsByDateRange - patient not found - throws AppException")
-    void getMoodPainLogsByDateRange_patientNotFound_throwsAppException() {
+    void getMoodPainLogsByDateRange_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -322,7 +322,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getLatestMoodPainLog - log exists - returns latest response")
-    void getLatestMoodPainLog_logExists_returnsLatestResponse() {
+    void getLatestMoodPainLog_logExists_returnsLatestResponse() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findFirstByPatientOrderByTimestampDesc(testPatient))
                 .thenReturn(testLog);
@@ -335,7 +335,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getLatestMoodPainLog - no logs found - throws AppException")
-    void getLatestMoodPainLog_noLogsFound_throwsAppException() {
+    void getLatestMoodPainLog_noLogsFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findFirstByPatientOrderByTimestampDesc(testPatient))
                 .thenReturn(null);
@@ -348,7 +348,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getLatestMoodPainLog - patient not found - throws AppException")
-    void getLatestMoodPainLog_patientNotFound_throwsAppException() {
+    void getLatestMoodPainLog_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -358,7 +358,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("updateMoodPainLog - valid update - returns updated response")
-    void updateMoodPainLog_validUpdate_returnsUpdatedResponse() {
+    void updateMoodPainLog_validUpdate_returnsUpdatedResponse() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findById(100L)).thenReturn(Optional.of(testLog));
 
@@ -391,7 +391,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("updateMoodPainLog - patient not found - throws AppException")
-    void updateMoodPainLog_patientNotFound_throwsAppException() {
+    void updateMoodPainLog_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -401,7 +401,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("updateMoodPainLog - log not found - throws AppException")
-    void updateMoodPainLog_logNotFound_throwsAppException() {
+    void updateMoodPainLog_logNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -413,7 +413,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("updateMoodPainLog - log belongs to different patient - throws AppException")
-    void updateMoodPainLog_logBelongsToDifferentPatient_throwsAppException() {
+    void updateMoodPainLog_logBelongsToDifferentPatient_throwsAppException() throws Exception {
         Patient otherPatient = Patient.builder().id(99L).build();
         MoodPainLog otherLog = MoodPainLog.builder()
                 .id(200L)
@@ -434,7 +434,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("updateMoodPainLog - invalid request values - throws AppException")
-    void updateMoodPainLog_invalidRequestValues_throwsAppException() {
+    void updateMoodPainLog_invalidRequestValues_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findById(100L)).thenReturn(Optional.of(testLog));
 
@@ -451,7 +451,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("deleteMoodPainLog - valid delete - deletes log successfully")
-    void deleteMoodPainLog_validDelete_deletesLogSuccessfully() {
+    void deleteMoodPainLog_validDelete_deletesLogSuccessfully() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findById(100L)).thenReturn(Optional.of(testLog));
 
@@ -462,7 +462,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("deleteMoodPainLog - patient not found - throws AppException")
-    void deleteMoodPainLog_patientNotFound_throwsAppException() {
+    void deleteMoodPainLog_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -472,7 +472,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("deleteMoodPainLog - log not found - throws AppException")
-    void deleteMoodPainLog_logNotFound_throwsAppException() {
+    void deleteMoodPainLog_logNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -484,7 +484,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("deleteMoodPainLog - log belongs to different patient - throws AppException")
-    void deleteMoodPainLog_logBelongsToDifferentPatient_throwsAppException() {
+    void deleteMoodPainLog_logBelongsToDifferentPatient_throwsAppException() throws Exception {
         Patient otherPatient = Patient.builder().id(99L).build();
         MoodPainLog otherLog = MoodPainLog.builder()
                 .id(200L)
@@ -505,7 +505,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsForPatient - patient exists - returns logs")
-    void getMoodPainLogsForPatient_patientExists_returnsLogs() {
+    void getMoodPainLogsForPatient_patientExists_returnsLogs() throws Exception {
         when(patientRepository.findById(10L)).thenReturn(Optional.of(testPatient));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(testPatient))
                 .thenReturn(Arrays.asList(testLog));
@@ -518,7 +518,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainLogsForPatient - patient not found - throws AppException")
-    void getMoodPainLogsForPatient_patientNotFound_throwsAppException() {
+    void getMoodPainLogsForPatient_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -529,7 +529,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - empty logs - returns empty analytics")
-    void getMoodPainAnalytics_emptyLogs_returnsEmptyAnalytics() {
+    void getMoodPainAnalytics_emptyLogs_returnsEmptyAnalytics() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
@@ -549,7 +549,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - with mood and pain values - returns computed analytics")
-    void getMoodPainAnalytics_withMoodAndPainValues_returnsComputedAnalytics() {
+    void getMoodPainAnalytics_withMoodAndPainValues_returnsComputedAnalytics() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -589,7 +589,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - only one log with values - trend is null")
-    void getMoodPainAnalytics_onlyOneLog_trendIsNull() {
+    void getMoodPainAnalytics_onlyOneLog_trendIsNull() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -614,7 +614,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - null mood values - mood stats are null")
-    void getMoodPainAnalytics_nullMoodValues_moodStatsAreNull() {
+    void getMoodPainAnalytics_nullMoodValues_moodStatsAreNull() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -651,7 +651,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - null pain values - pain stats are null")
-    void getMoodPainAnalytics_nullPainValues_painStatsAreNull() {
+    void getMoodPainAnalytics_nullPainValues_painStatsAreNull() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -688,7 +688,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - patient not found - throws AppException")
-    void getMoodPainAnalytics_patientNotFound_throwsAppException() {
+    void getMoodPainAnalytics_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.empty());
 
         AppException ex = assertThrows(AppException.class,
@@ -699,7 +699,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("getMoodPainAnalytics - three logs with mixed null values - computes correctly")
-    void getMoodPainAnalytics_threeLogsWithMixedNulls_computesCorrectly() {
+    void getMoodPainAnalytics_threeLogsWithMixedNulls_computesCorrectly() throws Exception {
         LocalDateTime start = LocalDateTime.now().minusDays(7);
         LocalDateTime end = LocalDateTime.now();
 
@@ -745,7 +745,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - mood value exactly 1 and pain value exactly 0 - succeeds")
-    void createMoodPainLog_moodValue1PainValue0_succeeds() {
+    void createMoodPainLog_moodValue1PainValue0_succeeds() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
 
         MoodPainLog savedLog = MoodPainLog.builder()
@@ -767,7 +767,7 @@ class MoodPainLogServiceTest {
 
     @Test
     @DisplayName("createMoodPainLog - mood value exactly 10 and pain value exactly 10 - succeeds")
-    void createMoodPainLog_moodValue10PainValue10_succeeds() {
+    void createMoodPainLog_moodValue10PainValue10_succeeds() throws Exception {
         when(patientRepository.findByUser(testUser)).thenReturn(Optional.of(testPatient));
 
         MoodPainLog savedLog = MoodPainLog.builder()

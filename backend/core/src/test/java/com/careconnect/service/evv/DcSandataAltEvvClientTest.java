@@ -38,7 +38,7 @@ class DcSandataAltEvvClientTest {
     }
 
     @Test
-    void destination_returnsDcSandata() {
+    void destination_returnsDcSandata() throws Exception {
         assertThat(client.destination()).isEqualTo("dc-sandata");
     }
 
@@ -61,7 +61,7 @@ class DcSandataAltEvvClientTest {
     }
 
     @Test
-    void submit_nonSuccessResponse_throwsRuntimeException() {
+    void submit_nonSuccessResponse_throwsRuntimeException() throws Exception {
         EvvRecord record = mock(EvvRecord.class);
         when(record.getTimeIn()).thenReturn(OffsetDateTime.parse("2025-01-15T08:00:00Z"));
         when(record.getLocationLat()).thenReturn(38.9072);

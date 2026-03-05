@@ -11,7 +11,7 @@ class EmailCredentialTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         EmailCredential cred = new EmailCredential();
         assertThat(cred).isNotNull();
         assertThat(cred.getId()).isNull();
@@ -20,7 +20,7 @@ class EmailCredentialTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         EmailCredential cred = new EmailCredential();
         Instant expires = Instant.parse("2025-12-31T23:59:59Z");
 
@@ -40,7 +40,7 @@ class EmailCredentialTest {
     // ─── Provider enum ────────────────────────────────────────────────────────
 
     @Test
-    void providerEnum_containsAllValues() {
+    void providerEnum_containsAllValues() throws Exception {
         assertThat(EmailCredential.Provider.values()).containsExactly(
                 EmailCredential.Provider.GMAIL,
                 EmailCredential.Provider.OUTLOOK
@@ -48,7 +48,7 @@ class EmailCredentialTest {
     }
 
     @Test
-    void providerEnum_outlook() {
+    void providerEnum_outlook() throws Exception {
         EmailCredential cred = new EmailCredential();
         cred.setProvider(EmailCredential.Provider.OUTLOOK);
         assertThat(cred.getProvider()).isEqualTo(EmailCredential.Provider.OUTLOOK);

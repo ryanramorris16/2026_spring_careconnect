@@ -3,7 +3,11 @@ package com.careconnect.controller;
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.schedule.ScheduledVisitService;
+import com.careconnect.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -19,8 +23,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @CrossOrigin(originPatterns = "*", allowCredentials = "true")
 public class ScheduledVisitController {
-    
+
     private final ScheduledVisitService scheduledVisitService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
     
     /**
      * Create a new scheduled visit
@@ -29,7 +35,9 @@ public class ScheduledVisitController {
     public ResponseEntity<ScheduledVisitResponse> createScheduledVisit(
         @PathVariable Long caregiverId,
         @Valid @RequestBody ScheduledVisitRequest request
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(caregiverId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -40,7 +48,9 @@ public class ScheduledVisitController {
     @GetMapping("/caregiver/{caregiverId}")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisits(
         @PathVariable Long caregiverId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService.getScheduledVisits(caregiverId);
         return ResponseEntity.ok(visits);
     }
@@ -52,7 +62,9 @@ public class ScheduledVisitController {
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisitsByDate(
         @PathVariable Long caregiverId,
         @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService.getScheduledVisitsByDate(caregiverId, date);
         return ResponseEntity.ok(visits);
     }
@@ -65,7 +77,9 @@ public class ScheduledVisitController {
         @PathVariable Long caregiverId,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService
             .getScheduledVisitsBetweenDates(caregiverId, startDate, endDate);
         return ResponseEntity.ok(visits);
@@ -77,7 +91,9 @@ public class ScheduledVisitController {
     @GetMapping("/caregiver/{caregiverId}/summary")
     public ResponseEntity<ScheduledVisitSummary> getVisitSummary(
         @PathVariable Long caregiverId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         ScheduledVisitSummary summary = scheduledVisitService.getVisitSummary(caregiverId);
         return ResponseEntity.ok(summary);
     }
@@ -88,7 +104,9 @@ public class ScheduledVisitController {
     @GetMapping("/caregiver/{caregiverId}/overdue")
     public ResponseEntity<List<ScheduledVisitResponse>> getOverdueVisits(
         @PathVariable Long caregiverId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService.getOverdueVisits(caregiverId);
         return ResponseEntity.ok(visits);
     }
@@ -99,7 +117,9 @@ public class ScheduledVisitController {
     @GetMapping("/caregiver/{caregiverId}/ready")
     public ResponseEntity<List<ScheduledVisitResponse>> getReadyVisits(
         @PathVariable Long caregiverId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService.getReadyVisits(caregiverId);
         return ResponseEntity.ok(visits);
     }
@@ -110,7 +130,9 @@ public class ScheduledVisitController {
     @GetMapping("/caregiver/{caregiverId}/upcoming")
     public ResponseEntity<List<ScheduledVisitResponse>> getUpcomingVisits(
         @PathVariable Long caregiverId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         List<ScheduledVisitResponse> visits = scheduledVisitService.getUpcomingVisits(caregiverId);
         return ResponseEntity.ok(visits);
     }
@@ -121,7 +143,9 @@ public class ScheduledVisitController {
     @GetMapping("/{visitId}")
     public ResponseEntity<ScheduledVisitResponse> getScheduledVisit(
         @PathVariable Long visitId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         ScheduledVisitResponse visit = scheduledVisitService.getScheduledVisit(visitId);
         return ResponseEntity.ok(visit);
     }
@@ -133,7 +157,9 @@ public class ScheduledVisitController {
     public ResponseEntity<ScheduledVisitResponse> updateScheduledVisit(
         @PathVariable Long visitId,
         @Valid @RequestBody ScheduledVisitRequest request
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         ScheduledVisitResponse response = scheduledVisitService.updateScheduledVisit(visitId, request);
         return ResponseEntity.ok(response);
     }
@@ -144,7 +170,9 @@ public class ScheduledVisitController {
     @PutMapping("/{visitId}/cancel")
     public ResponseEntity<Void> cancelScheduledVisit(
         @PathVariable Long visitId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         scheduledVisitService.cancelScheduledVisit(visitId);
         return ResponseEntity.noContent().build();
     }
@@ -156,7 +184,9 @@ public class ScheduledVisitController {
     public ResponseEntity<ScheduledVisitResponse> updateVisitStatus(
         @PathVariable Long visitId,
         @RequestParam String status
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         ScheduledVisitResponse response = scheduledVisitService.updateVisitStatus(visitId, status);
         return ResponseEntity.ok(response);
     }
@@ -167,7 +197,9 @@ public class ScheduledVisitController {
     @DeleteMapping("/{visitId}")
     public ResponseEntity<Void> deleteScheduledVisit(
         @PathVariable Long visitId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         scheduledVisitService.deleteScheduledVisit(visitId);
         return ResponseEntity.noContent().build();
     }

@@ -12,7 +12,7 @@ class ChatConversationTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ChatConversation conv = new ChatConversation();
 
         assertThat(conv).isNotNull();
@@ -25,7 +25,7 @@ class ChatConversationTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         ChatConversation conv = ChatConversation.builder()
                 .id(1L)
                 .conversationId("conv-uuid-001")
@@ -52,13 +52,13 @@ class ChatConversationTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_totalTokensUsed_defaultsToZero() {
+    void builder_totalTokensUsed_defaultsToZero() throws Exception {
         ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
         assertThat(conv.getTotalTokensUsed()).isEqualTo(0);
     }
 
     @Test
-    void builder_isActive_defaultsToTrue() {
+    void builder_isActive_defaultsToTrue() throws Exception {
         ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
         assertThat(conv.getIsActive()).isTrue();
     }
@@ -66,7 +66,7 @@ class ChatConversationTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ChatConversation conv = new ChatConversation();
         LocalDateTime now = LocalDateTime.now();
 
@@ -125,7 +125,7 @@ class ChatConversationTest {
     // ─── ChatType enum ────────────────────────────────────────────────────────
 
     @Test
-    void chatTypeEnum_getDisplayName() {
+    void chatTypeEnum_getDisplayName() throws Exception {
         assertThat(ChatConversation.ChatType.MEDICAL_CONSULTATION.getDisplayName()).isEqualTo("Medical Consultation");
         assertThat(ChatConversation.ChatType.GENERAL_SUPPORT.getDisplayName()).isEqualTo("General Support");
         assertThat(ChatConversation.ChatType.MEDICATION_INQUIRY.getDisplayName()).isEqualTo("Medication Inquiry");
@@ -135,7 +135,7 @@ class ChatConversationTest {
     }
 
     @Test
-    void chatTypeEnum_containsAllValues() {
+    void chatTypeEnum_containsAllValues() throws Exception {
         assertThat(ChatConversation.ChatType.values()).hasSize(6);
     }
 }

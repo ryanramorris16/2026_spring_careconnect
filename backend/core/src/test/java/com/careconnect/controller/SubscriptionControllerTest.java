@@ -10,7 +10,9 @@ import com.careconnect.repository.SubscriptionRepository;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.service.StripeService;
 import com.careconnect.service.SubscriptionEnrichmentService;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.SubscriptionService;
+import com.careconnect.util.SecurityUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +43,9 @@ class SubscriptionControllerTest {
     @Mock private PlanRepository planRepository;
     @Mock private SubscriptionRepository subscriptionRepository;
 
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
+
     @InjectMocks
     private SubscriptionController controller;
 
@@ -48,7 +53,7 @@ class SubscriptionControllerTest {
     private static final Long SUB_ID  = 42L;
 
     @BeforeEach
-    void injectValues() {
+    void injectValues() throws Exception {
         ReflectionTestUtils.setField(controller, "stripeWebhookSecret", "whsec_test");
         ReflectionTestUtils.setField(controller, "frontendBaseUrl", "http://localhost:3000");
     }
@@ -56,7 +61,7 @@ class SubscriptionControllerTest {
     // ─── listProducts ─────────────────────────────────────────────────────────
 
     @Test
-    void listProducts_returnsOkWithProductsString() {
+    void listProducts_returnsOkWithProductsString() throws Exception {
         when(stripeService.listProducts()).thenReturn("[{\"id\":\"prod_1\"}]");
 
         ResponseEntity<String> response = controller.listProducts();
@@ -68,7 +73,7 @@ class SubscriptionControllerTest {
     // ─── listPlans ────────────────────────────────────────────────────────────
 
     @Test
-    void listPlans_returnsOkWithPlanList() {
+    void listPlans_returnsOkWithPlanList() throws Exception {
         List<PlanDTO> plans = List.of(new PlanDTO("price_1", true, 999, "usd", "month", 1, "prod_1", "Pro"));
         when(stripeService.listPlans()).thenReturn(plans);
 
@@ -81,7 +86,7 @@ class SubscriptionControllerTest {
     // ─── createPlan ───────────────────────────────────────────────────────────
 
     @Test
-    void createPlan_returnsOkWithPlan() {
+    void createPlan_returnsOkWithPlan() throws Exception {
         Plan plan = mock(Plan.class);
         when(subscriptionService.createPlan("PRO", "Pro Plan", 999, "monthly", true)).thenReturn(plan);
 
@@ -94,7 +99,7 @@ class SubscriptionControllerTest {
     // ─── getPlan ──────────────────────────────────────────────────────────────
 
     @Test
-    void getPlan_returnsOkWithPlan() {
+    void getPlan_returnsOkWithPlan() throws Exception {
         Plan plan = mock(Plan.class);
         when(subscriptionService.getPlan(5L)).thenReturn(plan);
 
@@ -107,7 +112,7 @@ class SubscriptionControllerTest {
     // ─── syncPlanWithStripe ───────────────────────────────────────────────────
 
     @Test
-    void syncPlanWithStripe_success_returnsOk() {
+    void syncPlanWithStripe_success_returnsOk() throws Exception {
         Plan plan = mock(Plan.class);
         when(subscriptionService.syncPlanWithStripe(5L, true)).thenReturn(plan);
 
@@ -117,7 +122,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void syncPlanWithStripe_exception_returnsBadRequest() {
+    void syncPlanWithStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.syncPlanWithStripe(5L, true)).thenThrow(new RuntimeException("Stripe error"));
 
         ResponseEntity<?> response = controller.syncPlanWithStripe("5", true);
@@ -149,7 +154,7 @@ class SubscriptionControllerTest {
     // ─── getStripeCustomerSubscriptions ───────────────────────────────────────
 
     @Test
-    void getStripeCustomerSubscriptions_returnsOk() {
+    void getStripeCustomerSubscriptions_returnsOk() throws Exception {
         when(stripeService.listSubscriptions("cus_1")).thenReturn("[]");
 
         ResponseEntity<String> response = controller.getStripeCustomerSubscriptions("cus_1");
@@ -180,7 +185,7 @@ class SubscriptionControllerTest {
     // ─── getSubscription ──────────────────────────────────────────────────────
 
     @Test
-    void getSubscription_returnsOk() {
+    void getSubscription_returnsOk() throws Exception {
         when(stripeService.getSubscription("sub_1")).thenReturn("{\"id\":\"sub_1\"}");
 
         ResponseEntity<String> response = controller.getSubscription("sub_1");
@@ -191,7 +196,7 @@ class SubscriptionControllerTest {
     // ─── searchSubscriptions ──────────────────────────────────────────────────
 
     @Test
-    void searchSubscriptions_returnsOk() {
+    void searchSubscriptions_returnsOk() throws Exception {
         when(stripeService.searchSubscriptions("query")).thenReturn("[]");
 
         ResponseEntity<String> response = controller.searchSubscriptions("query");
@@ -202,7 +207,7 @@ class SubscriptionControllerTest {
     // ─── createCheckoutSession ────────────────────────────────────────────────
 
     @Test
-    void createCheckoutSession_delegatesToService() {
+    void createCheckoutSession_delegatesToService() throws Exception {
         HttpServletRequest request = mock(HttpServletRequest.class);
         ResponseEntity<String> serviceResponse = ResponseEntity.ok("url");
         doReturn(serviceResponse).when(subscriptionService)
@@ -216,7 +221,7 @@ class SubscriptionControllerTest {
     // ─── cancelSubscription ───────────────────────────────────────────────────
 
     @Test
-    void cancelSubscription_stripeId_cancelsByStripeIdAndReturnsOk() {
+    void cancelSubscription_stripeId_cancelsByStripeIdAndReturnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscriptionByStripeId("sub_abc");
 
         ResponseEntity<?> response = controller.cancelSubscription("sub_abc");
@@ -226,7 +231,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void cancelSubscription_numericId_cancelsByDatabaseIdAndReturnsOk() {
+    void cancelSubscription_numericId_cancelsByDatabaseIdAndReturnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscription(42L);
 
         ResponseEntity<?> response = controller.cancelSubscription("42");
@@ -236,14 +241,14 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void cancelSubscription_invalidFormat_returnsBadRequest() {
+    void cancelSubscription_invalidFormat_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.cancelSubscription("not-a-number");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void cancelSubscription_serviceThrows_returnsInternalServerError() {
+    void cancelSubscription_serviceThrows_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("Stripe down")).when(subscriptionService).cancelSubscriptionByStripeId("sub_x");
 
         ResponseEntity<?> response = controller.cancelSubscription("sub_x");
@@ -254,7 +259,7 @@ class SubscriptionControllerTest {
     // ─── cancelSubscriptionById ───────────────────────────────────────────────
 
     @Test
-    void cancelSubscriptionById_success_returnsOk() {
+    void cancelSubscriptionById_success_returnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscription(SUB_ID);
 
         ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
@@ -263,7 +268,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void cancelSubscriptionById_exception_returnsInternalServerError() {
+    void cancelSubscriptionById_exception_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("fail")).when(subscriptionService).cancelSubscription(SUB_ID);
 
         ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
@@ -274,7 +279,7 @@ class SubscriptionControllerTest {
     // ─── cancelSubscriptionByStripeId ─────────────────────────────────────────
 
     @Test
-    void cancelSubscriptionByStripeId_success_returnsOk() {
+    void cancelSubscriptionByStripeId_success_returnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscriptionByStripeId("sub_abc");
 
         ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_abc");
@@ -283,7 +288,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void cancelSubscriptionByStripeId_exception_returnsInternalServerError() {
+    void cancelSubscriptionByStripeId_exception_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("fail")).when(subscriptionService).cancelSubscriptionByStripeId("sub_bad");
 
         ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_bad");
@@ -294,7 +299,7 @@ class SubscriptionControllerTest {
     // ─── createSubscriptionDirect ─────────────────────────────────────────────
 
     @Test
-    void createSubscriptionDirect_bothParamsProvided_returnsOk() {
+    void createSubscriptionDirect_bothParamsProvided_returnsOk() throws Exception {
         Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.createSubscription("cus_1", "price_1")).thenReturn(result);
 
@@ -304,7 +309,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void createSubscriptionDirect_paramsFromBody_returnsOk() {
+    void createSubscriptionDirect_paramsFromBody_returnsOk() throws Exception {
         Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.createSubscription("cus_1", "price_1")).thenReturn(result);
         Map<String, String> body = Map.of("customerId", "cus_1", "priceId", "price_1");
@@ -315,7 +320,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void createSubscriptionDirect_customerIdMissing_returnsBadRequest() {
+    void createSubscriptionDirect_customerIdMissing_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.createSubscriptionDirect(null, "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -325,14 +330,14 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void createSubscriptionDirect_customerIdEmpty_returnsBadRequest() {
+    void createSubscriptionDirect_customerIdEmpty_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.createSubscriptionDirect("", "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void createSubscriptionDirect_priceIdMissing_returnsBadRequest() {
+    void createSubscriptionDirect_priceIdMissing_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -342,14 +347,14 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void createSubscriptionDirect_priceIdEmpty_returnsBadRequest() {
+    void createSubscriptionDirect_priceIdEmpty_returnsBadRequest() throws Exception {
         ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
-    void createSubscriptionDirect_stripeException_returnsBadRequest() {
+    void createSubscriptionDirect_stripeException_returnsBadRequest() throws Exception {
         when(stripeService.createSubscription("cus_1", "price_1")).thenThrow(new RuntimeException("Stripe error"));
 
         ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "price_1", null);
@@ -405,7 +410,7 @@ class SubscriptionControllerTest {
     // ─── getUserSubscriptions ─────────────────────────────────────────────────
 
     @Test
-    void getUserSubscriptions_success_returnsOk() {
+    void getUserSubscriptions_success_returnsOk() throws Exception {
         List<SubscriptionResponseDTO> dtos = List.of(new SubscriptionResponseDTO());
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenReturn(dtos);
 
@@ -415,7 +420,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void getUserSubscriptions_exception_returnsBadRequest() {
+    void getUserSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenThrow(new RuntimeException("fail"));
 
         ResponseEntity<?> response = controller.getUserSubscriptions(USER_ID);
@@ -426,7 +431,7 @@ class SubscriptionControllerTest {
     // ─── refreshAndGetUserSubscriptions ───────────────────────────────────────
 
     @Test
-    void refreshAndGetUserSubscriptions_success_returnsOk() {
+    void refreshAndGetUserSubscriptions_success_returnsOk() throws Exception {
         List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(List.of());
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenReturn(dtos);
@@ -437,7 +442,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void refreshAndGetUserSubscriptions_exception_returnsBadRequest() {
+    void refreshAndGetUserSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
         ResponseEntity<?> response = controller.refreshAndGetUserSubscriptions(USER_ID);
@@ -448,7 +453,7 @@ class SubscriptionControllerTest {
     // ─── forceImportSubscription ──────────────────────────────────────────────
 
     @Test
-    void forceImportSubscription_userNotFound_returnsBadRequest() {
+    void forceImportSubscription_userNotFound_returnsBadRequest() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
@@ -457,7 +462,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_subscriptionAlreadyExists_returnsOk() {
+    void forceImportSubscription_subscriptionAlreadyExists_returnsOk() throws Exception {
         User user = mock(User.class);
         Subscription existing = new Subscription();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
@@ -472,7 +477,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_stripeDataEmpty_returnsBadRequest() {
+    void forceImportSubscription_stripeDataEmpty_returnsBadRequest() throws Exception {
         User user = mock(User.class);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
@@ -484,7 +489,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_fullJson_planFound_returnsOk() {
+    void forceImportSubscription_fullJson_planFound_returnsOk() throws Exception {
         User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
         Subscription savedSub = new Subscription();
@@ -508,7 +513,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_minimalJson_noPlan_returnsOk() {
+    void forceImportSubscription_minimalJson_noPlan_returnsOk() throws Exception {
         User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
         Subscription savedSub = new Subscription();
@@ -525,7 +530,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_itemsWithNoPrice_returnsOk() {
+    void forceImportSubscription_itemsWithNoPrice_returnsOk() throws Exception {
         User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
         Subscription savedSub = new Subscription();
@@ -543,7 +548,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void forceImportSubscription_emptyItemsData_returnsOk() {
+    void forceImportSubscription_emptyItemsData_returnsOk() throws Exception {
         User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
         Subscription savedSub = new Subscription();
@@ -563,7 +568,7 @@ class SubscriptionControllerTest {
     // ─── refreshUserSubscriptionsWithStripe ───────────────────────────────────
 
     @Test
-    void refreshUserSubscriptionsWithStripe_success_returnsOk() {
+    void refreshUserSubscriptionsWithStripe_success_returnsOk() throws Exception {
         List<Subscription> subs = List.of();
         List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(subs);
@@ -575,7 +580,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void refreshUserSubscriptionsWithStripe_exception_returnsBadRequest() {
+    void refreshUserSubscriptionsWithStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
         ResponseEntity<?> response = controller.refreshUserSubscriptionsWithStripe(USER_ID);
@@ -586,7 +591,7 @@ class SubscriptionControllerTest {
     // ─── getUserActiveSubscriptions ───────────────────────────────────────────
 
     @Test
-    void getUserActiveSubscriptions_success_returnsOk() {
+    void getUserActiveSubscriptions_success_returnsOk() throws Exception {
         when(subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(USER_ID)).thenReturn(List.of());
 
         ResponseEntity<?> response = controller.getUserActiveSubscriptions(USER_ID);
@@ -595,7 +600,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void getUserActiveSubscriptions_exception_returnsBadRequest() {
+    void getUserActiveSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(USER_ID))
                 .thenThrow(new RuntimeException("fail"));
 
@@ -607,7 +612,7 @@ class SubscriptionControllerTest {
     // ─── syncUserSubscriptionsFromStripe ──────────────────────────────────────
 
     @Test
-    void syncUserSubscriptionsFromStripe_success_returnsOk() {
+    void syncUserSubscriptionsFromStripe_success_returnsOk() throws Exception {
         List<Subscription> subs = List.of();
         List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(subs);
@@ -619,7 +624,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void syncUserSubscriptionsFromStripe_exception_returnsBadRequest() {
+    void syncUserSubscriptionsFromStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
         ResponseEntity<?> response = controller.syncUserSubscriptionsFromStripe(USER_ID);
@@ -630,7 +635,7 @@ class SubscriptionControllerTest {
     // ─── upgradeOrDowngradeSubscription ───────────────────────────────────────
 
     @Test
-    void upgradeOrDowngradeSubscription_success_returnsOk() {
+    void upgradeOrDowngradeSubscription_success_returnsOk() throws Exception {
         Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new")).thenReturn(result);
 
@@ -640,7 +645,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void upgradeOrDowngradeSubscription_exception_returnsBadRequest() {
+    void upgradeOrDowngradeSubscription_exception_returnsBadRequest() throws Exception {
         when(stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new"))
                 .thenThrow(new RuntimeException("fail"));
 
@@ -652,7 +657,7 @@ class SubscriptionControllerTest {
     // ─── getPaymentRedirectUrl ────────────────────────────────────────────────
 
     @Test
-    void getPaymentRedirectUrl_portalTrue_redirectsToSubscriptionPage() {
+    void getPaymentRedirectUrl_portalTrue_redirectsToSubscriptionPage() throws Exception {
         ResponseEntity<?> response = controller.getPaymentRedirectUrl(true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -662,7 +667,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void getPaymentRedirectUrl_portalFalse_redirectsToDashboard() {
+    void getPaymentRedirectUrl_portalFalse_redirectsToDashboard() throws Exception {
         ResponseEntity<?> response = controller.getPaymentRedirectUrl(false);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -672,7 +677,7 @@ class SubscriptionControllerTest {
     }
 
     @Test
-    void getPaymentRedirectUrl_portalNull_redirectsToDashboard() {
+    void getPaymentRedirectUrl_portalNull_redirectsToDashboard() throws Exception {
         ResponseEntity<?> response = controller.getPaymentRedirectUrl(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

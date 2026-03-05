@@ -103,7 +103,7 @@ class DefaultAIChatServiceTest {
     // ── Setup ──────────────────────────────────────────────────────────────────
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         // Construct the service manually so all mocks are injected via constructor
@@ -190,7 +190,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("throws IllegalArgumentException when both patientId and userId are null")
-        void bothIdsNull_throwsIllegalArgumentException() {
+        void bothIdsNull_throwsIllegalArgumentException() throws Exception {
             // A request with no user identity cannot be processed at all
             ChatRequest req = new ChatRequest();
 
@@ -200,7 +200,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when userId is absent but patientId is set")
-        void missingUserId_returnsErrorResponse() {
+        void missingUserId_returnsErrorResponse() throws Exception {
             // patientId is present but the inner guard (userId == null) fires first
             ChatRequest req = new ChatRequest();
             req.setPatientId(PATIENT_ID);
@@ -215,7 +215,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when message is blank and no files are attached")
-        void blankMessageAndNoFiles_returnsErrorResponse() {
+        void blankMessageAndNoFiles_returnsErrorResponse() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setPatientId(PATIENT_ID);
@@ -230,7 +230,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("throws IllegalArgumentException when the patient cannot be found in cache/DB")
-        void patientNotFound_throwsIllegalArgumentException() {
+        void patientNotFound_throwsIllegalArgumentException() throws Exception {
             // Simulate a cache/DB miss for the patient
             when(cacheService.findPatient(PATIENT_ID)).thenReturn(Optional.empty());
 
@@ -241,7 +241,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("nullifies a blank (whitespace-only) conversationId before processing")
-        void blankConversationId_isTreatedAsAbsent() {
+        void blankConversationId_isTreatedAsAbsent() throws Exception {
             // The service strips blank conversationIds so a new conversation is created
             ChatRequest req = buildBasicRequest();
             req.setConversationId("   ");
@@ -255,7 +255,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when message is null and no files are attached")
-        void nullMessageAndNoFiles_returnsErrorResponse() {
+        void nullMessageAndNoFiles_returnsErrorResponse() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setPatientId(PATIENT_ID);
@@ -269,7 +269,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when message is null and files list is empty")
-        void nullMessageAndEmptyFiles_returnsErrorResponse() {
+        void nullMessageAndEmptyFiles_returnsErrorResponse() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setPatientId(PATIENT_ID);
@@ -292,7 +292,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when user message is blocked by the sanitizer")
-        void userInputBlocked_returnsErrorResponse() {
+        void userInputBlocked_returnsErrorResponse() throws Exception {
             // Simulates detection of SQL injection or XSS in user message
             when(inputSanitizationService.sanitizeUserInput(any(), any(), any()))
                     .thenReturn(new InputSanitizationService.SanitizationResult(
@@ -307,7 +307,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when the system prompt is blocked")
-        void systemPromptBlocked_returnsErrorResponse() {
+        void systemPromptBlocked_returnsErrorResponse() throws Exception {
             // System prompt injection attempt detected by the sanitizer
             when(inputSanitizationService.sanitizeSystemPrompt(any(), any(), any()))
                     .thenReturn(new InputSanitizationService.SanitizationResult(
@@ -321,7 +321,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when uploaded file content is blocked")
-        void uploadedFileContentBlocked_returnsErrorResponse() {
+        void uploadedFileContentBlocked_returnsErrorResponse() throws Exception {
             // First call (user message text) passes; second call (extracted file content) is blocked
             InputSanitizationService.SanitizationResult pass =
                     new InputSanitizationService.SanitizationResult(
@@ -360,7 +360,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns fallback message when the AI model returns a null response")
-        void nullAiResponse_returnsFallbackMessage() {
+        void nullAiResponse_returnsFallbackMessage() throws Exception {
             // Explicitly override the deep-stub to return null for the entire response
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenReturn(null);
 
@@ -374,7 +374,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns auth-error message when AuthenticationException is thrown")
-        void authenticationException_returnsFallbackMessage() {
+        void authenticationException_returnsFallbackMessage() throws Exception {
             // Mocking avoids constructor dependency on the concrete exception class
             AuthenticationException authEx = mock(AuthenticationException.class);
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(authEx);
@@ -388,7 +388,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns config-error message when IllegalStateException is thrown")
-        void illegalStateException_returnsFallbackMessage() {
+        void illegalStateException_returnsFallbackMessage() throws Exception {
             // Simulates a missing or misconfigured API key
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(new IllegalStateException("API key not set"));
 
@@ -401,7 +401,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns 503 message when RuntimeException mentions 'service unavailable'")
-        void runtimeException_503_returnsFallbackMessage() {
+        void runtimeException_503_returnsFallbackMessage() throws Exception {
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(
                     new RuntimeException("503 service unavailable"));
 
@@ -413,7 +413,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns 503 message when RuntimeException message contains '503'")
-        void runtimeException_503Code_returnsFallbackMessage() {
+        void runtimeException_503Code_returnsFallbackMessage() throws Exception {
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(
                     new RuntimeException("upstream error: 503"));
 
@@ -425,7 +425,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns rate-limit message when RuntimeException mentions '429'")
-        void runtimeException_429_returnsFallbackMessage() {
+        void runtimeException_429_returnsFallbackMessage() throws Exception {
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(
                     new RuntimeException("429 rate limit exceeded"));
 
@@ -438,7 +438,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns rate-limit message when RuntimeException mentions 'rate limit'")
-        void runtimeException_rateLimitText_returnsFallbackMessage() {
+        void runtimeException_rateLimitText_returnsFallbackMessage() throws Exception {
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(
                     new RuntimeException("OpenAI: rate limit hit"));
 
@@ -450,7 +450,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns generic error message for any other RuntimeException")
-        void genericRuntimeException_returnsFallbackMessage() {
+        void genericRuntimeException_returnsFallbackMessage() throws Exception {
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList())).thenThrow(
                     new RuntimeException("unexpected network failure"));
 
@@ -463,7 +463,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns fallback message when a generic checked Exception is thrown")
-        void checkedExceptionFromAi_returnsFallbackMessage() {
+        void checkedExceptionFromAi_returnsFallbackMessage() throws Exception {
             // Force a checked Exception to be wrapped and thrown by the chat method
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList()))
                     .thenAnswer(inv -> { throw new Exception("Unexpected checked exception"); });
@@ -479,7 +479,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("logs AI_RESPONSE_NULL when AI returns null aiMessage text")
-        void nullAiMessageText_logsSystemError() {
+        void nullAiMessageText_logsSystemError() throws Exception {
             // Make the response non-null but aiMessage returns null text
             var mockResponse = mock(dev.langchain4j.model.chat.response.ChatResponse.class, RETURNS_DEEP_STUBS);
             when(mockResponse.aiMessage().text()).thenReturn(null);
@@ -496,7 +496,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("logs AI_RESPONSE_NULL when AI response has null aiMessage")
-        void nullAiMessage_logsSystemError() {
+        void nullAiMessage_logsSystemError() throws Exception {
             var mockResponse = mock(dev.langchain4j.model.chat.response.ChatResponse.class);
             when(mockResponse.aiMessage()).thenReturn(null);
             when(chatModel.chat(ArgumentMatchers.<dev.langchain4j.data.message.ChatMessage>anyList()))
@@ -519,7 +519,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns successful response for a standard patient chat")
-        void patientChat_returnsSuccessResponse() {
+        void patientChat_returnsSuccessResponse() throws Exception {
             // Medical context is available for the patient
             when(medicalContextService.buildPatientContext(eq(PATIENT_ID), any(), any()))
                     .thenReturn("Vitals: BP 120/80, HR 72");
@@ -536,7 +536,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns successful response for a caregiver-only chat (no patientId)")
-        void caregiverOnlyChat_returnsSuccessResponse() {
+        void caregiverOnlyChat_returnsSuccessResponse() throws Exception {
             // Caregiver sends a general question without a specific patient in context
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
@@ -550,7 +550,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses temperature from request when explicitly provided")
-        void requestTemperature_propagatedToResponse() {
+        void requestTemperature_propagatedToResponse() throws Exception {
             ChatRequest req = buildBasicRequest();
             req.setTemperature(0.9);
 
@@ -563,7 +563,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("defaults temperature to 0.1 when the request omits it")
-        void noTemperatureInRequest_defaultsToPointOne() {
+        void noTemperatureInRequest_defaultsToPointOne() throws Exception {
             ChatRequest req = buildBasicRequest();
             // temperature is null — service should default to 0.1
 
@@ -575,7 +575,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("reuses an existing conversation when conversationId is found in cache")
-        void existingConversationId_conversationIsReused() {
+        void existingConversationId_conversationIsReused() throws Exception {
             // Conversation was started previously and is found in cache
             conversation.setCreatedAt(LocalDateTime.now().minusHours(2));
             when(cacheService.findConversation(CONV_ID)).thenReturn(Optional.of(conversation));
@@ -593,7 +593,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("creates a new conversation when the provided conversationId is not found")
-        void unknownConversationId_newConversationCreated() {
+        void unknownConversationId_newConversationCreated() throws Exception {
             // Cache returns empty even though an ID was supplied (e.g. expired/invalid)
             when(cacheService.findConversation("unknown-id")).thenReturn(Optional.empty());
 
@@ -609,7 +609,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("creates a new conversation when no conversationId is provided")
-        void noConversationId_newConversationCreated() {
+        void noConversationId_newConversationCreated() throws Exception {
             ChatResponse resp = service.processChat(buildBasicRequest());
 
             assertTrue(resp.getSuccess());
@@ -618,7 +618,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("appends extracted file content to the message for uploaded files")
-        void uploadedFileWithContent_fileTextIncluded() {
+        void uploadedFileWithContent_fileTextIncluded() throws Exception {
             UploadedFileDTO file = new UploadedFileDTO();
             file.setFilename("lab_results.pdf");
             file.setContentType("application/pdf");
@@ -637,7 +637,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("handles uploaded files gracefully when extraction returns empty text")
-        void uploadedFileWithNoExtractedText_successWithoutFileContent() {
+        void uploadedFileWithNoExtractedText_successWithoutFileContent() throws Exception {
             UploadedFileDTO file = new UploadedFileDTO();
             file.setFilename("empty.pdf");
             file.setContentType("application/pdf");
@@ -653,7 +653,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("handles file extraction exception gracefully and continues processing")
-        void uploadedFileThrowsDuringExtraction_processingContinues() {
+        void uploadedFileThrowsDuringExtraction_processingContinues() throws Exception {
             UploadedFileDTO file = new UploadedFileDTO();
             file.setFilename("corrupt.pdf");
             file.setContentType("application/pdf");
@@ -671,7 +671,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses CAREGIVER_SYSTEM_PROMPT when no patientId is present in request")
-        void caregiverChat_withoutPatientId_usesCaregiverSystemPrompt() {
+        void caregiverChat_withoutPatientId_usesCaregiverSystemPrompt() throws Exception {
             // When patientId is absent the service should select the caregiver prompt.
             // We verify indirectly: system-prompt sanitization is called with a non-null value.
             ChatRequest req = new ChatRequest();
@@ -687,7 +687,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("includes context_included and conversation metadata in success response")
-        void successResponse_containsMetadata() {
+        void successResponse_containsMetadata() throws Exception {
             when(chatMessageRepository.countByConversation(any())).thenReturn(7);
             when(chatMessageRepository.sumTokensUsedByConversation(any())).thenReturn(300);
 
@@ -702,7 +702,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("handles null return from sumTokensUsedByConversation gracefully")
-        void nullTotalTokens_defaultsToZero() {
+        void nullTotalTokens_defaultsToZero() throws Exception {
             when(chatMessageRepository.sumTokensUsedByConversation(any())).thenReturn(null);
 
             ChatResponse resp = service.processChat(buildBasicRequest());
@@ -713,7 +713,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("logs chat session start when conversation is newly created")
-        void newConversation_logsChatSessionStart() {
+        void newConversation_logsChatSessionStart() throws Exception {
             // Set createdAt to now so it is within the last minute
             conversation.setCreatedAt(LocalDateTime.now());
             when(cacheService.saveConversation(any())).thenReturn(conversation);
@@ -727,7 +727,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("does not log chat session start when conversation is old")
-        void oldConversation_doesNotLogChatSessionStart() {
+        void oldConversation_doesNotLogChatSessionStart() throws Exception {
             // createdAt is 5 minutes ago (set in setUp) — should NOT trigger logging
             ChatResponse resp = service.processChat(buildBasicRequest());
 
@@ -737,7 +737,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("adds medical context to chat memory when present and memory is empty")
-        void nonEmptyMedicalContext_addedToChatMemory() {
+        void nonEmptyMedicalContext_addedToChatMemory() throws Exception {
             when(medicalContextService.buildPatientContext(eq(PATIENT_ID), any(), any()))
                     .thenReturn("Vitals: HR 72  Medications: Aspirin");
 
@@ -750,7 +750,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("skips adding system prompt to memory when memory is not empty")
-        void nonEmptyMemory_skipsSystemPromptAddition() {
+        void nonEmptyMemory_skipsSystemPromptAddition() throws Exception {
             // Simulate non-empty chat memory (already has messages from previous interaction)
             List<dev.langchain4j.data.message.ChatMessage> existingMessages = new ArrayList<>();
             existingMessages.add(dev.langchain4j.data.message.SystemMessage.from("Existing prompt"));
@@ -765,7 +765,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("handles null extracted text from file processing")
-        void uploadedFileWithNullExtractedText_fallbackMessage() {
+        void uploadedFileWithNullExtractedText_fallbackMessage() throws Exception {
             UploadedFileDTO file = new UploadedFileDTO();
             file.setFilename("image.png");
             file.setContentType("image/png");
@@ -782,7 +782,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("processes request with null message but valid uploaded files")
-        void nullMessageWithFiles_processesSuccessfully() {
+        void nullMessageWithFiles_processesSuccessfully() throws Exception {
             UploadedFileDTO file = new UploadedFileDTO();
             file.setFilename("report.pdf");
             file.setContentType("application/pdf");
@@ -813,7 +813,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response when an unexpected exception occurs in the outer try block")
-        void outerException_returnsErrorResponse() {
+        void outerException_returnsErrorResponse() throws Exception {
             // Force the cacheService.findUserAIConfig to throw an exception
             // which happens inside the try block at line 479
             when(cacheService.findUserAIConfig(eq(USER_ID), any()))
@@ -828,7 +828,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns error response with user-friendly AI response on outer catch")
-        void outerException_responseContainsFriendlyMessage() {
+        void outerException_responseContainsFriendlyMessage() throws Exception {
             when(cacheService.findUserAIConfig(eq(USER_ID), any()))
                     .thenThrow(new RuntimeException("Unexpected error"));
 
@@ -850,7 +850,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("creates default AI config when none is found in cache")
-        void noExistingAIConfig_createsDefault() {
+        void noExistingAIConfig_createsDefault() throws Exception {
             when(cacheService.findUserAIConfig(eq(USER_ID), any())).thenReturn(Optional.empty());
             // saveUserAIConfig returns a valid config
             when(cacheService.saveUserAIConfig(any())).thenReturn(aiConfig);
@@ -872,7 +872,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses explicit title from request when provided")
-        void explicitTitle_usedInConversation() {
+        void explicitTitle_usedInConversation() throws Exception {
             ChatRequest req = buildBasicRequest();
             req.setTitle("My Custom Title");
             req.setConversationId("not-found-id");
@@ -887,7 +887,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("generates truncated title from long message when no title is provided")
-        void longMessage_titleIsTruncated() {
+        void longMessage_titleIsTruncated() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setPatientId(PATIENT_ID);
@@ -905,7 +905,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses full message as title when message is 50 chars or fewer")
-        void shortMessage_fullMessageUsedAsTitle() {
+        void shortMessage_fullMessageUsedAsTitle() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setPatientId(PATIENT_ID);
@@ -931,7 +931,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses preferred model from request when set")
-        void preferredModelSet_usedInConversation() {
+        void preferredModelSet_usedInConversation() throws Exception {
             ChatRequest req = buildBasicRequest();
             req.setPreferredModel("custom-model-v2");
             req.setConversationId("conv-for-model-test");
@@ -946,7 +946,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses openai model when provider is OPENAI and no preferred model set")
-        void openaiProvider_usesOpenaiModel() {
+        void openaiProvider_usesOpenaiModel() throws Exception {
             aiConfig.setPreferredAiProvider(UserAIConfig.AIProvider.OPENAI);
             ChatRequest req = buildBasicRequest();
             req.setConversationId("conv-openai-test");
@@ -961,7 +961,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses deepseek model when provider is DEEPSEEK and no preferred model set")
-        void deepseekProvider_usesDeepseekModel() {
+        void deepseekProvider_usesDeepseekModel() throws Exception {
             aiConfig.setPreferredAiProvider(UserAIConfig.AIProvider.DEEPSEEK);
             ChatRequest req = buildBasicRequest();
             req.setConversationId("conv-deepseek-test");
@@ -985,7 +985,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns a list of conversation summaries for a patient")
-        void returnsConversationSummaries() {
+        void returnsConversationSummaries() throws Exception {
             when(chatConversationRepository
                     .findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(PATIENT_ID))
                     .thenReturn(List.of(conversation));
@@ -1004,7 +1004,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns an empty list when no active conversations exist for patient")
-        void noConversations_returnsEmptyList() {
+        void noConversations_returnsEmptyList() throws Exception {
             when(chatConversationRepository
                     .findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(PATIENT_ID))
                     .thenReturn(Collections.emptyList());
@@ -1017,7 +1017,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("maps AI provider name to string in the summary")
-        void aiProviderMappedToStringName() {
+        void aiProviderMappedToStringName() throws Exception {
             conversation.setAiProviderUsed(UserAIConfig.AIProvider.DEEPSEEK);
             when(chatConversationRepository
                     .findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(PATIENT_ID))
@@ -1031,7 +1031,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("maps null AI provider to null in the summary without throwing")
-        void nullAiProvider_mappedToNull() {
+        void nullAiProvider_mappedToNull() throws Exception {
             conversation.setAiProviderUsed(null);
             when(chatConversationRepository
                     .findByPatientIdAndIsActiveTrueOrderByUpdatedAtDesc(PATIENT_ID))
@@ -1045,7 +1045,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("maps all conversation fields correctly in summary")
-        void allFieldsMappedCorrectly() {
+        void allFieldsMappedCorrectly() throws Exception {
             conversation.setAiModelUsed("deepseek-chat");
             conversation.setTotalTokensUsed(500);
             conversation.setUpdatedAt(LocalDateTime.of(2026, 1, 15, 10, 30));
@@ -1075,7 +1075,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns message summaries for a valid, active conversationId")
-        void validConversation_returnsMessageSummaries() {
+        void validConversation_returnsMessageSummaries() throws Exception {
             ChatMessage msg = buildChatMessage(ChatMessage.MessageType.USER, "What are my vitals?");
 
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue(CONV_ID))
@@ -1093,7 +1093,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("throws IllegalArgumentException when conversationId is not found")
-        void unknownConversationId_throwsIllegalArgumentException() {
+        void unknownConversationId_throwsIllegalArgumentException() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("missing"))
                     .thenReturn(Optional.empty());
 
@@ -1104,7 +1104,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns empty list when conversation exists but has no messages")
-        void conversationWithNoMessages_returnsEmptyList() {
+        void conversationWithNoMessages_returnsEmptyList() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue(CONV_ID))
                     .thenReturn(Optional.of(conversation));
             when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -1117,7 +1117,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("maps all message fields into the summary DTO correctly")
-        void messageFieldsMappedCorrectly() {
+        void messageFieldsMappedCorrectly() throws Exception {
             ChatMessage msg = buildChatMessage(ChatMessage.MessageType.ASSISTANT,
                     "Your BP is 120/80.");
             msg.setId(42L);
@@ -1149,7 +1149,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns empty list when the user has no active conversations")
-        void noConversations_returnsEmptyList() {
+        void noConversations_returnsEmptyList() throws Exception {
             when(chatConversationRepository.findByUserIdAndIsActiveTrueOrderByUpdatedAtDesc(USER_ID))
                     .thenReturn(Collections.emptyList());
 
@@ -1160,7 +1160,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("returns messages from the most recent active conversation")
-        void singleConversation_returnsMessages() {
+        void singleConversation_returnsMessages() throws Exception {
             ChatMessage msg = buildChatMessage(ChatMessage.MessageType.ASSISTANT,
                     "Your BP is 120/80.");
 
@@ -1177,7 +1177,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("uses only the most recent conversation when multiple conversations exist")
-        void multipleConversations_onlyMostRecentIsQueried() {
+        void multipleConversations_onlyMostRecentIsQueried() throws Exception {
             ChatConversation older = ChatConversation.builder()
                     .conversationId("older-conv")
                     .userId(USER_ID)
@@ -1217,7 +1217,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("sets isActive=false and saves the conversation when found")
-        void deactivate_success() {
+        void deactivate_success() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue(CONV_ID))
                     .thenReturn(Optional.of(conversation));
 
@@ -1230,7 +1230,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("logs the deletion through the audit service")
-        void deactivate_auditEventLogged() {
+        void deactivate_auditEventLogged() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue(CONV_ID))
                     .thenReturn(Optional.of(conversation));
 
@@ -1243,7 +1243,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("throws IllegalArgumentException when the conversationId is not found")
-        void deactivate_notFound_throwsIllegalArgumentException() {
+        void deactivate_notFound_throwsIllegalArgumentException() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("ghost"))
                     .thenReturn(Optional.empty());
 
@@ -1254,7 +1254,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("does not save when conversation is not found (exception raised first)")
-        void deactivate_notFound_repositorySaveNotCalled() {
+        void deactivate_notFound_repositorySaveNotCalled() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("ghost"))
                     .thenReturn(Optional.empty());
 
@@ -1275,7 +1275,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("builds patient context when patientId is present")
-        void patientContext_built_whenPatientIdSet() {
+        void patientContext_built_whenPatientIdSet() throws Exception {
             when(medicalContextService.buildPatientContext(eq(PATIENT_ID), any(), any()))
                     .thenReturn("Vitals: HR 72  Medications: Aspirin  Allergies: Penicillin");
 
@@ -1287,7 +1287,7 @@ class DefaultAIChatServiceTest {
 
         @Test
         @DisplayName("skips patient context when no patientId is set (caregiver-only mode)")
-        void patientContext_skipped_whenNoPatientId() {
+        void patientContext_skipped_whenNoPatientId() throws Exception {
             ChatRequest req = new ChatRequest();
             req.setUserId(USER_ID);
             req.setMessage("General question");
@@ -2314,7 +2314,7 @@ class DefaultAIChatServiceTest {
      * Creates a minimal, valid {@link ChatRequest} for the patient-chat happy path.
      * Individual tests can override fields as needed.
      */
-    private ChatRequest buildBasicRequest() {
+    private ChatRequest buildBasicRequest() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setUserId(USER_ID);
         req.setPatientId(PATIENT_ID);

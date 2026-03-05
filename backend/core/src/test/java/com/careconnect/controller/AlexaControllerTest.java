@@ -29,8 +29,10 @@ import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.service.v2.TaskServiceV2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -78,6 +80,12 @@ class AlexaControllerTest {
     @MockBean
     private TaskServiceV2 taskService;
 
+    @MockBean
+    private SecurityUtil securityUtil;
+
+    @MockBean
+    private AuthorizationService authorizationService;
+
     // --- Shared test constants ---
 
     private static final String VALID_TOKEN = "valid.jwt.token";
@@ -91,7 +99,7 @@ class AlexaControllerTest {
     private TaskDtoV2 sampleTask;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         patientUser = new User();
         patientUser.setId(10L);
         patientUser.setEmail("patient@test.com");
@@ -109,6 +117,10 @@ class AlexaControllerTest {
                 .isCompleted(false)
                 .taskType("Medication")
                 .build();
+
+        // Stub securityUtil.resolveCurrentUser() so that controller-level
+        // role checks (e.g. isFamilyMember()) do not NPE.
+        Mockito.when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
         // Default: token is valid
         Mockito.when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);

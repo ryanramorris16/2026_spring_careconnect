@@ -2,7 +2,11 @@ package com.careconnect.controller;
 
 import com.careconnect.dto.QuestionDTO;
 import com.careconnect.dto.QuestionUpsertDTO;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.QuestionService;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +29,13 @@ import java.util.List;
 public class QuestionController {
 
     private final QuestionService questions;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
-    public QuestionController(QuestionService questions) {
+    public QuestionController(QuestionService questions, SecurityUtil securityUtil, AuthorizationService authorizationService) {
         this.questions = questions;
+        this.securityUtil = securityUtil;
+        this.authorizationService = authorizationService;
     }
 
     /** GET /api/questions?active=true|false */
@@ -46,7 +54,9 @@ public class QuestionController {
 
     /** POST /api/questions */
     @PostMapping
-    public ResponseEntity<QuestionDTO> create(@RequestBody QuestionUpsertDTO body) {
+    public ResponseEntity<QuestionDTO> create(@RequestBody QuestionUpsertDTO body) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         QuestionDTO created = questions.create(body);
         return ResponseEntity.ok(created);
     }
@@ -54,7 +64,9 @@ public class QuestionController {
     /** PUT /api/questions/{id} */
     @PutMapping("/{id}")
     public ResponseEntity<QuestionDTO> update(@PathVariable Long id,
-                                              @RequestBody QuestionUpsertDTO body) {
+                                              @RequestBody QuestionUpsertDTO body) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         return questions.update(id, body)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -63,7 +75,9 @@ public class QuestionController {
     /** PATCH /api/questions/{id}/active?active=true|false */
     @PatchMapping("/{id}/active")
     public ResponseEntity<QuestionDTO> setActive(@PathVariable Long id,
-                                                 @RequestParam boolean active) {
+                                                 @RequestParam boolean active) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         return questions.setActive(id, active)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

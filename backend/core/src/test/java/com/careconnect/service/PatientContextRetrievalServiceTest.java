@@ -13,7 +13,7 @@ class PatientContextRetrievalServiceTest {
     private PatientContextRetrievalService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new PatientContextRetrievalService();
     }
 
@@ -21,7 +21,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("constructor_createsInstance_serviceIsNotNull")
-    void constructor_createsInstance_serviceIsNotNull() {
+    void constructor_createsInstance_serviceIsNotNull() throws Exception {
         PatientContextRetrievalService svc = new PatientContextRetrievalService();
         assertNotNull(svc);
     }
@@ -30,7 +30,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_withMultilineContext_indexesNonEmptySegments")
-    void indexPatientContext_withMultilineContext_indexesNonEmptySegments() {
+    void indexPatientContext_withMultilineContext_indexesNonEmptySegments() throws Exception {
         service.indexPatientContext(1L, "Diabetes\nHypertension\nAsthma");
 
         List<String> results = service.retrieveRelevantContext("Diabetes", 10);
@@ -40,7 +40,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_withEmptyLines_skipsEmptySegments")
-    void indexPatientContext_withEmptyLines_skipsEmptySegments() {
+    void indexPatientContext_withEmptyLines_skipsEmptySegments() throws Exception {
         service.indexPatientContext(1L, "Diabetes\n\n  \nHypertension");
 
         // Only non-empty segments should be indexed
@@ -52,7 +52,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_calledTwice_clearsOldSegments")
-    void indexPatientContext_calledTwice_clearsOldSegments() {
+    void indexPatientContext_calledTwice_clearsOldSegments() throws Exception {
         service.indexPatientContext(1L, "Diabetes\nHypertension");
         service.indexPatientContext(2L, "Asthma");
 
@@ -65,7 +65,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_withWhitespaceOnlyContent_indexesNoSegments")
-    void indexPatientContext_withWhitespaceOnlyContent_indexesNoSegments() {
+    void indexPatientContext_withWhitespaceOnlyContent_indexesNoSegments() throws Exception {
         service.indexPatientContext(1L, "   \n  \n   ");
 
         List<String> results = service.retrieveRelevantContext("anything", 10);
@@ -74,7 +74,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_trimsSegments_storedWithoutLeadingTrailingSpaces")
-    void indexPatientContext_trimsSegments_storedWithoutLeadingTrailingSpaces() {
+    void indexPatientContext_trimsSegments_storedWithoutLeadingTrailingSpaces() throws Exception {
         service.indexPatientContext(1L, "  Diabetes  \n  Hypertension  ");
 
         List<String> results = service.retrieveRelevantContext("Diabetes", 10);
@@ -86,7 +86,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_noMatchingSegments_returnsEmptyList")
-    void retrieveRelevantContext_noMatchingSegments_returnsEmptyList() {
+    void retrieveRelevantContext_noMatchingSegments_returnsEmptyList() throws Exception {
         service.indexPatientContext(1L, "Diabetes\nHypertension");
 
         List<String> results = service.retrieveRelevantContext("Cancer", 10);
@@ -95,7 +95,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_caseInsensitiveMatch_returnsMatchingSegments")
-    void retrieveRelevantContext_caseInsensitiveMatch_returnsMatchingSegments() {
+    void retrieveRelevantContext_caseInsensitiveMatch_returnsMatchingSegments() throws Exception {
         service.indexPatientContext(1L, "Diabetes Type 2\ndiabetes management");
 
         List<String> results = service.retrieveRelevantContext("DIABETES", 10);
@@ -104,7 +104,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_topKLimitsResults_returnsOnlyTopK")
-    void retrieveRelevantContext_topKLimitsResults_returnsOnlyTopK() {
+    void retrieveRelevantContext_topKLimitsResults_returnsOnlyTopK() throws Exception {
         service.indexPatientContext(1L, "med A\nmed B\nmed C\nmed D");
 
         List<String> results = service.retrieveRelevantContext("med", 2);
@@ -113,7 +113,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_topKGreaterThanMatches_returnsAllMatches")
-    void retrieveRelevantContext_topKGreaterThanMatches_returnsAllMatches() {
+    void retrieveRelevantContext_topKGreaterThanMatches_returnsAllMatches() throws Exception {
         service.indexPatientContext(1L, "med A\nmed B");
 
         List<String> results = service.retrieveRelevantContext("med", 100);
@@ -122,7 +122,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_emptyContextSegments_returnsEmptyList")
-    void retrieveRelevantContext_emptyContextSegments_returnsEmptyList() {
+    void retrieveRelevantContext_emptyContextSegments_returnsEmptyList() throws Exception {
         // No indexing called, contextSegments should be empty
         List<String> results = service.retrieveRelevantContext("anything", 5);
         assertTrue(results.isEmpty());
@@ -130,7 +130,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_emptyQuery_returnsAllSegments")
-    void retrieveRelevantContext_emptyQuery_returnsAllSegments() {
+    void retrieveRelevantContext_emptyQuery_returnsAllSegments() throws Exception {
         service.indexPatientContext(1L, "Diabetes\nHypertension\nAsthma");
 
         // An empty string is contained in every string
@@ -140,7 +140,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("retrieveRelevantContext_topKZero_returnsEmptyList")
-    void retrieveRelevantContext_topKZero_returnsEmptyList() {
+    void retrieveRelevantContext_topKZero_returnsEmptyList() throws Exception {
         service.indexPatientContext(1L, "Diabetes\nHypertension");
 
         List<String> results = service.retrieveRelevantContext("Diabetes", 0);
@@ -149,7 +149,7 @@ class PatientContextRetrievalServiceTest {
 
     @Test
     @DisplayName("indexPatientContext_singleLineContext_indexesOneSegment")
-    void indexPatientContext_singleLineContext_indexesOneSegment() {
+    void indexPatientContext_singleLineContext_indexesOneSegment() throws Exception {
         service.indexPatientContext(1L, "Diabetes Type 2");
 
         List<String> results = service.retrieveRelevantContext("Diabetes", 10);

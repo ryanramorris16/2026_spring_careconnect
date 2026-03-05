@@ -15,7 +15,7 @@ class CustomErrorControllerTest {
     private CustomErrorController controller;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         controller = new CustomErrorController();
 
         mockMvc = MockMvcBuilders
@@ -49,7 +49,7 @@ class CustomErrorControllerTest {
     }
 
     @Test
-    void getErrorPath_shouldReturnErrorPath() {
+    void getErrorPath_shouldReturnErrorPath() throws Exception {
 
         String path = controller.getErrorPath();
 

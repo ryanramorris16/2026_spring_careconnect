@@ -45,7 +45,7 @@ class PatientNotetakerServiceTest {
     private PatientNotetakerConfig config;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         service = new PatientNotetakerService(
                 patientNoteRepository,
@@ -81,7 +81,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getNotetakerConfigByPatientId - valid patient with config - returns config DTO")
-    void getNotetakerConfigByPatientId_validPatientWithConfig_returnsConfigDTO() {
+    void getNotetakerConfigByPatientId_validPatientWithConfig_returnsConfigDTO() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
@@ -94,7 +94,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getNotetakerConfigByPatientId - valid patient no config - returns DTO with nulls")
-    void getNotetakerConfigByPatientId_validPatientNoConfig_returnsDTOWithNulls() {
+    void getNotetakerConfigByPatientId_validPatientNoConfig_returnsDTOWithNulls() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
@@ -106,7 +106,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getNotetakerConfigByPatientId - invalid patient - throws IllegalArgumentException")
-    void getNotetakerConfigByPatientId_invalidPatient_throwsIllegalArgumentException() {
+    void getNotetakerConfigByPatientId_invalidPatient_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(99L)).thenReturn(null);
 
         assertThrows(IllegalArgumentException.class,
@@ -117,7 +117,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createOrUpdatePatientNotetakerConfig - null configDTO - throws IllegalArgumentException")
-    void createOrUpdatePatientNotetakerConfig_nullConfigDTO_throwsIllegalArgumentException() {
+    void createOrUpdatePatientNotetakerConfig_nullConfigDTO_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         assertThrows(IllegalArgumentException.class,
@@ -126,7 +126,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createOrUpdatePatientNotetakerConfig - no existing config - creates new config")
-    void createOrUpdatePatientNotetakerConfig_noExistingConfig_createsNewConfig() {
+    void createOrUpdatePatientNotetakerConfig_noExistingConfig_createsNewConfig() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
         when(patientNotetakerConfigRepository.save(any(PatientNotetakerConfig.class))).thenAnswer(inv -> {
@@ -150,7 +150,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createOrUpdatePatientNotetakerConfig - existing config - updates config")
-    void createOrUpdatePatientNotetakerConfig_existingConfig_updatesConfig() {
+    void createOrUpdatePatientNotetakerConfig_existingConfig_updatesConfig() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
         when(patientNotetakerConfigRepository.save(any(PatientNotetakerConfig.class))).thenReturn(config);
@@ -169,7 +169,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createOrUpdatePatientNotetakerConfig - invalid patient - throws IllegalArgumentException")
-    void createOrUpdatePatientNotetakerConfig_invalidPatient_throwsIllegalArgumentException() {
+    void createOrUpdatePatientNotetakerConfig_invalidPatient_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(99L)).thenReturn(null);
 
         PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder().build();
@@ -182,7 +182,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getAllNotesForPatient - patient has notes - returns list of DTOs")
-    void getAllNotesForPatient_patientHasNotes_returnsListOfDTOs() {
+    void getAllNotesForPatient_patientHasNotes_returnsListOfDTOs() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findByPatientId(10L)).thenReturn(Optional.of(List.of(patientNote)));
 
@@ -194,7 +194,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getAllNotesForPatient - patient has no notes - returns empty list")
-    void getAllNotesForPatient_patientHasNoNotes_returnsEmptyList() {
+    void getAllNotesForPatient_patientHasNoNotes_returnsEmptyList() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findByPatientId(10L)).thenReturn(Optional.empty());
 
@@ -205,7 +205,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getAllNotesForPatient - invalid patient - throws IllegalArgumentException")
-    void getAllNotesForPatient_invalidPatient_throwsIllegalArgumentException() {
+    void getAllNotesForPatient_invalidPatient_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(99L)).thenReturn(null);
 
         assertThrows(IllegalArgumentException.class, () -> service.getAllNotesForPatient(99L));
@@ -215,7 +215,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getNoteById - valid note - returns note DTO")
-    void getNoteById_validNote_returnsNoteDTO() {
+    void getNoteById_validNote_returnsNoteDTO() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
 
@@ -228,7 +228,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("getNoteById - note not found - throws IllegalArgumentException")
-    void getNoteById_noteNotFound_throwsIllegalArgumentException() {
+    void getNoteById_noteNotFound_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -239,7 +239,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - valid note with AI summary success - returns DTO with AI summary")
-    void createNoteForPatient_validNoteAiSummarySuccess_returnsDTOWithAiSummary() {
+    void createNoteForPatient_validNoteAiSummarySuccess_returnsDTOWithAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse response = new OpenRouterResponse();
@@ -270,7 +270,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - AI summary fails - sets failure message")
-    void createNoteForPatient_aiSummaryFails_setsFailureMessage() {
+    void createNoteForPatient_aiSummaryFails_setsFailureMessage() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class)))
                 .thenThrow(new RuntimeException("AI unavailable"));
@@ -293,7 +293,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - null noteDTO - throws IllegalArgumentException")
-    void createNoteForPatient_nullNoteDTO_throwsIllegalArgumentException() {
+    void createNoteForPatient_nullNoteDTO_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         assertThrows(IllegalArgumentException.class,
@@ -302,7 +302,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - AI returns null response - sets empty AI summary")
-    void createNoteForPatient_aiReturnsNullResponse_setsEmptyAiSummary() {
+    void createNoteForPatient_aiReturnsNullResponse_setsEmptyAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(null);
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
@@ -324,7 +324,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - AI returns response with null choices - sets empty AI summary")
-    void createNoteForPatient_aiReturnsNullChoices_setsEmptyAiSummary() {
+    void createNoteForPatient_aiReturnsNullChoices_setsEmptyAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         OpenRouterResponse response = new OpenRouterResponse();
         response.setChoices(null);
@@ -348,7 +348,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - AI returns response with empty choices - sets empty AI summary")
-    void createNoteForPatient_aiReturnsEmptyChoices_setsEmptyAiSummary() {
+    void createNoteForPatient_aiReturnsEmptyChoices_setsEmptyAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         OpenRouterResponse response = new OpenRouterResponse();
         response.setChoices(List.of());
@@ -372,7 +372,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - AI response contains HTML tags - strips HTML from summary")
-    void createNoteForPatient_aiResponseContainsHtml_stripsHtml() {
+    void createNoteForPatient_aiResponseContainsHtml_stripsHtml() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse response = new OpenRouterResponse();
@@ -403,7 +403,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - note contains ALERT keyword - detects keyword")
-    void createNoteForPatient_noteContainsAlertKeyword_detectsKeyword() {
+    void createNoteForPatient_noteContainsAlertKeyword_detectsKeyword() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse response = new OpenRouterResponse();
@@ -434,7 +434,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - note contains TASK keyword with valid AI response - creates task")
-    void createNoteForPatient_noteContainsTaskKeyword_createsTask() {
+    void createNoteForPatient_noteContainsTaskKeyword_createsTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         // AI summary response
@@ -476,7 +476,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - note contains TASK keyword but AI returns invalid JSON - does not create task")
-    void createNoteForPatient_taskKeywordInvalidAiJson_doesNotCreateTask() {
+    void createNoteForPatient_taskKeywordInvalidAiJson_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse summaryResponse = new OpenRouterResponse();
@@ -513,7 +513,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - note contains TASK keyword but OpenRouter throws - does not create task")
-    void createNoteForPatient_taskKeywordOpenRouterThrows_doesNotCreateTask() {
+    void createNoteForPatient_taskKeywordOpenRouterThrows_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse summaryResponse = new OpenRouterResponse();
@@ -545,7 +545,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - TASK keyword AI returns empty content - does not create task")
-    void createNoteForPatient_taskKeywordEmptyAiContent_doesNotCreateTask() {
+    void createNoteForPatient_taskKeywordEmptyAiContent_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse summaryResponse = new OpenRouterResponse();
@@ -580,7 +580,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - TASK keyword AI returns task with null required fields - does not create task")
-    void createNoteForPatient_taskKeywordAiReturnsTaskWithNullFields_doesNotCreateTask() {
+    void createNoteForPatient_taskKeywordAiReturnsTaskWithNullFields_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse summaryResponse = new OpenRouterResponse();
@@ -619,7 +619,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("createNoteForPatient - no keywords match - no task or alert triggered")
-    void createNoteForPatient_noKeywordsMatch_noTaskOrAlertTriggered() {
+    void createNoteForPatient_noKeywordsMatch_noTaskOrAlertTriggered() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         OpenRouterResponse summaryResponse = new OpenRouterResponse();
@@ -650,7 +650,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("updateNoteForPatient - valid update with non-failed AI summary - uses provided summary")
-    void updateNoteForPatient_validUpdateWithNonFailedAiSummary_usesProvidedSummary() {
+    void updateNoteForPatient_validUpdateWithNonFailedAiSummary_usesProvidedSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
         when(patientNoteRepository.save(any(PatientNote.class))).thenReturn(patientNote);
@@ -668,7 +668,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("updateNoteForPatient - AI summary is Failed to generate - regenerates summary")
-    void updateNoteForPatient_aiSummaryIsFailed_regeneratesSummary() {
+    void updateNoteForPatient_aiSummaryIsFailed_regeneratesSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
         when(patientNoteRepository.save(any(PatientNote.class))).thenReturn(patientNote);
@@ -692,7 +692,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("updateNoteForPatient - null noteDTO - throws IllegalArgumentException")
-    void updateNoteForPatient_nullNoteDTO_throwsIllegalArgumentException() {
+    void updateNoteForPatient_nullNoteDTO_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         assertThrows(IllegalArgumentException.class,
@@ -701,7 +701,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("updateNoteForPatient - note not found - throws NoSuchElementException")
-    void updateNoteForPatient_noteNotFound_throwsException() {
+    void updateNoteForPatient_noteNotFound_throwsException() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -717,7 +717,7 @@ class PatientNotetakerServiceTest {
 
     @Test
     @DisplayName("deleteNoteById - valid noteId - deletes note")
-    void deleteNoteById_validNoteId_deletesNote() {
+    void deleteNoteById_validNoteId_deletesNote() throws Exception {
         doNothing().when(patientNoteRepository).deleteById(1L);
 
         service.deleteNoteById(1L);

@@ -13,7 +13,7 @@ class InvoiceResultTest {
     // ─── Builder: InvoiceResult ───────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         Map<String, String> extra = Map.of("poNumber", "PO-001");
         List<InvoiceResult.InvoiceItem> items = List.of(
                 InvoiceResult.InvoiceItem.builder()
@@ -54,7 +54,7 @@ class InvoiceResultTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         InvoiceResult result = InvoiceResult.builder().build();
 
         assertThat(result.getVendorName()).isNull();
@@ -65,7 +65,7 @@ class InvoiceResultTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         InvoiceResult result = InvoiceResult.builder().build();
 
         result.setVendorName("XYZ Medical");
@@ -80,7 +80,7 @@ class InvoiceResultTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
         InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
 
@@ -89,7 +89,7 @@ class InvoiceResultTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").build();
         InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-002").build();
 
@@ -99,7 +99,7 @@ class InvoiceResultTest {
     // ─── Nested InvoiceItem ────────────────────────────────────────────────────
 
     @Test
-    void invoiceItem_builder_setsAllFields() {
+    void invoiceItem_builder_setsAllFields() throws Exception {
         InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder()
                 .description("Blood Panel")
                 .productCode("85025")
@@ -118,7 +118,7 @@ class InvoiceResultTest {
     }
 
     @Test
-    void invoiceItem_equals_sameFields_returnsTrue() {
+    void invoiceItem_equals_sameFields_returnsTrue() throws Exception {
         InvoiceResult.InvoiceItem i1 = InvoiceResult.InvoiceItem.builder()
                 .description("Visit").productCode("99213").amount(new BigDecimal("200.00")).build();
         InvoiceResult.InvoiceItem i2 = InvoiceResult.InvoiceItem.builder()
@@ -129,7 +129,7 @@ class InvoiceResultTest {
     }
 
     @Test
-    void invoiceItem_setters_updateFields() {
+    void invoiceItem_setters_updateFields() throws Exception {
         InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder().build();
 
         item.setDescription("Updated Desc");

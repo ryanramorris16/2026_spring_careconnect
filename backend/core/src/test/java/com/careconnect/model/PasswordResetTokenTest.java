@@ -11,7 +11,7 @@ class PasswordResetTokenTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         PasswordResetToken token = new PasswordResetToken();
 
         assertThat(token).isNotNull();
@@ -26,7 +26,7 @@ class PasswordResetTokenTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         PasswordResetToken token = new PasswordResetToken();
         User user = new User();
         Instant now = Instant.now();

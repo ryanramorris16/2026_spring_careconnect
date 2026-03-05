@@ -14,13 +14,13 @@ class CheckInServiceTest {
     private CheckInService checkInService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         checkInService = new CheckInService();
     }
 
     @Test
     @DisplayName("getAllCheckIns returns an empty list")
-    void getAllCheckIns_returnsEmptyList() {
+    void getAllCheckIns_returnsEmptyList() throws Exception {
         List<CheckIn> result = checkInService.getAllCheckIns();
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -28,28 +28,28 @@ class CheckInServiceTest {
 
     @Test
     @DisplayName("getAllCheckIns returns an immutable List.of()")
-    void getAllCheckIns_returnsImmutableList() {
+    void getAllCheckIns_returnsImmutableList() throws Exception {
         List<CheckIn> result = checkInService.getAllCheckIns();
         assertThrows(UnsupportedOperationException.class, () -> result.add(new CheckIn()));
     }
 
     @Test
     @DisplayName("getCheckInByID returns a non-null CheckIn instance")
-    void getCheckInByID_returnsNonNullCheckIn() {
+    void getCheckInByID_returnsNonNullCheckIn() throws Exception {
         CheckIn result = checkInService.getCheckInByID(1L);
         assertNotNull(result);
     }
 
     @Test
     @DisplayName("getCheckInByID returns a new CheckIn with null id")
-    void getCheckInByID_returnsCheckInWithNullId() {
+    void getCheckInByID_returnsCheckInWithNullId() throws Exception {
         CheckIn result = checkInService.getCheckInByID(1L);
         assertNull(result.getId());
     }
 
     @Test
     @DisplayName("getCheckInByID ignores the provided id parameter")
-    void getCheckInByID_ignoresProvidedId() {
+    void getCheckInByID_ignoresProvidedId() throws Exception {
         CheckIn result1 = checkInService.getCheckInByID(42L);
         CheckIn result2 = checkInService.getCheckInByID(99L);
         assertNull(result1.getId());
@@ -59,7 +59,7 @@ class CheckInServiceTest {
 
     @Test
     @DisplayName("getCheckInByID with null id still returns a new CheckIn")
-    void getCheckInByID_withNullId_returnsCheckIn() {
+    void getCheckInByID_withNullId_returnsCheckIn() throws Exception {
         CheckIn result = checkInService.getCheckInByID(null);
         assertNotNull(result);
     }

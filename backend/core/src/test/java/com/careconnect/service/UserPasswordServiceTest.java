@@ -36,7 +36,7 @@ class UserPasswordServiceTest {
     private User user;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         user = new User();
@@ -52,7 +52,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_verificationToken_unverifiedUser_shouldSetPasswordAndVerify")
-    void resetPasswordWithToken_verificationToken_unverifiedUser_shouldSetPasswordAndVerify() {
+    void resetPasswordWithToken_verificationToken_unverifiedUser_shouldSetPasswordAndVerify() throws Exception {
         user.setVerificationToken("verify-token-abc");
         user.setIsVerified(false);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -69,7 +69,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_verificationToken_alreadyVerifiedUser_shouldThrowIllegalArgumentException")
-    void resetPasswordWithToken_verificationToken_alreadyVerifiedUser_shouldThrowIllegalArgumentException() {
+    void resetPasswordWithToken_verificationToken_alreadyVerifiedUser_shouldThrowIllegalArgumentException() throws Exception {
         user.setVerificationToken("verify-token-abc");
         user.setIsVerified(true);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -82,7 +82,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_userNotFound_shouldThrowIllegalArgumentException")
-    void resetPasswordWithToken_userNotFound_shouldThrowIllegalArgumentException() {
+    void resetPasswordWithToken_userNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -95,7 +95,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_base64EncodedUserId_matchingUser_shouldResetPassword")
-    void resetPasswordWithToken_base64EncodedUserId_matchingUser_shouldResetPassword() {
+    void resetPasswordWithToken_base64EncodedUserId_matchingUser_shouldResetPassword() throws Exception {
         String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
         user.setVerificationToken(null); // Not a verification token
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -110,7 +110,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_base64EncodedUserId_nonMatchingUser_shouldFallToLegacyFlow")
-    void resetPasswordWithToken_base64EncodedUserId_nonMatchingUser_shouldFallToLegacyFlow() {
+    void resetPasswordWithToken_base64EncodedUserId_nonMatchingUser_shouldFallToLegacyFlow() throws Exception {
         // Encode a different user ID
         String base64Token = Base64.getUrlEncoder().encodeToString("999".getBytes());
         user.setVerificationToken(null);
@@ -140,7 +140,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_validToken_sameUser_shouldResetPassword")
-    void resetPasswordWithToken_legacyFlow_validToken_sameUser_shouldResetPassword() {
+    void resetPasswordWithToken_legacyFlow_validToken_sameUser_shouldResetPassword() throws Exception {
         String rawToken = "legacy-reset-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -168,7 +168,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_invalidOrExpiredToken_shouldThrowIllegalArgumentException")
-    void resetPasswordWithToken_legacyFlow_invalidOrExpiredToken_shouldThrowIllegalArgumentException() {
+    void resetPasswordWithToken_legacyFlow_invalidOrExpiredToken_shouldThrowIllegalArgumentException() throws Exception {
         String rawToken = "expired-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -186,7 +186,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenBelongsToDifferentUser_shouldThrowIllegalArgumentException")
-    void resetPasswordWithToken_legacyFlow_tokenBelongsToDifferentUser_shouldThrowIllegalArgumentException() {
+    void resetPasswordWithToken_legacyFlow_tokenBelongsToDifferentUser_shouldThrowIllegalArgumentException() throws Exception {
         String rawToken = "other-user-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -213,7 +213,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenFoundButExpired_logsExpired_shouldThrow")
-    void resetPasswordWithToken_legacyFlow_tokenFoundButExpired_logsExpired_shouldThrow() {
+    void resetPasswordWithToken_legacyFlow_tokenFoundButExpired_logsExpired_shouldThrow() throws Exception {
         String rawToken = "expired-token-debug";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -235,7 +235,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenFoundButUsed_logsUsed_shouldThrow")
-    void resetPasswordWithToken_legacyFlow_tokenFoundButUsed_logsUsed_shouldThrow() {
+    void resetPasswordWithToken_legacyFlow_tokenFoundButUsed_logsUsed_shouldThrow() throws Exception {
         String rawToken = "used-token-debug";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -257,7 +257,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_runsForEachOnEmpty_shouldThrow")
-    void resetPasswordWithToken_legacyFlow_tokenNotInDb_runsForEachOnEmpty_shouldThrow() {
+    void resetPasswordWithToken_legacyFlow_tokenNotInDb_runsForEachOnEmpty_shouldThrow() throws Exception {
         String rawToken = "non-existent-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -273,7 +273,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForOtherUser_shouldThrow")
-    void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForOtherUser_shouldThrow() {
+    void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForOtherUser_shouldThrow() throws Exception {
         String rawToken = "missing-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -298,7 +298,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForSameUser_shouldThrow")
-    void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForSameUser_shouldThrow() {
+    void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForSameUser_shouldThrow() throws Exception {
         String rawToken = "missing-token-same-user";
         String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
@@ -322,7 +322,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_verificationTokenDoesNotMatch_shouldFallToBase64Flow")
-    void resetPasswordWithToken_verificationTokenDoesNotMatch_shouldFallToBase64Flow() {
+    void resetPasswordWithToken_verificationTokenDoesNotMatch_shouldFallToBase64Flow() throws Exception {
         user.setVerificationToken("different-verify-token");
         String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -338,7 +338,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("setupPasswordWithVerificationToken_validToken_unverified_shouldSetPassword")
-    void setupPasswordWithVerificationToken_validToken_unverified_shouldSetPassword() {
+    void setupPasswordWithVerificationToken_validToken_unverified_shouldSetPassword() throws Exception {
         user.setVerificationToken("setup-token-xyz");
         user.setIsVerified(false);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -355,7 +355,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("setupPasswordWithVerificationToken_userNotFound_shouldThrowRuntimeException")
-    void setupPasswordWithVerificationToken_userNotFound_shouldThrowRuntimeException() {
+    void setupPasswordWithVerificationToken_userNotFound_shouldThrowRuntimeException() throws Exception {
         when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class, () ->
@@ -366,7 +366,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("setupPasswordWithVerificationToken_nullVerificationToken_shouldThrowRuntimeException")
-    void setupPasswordWithVerificationToken_nullVerificationToken_shouldThrowRuntimeException() {
+    void setupPasswordWithVerificationToken_nullVerificationToken_shouldThrowRuntimeException() throws Exception {
         user.setVerificationToken(null);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
@@ -378,7 +378,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("setupPasswordWithVerificationToken_mismatchedToken_shouldThrowRuntimeException")
-    void setupPasswordWithVerificationToken_mismatchedToken_shouldThrowRuntimeException() {
+    void setupPasswordWithVerificationToken_mismatchedToken_shouldThrowRuntimeException() throws Exception {
         user.setVerificationToken("correct-token");
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
@@ -390,7 +390,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("setupPasswordWithVerificationToken_alreadyVerified_shouldThrowRuntimeException")
-    void setupPasswordWithVerificationToken_alreadyVerified_shouldThrowRuntimeException() {
+    void setupPasswordWithVerificationToken_alreadyVerified_shouldThrowRuntimeException() throws Exception {
         user.setVerificationToken("setup-token-xyz");
         user.setIsVerified(true);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -405,7 +405,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_invalidBase64Token_shouldFallToLegacyFlow")
-    void resetPasswordWithToken_invalidBase64Token_shouldFallToLegacyFlow() {
+    void resetPasswordWithToken_invalidBase64Token_shouldFallToLegacyFlow() throws Exception {
         // A token that is not valid base64 will throw an exception in the try block,
         // causing it to fall through to the legacy flow.
         String rawToken = "not!!!base64===token";
@@ -434,7 +434,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_base64DecodesToNonNumeric_shouldFallToLegacyFlow")
-    void resetPasswordWithToken_base64DecodesToNonNumeric_shouldFallToLegacyFlow() {
+    void resetPasswordWithToken_base64DecodesToNonNumeric_shouldFallToLegacyFlow() throws Exception {
         // A token that decodes to a non-numeric string will cause NumberFormatException,
         // which is caught and falls through to legacy flow.
         String base64Token = Base64.getUrlEncoder().encodeToString("not_a_number".getBytes());
@@ -461,7 +461,7 @@ class UserPasswordServiceTest {
 
     @Test
     @DisplayName("resetPasswordWithToken_nullVerificationToken_notBase64_shouldUseTokenHashFlow")
-    void resetPasswordWithToken_nullVerificationToken_notBase64_shouldUseTokenHashFlow() {
+    void resetPasswordWithToken_nullVerificationToken_notBase64_shouldUseTokenHashFlow() throws Exception {
         user.setVerificationToken(null);
         String rawToken = "simple-raw-token";
         String tokenHash = DigestUtils.sha256Hex(rawToken);

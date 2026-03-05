@@ -12,7 +12,7 @@ class MedicationTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Medication med = new Medication();
 
         assertThat(med).isNotNull();
@@ -24,7 +24,7 @@ class MedicationTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_isActive_defaultsToTrue() {
+    void builder_isActive_defaultsToTrue() throws Exception {
         Medication med = Medication.builder()
                 .patient(new Patient())
                 .medicationName("Aspirin")
@@ -34,7 +34,7 @@ class MedicationTest {
     }
 
     @Test
-    void builder_approvalStatus_defaultsToPending() {
+    void builder_approvalStatus_defaultsToPending() throws Exception {
         Medication med = Medication.builder()
                 .patient(new Patient())
                 .medicationName("Aspirin")
@@ -46,7 +46,7 @@ class MedicationTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         Instant now = Instant.now();
 
@@ -161,7 +161,7 @@ class MedicationTest {
     // ─── MedicationType enum ──────────────────────────────────────────────────
 
     @Test
-    void medicationTypeEnum_getDisplayName() {
+    void medicationTypeEnum_getDisplayName() throws Exception {
         assertThat(Medication.MedicationType.PRESCRIPTION.getDisplayName()).isEqualTo("Prescription");
         assertThat(Medication.MedicationType.OVER_THE_COUNTER.getDisplayName()).isEqualTo("Over-the-counter");
         assertThat(Medication.MedicationType.SUPPLEMENT.getDisplayName()).isEqualTo("Supplement/Vitamin");
@@ -170,7 +170,7 @@ class MedicationTest {
     }
 
     @Test
-    void medicationTypeEnum_containsAllValues() {
+    void medicationTypeEnum_containsAllValues() throws Exception {
         assertThat(Medication.MedicationType.values()).hasSize(5);
     }
 }

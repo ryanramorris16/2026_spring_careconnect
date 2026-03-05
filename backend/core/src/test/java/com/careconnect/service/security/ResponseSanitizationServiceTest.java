@@ -21,7 +21,7 @@ class ResponseSanitizationServiceTest {
     private ResponseSanitizationService responseSanitizationService;
 
     @Test
-    void sanitizeAIResponse_null_returnsEmpty() {
+    void sanitizeAIResponse_null_returnsEmpty() throws Exception {
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(null, 1L, "conv-1", null);
         assertThat(result.getSanitizedContent()).isEmpty();
@@ -29,7 +29,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_blank_returnsEmpty() {
+    void sanitizeAIResponse_blank_returnsEmpty() throws Exception {
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse("  ", 1L, "conv-1", null);
         assertThat(result.getSanitizedContent()).isEmpty();
@@ -37,7 +37,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_cleanResponse_returnsUnmodified() {
+    void sanitizeAIResponse_cleanResponse_returnsUnmodified() throws Exception {
         String response = "Your appointment is scheduled for tomorrow at 10 AM.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 1L, "conv-1", null);
@@ -46,7 +46,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withSystemInfo_sanitizesAndLogs() {
+    void sanitizeAIResponse_withSystemInfo_sanitizesAndLogs() throws Exception {
         String response = "The api key: abc123 is in the configuration.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 2L, "conv-2", null);
@@ -57,7 +57,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withLocalhostRef_sanitizes() {
+    void sanitizeAIResponse_withLocalhostRef_sanitizes() throws Exception {
         String response = "The server is running at localhost for development.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 3L, "conv-3", null);
@@ -66,7 +66,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withSensitiveData_sanitizesAndLogs() {
+    void sanitizeAIResponse_withSensitiveData_sanitizesAndLogs() throws Exception {
         String response = "Your password: secretXYZ is here.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 4L, "conv-4", null);
@@ -77,7 +77,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withSsn_replacesNumber() {
+    void sanitizeAIResponse_withSsn_replacesNumber() throws Exception {
         String response = "The patient SSN is 123-45-6789 on file.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 5L, "conv-5", null);
@@ -86,7 +86,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withCreditCard_replacesNumber() {
+    void sanitizeAIResponse_withCreditCard_replacesNumber() throws Exception {
         String response = "Credit card 4111111111111111 was processed.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 6L, "conv-6", null);
@@ -95,7 +95,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withPatientId_allowsMedicalContext() {
+    void sanitizeAIResponse_withPatientId_allowsMedicalContext() throws Exception {
         String response = "Patient has been prescribed medication for hypertension.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 7L, "conv-7", 100L);
@@ -105,7 +105,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_withoutPatientId_restrictsMedicalInfo() {
+    void sanitizeAIResponse_withoutPatientId_restrictsMedicalInfo() throws Exception {
         String response = "The diagnosis: hypertension is confirmed.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 8L, "conv-8", null);
@@ -114,7 +114,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizeAIResponse_scriptContent_removed() {
+    void sanitizeAIResponse_scriptContent_removed() throws Exception {
         String response = "Click here <script>alert('xss')</script> to proceed.";
         ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 9L, "conv-9", null);
@@ -124,7 +124,7 @@ class ResponseSanitizationServiceTest {
     // ----- SanitizationResult inner class -----
 
     @Test
-    void sanitizationResult_getters() {
+    void sanitizationResult_getters() throws Exception {
         ResponseSanitizationService.SanitizationResult result =
                 new ResponseSanitizationService.SanitizationResult("content", List.of("item1"));
         assertThat(result.getSanitizedContent()).isEqualTo("content");
@@ -132,7 +132,7 @@ class ResponseSanitizationServiceTest {
     }
 
     @Test
-    void sanitizationResult_emptyItems() {
+    void sanitizationResult_emptyItems() throws Exception {
         ResponseSanitizationService.SanitizationResult result =
                 new ResponseSanitizationService.SanitizationResult("clean response", List.of());
         assertThat(result.getSanitizedItems()).isEmpty();

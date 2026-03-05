@@ -13,7 +13,7 @@ class OAuthExceptionTest {
     // ─── Two-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void constructor_messageAndErrorType_setsCorrectly() {
+    void constructor_messageAndErrorType_setsCorrectly() throws Exception {
         OAuthException exception = new OAuthException("OAuth failed", "INVALID_TOKEN");
 
         assertThat(exception.getMessage()).isEqualTo("OAuth failed");
@@ -22,7 +22,7 @@ class OAuthExceptionTest {
     }
 
     @Test
-    void constructor_differentErrorType_setsCorrectly() {
+    void constructor_differentErrorType_setsCorrectly() throws Exception {
         OAuthException exception = new OAuthException("Access denied", "ACCESS_DENIED");
 
         assertThat(exception.getMessage()).isEqualTo("Access denied");
@@ -32,7 +32,7 @@ class OAuthExceptionTest {
     // ─── Three-arg constructor (with cause) ───────────────────────────────────
 
     @Test
-    void constructor_withCause_setsAllFields() {
+    void constructor_withCause_setsAllFields() throws Exception {
         Throwable cause = new RuntimeException("underlying cause");
         OAuthException exception = new OAuthException("OAuth error with cause", "SERVER_ERROR", cause);
 
@@ -42,7 +42,7 @@ class OAuthExceptionTest {
     }
 
     @Test
-    void constructor_withCause_differentValues() {
+    void constructor_withCause_differentValues() throws Exception {
         Throwable cause = new IllegalStateException("state error");
         OAuthException exception = new OAuthException("Token refresh failed", "TOKEN_EXPIRED", cause);
 
@@ -54,14 +54,14 @@ class OAuthExceptionTest {
     // ─── Is a RuntimeException ────────────────────────────────────────────────
 
     @Test
-    void oAuthException_isRuntimeException() {
+    void oAuthException_isRuntimeException() throws Exception {
         OAuthException exception = new OAuthException("error", "TYPE");
 
         assertThat(exception).isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void oAuthException_canBeThrown() {
+    void oAuthException_canBeThrown() throws Exception {
         assertThatThrownBy(() -> {
             throw new OAuthException("thrown", "THROWN_TYPE");
         })

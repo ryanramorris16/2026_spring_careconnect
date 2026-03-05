@@ -14,7 +14,7 @@ class InvoiceTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Invoice invoice = new Invoice();
 
         assertThat(invoice).isNotNull();
@@ -33,7 +33,7 @@ class InvoiceTest {
     // ─── Builder: all fields ──────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         Invoice invoice = Invoice.builder()
@@ -90,7 +90,7 @@ class InvoiceTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Invoice invoice = new Invoice();
 
         invoice.setId("INV-002");
@@ -109,7 +109,7 @@ class InvoiceTest {
     // ─── addPayment() ─────────────────────────────────────────────────────────
 
     @Test
-    void addPayment_addsToList_andSetsInvoiceReference() {
+    void addPayment_addsToList_andSetsInvoiceReference() throws Exception {
         Invoice invoice = new Invoice();   // no-arg ctor initialises payments list
         invoice.setId("INV-003");
         InvoicePayment payment = new InvoicePayment();
@@ -123,7 +123,7 @@ class InvoiceTest {
     }
 
     @Test
-    void addPayment_multiplePayments_allAdded() {
+    void addPayment_multiplePayments_allAdded() throws Exception {
         Invoice invoice = new Invoice();
         invoice.setId("INV-004");
 
@@ -141,7 +141,7 @@ class InvoiceTest {
     // ─── removePaymentById() ──────────────────────────────────────────────────
 
     @Test
-    void removePaymentById_removesCorrectPayment() {
+    void removePaymentById_removesCorrectPayment() throws Exception {
         Invoice invoice = new Invoice();
         invoice.setId("INV-005");
 
@@ -160,7 +160,7 @@ class InvoiceTest {
     }
 
     @Test
-    void removePaymentById_nonexistentId_doesNothing() {
+    void removePaymentById_nonexistentId_doesNothing() throws Exception {
         Invoice invoice = new Invoice();
         invoice.setId("INV-006");
 
@@ -176,7 +176,7 @@ class InvoiceTest {
     // ─── setPayments() ────────────────────────────────────────────────────────
 
     @Test
-    void setPayments_replacesCollection() {
+    void setPayments_replacesCollection() throws Exception {
         Invoice invoice = new Invoice();
         invoice.setId("INV-007");
 
@@ -191,20 +191,20 @@ class InvoiceTest {
     // ─── collections default to empty ────────────────────────────────────────
 
     @Test
-    void builder_services_defaultsToEmptyList() {
+    void builder_services_defaultsToEmptyList() throws Exception {
         // Lombok builder doesn't honour plain field initialisers; use no-arg ctor
         Invoice invoice = new Invoice();
         assertThat(invoice.getServices()).isNotNull().isEmpty();
     }
 
     @Test
-    void builder_history_defaultsToEmptyList() {
+    void builder_history_defaultsToEmptyList() throws Exception {
         Invoice invoice = new Invoice();
         assertThat(invoice.getHistory()).isNotNull().isEmpty();
     }
 
     @Test
-    void builder_recommendedActions_defaultsToEmptyList() {
+    void builder_recommendedActions_defaultsToEmptyList() throws Exception {
         Invoice invoice = new Invoice();
         assertThat(invoice.getRecommendedActions()).isNotNull().isEmpty();
     }
@@ -212,7 +212,7 @@ class InvoiceTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameId_returnsTrue() {
+    void equals_sameId_returnsTrue() throws Exception {
         Invoice i1 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
         Invoice i2 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
 
@@ -221,7 +221,7 @@ class InvoiceTest {
     }
 
     @Test
-    void equals_differentId_returnsFalse() {
+    void equals_differentId_returnsFalse() throws Exception {
         Invoice i1 = Invoice.builder().id("INV-AAA").build();
         Invoice i2 = Invoice.builder().id("INV-BBB").build();
 
@@ -229,7 +229,7 @@ class InvoiceTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         Invoice invoice = new Invoice();
         assertThat(invoice).isNotEqualTo(null);
     }

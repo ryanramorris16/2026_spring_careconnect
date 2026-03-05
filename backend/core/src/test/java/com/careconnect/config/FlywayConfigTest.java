@@ -26,19 +26,19 @@ class FlywayConfigTest {
     private Flyway flyway;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         flywayConfig = new FlywayConfig();
     }
 
     @Test
-    void flywayMigrationStrategyBeanIsCreated() {
+    void flywayMigrationStrategyBeanIsCreated() throws Exception {
         FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
         assertNotNull(strategy);
     }
 
     @Test
-    void migrate_CallsFlywayMigrateSuccessfully() {
+    void migrate_CallsFlywayMigrateSuccessfully() throws Exception {
         FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
 
         assertDoesNotThrow(() -> strategy.migrate(flyway));
@@ -47,7 +47,7 @@ class FlywayConfigTest {
     }
 
     @Test
-    void migrate_CatchesExceptionAndDoesNotThrow() {
+    void migrate_CatchesExceptionAndDoesNotThrow() throws Exception {
         FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
 
         doThrow(new RuntimeException("Migration failure"))

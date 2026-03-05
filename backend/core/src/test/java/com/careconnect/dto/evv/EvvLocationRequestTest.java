@@ -17,7 +17,7 @@ class EvvLocationRequestTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         EvvLocationRequest request = new EvvLocationRequest();
 
         assertThat(request).isNotNull();
@@ -30,7 +30,7 @@ class EvvLocationRequestTest {
     // ─── All-args constructor ─────────────────────────────────────────────────
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.8951"), new BigDecimal("-77.0364"), new BigDecimal("5.0"));
 
@@ -46,7 +46,7 @@ class EvvLocationRequestTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
                 .lat(new BigDecimal("39.0"))
                 .lng(new BigDecimal("-76.0"))
@@ -69,7 +69,7 @@ class EvvLocationRequestTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         EvvLocationRequest request = new EvvLocationRequest();
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
@@ -87,7 +87,7 @@ class EvvLocationRequestTest {
     // ─── CoordinatesDto ───────────────────────────────────────────────────────
 
     @Test
-    void coordinatesDto_noArgConstructor_createsInstance() {
+    void coordinatesDto_noArgConstructor_createsInstance() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
         assertThat(coords).isNotNull();
@@ -97,7 +97,7 @@ class EvvLocationRequestTest {
     }
 
     @Test
-    void coordinatesDto_allArgsConstructor_setsFields() {
+    void coordinatesDto_allArgsConstructor_setsFields() throws Exception {
         BigDecimal lat = new BigDecimal("40.7128");
         BigDecimal lng = new BigDecimal("-74.0060");
         BigDecimal accuracy = new BigDecimal("2.5");
@@ -110,7 +110,7 @@ class EvvLocationRequestTest {
     }
 
     @Test
-    void coordinatesDto_setters_updateFields() {
+    void coordinatesDto_setters_updateFields() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
         coords.setLat(new BigDecimal("51.5074"));
@@ -125,7 +125,7 @@ class EvvLocationRequestTest {
     // ─── validate(): GPS with valid coords ────────────────────────────────────
 
     @Test
-    void validate_gpsWithValidCoords_doesNotThrow() {
+    void validate_gpsWithValidCoords_doesNotThrow() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.0"), new BigDecimal("-77.0"), null);
 
@@ -143,7 +143,7 @@ class EvvLocationRequestTest {
     // ─── validate(): GPS with null coords ────────────────────────────────────
 
     @Test
-    void validate_gpsWithNullCoords_throwsIllegalArgumentException() {
+    void validate_gpsWithNullCoords_throwsIllegalArgumentException() throws Exception {
         EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -159,7 +159,7 @@ class EvvLocationRequestTest {
     // ─── validate(): GPS with null lat ───────────────────────────────────────
 
     @Test
-    void validate_gpsWithNullLat_throwsIllegalArgumentException() {
+    void validate_gpsWithNullLat_throwsIllegalArgumentException() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 null, new BigDecimal("-77.0"), null);
 
@@ -178,7 +178,7 @@ class EvvLocationRequestTest {
     // ─── validate(): GPS with null lng ───────────────────────────────────────
 
     @Test
-    void validate_gpsWithNullLng_throwsIllegalArgumentException() {
+    void validate_gpsWithNullLng_throwsIllegalArgumentException() throws Exception {
         EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.0"), null, null);
 
@@ -197,7 +197,7 @@ class EvvLocationRequestTest {
     // ─── validate(): PATIENT_ADDRESS does not need coords ────────────────────
 
     @Test
-    void validate_patientAddress_doesNotThrow() {
+    void validate_patientAddress_doesNotThrow() throws Exception {
         EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_OUT)

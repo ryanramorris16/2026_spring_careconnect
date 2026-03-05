@@ -1,7 +1,9 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.USPSDigest;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.USPSDigestService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,17 +26,22 @@ class UspsDigestControllerTest {
     @Mock
     private USPSDigestService uspsDigestService;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private com.careconnect.controller.UspsDigestController controller;
 
-    private USPSDigest digest() {
+    private USPSDigest digest() throws Exception {
         return new USPSDigest(null, List.of(), List.of());
     }
 
     // ─── getLatestDigest ──────────────────────────────────────────────────────
 
     @Test
-    void getLatestDigest_dateProvided_callsDigestForDate_returnsOk() {
+    void getLatestDigest_dateProvided_callsDigestForDate_returnsOk() throws Exception {
         LocalDate date = LocalDate.of(2025, 6, 1);
         USPSDigest d = digest();
         when(uspsDigestService.digestForDate("user1", date)).thenReturn(Optional.of(d));
@@ -47,7 +54,7 @@ class UspsDigestControllerTest {
     }
 
     @Test
-    void getLatestDigest_dateNull_callsLatestForUser_returnsOk() {
+    void getLatestDigest_dateNull_callsLatestForUser_returnsOk() throws Exception {
         USPSDigest d = digest();
         when(uspsDigestService.latestForUser("demo-user")).thenReturn(Optional.of(d));
 
@@ -59,7 +66,7 @@ class UspsDigestControllerTest {
     }
 
     @Test
-    void getLatestDigest_notFound_returnsNoContent() {
+    void getLatestDigest_notFound_returnsNoContent() throws Exception {
         when(uspsDigestService.latestForUser("demo-user")).thenReturn(Optional.empty());
 
         ResponseEntity<USPSDigest> response = controller.getLatestDigest("demo-user", null);
@@ -70,7 +77,7 @@ class UspsDigestControllerTest {
     // ─── search ───────────────────────────────────────────────────────────────
 
     @Test
-    void search_returnsOkWithResults() {
+    void search_returnsOkWithResults() throws Exception {
         List<Map<String, Object>> results = List.of(Map.of("key", "value"));
         when(uspsDigestService.search("user1", "invoice")).thenReturn(results);
 
@@ -84,7 +91,7 @@ class UspsDigestControllerTest {
     // ─── clearCache ───────────────────────────────────────────────────────────
 
     @Test
-    void clearCache_returnsOkWithMessage() {
+    void clearCache_returnsOkWithMessage() throws Exception {
         doNothing().when(uspsDigestService).clearCacheForUser("user1");
 
         ResponseEntity<String> response = controller.clearCache("user1");

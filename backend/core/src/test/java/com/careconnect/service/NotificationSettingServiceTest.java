@@ -30,7 +30,7 @@ class NotificationSettingServiceTest {
     private Instant now;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         now = Instant.now();
 
@@ -52,7 +52,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("getByUserId_settingExists_returnsExistingSettingAsDTO")
-    void getByUserId_settingExists_returnsExistingSettingAsDTO() {
+    void getByUserId_settingExists_returnsExistingSettingAsDTO() throws Exception {
         when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.of(existingSetting));
 
         NotificationSettingDTO result = notificationSettingService.getByUserId(1L);
@@ -75,7 +75,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("getByUserId_settingDoesNotExist_createsDefaultAndReturnsDTO")
-    void getByUserId_settingDoesNotExist_createsDefaultAndReturnsDTO() {
+    void getByUserId_settingDoesNotExist_createsDefaultAndReturnsDTO() throws Exception {
         NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(2L)
                 .gamification(true)
@@ -110,7 +110,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("getByUserId_settingWithAllFalseFlags_returnsDTOWithAllFalse")
-    void getByUserId_settingWithAllFalseFlags_returnsDTOWithAllFalse() {
+    void getByUserId_settingWithAllFalseFlags_returnsDTOWithAllFalse() throws Exception {
         NotificationSetting allFalse = NotificationSetting.builder()
                 .userId(3L)
                 .build();
@@ -142,7 +142,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("createOrUpdate_settingExists_updatesExistingSettingAndReturnsDTO")
-    void createOrUpdate_settingExists_updatesExistingSettingAndReturnsDTO() {
+    void createOrUpdate_settingExists_updatesExistingSettingAndReturnsDTO() throws Exception {
         NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(1L)
                 .gamification(false)
@@ -188,7 +188,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("createOrUpdate_settingDoesNotExist_createsNewSettingAndReturnsDTO")
-    void createOrUpdate_settingDoesNotExist_createsNewSettingAndReturnsDTO() {
+    void createOrUpdate_settingDoesNotExist_createsNewSettingAndReturnsDTO() throws Exception {
         NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(5L)
                 .gamification(true)
@@ -234,7 +234,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("createOrUpdate_allFieldsTrue_returnsAllTrueDTO")
-    void createOrUpdate_allFieldsTrue_returnsAllTrueDTO() {
+    void createOrUpdate_allFieldsTrue_returnsAllTrueDTO() throws Exception {
         NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(7L)
                 .gamification(true)
@@ -275,7 +275,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("createOrUpdate_allFieldsFalse_returnsAllFalseDTO")
-    void createOrUpdate_allFieldsFalse_returnsAllFalseDTO() {
+    void createOrUpdate_allFieldsFalse_returnsAllFalseDTO() throws Exception {
         NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(8L)
                 .gamification(false)
@@ -316,7 +316,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("createOrUpdate_existingSettingPartialUpdate_updatesOnlySpecifiedFields")
-    void createOrUpdate_existingSettingPartialUpdate_updatesOnlySpecifiedFields() {
+    void createOrUpdate_existingSettingPartialUpdate_updatesOnlySpecifiedFields() throws Exception {
         NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(1L)
                 .gamification(false)
@@ -359,7 +359,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("getByUserId_settingWithNullTimestamps_returnsDTOWithNullTimestamps")
-    void getByUserId_settingWithNullTimestamps_returnsDTOWithNullTimestamps() {
+    void getByUserId_settingWithNullTimestamps_returnsDTOWithNullTimestamps() throws Exception {
         NotificationSetting settingNoTimestamps = NotificationSetting.builder()
                 .userId(9L)
                 .build();
@@ -379,7 +379,7 @@ class NotificationSettingServiceTest {
 
     @Test
     @DisplayName("getByUserId_settingWithNullId_returnsDTOWithNullId")
-    void getByUserId_settingWithNullId_returnsDTOWithNullId() {
+    void getByUserId_settingWithNullId_returnsDTOWithNullId() throws Exception {
         NotificationSetting settingNoId = NotificationSetting.builder()
                 .userId(11L)
                 .build();

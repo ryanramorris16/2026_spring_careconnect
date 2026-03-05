@@ -33,7 +33,7 @@ class DatabaseChatMemoryTest {
     private static final int MAX_MESSAGES = 10;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         conversation = ChatConversation.builder()
@@ -52,7 +52,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("id_returnsConversationId_fromConversationObject")
-    void id_returnsConversationId_fromConversationObject() {
+    void id_returnsConversationId_fromConversationObject() throws Exception {
         Object result = chatMemory.id();
 
         assertEquals("conv-uuid-123", result);
@@ -64,7 +64,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_systemMessage_savesWithSystemTypeAndCorrectContent")
-    void add_systemMessage_savesWithSystemTypeAndCorrectContent() {
+    void add_systemMessage_savesWithSystemTypeAndCorrectContent() throws Exception {
         SystemMessage message = SystemMessage.from("You are a helpful assistant");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -85,7 +85,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_userMessage_savesWithUserTypeAndCorrectContent")
-    void add_userMessage_savesWithUserTypeAndCorrectContent() {
+    void add_userMessage_savesWithUserTypeAndCorrectContent() throws Exception {
         UserMessage message = UserMessage.from("Hello doctor");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -105,7 +105,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_aiMessage_savesWithAssistantTypeAndCorrectContent")
-    void add_aiMessage_savesWithAssistantTypeAndCorrectContent() {
+    void add_aiMessage_savesWithAssistantTypeAndCorrectContent() throws Exception {
         AiMessage message = AiMessage.from("I can help you with that");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -125,7 +125,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_unknownMessageType_fallsBackToUserTypeWithToStringContent")
-    void add_unknownMessageType_fallsBackToUserTypeWithToStringContent() {
+    void add_unknownMessageType_fallsBackToUserTypeWithToStringContent() throws Exception {
         // ToolExecutionResultMessage exercises the else branch (not System/User/Ai)
         ToolExecutionResultMessage message = ToolExecutionResultMessage.from("tool-1", "tool-name", "result-text");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
@@ -147,7 +147,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_exceedsMaxMessages_cleansUpOldMessages")
-    void add_exceedsMaxMessages_cleansUpOldMessages() {
+    void add_exceedsMaxMessages_cleansUpOldMessages() throws Exception {
         UserMessage message = UserMessage.from("New message");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -178,7 +178,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_withinLimit_noCleanup")
-    void add_withinLimit_noCleanup() {
+    void add_withinLimit_noCleanup() throws Exception {
         UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -204,7 +204,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_repositorySaveThrowsException_wrapsInRuntimeException")
-    void add_repositorySaveThrowsException_wrapsInRuntimeException() {
+    void add_repositorySaveThrowsException_wrapsInRuntimeException() throws Exception {
         UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenThrow(new RuntimeException("DB connection error"));
@@ -216,7 +216,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("add_cleanupThrowsException_swallowedSilentlyAddStillSucceeds")
-    void add_cleanupThrowsException_swallowedSilentlyAddStillSucceeds() {
+    void add_cleanupThrowsException_swallowedSilentlyAddStillSucceeds() throws Exception {
         UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -235,7 +235,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("messages_returnsConvertedLangChain4jMessages_inOrder")
-    void messages_returnsConvertedLangChain4jMessages_inOrder() {
+    void messages_returnsConvertedLangChain4jMessages_inOrder() throws Exception {
         com.careconnect.model.ChatMessage sysMsg = com.careconnect.model.ChatMessage.builder()
                 .messageType(MessageType.SYSTEM)
                 .content("System prompt")
@@ -265,7 +265,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("messages_emptyDatabase_returnsEmptyList")
-    void messages_emptyDatabase_returnsEmptyList() {
+    void messages_emptyDatabase_returnsEmptyList() throws Exception {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(Collections.emptyList());
 
@@ -276,7 +276,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("messages_nullConversionResultFiltered_returnsOnlyNonNull")
-    void messages_nullConversionResultFiltered_returnsOnlyNonNull() {
+    void messages_nullConversionResultFiltered_returnsOnlyNonNull() throws Exception {
         // We test with a valid message type to verify the filter works;
         // the null path (default branch) is effectively unreachable with
         // the current 3-value enum but the filter logic is exercised.
@@ -296,7 +296,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("messages_repositoryThrowsException_returnsEmptyList")
-    void messages_repositoryThrowsException_returnsEmptyList() {
+    void messages_repositoryThrowsException_returnsEmptyList() throws Exception {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenThrow(new RuntimeException("DB is down"));
 
@@ -311,7 +311,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("clear_deletesAllMessages_forTheConversation")
-    void clear_deletesAllMessages_forTheConversation() {
+    void clear_deletesAllMessages_forTheConversation() throws Exception {
         List<com.careconnect.model.ChatMessage> messages = List.of(
                 com.careconnect.model.ChatMessage.builder()
                         .id(1L)
@@ -336,7 +336,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("clear_noMessages_callsDeleteAllWithEmptyList")
-    void clear_noMessages_callsDeleteAllWithEmptyList() {
+    void clear_noMessages_callsDeleteAllWithEmptyList() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(Collections.emptyList());
 
@@ -347,7 +347,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("clear_repositoryThrowsException_wrapsInRuntimeException")
-    void clear_repositoryThrowsException_wrapsInRuntimeException() {
+    void clear_repositoryThrowsException_wrapsInRuntimeException() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -361,7 +361,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("convertToLangchainMessage_systemType_returnsSystemMessage")
-    void convertToLangchainMessage_systemType_returnsSystemMessage() {
+    void convertToLangchainMessage_systemType_returnsSystemMessage() throws Exception {
         com.careconnect.model.ChatMessage dbMsg = com.careconnect.model.ChatMessage.builder()
                 .messageType(MessageType.SYSTEM)
                 .content("Be helpful")
@@ -378,7 +378,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("convertToLangchainMessage_userType_returnsUserMessage")
-    void convertToLangchainMessage_userType_returnsUserMessage() {
+    void convertToLangchainMessage_userType_returnsUserMessage() throws Exception {
         com.careconnect.model.ChatMessage dbMsg = com.careconnect.model.ChatMessage.builder()
                 .messageType(MessageType.USER)
                 .content("What is my medication?")
@@ -395,7 +395,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("convertToLangchainMessage_assistantType_returnsAiMessage")
-    void convertToLangchainMessage_assistantType_returnsAiMessage() {
+    void convertToLangchainMessage_assistantType_returnsAiMessage() throws Exception {
         com.careconnect.model.ChatMessage dbMsg = com.careconnect.model.ChatMessage.builder()
                 .messageType(MessageType.ASSISTANT)
                 .content("Take 2 pills daily")
@@ -416,7 +416,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("cleanupOldMessages_exactlyAtLimit_noDeletion")
-    void cleanupOldMessages_exactlyAtLimit_noDeletion() {
+    void cleanupOldMessages_exactlyAtLimit_noDeletion() throws Exception {
         UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -440,7 +440,7 @@ class DatabaseChatMemoryTest {
 
     @Test
     @DisplayName("cleanupOldMessages_oneOverLimit_deletesExactlyOneOldest")
-    void cleanupOldMessages_oneOverLimit_deletesExactlyOneOldest() {
+    void cleanupOldMessages_oneOverLimit_deletesExactlyOneOldest() throws Exception {
         UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));

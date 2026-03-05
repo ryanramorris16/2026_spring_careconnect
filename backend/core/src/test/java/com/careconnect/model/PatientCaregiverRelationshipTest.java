@@ -9,7 +9,7 @@ class PatientCaregiverRelationshipTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientCaregiverRelationship rel = new PatientCaregiverRelationship();
 
         assertThat(rel).isNotNull();
@@ -22,7 +22,7 @@ class PatientCaregiverRelationshipTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         PatientCaregiverRelationship rel = new PatientCaregiverRelationship(1L, 10L, 20L, "PRIMARY");
 
         assertThat(rel.getId()).isEqualTo(1L);
@@ -34,7 +34,7 @@ class PatientCaregiverRelationshipTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         PatientCaregiverRelationship rel = PatientCaregiverRelationship.builder()
                 .id(2L)
                 .patientId(30L)
@@ -51,7 +51,7 @@ class PatientCaregiverRelationshipTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientCaregiverRelationship rel = new PatientCaregiverRelationship();
 
         rel.setId(3L);
@@ -68,7 +68,7 @@ class PatientCaregiverRelationshipTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         PatientCaregiverRelationship r1 = PatientCaregiverRelationship.builder().id(1L).patientId(10L).build();
         PatientCaregiverRelationship r2 = PatientCaregiverRelationship.builder().id(1L).patientId(10L).build();
 
@@ -77,7 +77,7 @@ class PatientCaregiverRelationshipTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         PatientCaregiverRelationship r1 = PatientCaregiverRelationship.builder().id(1L).build();
         PatientCaregiverRelationship r2 = PatientCaregiverRelationship.builder().id(2L).build();
 

@@ -11,7 +11,7 @@ class TemplateTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Template t = new Template();
 
         assertThat(t).isNotNull();
@@ -30,7 +30,7 @@ class TemplateTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         List<Boolean> days = List.of(true, false, true, false, true, false, false);
 
         Template t = Template.builder()
@@ -61,7 +61,7 @@ class TemplateTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Template t = new Template();
 
         t.setId(2L);
@@ -86,7 +86,7 @@ class TemplateTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Template t1 = Template.builder().id(1L).name("Test").icon(1).build();
         Template t2 = Template.builder().id(1L).name("Test").icon(1).build();
 
