@@ -9,7 +9,7 @@ class CheckInTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         CheckIn checkIn = new CheckIn();
         assertThat(checkIn).isNotNull();
     }
@@ -17,7 +17,7 @@ class CheckInTest {
     // ─── Package-private constructor with template ────────────────────────────
 
     @Test
-    void templateConstructor_setsTemplate() {
+    void templateConstructor_setsTemplate() throws Exception {
         CheckInTemplate template = new CheckInTemplate();
         CheckIn checkIn = new CheckIn(template);
         assertThat(checkIn).isNotNull();
