@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WebClientConfigTest {
 
     @Test
-    void shouldCreateRestTemplateBean() {
+    void shouldCreateRestTemplateBean() throws Exception {
         // Verifies that WebClientConfig successfully registers a RestTemplate bean
         // in a real (minimal) Spring context, confirming Spring can discover and wire it.
         // The context is closed immediately after to avoid resource leaks.
@@ -39,7 +39,7 @@ class WebClientConfigTest {
     }
 
     @Test
-    void shouldUseBufferingRequestFactory() {
+    void shouldUseBufferingRequestFactory() throws Exception {
         // Verifies that the RestTemplate uses a BufferingClientHttpRequestFactory,
         // which caches the response body in memory so it can be read multiple times
         // (necessary for logging interceptors that consume the body before the caller).
@@ -52,7 +52,7 @@ class WebClientConfigTest {
     }
 
     @Test
-    void restTemplateShouldBeFunctional() {
+    void restTemplateShouldBeFunctional() throws Exception {
         // Verifies the RestTemplate is fully configured: it has a non-null request
         // factory and at least the default set of message converters (JSON, form data,
         // etc.), confirming it is ready to make and deserialise HTTP calls.
@@ -65,7 +65,7 @@ class WebClientConfigTest {
     }
 
     @Test
-    void shouldReturnNewInstanceEachCall() {
+    void shouldReturnNewInstanceEachCall() throws Exception {
         // Verifies that each call to restTemplate() produces a distinct instance.
         // This is the expected behaviour for a @Bean method without @Scope("singleton")
         // when called directly (outside the Spring proxy), and ensures no shared state

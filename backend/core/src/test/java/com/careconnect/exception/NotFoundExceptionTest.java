@@ -10,7 +10,7 @@ class NotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor sets message and extends RuntimeException")
-    void messageConstructor_setsMessage() {
+    void messageConstructor_setsMessage() throws Exception {
         NotFoundException ex = new NotFoundException("not here");
         assertEquals("not here", ex.getMessage());
         assertInstanceOf(RuntimeException.class, ex);

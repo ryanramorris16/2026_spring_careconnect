@@ -13,7 +13,7 @@ class InvoicePaymentTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         InvoicePayment payment = new InvoicePayment();
 
         assertThat(payment).isNotNull();
@@ -33,7 +33,7 @@ class InvoicePaymentTest {
     }
 
     @Test
-    void noArgConstructor_idIsUUID() {
+    void noArgConstructor_idIsUUID() throws Exception {
         InvoicePayment p1 = new InvoicePayment();
         InvoicePayment p2 = new InvoicePayment();
 
@@ -44,7 +44,7 @@ class InvoicePaymentTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         Invoice invoice = Invoice.builder().id("INV-500").build();
         OffsetDateTime paymentDate = OffsetDateTime.of(2025, 4, 10, 12, 0, 0, 0, ZoneOffset.UTC);
@@ -76,13 +76,13 @@ class InvoicePaymentTest {
     // ─── planEnabled default ──────────────────────────────────────────────────
 
     @Test
-    void planEnabled_defaultsFalse() {
+    void planEnabled_defaultsFalse() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         assertThat(payment.isPlanEnabled()).isFalse();
     }
 
     @Test
-    void planEnabled_canBeSetTrue() {
+    void planEnabled_canBeSetTrue() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         payment.setPlanEnabled(true);
         assertThat(payment.isPlanEnabled()).isTrue();
@@ -91,21 +91,21 @@ class InvoicePaymentTest {
     // ─── methodKey values ─────────────────────────────────────────────────────
 
     @Test
-    void methodKey_check_setsCorrectly() {
+    void methodKey_check_setsCorrectly() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("check");
         assertThat(payment.getMethodKey()).isEqualTo("check");
     }
 
     @Test
-    void methodKey_online_setsCorrectly() {
+    void methodKey_online_setsCorrectly() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("online");
         assertThat(payment.getMethodKey()).isEqualTo("online");
     }
 
     @Test
-    void methodKey_telephone_setsCorrectly() {
+    void methodKey_telephone_setsCorrectly() throws Exception {
         InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("telephone");
         assertThat(payment.getMethodKey()).isEqualTo("telephone");

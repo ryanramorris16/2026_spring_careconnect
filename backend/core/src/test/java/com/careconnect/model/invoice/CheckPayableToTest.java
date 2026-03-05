@@ -9,7 +9,7 @@ class CheckPayableToTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         CheckPayableTo checkPayableTo = CheckPayableTo.builder()
                 .name("Care Connect Medical")
                 .address("123 Main St, Springfield, IL")
@@ -22,7 +22,7 @@ class CheckPayableToTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
 
         assertThat(checkPayableTo.getName()).isNull();
@@ -33,7 +33,7 @@ class CheckPayableToTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
 
         checkPayableTo.setName("Updated Name");
@@ -48,7 +48,7 @@ class CheckPayableToTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
         CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
 
@@ -57,7 +57,7 @@ class CheckPayableToTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").build();
         CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic B").build();
 
@@ -65,7 +65,7 @@ class CheckPayableToTest {
     }
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         CheckPayableTo c = CheckPayableTo.builder().name("Care Connect").reference("INV-001").build();
 
         assertThat(c.toString()).contains("Care Connect");

@@ -21,7 +21,7 @@ class NotificationWebSocketHandlerTest {
     private NotificationWebSocketHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         handler = new NotificationWebSocketHandler();
     }
 
@@ -117,7 +117,7 @@ class NotificationWebSocketHandlerTest {
     // ─── sendNotificationToUser() ────────────────────────────────────────────
 
     @Test
-    void sendNotificationToUser_unknownUser_returnsFalse() {
+    void sendNotificationToUser_unknownUser_returnsFalse() throws Exception {
         assertThat(handler.sendNotificationToUser("nobody", "msg")).isFalse();
     }
 

@@ -24,7 +24,7 @@ class SecurityUtilTest {
     // ─── getCurrentUser() ─────────────────────────────────────────────────────
 
     @Test
-    void getCurrentUser_nullAuthorizationHeader_throwsRuntimeException() {
+    void getCurrentUser_nullAuthorizationHeader_throwsRuntimeException() throws Exception {
         when(request.getHeader("Authorization")).thenReturn(null);
 
         assertThatThrownBy(() -> securityUtil.getCurrentUser(request))
@@ -33,7 +33,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    void getCurrentUser_headerWithoutBearerPrefix_throwsRuntimeException() {
+    void getCurrentUser_headerWithoutBearerPrefix_throwsRuntimeException() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Basic abc123");
 
         assertThatThrownBy(() -> securityUtil.getCurrentUser(request))
@@ -42,7 +42,7 @@ class SecurityUtilTest {
     }
 
     @Test
-    void getCurrentUser_validBearerToken_returnsUserInfo() {
+    void getCurrentUser_validBearerToken_returnsUserInfo() throws Exception {
         String token = "valid-jwt-token";
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtTokenProvider.getUsername(token)).thenReturn("user@example.com");
@@ -58,7 +58,7 @@ class SecurityUtilTest {
     // ─── UserInfo inner class ─────────────────────────────────────────────────
 
     @Test
-    void userInfo_constructorSetsFields() {
+    void userInfo_constructorSetsFields() throws Exception {
         SecurityUtil.UserInfo info = new SecurityUtil.UserInfo("admin@example.com", Role.ADMIN);
 
         assertThat(info.email).isEqualTo("admin@example.com");

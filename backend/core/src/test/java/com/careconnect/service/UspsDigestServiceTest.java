@@ -33,7 +33,7 @@ class USPSDigestServiceTest {
     // ── Existing tests (unchanged) ────────────────────────────────────────────
 
     @Test
-    void returnsGmailDigestAndCachesResult() {
+    void returnsGmailDigestAndCachesResult() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
 
@@ -108,7 +108,7 @@ class USPSDigestServiceTest {
      * latestForUser() should return an empty Optional without throwing.
      */
     @Test
-    void returnsEmptyWhenNoCacheAndNoCredentials() {
+    void returnsEmptyWhenNoCacheAndNoCredentials() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
 
@@ -130,7 +130,7 @@ class USPSDigestServiceTest {
      * latestForUser() should fall back to Outlook, return its digest, and cache it.
      */
     @Test
-    void fallsBackToOutlookWhenGmailCredentialAbsent() {
+    void fallsBackToOutlookWhenGmailCredentialAbsent() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
 
@@ -168,7 +168,7 @@ class USPSDigestServiceTest {
      * A valid cache entry returned by latestForUser() should propagate back as the result.
      */
     @Test
-    void digestForDateWithNullDelegatesToLatestForUser() {
+    void digestForDateWithNullDelegatesToLatestForUser() throws Exception {
         var cacheStub = new CacheRepoStub();
         // Simulate a cache hit that latestForUser() will find
         var cached = new USPSDigestCache();
@@ -197,7 +197,7 @@ class USPSDigestServiceTest {
      * digestForDate() should return it without performing a remote fetch.
      */
     @Test
-    void digestForDateReturnsCachedEntryForDate() {
+    void digestForDateReturnsCachedEntryForDate() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();  // latestForUser lookup (not used here)
 
@@ -228,7 +228,7 @@ class USPSDigestServiceTest {
      * digestForDate() should fetch from Gmail, cache the result, and return it.
      */
     @Test
-    void digestForDateFetchesFromGmailWhenNoCacheHit() {
+    void digestForDateFetchesFromGmailWhenNoCacheHit() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
         cacheStub.dateRangeLookup = Optional.empty();
@@ -270,7 +270,7 @@ class USPSDigestServiceTest {
      * A blank or null userId must return an empty list without touching any repository.
      */
     @Test
-    void searchReturnsEmptyForBlankUserId() {
+    void searchReturnsEmptyForBlankUserId() throws Exception {
         USPSDigestService service = buildService(
                 emailCredentialRepositoryByProvider(Optional.empty(), Optional.empty()),
                 new CacheRepoStub(),
@@ -289,7 +289,7 @@ class USPSDigestServiceTest {
      * A blank or null keyword must return an empty list without touching any repository.
      */
     @Test
-    void searchReturnsEmptyForBlankKeyword() {
+    void searchReturnsEmptyForBlankKeyword() throws Exception {
         USPSDigestService service = buildService(
                 emailCredentialRepositoryByProvider(Optional.empty(), Optional.empty()),
                 new CacheRepoStub(),
@@ -309,7 +309,7 @@ class USPSDigestServiceTest {
      * and the correct id and sender fields.
      */
     @Test
-    void searchFindsMatchingMailPiecesFromCache() {
+    void searchFindsMatchingMailPiecesFromCache() throws Exception {
         // JSON uses "summary" because MailPiece.subject is @JsonProperty("summary")
         String payloadJson = "{\"digestDate\":null,\"mailpieces\":[" +
                 "{\"id\":\"m-1\",\"sender\":\"ACME Bank\",\"summary\":\"Monthly Statement\"," +
@@ -343,7 +343,7 @@ class USPSDigestServiceTest {
      * search() must return a result entry with type="package" and the correct trackingNumber.
      */
     @Test
-    void searchFindsMatchingPackagesFromCache() {
+    void searchFindsMatchingPackagesFromCache() throws Exception {
         // JSON uses "expectedDateIso" because PackageItem.expectedDeliveryDate is @JsonProperty("expectedDateIso")
         String payloadJson = "{\"digestDate\":null,\"mailpieces\":[]," +
                 "\"packages\":[{\"trackingNumber\":\"9400111899223397623988\"," +
@@ -376,7 +376,7 @@ class USPSDigestServiceTest {
      * search() must include it only once in the results — deduplication by composite key.
      */
     @Test
-    void searchDeduplicatesMatchingItems() {
+    void searchDeduplicatesMatchingItems() throws Exception {
         // Both cache entries carry the exact same MailPiece; the second should be skipped.
         String payloadJson = "{\"digestDate\":null,\"mailpieces\":[" +
                 "{\"id\":\"m-dup\",\"sender\":\"Duplicate Sender\",\"summary\":\"Bill\"," +
@@ -416,7 +416,7 @@ class USPSDigestServiceTest {
      * belonging to the specified user, and must not modify entries owned by other users.
      */
     @Test
-    void clearCacheForUserExpiresAllEntries() {
+    void clearCacheForUserExpiresAllEntries() throws Exception {
         Instant future = Instant.now().plusSeconds(3600);
 
         var entry1 = new USPSDigestCache();
@@ -470,7 +470,7 @@ class USPSDigestServiceTest {
      * latestForUser() should fall through to Outlook, return its digest, and cache it.
      */
     @Test
-    void latestForUserFallsBackToOutlookWhenGmailFetchEmpty() {
+    void latestForUserFallsBackToOutlookWhenGmailFetchEmpty() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
 
@@ -517,7 +517,7 @@ class USPSDigestServiceTest {
      * digestForDate() must return an empty Optional.
      */
     @Test
-    void digestForDateReturnsEmptyWhenNoCacheAndNoCredentials() {
+    void digestForDateReturnsEmptyWhenNoCacheAndNoCredentials() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
         cacheStub.dateRangeLookup = Optional.empty();
@@ -540,7 +540,7 @@ class USPSDigestServiceTest {
      * is present, digestForDate() should fetch from Outlook and cache the result.
      */
     @Test
-    void digestForDateFetchesFromOutlookWhenGmailUnavailable() {
+    void digestForDateFetchesFromOutlookWhenGmailUnavailable() throws Exception {
         var cacheStub = new CacheRepoStub();
         cacheStub.nextLookup = Optional.empty();
         cacheStub.dateRangeLookup = Optional.empty();
@@ -578,7 +578,7 @@ class USPSDigestServiceTest {
      * the keyword, even when the sender does not match.
      */
     @Test
-    void searchFindsMailPieceMatchingBySubject() {
+    void searchFindsMailPieceMatchingBySubject() throws Exception {
         String payloadJson = "{\"digestDate\":null,\"mailpieces\":[" +
                 "{\"id\":\"m-sub\",\"sender\":\"XYZ Corp\",\"summary\":\"Invoice November\"," +
                 "\"imageDataUrl\":null,\"receivedAt\":null,\"actions\":null}]," +
@@ -610,7 +610,7 @@ class USPSDigestServiceTest {
      * even when the sender does not match.
      */
     @Test
-    void searchFindsPackageMatchingByTrackingNumber() {
+    void searchFindsPackageMatchingByTrackingNumber() throws Exception {
         String payloadJson = "{\"digestDate\":null,\"mailpieces\":[]," +
                 "\"packages\":[{\"trackingNumber\":\"9400UNIQUE99\"," +
                 "\"sender\":\"SomeShop\",\"expectedDateIso\":null,\"actions\":null}]}";
@@ -641,7 +641,7 @@ class USPSDigestServiceTest {
      * must be silently skipped; subsequent valid entries must still be searched normally.
      */
     @Test
-    void searchSkipsInvalidCacheEntries() {
+    void searchSkipsInvalidCacheEntries() throws Exception {
         var badEntry = new USPSDigestCache();
         badEntry.setUserId("user-bad");
         badEntry.setDigestDate(null);
@@ -680,7 +680,7 @@ class USPSDigestServiceTest {
      * A cache hit in latestForUser() with a matching item must appear in the result.
      */
     @Test
-    void searchFallsBackToLatestForUserWhenNoCacheResultsMatch() {
+    void searchFallsBackToLatestForUserWhenNoCacheResultsMatch() throws Exception {
         // Cache scan entry with no matching content
         String nonMatchingPayload = "{\"digestDate\":null,\"mailpieces\":[]," +
                 "\"packages\":[{\"trackingNumber\":\"NONE\",\"sender\":\"No Match\"," +
@@ -730,7 +730,7 @@ class USPSDigestServiceTest {
             OutlookClient outlookClient,
             GmailParser gmailParser,
             OutlookParser outlookParser
-    ) {
+    ) throws Exception {
         return new USPSDigestService(
                 credRepo,
                 cacheStub.asRepo(),
@@ -829,7 +829,7 @@ class USPSDigestServiceTest {
          */
         List<USPSDigestCache> savedAll = null;
 
-        USPSDigestCacheRepo asRepo() {
+        USPSDigestCacheRepo asRepo() throws Exception {
             InvocationHandler handler = new InvocationHandler() {
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

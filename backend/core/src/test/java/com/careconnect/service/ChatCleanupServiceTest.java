@@ -41,7 +41,7 @@ class ChatCleanupServiceTest {
     private ChatCleanupService chatCleanupService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -51,7 +51,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("cleanupOldChats_autoCleanupDisabled_shouldSkipCleanup")
-    void cleanupOldChats_autoCleanupDisabled_shouldSkipCleanup() {
+    void cleanupOldChats_autoCleanupDisabled_shouldSkipCleanup() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(false);
 
         chatCleanupService.cleanupOldChats();
@@ -61,7 +61,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("cleanupOldChats_noOldConversations_shouldLogDebugAndNotDelete")
-    void cleanupOldChats_noOldConversations_shouldLogDebugAndNotDelete() {
+    void cleanupOldChats_noOldConversations_shouldLogDebugAndNotDelete() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
         when(chatConversationRepository.findByCreatedAtBeforeAndIsActiveTrue(any(LocalDateTime.class)))
@@ -76,7 +76,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("cleanupOldChats_conversationsWithMessages_shouldCleanUpAll")
-    void cleanupOldChats_conversationsWithMessages_shouldCleanUpAll() {
+    void cleanupOldChats_conversationsWithMessages_shouldCleanUpAll() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
@@ -126,7 +126,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("cleanupOldChats_conversationWithEmptyMessages_shouldSkipAnalyticsAndDeleteButStillDeactivate")
-    void cleanupOldChats_conversationWithEmptyMessages_shouldSkipAnalyticsAndDeleteButStillDeactivate() {
+    void cleanupOldChats_conversationWithEmptyMessages_shouldSkipAnalyticsAndDeleteButStillDeactivate() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
@@ -154,7 +154,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("cleanupOldChats_exceptionThrown_shouldCatchAndNotPropagate")
-    void cleanupOldChats_exceptionThrown_shouldCatchAndNotPropagate() {
+    void cleanupOldChats_exceptionThrown_shouldCatchAndNotPropagate() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
         when(chatConversationRepository.findByCreatedAtBeforeAndIsActiveTrue(any(LocalDateTime.class)))
@@ -170,7 +170,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("deleteConversationImmediately_conversationFoundWithMessages_shouldDeleteAndDeactivate")
-    void deleteConversationImmediately_conversationFoundWithMessages_shouldDeleteAndDeactivate() {
+    void deleteConversationImmediately_conversationFoundWithMessages_shouldDeleteAndDeactivate() throws Exception {
         String conversationId = "conv-123";
         ChatConversation conversation = new ChatConversation();
         conversation.setConversationId(conversationId);
@@ -197,7 +197,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("deleteConversationImmediately_conversationFoundNoMessages_shouldDeactivateOnly")
-    void deleteConversationImmediately_conversationFoundNoMessages_shouldDeactivateOnly() {
+    void deleteConversationImmediately_conversationFoundNoMessages_shouldDeactivateOnly() throws Exception {
         String conversationId = "conv-empty";
         ChatConversation conversation = new ChatConversation();
         conversation.setConversationId(conversationId);
@@ -220,7 +220,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("deleteConversationImmediately_conversationNotFound_shouldDoNothing")
-    void deleteConversationImmediately_conversationNotFound_shouldDoNothing() {
+    void deleteConversationImmediately_conversationNotFound_shouldDoNothing() throws Exception {
         String conversationId = "conv-nonexistent";
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue(conversationId))
@@ -235,7 +235,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("deleteConversationImmediately_exceptionThrown_shouldWrapAndRethrowAsRuntimeException")
-    void deleteConversationImmediately_exceptionThrown_shouldWrapAndRethrowAsRuntimeException() {
+    void deleteConversationImmediately_exceptionThrown_shouldWrapAndRethrowAsRuntimeException() throws Exception {
         String conversationId = "conv-error";
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue(conversationId))
@@ -254,7 +254,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("getRetentionPolicyInfo_autoCleanupEnabled_shouldReturnInfoWithDays")
-    void getRetentionPolicyInfo_autoCleanupEnabled_shouldReturnInfoWithDays() {
+    void getRetentionPolicyInfo_autoCleanupEnabled_shouldReturnInfoWithDays() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
@@ -267,7 +267,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("getRetentionPolicyInfo_autoCleanupDisabled_shouldReturnDisabledMessage")
-    void getRetentionPolicyInfo_autoCleanupDisabled_shouldReturnDisabledMessage() {
+    void getRetentionPolicyInfo_autoCleanupDisabled_shouldReturnDisabledMessage() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(false);
 
         String result = chatCleanupService.getRetentionPolicyInfo();
@@ -279,7 +279,7 @@ class ChatCleanupServiceTest {
 
     @Test
     @DisplayName("getRetentionPolicyInfo_autoCleanupEnabledCustomDays_shouldReturnCorrectDayCount")
-    void getRetentionPolicyInfo_autoCleanupEnabledCustomDays_shouldReturnCorrectDayCount() {
+    void getRetentionPolicyInfo_autoCleanupEnabledCustomDays_shouldReturnCorrectDayCount() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(7);
 

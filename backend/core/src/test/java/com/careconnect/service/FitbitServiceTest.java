@@ -19,20 +19,20 @@ class FitbitServiceTest {
     private FitbitService fitbitService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         fitbitService = new FitbitService();
     }
 
     @Test
     @DisplayName("constructor_defaultNoArg_createsNonNullInstance")
-    void constructor_defaultNoArg_createsNonNullInstance() {
+    void constructor_defaultNoArg_createsNonNullInstance() throws Exception {
         assertThat(fitbitService).isNotNull();
     }
 
     @Test
     @DisplayName("class_springServiceAnnotation_isInstantiableAsBean")
-    void class_springServiceAnnotation_isInstantiableAsBean() {
+    void class_springServiceAnnotation_isInstantiableAsBean() throws Exception {
         // Verify a second independent instance can be created (bean-style)
         FitbitService anotherInstance = new FitbitService();
         assertThat(anotherInstance).isNotNull();

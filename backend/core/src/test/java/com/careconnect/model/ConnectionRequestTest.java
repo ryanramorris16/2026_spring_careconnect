@@ -11,7 +11,7 @@ class ConnectionRequestTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ConnectionRequest req = new ConnectionRequest();
 
         assertThat(req).isNotNull();
@@ -29,7 +29,7 @@ class ConnectionRequestTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         User caregiver = new User();
         User patient = new User();
         Instant now = Instant.now();
@@ -59,7 +59,7 @@ class ConnectionRequestTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ConnectionRequest req = new ConnectionRequest();
         User caregiver = new User();
         User patient = new User();

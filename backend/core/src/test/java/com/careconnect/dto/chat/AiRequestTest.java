@@ -12,7 +12,7 @@ class AiRequestTest {
     // ─── Record: constructors and accessors ───────────────────────────────────
 
     @Test
-    void constructor_allFields_setsCorrectly() {
+    void constructor_allFields_setsCorrectly() throws Exception {
         AiRequest request = new AiRequest("system context", "user prompt", "openai");
 
         assertThat(request.context()).isEqualTo("system context");
@@ -21,7 +21,7 @@ class AiRequestTest {
     }
 
     @Test
-    void constructor_nullFields_setsNulls() {
+    void constructor_nullFields_setsNulls() throws Exception {
         AiRequest request = new AiRequest(null, "prompt only", null);
 
         assertThat(request.context()).isNull();
@@ -32,7 +32,7 @@ class AiRequestTest {
     // ─── Record: equals() and hashCode() ─────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         AiRequest r1 = new AiRequest("ctx", "ask something", "deepseek");
         AiRequest r2 = new AiRequest("ctx", "ask something", "deepseek");
 
@@ -41,7 +41,7 @@ class AiRequestTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         AiRequest r1 = new AiRequest("ctx1", "prompt1", "openai");
         AiRequest r2 = new AiRequest("ctx2", "prompt2", "deepseek");
 
@@ -49,7 +49,7 @@ class AiRequestTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         AiRequest request = new AiRequest("ctx", "prompt", "openai");
         assertThat(request).isNotEqualTo(null);
     }
@@ -57,7 +57,7 @@ class AiRequestTest {
     // ─── Record: toString() ───────────────────────────────────────────────────
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         AiRequest request = new AiRequest("my context", "my prompt", "openai");
         String str = request.toString();
 
@@ -69,7 +69,7 @@ class AiRequestTest {
     // ─── AnalysisResult nested class ──────────────────────────────────────────
 
     @Test
-    void analysisResult_constructor_setsFields() {
+    void analysisResult_constructor_setsFields() throws Exception {
         AiRequest.AnalysisResult result = new AiRequest.AnalysisResult("raw text content", "s3/key/path");
 
         assertThat(result.rawText).isEqualTo("raw text content");
@@ -77,7 +77,7 @@ class AiRequestTest {
     }
 
     @Test
-    void analysisResult_constructor_nullFields_setsNulls() {
+    void analysisResult_constructor_nullFields_setsNulls() throws Exception {
         AiRequest.AnalysisResult result = new AiRequest.AnalysisResult(null, null);
 
         assertThat(result.rawText).isNull();

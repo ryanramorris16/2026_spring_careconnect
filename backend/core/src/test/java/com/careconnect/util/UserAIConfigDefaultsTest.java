@@ -10,7 +10,7 @@ class UserAIConfigDefaultsTest {
     // ─── Constants ────────────────────────────────────────────────────────────
 
     @Test
-    void constants_areDefinedAndNotBlank() {
+    void constants_areDefinedAndNotBlank() throws Exception {
         assertThat(UserAIConfigDefaults.MEDICAL_SYSTEM_PROMPT).isNotBlank();
         assertThat(UserAIConfigDefaults.CAREGIVER_SYSTEM_PROMPT).isNotBlank();
         assertThat(UserAIConfigDefaults.GENERIC_SYSTEM_PROMPT).isNotBlank();
@@ -23,7 +23,7 @@ class UserAIConfigDefaultsTest {
     // ─── createMedicalDefaultConfig() ────────────────────────────────────────
 
     @Test
-    void createMedicalDefaultConfig_returnsFullyPopulatedConfig() {
+    void createMedicalDefaultConfig_returnsFullyPopulatedConfig() throws Exception {
         UserAIConfig config = UserAIConfigDefaults.createMedicalDefaultConfig(1L, 2L);
 
         assertThat(config).isNotNull();
@@ -45,13 +45,13 @@ class UserAIConfigDefaultsTest {
     // ─── getSystemPrompt() ────────────────────────────────────────────────────
 
     @Test
-    void getSystemPrompt_nullConfig_returnsGenericPrompt() {
+    void getSystemPrompt_nullConfig_returnsGenericPrompt() throws Exception {
         assertThat(UserAIConfigDefaults.getSystemPrompt(null))
                 .isEqualTo(UserAIConfigDefaults.GENERIC_SYSTEM_PROMPT);
     }
 
     @Test
-    void getSystemPrompt_nullSystemPromptAndNullPatientId_returnsGenericPrompt() {
+    void getSystemPrompt_nullSystemPromptAndNullPatientId_returnsGenericPrompt() throws Exception {
         UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt(null);
         config.setPatientId(null);
@@ -61,7 +61,7 @@ class UserAIConfigDefaultsTest {
     }
 
     @Test
-    void getSystemPrompt_nullSystemPromptAndNonNullPatientId_returnsMedicalPrompt() {
+    void getSystemPrompt_nullSystemPromptAndNonNullPatientId_returnsMedicalPrompt() throws Exception {
         UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt(null);
         config.setPatientId(42L);
@@ -71,7 +71,7 @@ class UserAIConfigDefaultsTest {
     }
 
     @Test
-    void getSystemPrompt_blankSystemPromptAndNonNullPatientId_returnsMedicalPrompt() {
+    void getSystemPrompt_blankSystemPromptAndNonNullPatientId_returnsMedicalPrompt() throws Exception {
         UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("   ");
         config.setPatientId(42L);
@@ -81,7 +81,7 @@ class UserAIConfigDefaultsTest {
     }
 
     @Test
-    void getSystemPrompt_blankSystemPromptAndNullPatientId_returnsGenericPrompt() {
+    void getSystemPrompt_blankSystemPromptAndNullPatientId_returnsGenericPrompt() throws Exception {
         UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("   ");
         config.setPatientId(null);
@@ -91,7 +91,7 @@ class UserAIConfigDefaultsTest {
     }
 
     @Test
-    void getSystemPrompt_nonBlankSystemPrompt_returnsIt() {
+    void getSystemPrompt_nonBlankSystemPrompt_returnsIt() throws Exception {
         UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("Custom system prompt for this user");
 
@@ -102,7 +102,7 @@ class UserAIConfigDefaultsTest {
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     @Test
-    void constructor_shouldBeInstantiable() {
+    void constructor_shouldBeInstantiable() throws Exception {
         UserAIConfigDefaults defaults = new UserAIConfigDefaults();
         assertThat(defaults).isNotNull();
     }

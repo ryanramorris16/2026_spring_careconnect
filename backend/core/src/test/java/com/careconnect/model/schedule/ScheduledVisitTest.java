@@ -14,7 +14,7 @@ class ScheduledVisitTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_appliesFieldDefaults() {
+    void noArgConstructor_appliesFieldDefaults() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
 
         assertThat(sv).isNotNull();
@@ -33,7 +33,7 @@ class ScheduledVisitTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         LocalDate date = LocalDate.of(2026, 3, 15);
         LocalTime time = LocalTime.of(9, 0);
         LocalDateTime now = LocalDateTime.now();
@@ -106,28 +106,28 @@ class ScheduledVisitTest {
     // ─── Status-transition methods ────────────────────────────────────────────
 
     @Test
-    void markInProgress_setsStatus() {
+    void markInProgress_setsStatus() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markInProgress();
         assertThat(sv.getStatus()).isEqualTo("In Progress");
     }
 
     @Test
-    void markCompleted_setsStatus() {
+    void markCompleted_setsStatus() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markCompleted();
         assertThat(sv.getStatus()).isEqualTo("Completed");
     }
 
     @Test
-    void markCancelled_setsStatus() {
+    void markCancelled_setsStatus() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markCancelled();
         assertThat(sv.getStatus()).isEqualTo("Cancelled");
     }
 
     @Test
-    void markNoShow_setsStatus() {
+    void markNoShow_setsStatus() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markNoShow();
         assertThat(sv.getStatus()).isEqualTo("No Show");
@@ -136,41 +136,41 @@ class ScheduledVisitTest {
     // ─── Status predicate methods ─────────────────────────────────────────────
 
     @Test
-    void isScheduled_whenStatusIsScheduled_returnsTrue() {
+    void isScheduled_whenStatusIsScheduled_returnsTrue() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         // default status is "Scheduled"
         assertThat(sv.isScheduled()).isTrue();
     }
 
     @Test
-    void isScheduled_whenStatusIsNotScheduled_returnsFalse() {
+    void isScheduled_whenStatusIsNotScheduled_returnsFalse() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markInProgress();
         assertThat(sv.isScheduled()).isFalse();
     }
 
     @Test
-    void isCompleted_whenStatusIsCompleted_returnsTrue() {
+    void isCompleted_whenStatusIsCompleted_returnsTrue() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markCompleted();
         assertThat(sv.isCompleted()).isTrue();
     }
 
     @Test
-    void isCompleted_whenStatusIsNotCompleted_returnsFalse() {
+    void isCompleted_whenStatusIsNotCompleted_returnsFalse() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         assertThat(sv.isCompleted()).isFalse();
     }
 
     @Test
-    void isCancelled_whenStatusIsCancelled_returnsTrue() {
+    void isCancelled_whenStatusIsCancelled_returnsTrue() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         sv.markCancelled();
         assertThat(sv.isCancelled()).isTrue();
     }
 
     @Test
-    void isCancelled_whenStatusIsNotCancelled_returnsFalse() {
+    void isCancelled_whenStatusIsNotCancelled_returnsFalse() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         assertThat(sv.isCancelled()).isFalse();
     }
@@ -178,7 +178,7 @@ class ScheduledVisitTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ScheduledVisit sv = new ScheduledVisit();
         LocalDate date = LocalDate.of(2026, 4, 1);
         LocalTime time = LocalTime.of(14, 30);

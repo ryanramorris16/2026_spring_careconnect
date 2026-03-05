@@ -16,7 +16,7 @@ class GlobalExceptionHandlerTest {
     private GlobalExceptionHandler handler;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         handler = new GlobalExceptionHandler();
     }
 
@@ -24,7 +24,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("handleRegistrationException returns 400 with error message")
-    void handleRegistrationException_returns400WithMessage() {
+    void handleRegistrationException_returns400WithMessage() throws Exception {
         RegistrationException ex = new RegistrationException("email taken");
 
         ResponseEntity<?> response = handler.handleRegistrationException(ex);
@@ -40,7 +40,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("handleAppException returns status from exception with error message")
-    void handleAppException_returnsExceptionStatus() {
+    void handleAppException_returnsExceptionStatus() throws Exception {
         AppException ex = new AppException(HttpStatus.FORBIDDEN, "access denied");
 
         ResponseEntity<?> response = handler.handleAppException(ex);
@@ -56,7 +56,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("handleOtherExceptions returns 500 with generic message")
-    void handleOtherExceptions_returns500WithGenericMessage() {
+    void handleOtherExceptions_returns500WithGenericMessage() throws Exception {
         Exception ex = new Exception("something broke");
 
         ResponseEntity<?> response = handler.handleOtherExceptions(ex);

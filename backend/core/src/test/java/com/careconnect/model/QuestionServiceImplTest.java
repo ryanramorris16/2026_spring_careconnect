@@ -29,7 +29,7 @@ class QuestionServiceImplTest {
     // ─── listQuestions(null) – all questions ──────────────────────────────────
 
     @Test
-    void listQuestions_nullActive_returnsAllOrderedByOrdinal() {
+    void listQuestions_nullActive_returnsAllOrderedByOrdinal() throws Exception {
         Question q1 = Question.builder().id(1L).prompt("Q1").type(QuestionType.TEXT)
                 .active(true).ordinal(1).build();
         Question q2 = Question.builder().id(2L).prompt("Q2").type(QuestionType.YES_NO)
@@ -47,7 +47,7 @@ class QuestionServiceImplTest {
     // ─── listQuestions(true) – active only ────────────────────────────────────
 
     @Test
-    void listQuestions_trueActive_returnsActiveOnlyOrdered() {
+    void listQuestions_trueActive_returnsActiveOnlyOrdered() throws Exception {
         Question q = Question.builder().id(1L).prompt("Active Q").type(QuestionType.TEXT)
                 .active(true).ordinal(1).build();
         when(repo.findAllByActiveTrueOrderByOrdinalAsc()).thenReturn(List.of(q));
@@ -62,7 +62,7 @@ class QuestionServiceImplTest {
     // ─── listQuestions(false) – inactive only ────────────────────────────────
 
     @Test
-    void listQuestions_falseActive_returnsInactiveOnlyOrdered() {
+    void listQuestions_falseActive_returnsInactiveOnlyOrdered() throws Exception {
         Question q = Question.builder().id(2L).prompt("Inactive Q").type(QuestionType.YES_NO)
                 .active(false).ordinal(3).build();
         when(repo.findAllByActiveFalseOrderByOrdinalAsc()).thenReturn(List.of(q));
@@ -77,7 +77,7 @@ class QuestionServiceImplTest {
     // ─── findActiveOrdered() ─────────────────────────────────────────────────
 
     @Test
-    void findActiveOrdered_returnsActiveMappedToDtos() {
+    void findActiveOrdered_returnsActiveMappedToDtos() throws Exception {
         Question q = Question.builder().id(3L).prompt("Active?").type(QuestionType.TRUE_FALSE)
                 .active(true).ordinal(2).build();
         when(repo.findAllByActiveTrueOrderByOrdinalAsc()).thenReturn(List.of(q));
@@ -93,7 +93,7 @@ class QuestionServiceImplTest {
     // ─── getOne() – found ─────────────────────────────────────────────────────
 
     @Test
-    void getOne_existingId_returnsDto() {
+    void getOne_existingId_returnsDto() throws Exception {
         Question q = Question.builder().id(5L).prompt("Pain level?").type(QuestionType.NUMBER)
                 .active(true).ordinal(0).build();
         when(repo.findById(5L)).thenReturn(Optional.of(q));
@@ -108,7 +108,7 @@ class QuestionServiceImplTest {
     // ─── getOne() – not found ─────────────────────────────────────────────────
 
     @Test
-    void getOne_nonExistingId_returnsEmpty() {
+    void getOne_nonExistingId_returnsEmpty() throws Exception {
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
         Optional<QuestionDTO> result = service.getOne(99L);
@@ -119,7 +119,7 @@ class QuestionServiceImplTest {
     // ─── create() ────────────────────────────────────────────────────────────
 
     @Test
-    void create_savesAndReturnsMappedDto() {
+    void create_savesAndReturnsMappedDto() throws Exception {
         QuestionUpsertDTO body = new QuestionUpsertDTO("How do you feel?", QuestionType.TEXT, false, 1);
 
         Question saved = Question.builder().id(10L).prompt("How do you feel?")
@@ -137,7 +137,7 @@ class QuestionServiceImplTest {
     // ─── update() – found ────────────────────────────────────────────────────
 
     @Test
-    void update_existingId_savesAndReturnsMappedDto() {
+    void update_existingId_savesAndReturnsMappedDto() throws Exception {
         QuestionUpsertDTO body = new QuestionUpsertDTO("Updated prompt?", QuestionType.YES_NO, true, 2);
 
         Question existing = Question.builder().id(7L).prompt("Old prompt?")
@@ -158,7 +158,7 @@ class QuestionServiceImplTest {
     // ─── update() – not found ────────────────────────────────────────────────
 
     @Test
-    void update_nonExistingId_returnsEmpty() {
+    void update_nonExistingId_returnsEmpty() throws Exception {
         QuestionUpsertDTO body = new QuestionUpsertDTO("X", QuestionType.TEXT, false, 0);
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
@@ -170,7 +170,7 @@ class QuestionServiceImplTest {
     // ─── setActive() – found ─────────────────────────────────────────────────
 
     @Test
-    void setActive_existingId_updatesActiveFlag() {
+    void setActive_existingId_updatesActiveFlag() throws Exception {
         Question existing = Question.builder().id(4L).prompt("Q?")
                 .type(QuestionType.TEXT).active(true).ordinal(0).build();
         Question deactivated = Question.builder().id(4L).prompt("Q?")
@@ -189,7 +189,7 @@ class QuestionServiceImplTest {
     // ─── setActive() – not found ──────────────────────────────────────────────
 
     @Test
-    void setActive_nonExistingId_returnsEmpty() {
+    void setActive_nonExistingId_returnsEmpty() throws Exception {
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
         Optional<QuestionDTO> result = service.setActive(99L, true);

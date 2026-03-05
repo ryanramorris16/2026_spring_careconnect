@@ -32,7 +32,7 @@ class DocumentProcessingServiceTest {
     private DocumentProcessingService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new DocumentProcessingService();
     }
 
@@ -163,7 +163,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_pdfExtension_routesToPdfHandler")
-    void extractTextContent_pdfExtension_routesToPdfHandler() {
+    void extractTextContent_pdfExtension_routesToPdfHandler() throws Exception {
         UploadedFileDTO dto = file("report.pdf", "application/pdf", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty PDF file: report.pdf]");
@@ -171,7 +171,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_docExtension_routesToDocHandler")
-    void extractTextContent_docExtension_routesToDocHandler() {
+    void extractTextContent_docExtension_routesToDocHandler() throws Exception {
         UploadedFileDTO dto = file("report.doc", "application/msword", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOC file: report.doc]");
@@ -179,7 +179,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_docxExtension_routesToDocxHandler")
-    void extractTextContent_docxExtension_routesToDocxHandler() {
+    void extractTextContent_docxExtension_routesToDocxHandler() throws Exception {
         UploadedFileDTO dto = file("report.docx", "application/vnd.openxmlformats", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOCX file: report.docx]");
@@ -187,7 +187,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_txtExtension_routesToTextHandler")
-    void extractTextContent_txtExtension_routesToTextHandler() {
+    void extractTextContent_txtExtension_routesToTextHandler() throws Exception {
         UploadedFileDTO dto = file("notes.txt", "text/plain", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty text file]");
@@ -195,7 +195,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_mdExtension_routesToTextHandler")
-    void extractTextContent_mdExtension_routesToTextHandler() {
+    void extractTextContent_mdExtension_routesToTextHandler() throws Exception {
         UploadedFileDTO dto = file("readme.md", "text/markdown", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty text file]");
@@ -203,7 +203,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_textExtension_routesToTextHandler")
-    void extractTextContent_textExtension_routesToTextHandler() {
+    void extractTextContent_textExtension_routesToTextHandler() throws Exception {
         UploadedFileDTO dto = file("readme.text", "text/plain", "Hello");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("Hello");
@@ -211,7 +211,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_jsonExtension_routesToJsonHandler")
-    void extractTextContent_jsonExtension_routesToJsonHandler() {
+    void extractTextContent_jsonExtension_routesToJsonHandler() throws Exception {
         UploadedFileDTO dto = file("data.json", "application/json", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty JSON file]");
@@ -219,7 +219,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_csvExtension_routesToCsvHandler")
-    void extractTextContent_csvExtension_routesToCsvHandler() {
+    void extractTextContent_csvExtension_routesToCsvHandler() throws Exception {
         UploadedFileDTO dto = file("data.csv", "text/csv", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty CSV file]");
@@ -227,7 +227,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_unknownExtension_routesToGenericHandler")
-    void extractTextContent_unknownExtension_routesToGenericHandler() {
+    void extractTextContent_unknownExtension_routesToGenericHandler() throws Exception {
         UploadedFileDTO dto = file("archive.xyz", "application/octet", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty file: archive.xyz]");
@@ -237,7 +237,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameTextContentType_routesToTextHandler")
-    void extractTextContent_nullFilenameTextContentType_routesToTextHandler() {
+    void extractTextContent_nullFilenameTextContentType_routesToTextHandler() throws Exception {
         UploadedFileDTO dto = file(null, "text/plain", "Hello world");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("Hello world");
@@ -245,7 +245,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameImageContentType_routesToGeneric")
-    void extractTextContent_nullFilenameImageContentType_routesToGeneric() {
+    void extractTextContent_nullFilenameImageContentType_routesToGeneric() throws Exception {
         UploadedFileDTO dto = file(null, "image/png", "");
         String result = service.extractTextContent(dto);
         assertThat(result).startsWith("[Empty file: null]");
@@ -253,7 +253,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenamePdfContentType_routesToPdf")
-    void extractTextContent_nullFilenamePdfContentType_routesToPdf() {
+    void extractTextContent_nullFilenamePdfContentType_routesToPdf() throws Exception {
         UploadedFileDTO dto = file(null, "application/pdf", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty PDF file: null]");
@@ -261,7 +261,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameJsonContentType_routesToJson")
-    void extractTextContent_nullFilenameJsonContentType_routesToJson() {
+    void extractTextContent_nullFilenameJsonContentType_routesToJson() throws Exception {
         UploadedFileDTO dto = file(null, "application/json", "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty JSON file]");
@@ -269,7 +269,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameCsvContentType_routesToTextHandler")
-    void extractTextContent_nullFilenameCsvContentType_routesToCsv() {
+    void extractTextContent_nullFilenameCsvContentType_routesToCsv() throws Exception {
         // "text/csv" starts with "text/", so getFileType returns "text" before
         // reaching the "text/csv" check, routing to the text handler
         UploadedFileDTO dto = file(null, "text/csv", "");
@@ -279,7 +279,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameDocxContentType_routesToDocx")
-    void extractTextContent_nullFilenameDocxContentType_routesToDocx() {
+    void extractTextContent_nullFilenameDocxContentType_routesToDocx() throws Exception {
         UploadedFileDTO dto = file(null,
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "");
         String result = service.extractTextContent(dto);
@@ -288,7 +288,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameMswordContentType_routesToDoc")
-    void extractTextContent_nullFilenameMswordContentType_routesToDoc() {
+    void extractTextContent_nullFilenameMswordContentType_routesToDoc() throws Exception {
         UploadedFileDTO dto = file(null, "application/msword", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOC file: null]");
@@ -296,7 +296,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_nullFilenameNullContentType_routesToGeneric")
-    void extractTextContent_nullFilenameNullContentType_routesToGeneric() {
+    void extractTextContent_nullFilenameNullContentType_routesToGeneric() throws Exception {
         UploadedFileDTO dto = file(null, null, "");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty file: null]");
@@ -306,7 +306,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractPdfContent_nullContent_returnsEmptyMessage")
-    void extractPdfContent_nullContent_returnsEmptyMessage() {
+    void extractPdfContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.pdf", "application/pdf", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty PDF file: doc.pdf]");
@@ -314,7 +314,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractPdfContent_blankContent_returnsEmptyMessage")
-    void extractPdfContent_blankContent_returnsEmptyMessage() {
+    void extractPdfContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.pdf", "application/pdf", "   ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty PDF file: doc.pdf]");
@@ -322,7 +322,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractPdfContent_invalidBase64_returnsErrorMessage")
-    void extractPdfContent_invalidBase64_returnsErrorMessage() {
+    void extractPdfContent_invalidBase64_returnsErrorMessage() throws Exception {
         UploadedFileDTO dto = file("doc.pdf", "application/pdf", "NOT_VALID_B64!!!");
         String result = service.extractTextContent(dto);
         assertThat(result).startsWith("[Error extracting PDF content:");
@@ -359,7 +359,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocContent_nullContent_returnsEmptyMessage")
-    void extractDocContent_nullContent_returnsEmptyMessage() {
+    void extractDocContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.doc", "application/msword", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOC file: doc.doc]");
@@ -367,7 +367,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocContent_blankContent_returnsEmptyMessage")
-    void extractDocContent_blankContent_returnsEmptyMessage() {
+    void extractDocContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.doc", "application/msword", "  ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOC file: doc.doc]");
@@ -375,7 +375,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocContent_invalidBinary_returnsError")
-    void extractDocContent_invalidBinary_returnsError() {
+    void extractDocContent_invalidBinary_returnsError() throws Exception {
         String bogus = Base64.getEncoder().encodeToString("not a doc file".getBytes());
         UploadedFileDTO dto = file("doc.doc", "application/msword", bogus);
         String result = service.extractTextContent(dto);
@@ -386,7 +386,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocxContent_nullContent_returnsEmptyMessage")
-    void extractDocxContent_nullContent_returnsEmptyMessage() {
+    void extractDocxContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.docx", "application/vnd.openxmlformats", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOCX file: doc.docx]");
@@ -394,7 +394,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocxContent_blankContent_returnsEmptyMessage")
-    void extractDocxContent_blankContent_returnsEmptyMessage() {
+    void extractDocxContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("doc.docx", "application/vnd.openxmlformats", "  ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty DOCX file: doc.docx]");
@@ -402,7 +402,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractDocxContent_invalidBinary_returnsError")
-    void extractDocxContent_invalidBinary_returnsError() {
+    void extractDocxContent_invalidBinary_returnsError() throws Exception {
         String bogus = Base64.getEncoder().encodeToString("not a docx file".getBytes());
         UploadedFileDTO dto = file("doc.docx", "application/vnd.openxmlformats", bogus);
         String result = service.extractTextContent(dto);
@@ -440,7 +440,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_nullContent_returnsEmptyMessage")
-    void extractTextFileContent_nullContent_returnsEmptyMessage() {
+    void extractTextFileContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("notes.txt", "text/plain", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty text file]");
@@ -448,7 +448,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_blankContent_returnsEmptyMessage")
-    void extractTextFileContent_blankContent_returnsEmptyMessage() {
+    void extractTextFileContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("notes.txt", "text/plain", "  ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty text file]");
@@ -456,7 +456,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_plainText_returnedAsIs")
-    void extractTextFileContent_plainText_returnedAsIs() {
+    void extractTextFileContent_plainText_returnedAsIs() throws Exception {
         UploadedFileDTO dto = file("notes.txt", "text/plain", "Hello CareConnect");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("Hello CareConnect");
@@ -464,7 +464,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_base64Content_decoded")
-    void extractTextFileContent_base64Content_decoded() {
+    void extractTextFileContent_base64Content_decoded() throws Exception {
         StringBuilder raw = new StringBuilder();
         while (raw.length() < 200) {
             raw.append("CareConnect patient notes are important. ");
@@ -477,7 +477,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_longContent_truncated")
-    void extractTextFileContent_longContent_truncated() {
+    void extractTextFileContent_longContent_truncated() throws Exception {
         String longText = longPlain(10000);
         UploadedFileDTO dto = file("notes.txt", "text/plain", longText);
         String result = service.extractTextContent(dto);
@@ -487,7 +487,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_shortString_notBase64")
-    void extractTextFileContent_shortString_notBase64() {
+    void extractTextFileContent_shortString_notBase64() throws Exception {
         UploadedFileDTO dto = file("notes.txt", "text/plain", "Short text");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("Short text");
@@ -495,7 +495,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextFileContent_nonBase64Pattern_notDecoded")
-    void extractTextFileContent_nonBase64Pattern_notDecoded() {
+    void extractTextFileContent_nonBase64Pattern_notDecoded() throws Exception {
         StringBuilder sb = new StringBuilder();
         while (sb.length() < 150) {
             sb.append("This has spaces and punctuation! ");
@@ -509,7 +509,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractJsonContent_nullContent_returnsEmptyMessage")
-    void extractJsonContent_nullContent_returnsEmptyMessage() {
+    void extractJsonContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("data.json", "application/json", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty JSON file]");
@@ -517,7 +517,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractJsonContent_blankContent_returnsEmptyMessage")
-    void extractJsonContent_blankContent_returnsEmptyMessage() {
+    void extractJsonContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("data.json", "application/json", "  ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty JSON file]");
@@ -525,7 +525,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractJsonContent_plainJson_formatted")
-    void extractJsonContent_plainJson_formatted() {
+    void extractJsonContent_plainJson_formatted() throws Exception {
         String json = "{\"name\":\"test\"}";
         UploadedFileDTO dto = file("data.json", "application/json", json);
         String result = service.extractTextContent(dto);
@@ -535,7 +535,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractJsonContent_base64Json_decodedAndFormatted")
-    void extractJsonContent_base64Json_decodedAndFormatted() {
+    void extractJsonContent_base64Json_decodedAndFormatted() throws Exception {
         StringBuilder raw = new StringBuilder();
         raw.append("{\"key\":\"");
         while (raw.length() < 200) {
@@ -550,7 +550,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractJsonContent_longJson_truncated")
-    void extractJsonContent_longJson_truncated() {
+    void extractJsonContent_longJson_truncated() throws Exception {
         String longJson = longPlain(10000);
         UploadedFileDTO dto = file("data.json", "application/json", longJson);
         String result = service.extractTextContent(dto);
@@ -561,7 +561,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractCsvContent_nullContent_returnsEmptyMessage")
-    void extractCsvContent_nullContent_returnsEmptyMessage() {
+    void extractCsvContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("data.csv", "text/csv", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty CSV file]");
@@ -569,7 +569,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractCsvContent_blankContent_returnsEmptyMessage")
-    void extractCsvContent_blankContent_returnsEmptyMessage() {
+    void extractCsvContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("data.csv", "text/csv", " ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty CSV file]");
@@ -577,7 +577,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractCsvContent_plainCsv_returned")
-    void extractCsvContent_plainCsv_returned() {
+    void extractCsvContent_plainCsv_returned() throws Exception {
         String csv = "name,age\nAlice,30\nBob,25";
         UploadedFileDTO dto = file("data.csv", "text/csv", csv);
         String result = service.extractTextContent(dto);
@@ -586,7 +586,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractCsvContent_base64Csv_decoded")
-    void extractCsvContent_base64Csv_decoded() {
+    void extractCsvContent_base64Csv_decoded() throws Exception {
         StringBuilder raw = new StringBuilder();
         raw.append("col1,col2\n");
         while (raw.length() < 200) {
@@ -600,7 +600,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractCsvContent_longCsv_truncated")
-    void extractCsvContent_longCsv_truncated() {
+    void extractCsvContent_longCsv_truncated() throws Exception {
         String longCsv = longPlain(10000);
         UploadedFileDTO dto = file("data.csv", "text/csv", longCsv);
         String result = service.extractTextContent(dto);
@@ -611,7 +611,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_nullContent_returnsEmptyMessage")
-    void extractGenericContent_nullContent_returnsEmptyMessage() {
+    void extractGenericContent_nullContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("file.xyz", "application/octet", null);
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty file: file.xyz]");
@@ -619,7 +619,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_blankContent_returnsEmptyMessage")
-    void extractGenericContent_blankContent_returnsEmptyMessage() {
+    void extractGenericContent_blankContent_returnsEmptyMessage() throws Exception {
         UploadedFileDTO dto = file("file.xyz", "application/octet", "   ");
         String result = service.extractTextContent(dto);
         assertThat(result).isEqualTo("[Empty file: file.xyz]");
@@ -627,7 +627,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_plainText_extractedViaTika")
-    void extractGenericContent_plainText_extractedViaTika() {
+    void extractGenericContent_plainText_extractedViaTika() throws Exception {
         UploadedFileDTO dto = file("file.xyz", "application/octet", "Some readable text");
         String result = service.extractTextContent(dto);
         assertThat(result).contains("Some readable text");
@@ -635,7 +635,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_longContent_truncated")
-    void extractGenericContent_longContent_truncated() {
+    void extractGenericContent_longContent_truncated() throws Exception {
         String longText = longPlain(10000);
         UploadedFileDTO dto = file("file.xyz", "application/octet", longText);
         String result = service.extractTextContent(dto);
@@ -694,7 +694,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_base64Content_decodedBeforeTika")
-    void extractGenericContent_base64Content_decodedBeforeTika() {
+    void extractGenericContent_base64Content_decodedBeforeTika() throws Exception {
         StringBuilder raw = new StringBuilder();
         while (raw.length() < 200) {
             raw.append("Readable generic text content here. ");
@@ -709,7 +709,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_base64DecodeFails_returnsBinaryFileMessage")
-    void extractGenericContent_base64DecodeFails_returnsBinaryFileMessage() {
+    void extractGenericContent_base64DecodeFails_returnsBinaryFileMessage() throws Exception {
         // Build a string > 100 chars that matches the base64 regex in the sample
         // but will fail full decode. We use a valid base64 string and then make
         // isBase64Encoded return true, but force the inner decode to fail.
@@ -734,7 +734,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("isBase64Encoded_nullContent_returnsFalse")
-    void isBase64Encoded_nullContent_returnsFalse() {
+    void isBase64Encoded_nullContent_returnsFalse() throws Exception {
         // Text handler with null content triggers the null check in isBase64Encoded
         // indirectly - but content null is caught earlier. Test via CSV with short non-b64.
         UploadedFileDTO dto = file("data.csv", "text/csv", "short");
@@ -744,7 +744,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("isBase64Encoded_emptyContent_returnsFalse")
-    void isBase64Encoded_emptyContent_returnsFalse() {
+    void isBase64Encoded_emptyContent_returnsFalse() throws Exception {
         // The empty check happens before isBase64Encoded, but we verify the flow
         UploadedFileDTO dto = file("notes.txt", "text/plain", "");
         String result = service.extractTextContent(dto);
@@ -753,7 +753,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("isBase64Encoded_longSampleOver1000Chars_checksSubstring")
-    void isBase64Encoded_longSampleOver1000Chars_checksSubstring() {
+    void isBase64Encoded_longSampleOver1000Chars_checksSubstring() throws Exception {
         // Create valid base64 content longer than 1000 chars to exercise the
         // substring(0, 1000) branch in isBase64Encoded
         StringBuilder raw = new StringBuilder();
@@ -769,7 +769,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("isBase64Encoded_validBase64CharsButDecodeThrows_returnsFalse")
-    void isBase64Encoded_validBase64CharsButDecodeThrows_returnsFalse() {
+    void isBase64Encoded_validBase64CharsButDecodeThrows_returnsFalse() throws Exception {
         // Create a string > 100 chars with only valid base64 chars that passes
         // the regex but fails the actual decode attempt at line 376.
         // A string of 'A' repeated 101 times is valid base64 chars but length
@@ -797,7 +797,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractGenericContent_excessiveWhitespace_cleaned")
-    void extractGenericContent_excessiveWhitespace_cleaned() {
+    void extractGenericContent_excessiveWhitespace_cleaned() throws Exception {
         UploadedFileDTO dto = file("file.xyz", "application/octet",
                 "Hello    world   test    content");
         String result = service.extractTextContent(dto);
@@ -808,7 +808,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_exceptionDuringProcessing_returnsErrorMessage")
-    void extractTextContent_exceptionDuringProcessing_returnsErrorMessage() {
+    void extractTextContent_exceptionDuringProcessing_returnsErrorMessage() throws Exception {
         // Create a mock where getFilename() returns a value (so the catch block's
         // log statement works) but getContentType() throws to trigger the catch
         UploadedFileDTO dto = mock(UploadedFileDTO.class);
@@ -821,7 +821,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_exceptionInProcessing_andGetFilenameThrows_rethrows")
-    void extractTextContent_exceptionInProcessing_andGetFilenameThrows_rethrows() {
+    void extractTextContent_exceptionInProcessing_andGetFilenameThrows_rethrows() throws Exception {
         // When getFilename() always throws, the catch block at line 71 calls
         // file.getFilename() again for logging, which re-throws the exception
         UploadedFileDTO dto = mock(UploadedFileDTO.class);
@@ -834,7 +834,7 @@ class DocumentProcessingServiceTest {
 
     @Test
     @DisplayName("extractTextContent_imageFileType_routesToDefaultGenericHandler")
-    void extractTextContent_imageFileType_routesToDefaultGenericHandler() {
+    void extractTextContent_imageFileType_routesToDefaultGenericHandler() throws Exception {
         // When filename is null and contentType is "image/png", getFileType returns "image"
         // which doesn't match any switch case, falling through to default (generic handler)
         UploadedFileDTO dto = file(null, "image/png", "image data here");

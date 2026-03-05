@@ -18,7 +18,7 @@ class OutlookParserTest {
     private OutlookParser outlookParser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         outlookParser = new OutlookParser();
     }
@@ -27,7 +27,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_validRaw_returnsUSPSDigestWithCorrectDate")
-    void toDomain_validRaw_returnsUSPSDigestWithCorrectDate() {
+    void toDomain_validRaw_returnsUSPSDigestWithCorrectDate() throws Exception {
         Instant received = Instant.parse("2026-02-27T10:30:00Z");
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 "<html>digest content</html>",
@@ -48,7 +48,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawWithEmptyHtml_returnsUSPSDigestWithEmptyLists")
-    void toDomain_rawWithEmptyHtml_returnsUSPSDigestWithEmptyLists() {
+    void toDomain_rawWithEmptyHtml_returnsUSPSDigestWithEmptyLists() throws Exception {
         Instant received = Instant.parse("2026-01-15T08:00:00Z");
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 "",
@@ -66,7 +66,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawWithNullHtml_returnsUSPSDigestSuccessfully")
-    void toDomain_rawWithNullHtml_returnsUSPSDigestSuccessfully() {
+    void toDomain_rawWithNullHtml_returnsUSPSDigestSuccessfully() throws Exception {
         Instant received = Instant.parse("2026-03-01T14:45:00Z");
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 null,
@@ -84,7 +84,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawWithEpochReceived_returnsDigestAtEpoch")
-    void toDomain_rawWithEpochReceived_returnsDigestAtEpoch() {
+    void toDomain_rawWithEpochReceived_returnsDigestAtEpoch() throws Exception {
         Instant epoch = Instant.EPOCH;
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 "<html></html>",
@@ -104,7 +104,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawWithMultipleCids_returnsDigestIgnoringCids")
-    void toDomain_rawWithMultipleCids_returnsDigestIgnoringCids() {
+    void toDomain_rawWithMultipleCids_returnsDigestIgnoringCids() throws Exception {
         Instant received = Instant.parse("2026-06-15T20:00:00Z");
         Map<String, String> cids = Map.of(
                 "cid1", "data:image/png;base64,abc",
@@ -127,7 +127,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawReceivedDatePreservesUtcOffset_returnsZeroOffset")
-    void toDomain_rawReceivedDatePreservesUtcOffset_returnsZeroOffset() {
+    void toDomain_rawReceivedDatePreservesUtcOffset_returnsZeroOffset() throws Exception {
         Instant received = Instant.parse("2026-12-31T23:59:59Z");
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 "<html>year end</html>",
@@ -149,7 +149,7 @@ class OutlookParserTest {
 
     @Test
     @DisplayName("toDomain_rawWithRecentInstant_returnsDigestWithMatchingTimestamp")
-    void toDomain_rawWithRecentInstant_returnsDigestWithMatchingTimestamp() {
+    void toDomain_rawWithRecentInstant_returnsDigestWithMatchingTimestamp() throws Exception {
         Instant now = Instant.now();
         OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(
                 "<div>recent digest</div>",

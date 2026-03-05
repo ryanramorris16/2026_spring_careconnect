@@ -43,7 +43,7 @@ class SymptomControllerTest {
     private static final String USER_EMAIL = "user@test.com";
 
     @AfterEach
-    void clearSecurity() {
+    void clearSecurity() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
@@ -72,7 +72,7 @@ class SymptomControllerTest {
     // ─── create ───────────────────────────────────────────────────────────────
 
     @Test
-    void create_nullPatientId_returnsForbidden() {
+    void create_nullPatientId_returnsForbidden() throws Exception {
         SymptomDTO dto = dto(null);
 
         ResponseEntity<?> response = controller.create(dto);
@@ -81,7 +81,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void create_noSecurityContext_hasAccessReturnsFalse_returnsForbidden() {
+    void create_noSecurityContext_hasAccessReturnsFalse_returnsForbidden() throws Exception {
         // No security context set → NullPointerException in hasAccessToPatient → returns false
         SymptomDTO dto = dto(PATIENT_ID);
 
@@ -91,7 +91,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void create_patientNotFound_returnsForbidden() {
+    void create_patientNotFound_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
@@ -103,7 +103,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void create_patientRole_sameUser_returnsCreated() {
+    void create_patientRole_sameUser_returnsCreated() throws Exception {
         setUpSecurity(USER_EMAIL);
         User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
         Patient patient = patientWithUser(user);
@@ -118,7 +118,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void create_patientRole_differentUser_returnsForbidden() {
+    void create_patientRole_differentUser_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
         User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
@@ -132,7 +132,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void create_adminRole_serviceThrowsException_returnsBadRequest() {
+    void create_adminRole_serviceThrowsException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
         User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
         Patient patient = patientWithUser(adminUser);
@@ -148,7 +148,7 @@ class SymptomControllerTest {
     // ─── update ───────────────────────────────────────────────────────────────
 
     @Test
-    void update_symptomNotFound_returnsNotFound() {
+    void update_symptomNotFound_returnsNotFound() throws Exception {
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
@@ -157,7 +157,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void update_noAccess_returnsForbidden() {
+    void update_noAccess_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
         User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
@@ -173,7 +173,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void update_adminAccess_returnsOk() {
+    void update_adminAccess_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
         User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
         Patient patient = patientWithUser(adminUser);
@@ -190,7 +190,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void update_serviceException_returnsBadRequest() {
+    void update_serviceException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
         User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
         Patient patient = patientWithUser(adminUser);
@@ -208,7 +208,7 @@ class SymptomControllerTest {
     // ─── list ─────────────────────────────────────────────────────────────────
 
     @Test
-    void list_caregiverAccessDenied_returnsForbidden() {
+    void list_caregiverAccessDenied_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
         Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
@@ -222,7 +222,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void list_caregiverAccessGranted_returnsOk() {
+    void list_caregiverAccessGranted_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
         User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
         Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
@@ -237,7 +237,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void list_familyMemberAccessGranted_returnsOk() {
+    void list_familyMemberAccessGranted_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
         User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
         Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
@@ -252,7 +252,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void list_familyMemberAccessDenied_returnsForbidden() {
+    void list_familyMemberAccessDenied_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
         Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
@@ -266,7 +266,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void list_userRepoThrowsException_returnsForbidden() {
+    void list_userRepoThrowsException_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         when(userRepository.findByEmail(USER_EMAIL)).thenThrow(new RuntimeException("DB down"));
 
@@ -276,7 +276,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void list_nullRoleUser_returnsForbidden() {
+    void list_nullRoleUser_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         // Mock a user whose getRole() returns null — falls through all role checks to "return false"
         User mockUser = mock(User.class);
@@ -293,7 +293,7 @@ class SymptomControllerTest {
     // ─── delete ───────────────────────────────────────────────────────────────
 
     @Test
-    void delete_symptomNotFound_returnsNotFound() {
+    void delete_symptomNotFound_returnsNotFound() throws Exception {
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
@@ -302,7 +302,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void delete_noAccess_returnsForbidden() {
+    void delete_noAccess_returnsForbidden() throws Exception {
         // No security context → NPE → access = false
         SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
@@ -313,7 +313,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void delete_success_returnsOk() {
+    void delete_success_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
         User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
         Patient patient = patientWithUser(adminUser);
@@ -332,7 +332,7 @@ class SymptomControllerTest {
     }
 
     @Test
-    void delete_serviceException_returnsBadRequest() {
+    void delete_serviceException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
         User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
         Patient patient = patientWithUser(adminUser);

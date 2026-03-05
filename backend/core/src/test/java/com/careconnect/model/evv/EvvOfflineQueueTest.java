@@ -14,7 +14,7 @@ class EvvOfflineQueueTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         EvvOfflineQueue q = new EvvOfflineQueue();
 
         assertThat(q).isNotNull();
@@ -33,7 +33,7 @@ class EvvOfflineQueueTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         OffsetDateTime now = OffsetDateTime.now();
         Map<String, Object> recordData = new HashMap<>();
         recordData.put("serviceType", "PERSONAL_CARE");
@@ -95,7 +95,7 @@ class EvvOfflineQueueTest {
     // ─── markSyncing() ────────────────────────────────────────────────────────
 
     @Test
-    void markSyncing_incrementsAttemptsAndSetsStatus() {
+    void markSyncing_incrementsAttemptsAndSetsStatus() throws Exception {
         EvvOfflineQueue q = new EvvOfflineQueue();
         q.setSyncAttempts(0);
 
@@ -109,7 +109,7 @@ class EvvOfflineQueueTest {
     // ─── markSynced() ─────────────────────────────────────────────────────────
 
     @Test
-    void markSynced_setsSyncedStatus() {
+    void markSynced_setsSyncedStatus() throws Exception {
         EvvOfflineQueue q = new EvvOfflineQueue();
 
         q.markSynced();
@@ -120,7 +120,7 @@ class EvvOfflineQueueTest {
     // ─── markFailed() ─────────────────────────────────────────────────────────
 
     @Test
-    void markFailed_setsFailedStatusAndError() {
+    void markFailed_setsFailedStatusAndError() throws Exception {
         EvvOfflineQueue q = new EvvOfflineQueue();
 
         q.markFailed("Network timeout");

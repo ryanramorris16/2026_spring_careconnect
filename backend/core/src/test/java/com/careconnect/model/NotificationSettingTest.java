@@ -12,7 +12,7 @@ class NotificationSettingTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         NotificationSetting ns = new NotificationSetting();
 
         assertThat(ns).isNotNull();
@@ -23,7 +23,7 @@ class NotificationSettingTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults_allTrue() {
+    void builder_defaults_allTrue() throws Exception {
         NotificationSetting ns = NotificationSetting.builder().userId(1L).build();
 
         assertThat(ns.isGamification()).isTrue();
@@ -37,7 +37,7 @@ class NotificationSettingTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Instant now = Instant.now();
 
         NotificationSetting ns = NotificationSetting.builder()
@@ -95,7 +95,7 @@ class NotificationSettingTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         NotificationSetting ns = new NotificationSetting();
         Instant now = Instant.now();
 
@@ -123,7 +123,7 @@ class NotificationSettingTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Instant now = Instant.now();
         NotificationSetting n1 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();
         NotificationSetting n2 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();

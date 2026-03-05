@@ -12,7 +12,7 @@ class AnswerTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Answer answer = new Answer();
 
         assertThat(answer).isNotNull();
@@ -27,7 +27,7 @@ class AnswerTest {
     // ─── Builder default: createdAt ───────────────────────────────────────────
 
     @Test
-    void builder_createdAt_defaultsToNow() {
+    void builder_createdAt_defaultsToNow() throws Exception {
         Answer answer = Answer.builder()
                 .checkIn(new CheckIn())
                 .question(new Question())
@@ -39,7 +39,7 @@ class AnswerTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         CheckIn checkIn = new CheckIn();
         Question question = new Question();
         OffsetDateTime now = OffsetDateTime.now();
@@ -66,7 +66,7 @@ class AnswerTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Answer answer = new Answer();
         CheckIn checkIn = new CheckIn();
         Question question = new Question();
@@ -92,7 +92,7 @@ class AnswerTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         OffsetDateTime now = OffsetDateTime.now();
         Answer a1 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
         Answer a2 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
@@ -102,7 +102,7 @@ class AnswerTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         Answer a1 = Answer.builder().id(1L).build();
         Answer a2 = Answer.builder().id(2L).build();
 

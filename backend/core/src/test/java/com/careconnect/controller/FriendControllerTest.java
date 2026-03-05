@@ -6,7 +6,9 @@ import com.careconnect.model.User;
 import com.careconnect.repository.FriendRequestRepository;
 import com.careconnect.repository.FriendshipRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.GamificationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +33,9 @@ class FriendControllerTest {
     @Mock private FriendRequestRepository friendRequestRepo;
     @Mock private UserRepository userRepo;
     @Mock private FriendshipRepository friendshipRepository;
+
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private FriendController controller;
@@ -60,7 +65,7 @@ class FriendControllerTest {
     // ─── sendFriendRequest ────────────────────────────────────────────────────
 
     @Test
-    void sendFriendRequest_alreadyExists_returnsConflict() {
+    void sendFriendRequest_alreadyExists_returnsConflict() throws Exception {
         when(friendRequestRepo.existsByFromUserIdAndToUserId(FROM_USER_ID, TO_USER_ID)).thenReturn(true);
 
         Map<String, Long> payload = Map.of("fromUserId", FROM_USER_ID, "toUserId", TO_USER_ID);
@@ -72,7 +77,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void sendFriendRequest_new_savesAndReturnsCreated() {
+    void sendFriendRequest_new_savesAndReturnsCreated() throws Exception {
         when(friendRequestRepo.existsByFromUserIdAndToUserId(FROM_USER_ID, TO_USER_ID)).thenReturn(false);
         FriendRequest saved = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.save(any(FriendRequest.class))).thenReturn(saved);
@@ -93,7 +98,7 @@ class FriendControllerTest {
     // ─── getPendingRequests ───────────────────────────────────────────────────
 
     @Test
-    void getPendingRequests_noRequests_returnsEmptyList() {
+    void getPendingRequests_noRequests_returnsEmptyList() throws Exception {
         when(friendRequestRepo.findByToUserIdAndStatus(TO_USER_ID, "pending")).thenReturn(List.of());
 
         ResponseEntity<List<Map<String, Object>>> response = controller.getPendingRequests(TO_USER_ID);
@@ -103,7 +108,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getPendingRequests_withRequest_userFound_includesNameAndEmail() {
+    void getPendingRequests_withRequest_userFound_includesNameAndEmail() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findByToUserIdAndStatus(TO_USER_ID, "pending")).thenReturn(List.of(req));
         User sender = makeUser(FROM_USER_ID, "Alice", "alice@example.com");
@@ -123,7 +128,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getPendingRequests_withRequest_userNotFound_noNameEmail() {
+    void getPendingRequests_withRequest_userNotFound_noNameEmail() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findByToUserIdAndStatus(TO_USER_ID, "pending")).thenReturn(List.of(req));
         when(userRepo.findById(FROM_USER_ID)).thenReturn(Optional.empty());
@@ -140,7 +145,7 @@ class FriendControllerTest {
     // ─── acceptFriendRequest ──────────────────────────────────────────────────
 
     @Test
-    void acceptFriendRequest_notFound_returnsNotFound() {
+    void acceptFriendRequest_notFound_returnsNotFound() throws Exception {
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.acceptFriendRequest(Map.of("requestId", REQUEST_ID));
@@ -150,7 +155,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void acceptFriendRequest_alreadyHandled_returnsConflict() {
+    void acceptFriendRequest_alreadyHandled_returnsConflict() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         req.setStatus("accepted");
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
@@ -162,7 +167,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void acceptFriendRequest_fromUserNotFound_returnsBadRequest() {
+    void acceptFriendRequest_fromUserNotFound_returnsBadRequest() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
         when(friendRequestRepo.save(any())).thenReturn(req);
@@ -175,7 +180,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void acceptFriendRequest_toUserNotFound_returnsBadRequest() {
+    void acceptFriendRequest_toUserNotFound_returnsBadRequest() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
         when(friendRequestRepo.save(any())).thenReturn(req);
@@ -189,7 +194,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void acceptFriendRequest_firstFriend_unlocksAchievement() {
+    void acceptFriendRequest_firstFriend_unlocksAchievement() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
         when(friendRequestRepo.save(any())).thenReturn(req);
@@ -216,7 +221,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void acceptFriendRequest_notFirstFriend_noAchievement() {
+    void acceptFriendRequest_notFirstFriend_noAchievement() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
         when(friendRequestRepo.save(any())).thenReturn(req);
@@ -239,7 +244,7 @@ class FriendControllerTest {
     // ─── rejectFriendRequest ──────────────────────────────────────────────────
 
     @Test
-    void rejectFriendRequest_notFound_returnsNotFound() {
+    void rejectFriendRequest_notFound_returnsNotFound() throws Exception {
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.rejectFriendRequest(Map.of("requestId", REQUEST_ID));
@@ -249,7 +254,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void rejectFriendRequest_alreadyHandled_returnsConflict() {
+    void rejectFriendRequest_alreadyHandled_returnsConflict() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         req.setStatus("rejected");
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
@@ -261,7 +266,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void rejectFriendRequest_success_savesRejectedStatusAndReturnsOk() {
+    void rejectFriendRequest_success_savesRejectedStatusAndReturnsOk() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         when(friendRequestRepo.findById(REQUEST_ID)).thenReturn(Optional.of(req));
         when(friendRequestRepo.save(any())).thenReturn(req);
@@ -276,7 +281,7 @@ class FriendControllerTest {
     // ─── getFriends ───────────────────────────────────────────────────────────
 
     @Test
-    void getFriends_noAcceptedRequests_returnsEmpty() {
+    void getFriends_noAcceptedRequests_returnsEmpty() throws Exception {
         when(friendRequestRepo.findByStatus("accepted")).thenReturn(List.of());
 
         ResponseEntity<List<Map<String, Object>>> response = controller.getFriends(FROM_USER_ID);
@@ -286,7 +291,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getFriends_userIsFromUser_returnsPeer() {
+    void getFriends_userIsFromUser_returnsPeer() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         req.setStatus("accepted");
         when(friendRequestRepo.findByStatus("accepted")).thenReturn(List.of(req));
@@ -304,7 +309,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getFriends_userIsToUser_returnsPeer() {
+    void getFriends_userIsToUser_returnsPeer() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         req.setStatus("accepted");
         when(friendRequestRepo.findByStatus("accepted")).thenReturn(List.of(req));
@@ -319,7 +324,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getFriends_peerNotFoundInRepo_skipsEntry() {
+    void getFriends_peerNotFoundInRepo_skipsEntry() throws Exception {
         FriendRequest req = makePendingRequest(REQUEST_ID, FROM_USER_ID, TO_USER_ID);
         req.setStatus("accepted");
         when(friendRequestRepo.findByStatus("accepted")).thenReturn(List.of(req));
@@ -332,7 +337,7 @@ class FriendControllerTest {
     }
 
     @Test
-    void getFriends_requestUnrelatedToUser_notIncluded() {
+    void getFriends_requestUnrelatedToUser_notIncluded() throws Exception {
         Long otherUser1 = 99L;
         Long otherUser2 = 100L;
         FriendRequest req = makePendingRequest(REQUEST_ID, otherUser1, otherUser2);

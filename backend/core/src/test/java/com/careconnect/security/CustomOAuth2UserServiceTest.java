@@ -34,7 +34,7 @@ class CustomOAuth2UserServiceTest {
     private ClientRegistration clientRegistration;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         clientRegistration = mock(ClientRegistration.class);
 
         OAuth2AccessToken accessToken = mock(OAuth2AccessToken.class);

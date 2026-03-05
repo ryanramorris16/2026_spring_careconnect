@@ -42,7 +42,7 @@ class WebMvcConfigTest {
 
     @SuppressWarnings("unchecked")
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Instantiate the config and drive addCorsMappings() against a real CorsRegistry.
         // Extract the resulting CorsConfiguration for "/**" using reflection since
         // getCorsConfigurations() is package-private on CorsRegistry.
@@ -59,14 +59,14 @@ class WebMvcConfigTest {
     // --- CORS Tests ---
 
     @Test
-    void addCorsMappings_MapsAllPaths() {
+    void addCorsMappings_MapsAllPaths() throws Exception {
         // Verifies that the CORS configuration is registered under "/**" so every
         // endpoint is covered by the policy.
         assertNotNull(corsConfig, "Expected CORS configuration for '/**' path mapping");
     }
 
     @Test
-    void addCorsMappings_HasCorrectAllowedOriginPatterns() {
+    void addCorsMappings_HasCorrectAllowedOriginPatterns() throws Exception {
         // Verifies that exactly the four expected origins are allowed:
         // the local dev server (port 50030 and 3000), the Amplify staging URL, and
         // the GitHub Pages URL for the deployed demo site.
@@ -80,7 +80,7 @@ class WebMvcConfigTest {
     }
 
     @Test
-    void addCorsMappings_AllowsCorrectMethods() {
+    void addCorsMappings_AllowsCorrectMethods() throws Exception {
         // Verifies the five HTTP methods (including OPTIONS for CORS preflight) are permitted.
         List<String> methods = corsConfig.getAllowedMethods();
         assertNotNull(methods);
@@ -89,14 +89,14 @@ class WebMvcConfigTest {
     }
 
     @Test
-    void addCorsMappings_AllowsAllHeaders() {
+    void addCorsMappings_AllowsAllHeaders() throws Exception {
         // Verifies that any request header is accepted ("*"), so clients can send
         // custom headers (e.g. Authorization, Content-Type) without being rejected.
         assertEquals(List.of("*"), corsConfig.getAllowedHeaders());
     }
 
     @Test
-    void addCorsMappings_AllowsCredentials() {
+    void addCorsMappings_AllowsCredentials() throws Exception {
         // Verifies that credentialed cross-origin requests (cookies, auth headers) are
         // permitted, which is required for session-based and JWT cookie authentication.
         assertTrue(corsConfig.getAllowCredentials());
@@ -111,7 +111,7 @@ class WebMvcConfigTest {
      * the registry constructor requires them but does not use them in this code path.
      */
     @SuppressWarnings("unchecked")
-    private List<ResourceHandlerRegistration> getRegistrations() {
+    private List<ResourceHandlerRegistration> getRegistrations() throws Exception {
         ResourceHandlerRegistry registry = new ResourceHandlerRegistry(
                 mock(ApplicationContext.class), mock(ServletContext.class));
         webMvcConfig.addResourceHandlers(registry);
@@ -119,7 +119,7 @@ class WebMvcConfigTest {
     }
 
     @Test
-    void addResourceHandlers_RegistersOneHandler() {
+    void addResourceHandlers_RegistersOneHandler() throws Exception {
         // Verifies that exactly one resource handler is registered, preventing
         // accidental duplication or omission of the uploads handler.
         List<ResourceHandlerRegistration> registrations = getRegistrations();
@@ -128,7 +128,7 @@ class WebMvcConfigTest {
     }
 
     @Test
-    void addResourceHandlers_RegistersUploadsPattern() {
+    void addResourceHandlers_RegistersUploadsPattern() throws Exception {
         // Verifies that the handler is mapped to "/uploads/**", the URL prefix under
         // which uploaded user files (images, documents) are served.
         List<ResourceHandlerRegistration> registrations = getRegistrations();
@@ -140,7 +140,7 @@ class WebMvcConfigTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void addResourceHandlers_RegistersCorrectLocation() {
+    void addResourceHandlers_RegistersCorrectLocation() throws Exception {
         // Verifies that the handler serves files from the expected local filesystem path.
         // The "file:" prefix tells Spring to read from an absolute filesystem location
         // rather than the classpath.

@@ -9,7 +9,7 @@ class AmountsTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         Amounts amounts = Amounts.builder()
                 .totalCharges(500.0)
                 .totalAdjustments(50.0)
@@ -24,7 +24,7 @@ class AmountsTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         Amounts amounts = Amounts.builder().build();
 
         assertThat(amounts.getTotalCharges()).isNull();
@@ -36,7 +36,7 @@ class AmountsTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Amounts amounts = Amounts.builder().build();
 
         amounts.setTotalCharges(1000.0);
@@ -53,7 +53,7 @@ class AmountsTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Amounts a1 = Amounts.builder().totalCharges(500.0).total(500.0).build();
         Amounts a2 = Amounts.builder().totalCharges(500.0).total(500.0).build();
 
@@ -62,7 +62,7 @@ class AmountsTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         Amounts a1 = Amounts.builder().totalCharges(500.0).build();
         Amounts a2 = Amounts.builder().totalCharges(999.0).build();
 
@@ -70,7 +70,7 @@ class AmountsTest {
     }
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         Amounts amounts = Amounts.builder().totalCharges(500.0).amountDue(450.0).build();
 
         assertThat(amounts.toString()).contains("500.0");

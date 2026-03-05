@@ -1,6 +1,10 @@
 package com.careconnect.controller;
 
+import com.careconnect.model.User;
+import com.careconnect.security.Role;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.WebSocketNotificationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,13 +27,18 @@ class WebSocketControllerTest {
     @Mock
     private WebSocketNotificationService webSocketNotificationService;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private WebSocketController controller;
 
     // ─── initializeWebSocketService ───────────────────────────────────────────
 
     @Test
-    void initializeWebSocketService_returnsOkWithSuccessTrue() {
+    void initializeWebSocketService_returnsOkWithSuccessTrue() throws Exception {
         ResponseEntity<Map<String, Object>> response = controller.initializeWebSocketService(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -37,7 +47,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void initializeWebSocketService_withRequestBody_returnsOk() {
+    void initializeWebSocketService_withRequestBody_returnsOk() throws Exception {
         ResponseEntity<Map<String, Object>> response =
                 controller.initializeWebSocketService(Map.of("key", "value"));
 
@@ -47,7 +57,7 @@ class WebSocketControllerTest {
     // ─── registerUserForWebSocket ─────────────────────────────────────────────
 
     @Test
-    void registerUser_missingUserId_returnsBadRequest() {
+    void registerUser_missingUserId_returnsBadRequest() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("userId", null);
         request.put("userName", "Alice");
@@ -59,7 +69,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void registerUser_missingUserName_returnsBadRequest() {
+    void registerUser_missingUserName_returnsBadRequest() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("userId", "user-1");
         request.put("userName", null);
@@ -71,7 +81,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void registerUser_validFields_returnsOk() {
+    void registerUser_validFields_returnsOk() throws Exception {
         doNothing().when(webSocketNotificationService).registerUser("user-1", "Alice");
 
         ResponseEntity<Map<String, Object>> response = controller.registerUserForWebSocket(
@@ -84,7 +94,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void registerUser_serviceThrows_returnsBadRequest() {
+    void registerUser_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Registration failed"))
                 .when(webSocketNotificationService).registerUser("bad", "user");
 
@@ -98,7 +108,7 @@ class WebSocketControllerTest {
     // ─── sendCallInvitation ───────────────────────────────────────────────────
 
     @Test
-    void sendCallInvitation_success_returnsOk() {
+    void sendCallInvitation_success_returnsOk() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "rec-1");
         request.put("senderId", "send-1");
@@ -116,7 +126,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendCallInvitation_defaultsApplied_sendsWithDefaults() {
+    void sendCallInvitation_defaultsApplied_sendsWithDefaults() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "rec-2");
         request.put("senderId", "send-2");
@@ -131,7 +141,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendCallInvitation_withIsVideoCallFalse_returnsOk() {
+    void sendCallInvitation_withIsVideoCallFalse_returnsOk() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "rec-5");
         request.put("senderId", "send-5");
@@ -148,10 +158,10 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendCallInvitation_serviceThrows_returnsBadRequest() {
+    void sendCallInvitation_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Connection lost"))
                 .when(webSocketNotificationService)
-                .sendCallInvitation(any(), any(), any(), any(), any(), any());
+                .sendCallInvitation(any(), any(), any(), any(), anyBoolean(), any());
 
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "r");
@@ -168,7 +178,7 @@ class WebSocketControllerTest {
     // ─── sendSMSNotification ──────────────────────────────────────────────────
 
     @Test
-    void sendSMSNotification_success_returnsOk() {
+    void sendSMSNotification_success_returnsOk() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "rec-1");
         request.put("senderId", "send-1");
@@ -184,7 +194,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSMSNotification_defaultMessageType_sendsGeneral() {
+    void sendSMSNotification_defaultMessageType_sendsGeneral() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("recipientId", "rec-3");
         request.put("senderId", "send-3");
@@ -198,7 +208,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSMSNotification_serviceThrows_returnsBadRequest() {
+    void sendSMSNotification_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("SMS error"))
                 .when(webSocketNotificationService)
                 .sendSMSNotification(any(), any(), any(), any(), any());
@@ -217,7 +227,7 @@ class WebSocketControllerTest {
     // ─── sendMedicationReminder ───────────────────────────────────────────────
 
     @Test
-    void sendMedicationReminder_success_returnsOk() {
+    void sendMedicationReminder_success_returnsOk() throws Exception {
         Map<String, Object> request = Map.of(
                 "patientId", "p-1",
                 "medicationName", "Aspirin",
@@ -233,7 +243,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendMedicationReminder_serviceThrows_returnsBadRequest() {
+    void sendMedicationReminder_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Reminder error"))
                 .when(webSocketNotificationService)
                 .sendMedicationReminder(any(), any(), any(), any());
@@ -252,7 +262,7 @@ class WebSocketControllerTest {
     // ─── sendVitalSignsAlert ──────────────────────────────────────────────────
 
     @Test
-    void sendVitalSignsAlert_success_returnsOk() {
+    void sendVitalSignsAlert_success_returnsOk() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("patientId", "p-1");
         request.put("patientName", "John Doe");
@@ -272,7 +282,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendVitalSignsAlert_serviceThrows_returnsBadRequest() {
+    void sendVitalSignsAlert_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Alert error"))
                 .when(webSocketNotificationService)
                 .sendVitalSignsAlert(any(), any(), any(), any(), any(), any(String[].class));
@@ -293,7 +303,7 @@ class WebSocketControllerTest {
     // ─── sendEmergencyAlert ───────────────────────────────────────────────────
 
     @Test
-    void sendEmergencyAlert_success_returnsOk() {
+    void sendEmergencyAlert_success_returnsOk() throws Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("patientId", "p-10");
         request.put("patientName", "Sam Lee");
@@ -311,7 +321,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendEmergencyAlert_serviceThrows_returnsBadRequest() {
+    void sendEmergencyAlert_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Emergency error"))
                 .when(webSocketNotificationService)
                 .sendEmergencyAlert(any(), any(), any(), any(String[].class));
@@ -330,7 +340,7 @@ class WebSocketControllerTest {
     // ─── sendAppointmentReminder ──────────────────────────────────────────────
 
     @Test
-    void sendAppointmentReminder_success_returnsOk() {
+    void sendAppointmentReminder_success_returnsOk() throws Exception {
         Map<String, Object> request = Map.of(
                 "patientId", "p-5",
                 "appointmentDetails", "Cardiology checkup",
@@ -347,7 +357,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendAppointmentReminder_serviceThrows_returnsBadRequest() {
+    void sendAppointmentReminder_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Appointment error"))
                 .when(webSocketNotificationService)
                 .sendAppointmentReminder(any(), any(), any(), any());
@@ -366,7 +376,7 @@ class WebSocketControllerTest {
     // ─── broadcastSystemAnnouncement ─────────────────────────────────────────
 
     @Test
-    void broadcastSystemAnnouncement_success_returnsOk() {
+    void broadcastSystemAnnouncement_success_returnsOk() throws Exception {
         when(webSocketNotificationService.getOnlineUsersCount()).thenReturn(42);
 
         Map<String, Object> request = Map.of(
@@ -383,7 +393,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void broadcastSystemAnnouncement_defaultType_sendsInfo() {
+    void broadcastSystemAnnouncement_defaultType_sendsInfo() throws Exception {
         when(webSocketNotificationService.getOnlineUsersCount()).thenReturn(5);
 
         Map<String, Object> request = new HashMap<>();
@@ -397,7 +407,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void broadcastSystemAnnouncement_serviceThrows_returnsBadRequest() {
+    void broadcastSystemAnnouncement_serviceThrows_returnsBadRequest() throws Exception {
         doThrow(new RuntimeException("Broadcast error"))
                 .when(webSocketNotificationService)
                 .broadcastSystemAnnouncement(any(), any(), any());
@@ -414,7 +424,7 @@ class WebSocketControllerTest {
     // ─── getOnlineUsers ───────────────────────────────────────────────────────
 
     @Test
-    void getOnlineUsers_success_returnsOkWithUsers() {
+    void getOnlineUsers_success_returnsOkWithUsers() throws Exception {
         Map<String, String> users = Map.of("user-1", "Alice", "user-2", "Bob");
         when(webSocketNotificationService.getOnlineUsers()).thenReturn(users);
         when(webSocketNotificationService.getOnlineUsersCount()).thenReturn(2);
@@ -428,7 +438,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void getOnlineUsers_serviceThrows_returnsBadRequest() {
+    void getOnlineUsers_serviceThrows_returnsBadRequest() throws Exception {
         when(webSocketNotificationService.getOnlineUsers())
                 .thenThrow(new RuntimeException("Service error"));
 
@@ -441,7 +451,7 @@ class WebSocketControllerTest {
     // ─── getUserOnlineStatus ──────────────────────────────────────────────────
 
     @Test
-    void getUserOnlineStatus_userOnline_returnsOkWithIsOnlineTrue() {
+    void getUserOnlineStatus_userOnline_returnsOkWithIsOnlineTrue() throws Exception {
         when(webSocketNotificationService.isUserOnline("user-1")).thenReturn(true);
 
         ResponseEntity<Map<String, Object>> response = controller.getUserOnlineStatus("user-1");
@@ -453,7 +463,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void getUserOnlineStatus_userOffline_returnsOkWithIsOnlineFalse() {
+    void getUserOnlineStatus_userOffline_returnsOkWithIsOnlineFalse() throws Exception {
         when(webSocketNotificationService.isUserOnline("user-2")).thenReturn(false);
 
         ResponseEntity<Map<String, Object>> response = controller.getUserOnlineStatus("user-2");
@@ -463,7 +473,7 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void getUserOnlineStatus_serviceThrows_returnsBadRequest() {
+    void getUserOnlineStatus_serviceThrows_returnsBadRequest() throws Exception {
         when(webSocketNotificationService.isUserOnline("bad-user"))
                 .thenThrow(new RuntimeException("Lookup failed"));
 
@@ -476,7 +486,10 @@ class WebSocketControllerTest {
     // ─── sendSOSCall ──────────────────────────────────────────────────────────
 
     @Test
-    void sendSOSCall_missingPatientUserId_returnsBadRequest() {
+    void sendSOSCall_missingPatientUserId_returnsBadRequest() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
+
         Map<String, Object> request = new HashMap<>();
         request.put("patientUserId", null);
         request.put("patientName", "Alice");
@@ -489,7 +502,10 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSOSCall_missingPatientName_returnsBadRequest() {
+    void sendSOSCall_missingPatientName_returnsBadRequest() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
+
         Map<String, Object> request = new HashMap<>();
         request.put("patientUserId", "p-1");
         request.put("patientName", null);
@@ -502,7 +518,10 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSOSCall_missingCallId_returnsBadRequest() {
+    void sendSOSCall_missingCallId_returnsBadRequest() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
+
         Map<String, Object> request = new HashMap<>();
         request.put("patientUserId", "p-2");
         request.put("patientName", "Bob");
@@ -515,9 +534,11 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSOSCall_caregiversNotified_returnsOk() {
+    void sendSOSCall_caregiversNotified_returnsOk() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
         when(webSocketNotificationService.sendSOSCallToAllCaregivers(
-                any(), any(), any(), any(), any(), any(), any()))
+                any(), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenReturn(3);
 
         Map<String, Object> request = new HashMap<>();
@@ -533,11 +554,13 @@ class WebSocketControllerTest {
         assertThat(response.getBody()).containsEntry("patientUserId", "p-3");
         assertThat(response.getBody()).containsEntry("callId", "sos-3");
         verify(webSocketNotificationService).sendSOSCallToAllCaregivers(
-                any(), any(), any(), any(), any(), any(), any());
+                any(), any(), any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
-    void sendSOSCall_withExplicitOptions_returnsOk() {
+    void sendSOSCall_withExplicitOptions_returnsOk() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
         when(webSocketNotificationService.sendSOSCallToAllCaregivers(
                 eq("p-6"), eq("Frank"), eq("sos-6"),
                 eq("CARDIAC"), eq("Room 302"), eq("Patient is conscious"), eq(false)))
@@ -563,9 +586,11 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSOSCall_noCaregiversOnline_returns404() {
+    void sendSOSCall_noCaregiversOnline_returns404() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
         when(webSocketNotificationService.sendSOSCallToAllCaregivers(
-                any(), any(), any(), any(), any(), any(), any()))
+                any(), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenReturn(0);
 
         Map<String, Object> request = new HashMap<>();
@@ -580,9 +605,11 @@ class WebSocketControllerTest {
     }
 
     @Test
-    void sendSOSCall_serviceThrows_returnsBadRequest() {
+    void sendSOSCall_serviceThrows_returnsBadRequest() throws Exception {
+        User patient = User.builder().role(Role.PATIENT).build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(patient);
         when(webSocketNotificationService.sendSOSCallToAllCaregivers(
-                any(), any(), any(), any(), any(), any(), any()))
+                any(), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenThrow(new RuntimeException("SOS error"));
 
         Map<String, Object> request = new HashMap<>();

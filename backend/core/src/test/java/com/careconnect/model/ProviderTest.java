@@ -9,7 +9,7 @@ class ProviderTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Provider provider = new Provider();
 
         assertThat(provider).isNotNull();
@@ -24,7 +24,7 @@ class ProviderTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Provider provider = new Provider(1L, "Dr. Smith", "Cardiology", "City Hospital", "555-1234", "smith@hospital.org");
 
         assertThat(provider.getId()).isEqualTo(1L);
@@ -38,7 +38,7 @@ class ProviderTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         Provider provider = Provider.builder()
                 .id(2L)
                 .name("Dr. Jones")
@@ -59,7 +59,7 @@ class ProviderTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Provider provider = new Provider();
 
         provider.setId(3L);

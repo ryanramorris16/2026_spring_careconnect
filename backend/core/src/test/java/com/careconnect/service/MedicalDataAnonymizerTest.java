@@ -11,7 +11,7 @@ class MedicalDataAnonymizerTest {
     private MedicalDataAnonymizer anonymizer;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         anonymizer = new MedicalDataAnonymizer();
     }
 
@@ -21,7 +21,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_nullContext_returnsNull")
-    void anonymizePatientContext_nullContext_returnsNull() {
+    void anonymizePatientContext_nullContext_returnsNull() throws Exception {
         String result = anonymizer.anonymizePatientContext(null, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
         assertThat(result).isNull();
@@ -29,7 +29,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_emptyContext_returnsEmpty")
-    void anonymizePatientContext_emptyContext_returnsEmpty() {
+    void anonymizePatientContext_emptyContext_returnsEmpty() throws Exception {
         String result = anonymizer.anonymizePatientContext("", 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
         assertThat(result).isEmpty();
@@ -37,7 +37,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_blankContext_returnsBlank")
-    void anonymizePatientContext_blankContext_returnsBlank() {
+    void anonymizePatientContext_blankContext_returnsBlank() throws Exception {
         String result = anonymizer.anonymizePatientContext("   ", 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
         assertThat(result).isEqualTo("   ");
@@ -49,7 +49,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesNames")
-    void anonymizePatientContext_minimalLevel_replacesNames() {
+    void anonymizePatientContext_minimalLevel_replacesNames() throws Exception {
         String context = "Patient John Smith visited today";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -59,7 +59,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesSSN")
-    void anonymizePatientContext_minimalLevel_replacesSSN() {
+    void anonymizePatientContext_minimalLevel_replacesSSN() throws Exception {
         String context = "SSN: 123-45-6789";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -69,7 +69,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesPhone")
-    void anonymizePatientContext_minimalLevel_replacesPhone() {
+    void anonymizePatientContext_minimalLevel_replacesPhone() throws Exception {
         String context = "Call 301-555-1234 for info";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -79,7 +79,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesEmail")
-    void anonymizePatientContext_minimalLevel_replacesEmail() {
+    void anonymizePatientContext_minimalLevel_replacesEmail() throws Exception {
         String context = "Email john.doe@example.com for details";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -93,7 +93,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesAddress")
-    void anonymizePatientContext_moderateLevel_replacesAddress() {
+    void anonymizePatientContext_moderateLevel_replacesAddress() throws Exception {
         String context = "Lives at 123 Main Street area";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -104,7 +104,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesDate")
-    void anonymizePatientContext_moderateLevel_replacesDate() {
+    void anonymizePatientContext_moderateLevel_replacesDate() throws Exception {
         String context = "Born on January 15, 1990 in the city";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -114,7 +114,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesFacility")
-    void anonymizePatientContext_moderateLevel_replacesFacility() {
+    void anonymizePatientContext_moderateLevel_replacesFacility() throws Exception {
         String context = "Treated at Memorial Hospital for treatment";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -125,7 +125,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesTime")
-    void anonymizePatientContext_moderateLevel_replacesTime() {
+    void anonymizePatientContext_moderateLevel_replacesTime() throws Exception {
         String context = "Appointment at 3:30 PM today";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -135,7 +135,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_alsoAppliesMinimal")
-    void anonymizePatientContext_moderateLevel_alsoAppliesMinimal() {
+    void anonymizePatientContext_moderateLevel_alsoAppliesMinimal() throws Exception {
         String context = "Patient John Smith SSN: 123-45-6789 at 123 Main Street";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -151,7 +151,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_roundsDecimalNumbers")
-    void anonymizePatientContext_aggressiveLevel_roundsDecimalNumbers() {
+    void anonymizePatientContext_aggressiveLevel_roundsDecimalNumbers() throws Exception {
         String context = "Blood level was 123.45678 units";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -161,7 +161,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89")
-    void anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89() {
+    void anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89() throws Exception {
         String context = "Patient is 95 years old";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -171,7 +171,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89WithYear")
-    void anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89WithYear() {
+    void anonymizePatientContext_aggressiveLevel_anonymizesAgeOver89WithYear() throws Exception {
         String context = "Patient is 100 year old";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -180,7 +180,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesMedications")
-    void anonymizePatientContext_aggressiveLevel_generalizesMedications() {
+    void anonymizePatientContext_aggressiveLevel_generalizesMedications() throws Exception {
         String context = "Taking Lisinopril and Metoprolol and Amlodipine and Metformin and Atorvastatin daily";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -200,7 +200,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesEnalapril")
-    void anonymizePatientContext_aggressiveLevel_generalizesEnalapril() {
+    void anonymizePatientContext_aggressiveLevel_generalizesEnalapril() throws Exception {
         String context = "Prescribed Enalapril";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -211,7 +211,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesCaptopril")
-    void anonymizePatientContext_aggressiveLevel_generalizesCaptopril() {
+    void anonymizePatientContext_aggressiveLevel_generalizesCaptopril() throws Exception {
         String context = "Prescribed Captopril";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -222,7 +222,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesAtenolol")
-    void anonymizePatientContext_aggressiveLevel_generalizesAtenolol() {
+    void anonymizePatientContext_aggressiveLevel_generalizesAtenolol() throws Exception {
         String context = "Prescribed Atenolol";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -233,7 +233,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesPropranolol")
-    void anonymizePatientContext_aggressiveLevel_generalizesPropranolol() {
+    void anonymizePatientContext_aggressiveLevel_generalizesPropranolol() throws Exception {
         String context = "Prescribed Propranolol";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -244,7 +244,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesNifedipine")
-    void anonymizePatientContext_aggressiveLevel_generalizesNifedipine() {
+    void anonymizePatientContext_aggressiveLevel_generalizesNifedipine() throws Exception {
         String context = "Prescribed Nifedipine";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -255,7 +255,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesGlipizide")
-    void anonymizePatientContext_aggressiveLevel_generalizesGlipizide() {
+    void anonymizePatientContext_aggressiveLevel_generalizesGlipizide() throws Exception {
         String context = "Prescribed Glipizide";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -266,7 +266,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesInsulin")
-    void anonymizePatientContext_aggressiveLevel_generalizesInsulin() {
+    void anonymizePatientContext_aggressiveLevel_generalizesInsulin() throws Exception {
         String context = "Prescribed Insulin";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -277,7 +277,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_generalizesSimvastatin")
-    void anonymizePatientContext_aggressiveLevel_generalizesSimvastatin() {
+    void anonymizePatientContext_aggressiveLevel_generalizesSimvastatin() throws Exception {
         String context = "Prescribed Simvastatin";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -288,7 +288,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_alsoAppliesModerateAndMinimal")
-    void anonymizePatientContext_aggressiveLevel_alsoAppliesModerateAndMinimal() {
+    void anonymizePatientContext_aggressiveLevel_alsoAppliesModerateAndMinimal() throws Exception {
         String context = "Patient John Smith at 123 Main Street takes Lisinopril. SSN: 123-45-6789";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -305,7 +305,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_statisticalLevel_returnsStatisticalSummary")
-    void anonymizePatientContext_statisticalLevel_returnsStatisticalSummary() {
+    void anonymizePatientContext_statisticalLevel_returnsStatisticalSummary() throws Exception {
         String context = "Patient John Smith has detailed medical records";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.STATISTICAL);
@@ -324,7 +324,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_defaultLevel_appliesMinimalAnonymization")
-    void anonymizePatientContext_defaultLevel_appliesMinimalAnonymization() {
+    void anonymizePatientContext_defaultLevel_appliesMinimalAnonymization() throws Exception {
         // MINIMAL is the default case; also covers the default switch branch
         String context = "SSN: 123-45-6789";
         String result = anonymizer.anonymizePatientContext(context, 1L,
@@ -338,7 +338,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("generatePseudonym_validInput_returnsConsistentPseudonym")
-    void generatePseudonym_validInput_returnsConsistentPseudonym() {
+    void generatePseudonym_validInput_returnsConsistentPseudonym() throws Exception {
         String first = anonymizer.generatePseudonym(1L, "NAME");
         String second = anonymizer.generatePseudonym(1L, "NAME");
         assertThat(first).isEqualTo(second);
@@ -347,7 +347,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("generatePseudonym_differentTypes_returnsDifferentPseudonyms")
-    void generatePseudonym_differentTypes_returnsDifferentPseudonyms() {
+    void generatePseudonym_differentTypes_returnsDifferentPseudonyms() throws Exception {
         String namePseudo = anonymizer.generatePseudonym(1L, "NAME");
         String idPseudo = anonymizer.generatePseudonym(1L, "ID");
         // They could be same if hash collision, but both should start with Patient_
@@ -357,7 +357,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("generatePseudonym_differentPatients_returnsDifferentPseudonyms")
-    void generatePseudonym_differentPatients_returnsDifferentPseudonyms() {
+    void generatePseudonym_differentPatients_returnsDifferentPseudonyms() throws Exception {
         String pseudo1 = anonymizer.generatePseudonym(1L, "NAME");
         String pseudo2 = anonymizer.generatePseudonym(2L, "NAME");
         assertThat(pseudo1).startsWith("Patient_");
@@ -370,14 +370,14 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("generatePseudoId_validPatientId_returnsPseudoId")
-    void generatePseudoId_validPatientId_returnsPseudoId() {
+    void generatePseudoId_validPatientId_returnsPseudoId() throws Exception {
         String pseudoId = anonymizer.generatePseudoId(1L);
         assertThat(pseudoId).startsWith("Patient_");
     }
 
     @Test
     @DisplayName("generatePseudoId_calledTwice_returnsConsistentResult")
-    void generatePseudoId_calledTwice_returnsConsistentResult() {
+    void generatePseudoId_calledTwice_returnsConsistentResult() throws Exception {
         String first = anonymizer.generatePseudoId(42L);
         String second = anonymizer.generatePseudoId(42L);
         assertThat(first).isEqualTo(second);
@@ -389,7 +389,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("clearPseudonymMappings_validPatientId_clearsMappingsForThatPatient")
-    void clearPseudonymMappings_validPatientId_clearsMappingsForThatPatient() {
+    void clearPseudonymMappings_validPatientId_clearsMappingsForThatPatient() throws Exception {
         // Generate pseudonyms for patient 1
         String beforeClear = anonymizer.generatePseudonym(1L, "NAME");
         assertThat(beforeClear).startsWith("Patient_");
@@ -404,7 +404,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("clearPseudonymMappings_differentPatients_onlyClearsTargetPatient")
-    void clearPseudonymMappings_differentPatients_onlyClearsTargetPatient() {
+    void clearPseudonymMappings_differentPatients_onlyClearsTargetPatient() throws Exception {
         String patient2Pseudo = anonymizer.generatePseudonym(2L, "NAME");
 
         anonymizer.clearPseudonymMappings(1L);
@@ -420,7 +420,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("clearAllMappings_validPatientId_delegatesToClearPseudonymMappings")
-    void clearAllMappings_validPatientId_delegatesToClearPseudonymMappings() {
+    void clearAllMappings_validPatientId_delegatesToClearPseudonymMappings() throws Exception {
         anonymizer.generatePseudonym(1L, "NAME");
         anonymizer.generatePseudonym(1L, "ID");
 
@@ -437,7 +437,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_stringWithDecimals_addsNoiseToDecimals")
-    void addDifferentialPrivacyNoise_stringWithDecimals_addsNoiseToDecimals() {
+    void addDifferentialPrivacyNoise_stringWithDecimals_addsNoiseToDecimals() throws Exception {
         String data = "Blood pressure was 120.5 and heart rate was 72.3";
         String result = anonymizer.addDifferentialPrivacyNoise(data, 1.0);
         // The numbers should be modified (with noise) and formatted to 2 decimal places
@@ -449,7 +449,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_stringWithoutDecimals_returnsUnchanged")
-    void addDifferentialPrivacyNoise_stringWithoutDecimals_returnsUnchanged() {
+    void addDifferentialPrivacyNoise_stringWithoutDecimals_returnsUnchanged() throws Exception {
         String data = "Patient has 3 prescriptions";
         String result = anonymizer.addDifferentialPrivacyNoise(data, 1.0);
         assertThat(result).isEqualTo(data);
@@ -457,14 +457,14 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_emptyString_returnsEmpty")
-    void addDifferentialPrivacyNoise_emptyString_returnsEmpty() {
+    void addDifferentialPrivacyNoise_emptyString_returnsEmpty() throws Exception {
         String result = anonymizer.addDifferentialPrivacyNoise("", 1.0);
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_highEpsilon_lessPerturbation")
-    void addDifferentialPrivacyNoise_highEpsilon_lessPerturbation() {
+    void addDifferentialPrivacyNoise_highEpsilon_lessPerturbation() throws Exception {
         // High epsilon = less noise = values closer to original
         String data = "Value is 100.00";
         String result = anonymizer.addDifferentialPrivacyNoise(data, 100.0);
@@ -474,7 +474,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_lowEpsilon_morePerturbation")
-    void addDifferentialPrivacyNoise_lowEpsilon_morePerturbation() {
+    void addDifferentialPrivacyNoise_lowEpsilon_morePerturbation() throws Exception {
         String data = "Value is 50.0";
         String result = anonymizer.addDifferentialPrivacyNoise(data, 0.01);
         assertThat(result).isNotNull();
@@ -484,7 +484,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("addDifferentialPrivacyNoise_negativeResult_clampedToZero")
-    void addDifferentialPrivacyNoise_negativeResult_clampedToZero() {
+    void addDifferentialPrivacyNoise_negativeResult_clampedToZero() throws Exception {
         // Use a very small value with low epsilon to force negative results being clamped
         String data = "Value is 0.01";
         // Run multiple times as noise is random; the Math.max(0, ...) ensures >= 0
@@ -501,49 +501,49 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("containsPHI_nullContent_returnsFalse")
-    void containsPHI_nullContent_returnsFalse() {
+    void containsPHI_nullContent_returnsFalse() throws Exception {
         assertThat(anonymizer.containsPHI(null)).isFalse();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithName_returnsTrue")
-    void containsPHI_contentWithName_returnsTrue() {
+    void containsPHI_contentWithName_returnsTrue() throws Exception {
         assertThat(anonymizer.containsPHI("Patient John Smith visited today")).isTrue();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithSSN_returnsTrue")
-    void containsPHI_contentWithSSN_returnsTrue() {
+    void containsPHI_contentWithSSN_returnsTrue() throws Exception {
         assertThat(anonymizer.containsPHI("SSN: 123-45-6789")).isTrue();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithPhone_returnsTrue")
-    void containsPHI_contentWithPhone_returnsTrue() {
+    void containsPHI_contentWithPhone_returnsTrue() throws Exception {
         assertThat(anonymizer.containsPHI("Call 301-555-1234")).isTrue();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithEmail_returnsTrue")
-    void containsPHI_contentWithEmail_returnsTrue() {
+    void containsPHI_contentWithEmail_returnsTrue() throws Exception {
         assertThat(anonymizer.containsPHI("Email john@example.com")).isTrue();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithAddress_returnsTrue")
-    void containsPHI_contentWithAddress_returnsTrue() {
+    void containsPHI_contentWithAddress_returnsTrue() throws Exception {
         assertThat(anonymizer.containsPHI("Lives at 123 Main Street")).isTrue();
     }
 
     @Test
     @DisplayName("containsPHI_contentWithNoSensitiveData_returnsFalse")
-    void containsPHI_contentWithNoSensitiveData_returnsFalse() {
+    void containsPHI_contentWithNoSensitiveData_returnsFalse() throws Exception {
         assertThat(anonymizer.containsPHI("patient has a cold")).isFalse();
     }
 
     @Test
     @DisplayName("containsPHI_emptyContent_returnsFalse")
-    void containsPHI_emptyContent_returnsFalse() {
+    void containsPHI_emptyContent_returnsFalse() throws Exception {
         assertThat(anonymizer.containsPHI("")).isFalse();
     }
 
@@ -553,7 +553,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_roundsMultipleDecimals")
-    void anonymizePatientContext_aggressiveLevel_roundsMultipleDecimals() {
+    void anonymizePatientContext_aggressiveLevel_roundsMultipleDecimals() throws Exception {
         String context = "Values: 1.2345 and 9.87654";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);
@@ -563,7 +563,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_shortDecimalsNotRounded")
-    void anonymizePatientContext_aggressiveLevel_shortDecimalsNotRounded() {
+    void anonymizePatientContext_aggressiveLevel_shortDecimalsNotRounded() throws Exception {
         // Decimals with fewer than 3 decimal places should not be affected by roundDecimalNumbers
         String context = "Value: 5.12 units";
         String result = anonymizer.anonymizePatientContext(context, 1L,
@@ -577,7 +577,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesAvenueAddress")
-    void anonymizePatientContext_moderateLevel_replacesAvenueAddress() {
+    void anonymizePatientContext_moderateLevel_replacesAvenueAddress() throws Exception {
         String context = "Lives at 456 Oak Avenue end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -588,7 +588,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesRoadAddress")
-    void anonymizePatientContext_moderateLevel_replacesRoadAddress() {
+    void anonymizePatientContext_moderateLevel_replacesRoadAddress() throws Exception {
         String context = "Located at 789 Pine Road end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -599,7 +599,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesDriveAddress")
-    void anonymizePatientContext_moderateLevel_replacesDriveAddress() {
+    void anonymizePatientContext_moderateLevel_replacesDriveAddress() throws Exception {
         String context = "At 100 Sunset Drive end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -610,7 +610,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesLaneAddress")
-    void anonymizePatientContext_moderateLevel_replacesLaneAddress() {
+    void anonymizePatientContext_moderateLevel_replacesLaneAddress() throws Exception {
         String context = "At 200 Maple Lane end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -621,7 +621,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesCourtAddress")
-    void anonymizePatientContext_moderateLevel_replacesCourtAddress() {
+    void anonymizePatientContext_moderateLevel_replacesCourtAddress() throws Exception {
         String context = "At 300 Rose Court end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -632,7 +632,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesBoulevardAddress")
-    void anonymizePatientContext_moderateLevel_replacesBoulevardAddress() {
+    void anonymizePatientContext_moderateLevel_replacesBoulevardAddress() throws Exception {
         String context = "At 400 Grand Boulevard end";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -647,7 +647,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_moderateLevel_replacesClinicFacility")
-    void anonymizePatientContext_moderateLevel_replacesClinicFacility() {
+    void anonymizePatientContext_moderateLevel_replacesClinicFacility() throws Exception {
         String context = "Visited Central Clinic for checkup";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MODERATE);
@@ -662,7 +662,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesPhoneWithDots")
-    void anonymizePatientContext_minimalLevel_replacesPhoneWithDots() {
+    void anonymizePatientContext_minimalLevel_replacesPhoneWithDots() throws Exception {
         String context = "Call 301.555.1234 for info";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -671,7 +671,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesPhoneWithSpaces")
-    void anonymizePatientContext_minimalLevel_replacesPhoneWithSpaces() {
+    void anonymizePatientContext_minimalLevel_replacesPhoneWithSpaces() throws Exception {
         String context = "Call 301 555 1234 for info";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -680,7 +680,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_minimalLevel_replacesPhoneNoDashes")
-    void anonymizePatientContext_minimalLevel_replacesPhoneNoDashes() {
+    void anonymizePatientContext_minimalLevel_replacesPhoneNoDashes() throws Exception {
         String context = "Call 3015551234 for info";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.MINIMAL);
@@ -693,7 +693,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_age89NotAnonymized")
-    void anonymizePatientContext_aggressiveLevel_age89NotAnonymized() {
+    void anonymizePatientContext_aggressiveLevel_age89NotAnonymized() throws Exception {
         // 89 years old is NOT >= 90 so should not match the regex
         String context = "Patient is 89 years old";
         String result = anonymizer.anonymizePatientContext(context, 1L,
@@ -704,7 +704,7 @@ class MedicalDataAnonymizerTest {
 
     @Test
     @DisplayName("anonymizePatientContext_aggressiveLevel_age90Anonymized")
-    void anonymizePatientContext_aggressiveLevel_age90Anonymized() {
+    void anonymizePatientContext_aggressiveLevel_age90Anonymized() throws Exception {
         String context = "Patient is 90 years old";
         String result = anonymizer.anonymizePatientContext(context, 1L,
                 MedicalDataAnonymizer.AnonymizationLevel.AGGRESSIVE);

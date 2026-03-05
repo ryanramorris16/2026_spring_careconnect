@@ -9,7 +9,7 @@ class ProfessionalInfoTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ProfessionalInfo info = new ProfessionalInfo();
 
         assertThat(info).isNotNull();
@@ -21,7 +21,7 @@ class ProfessionalInfoTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         ProfessionalInfo info = new ProfessionalInfo("LIC-12345", "MD", 10);
 
         assertThat(info.getLicenseNumber()).isEqualTo("LIC-12345");
@@ -32,7 +32,7 @@ class ProfessionalInfoTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         ProfessionalInfo info = ProfessionalInfo.builder()
                 .licenseNumber("RN-99999")
                 .issuingState("VA")
@@ -47,7 +47,7 @@ class ProfessionalInfoTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ProfessionalInfo info = new ProfessionalInfo();
 
         info.setLicenseNumber("CNA-777");

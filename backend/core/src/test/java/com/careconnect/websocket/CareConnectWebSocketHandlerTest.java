@@ -417,7 +417,7 @@ class CareConnectWebSocketHandlerTest {
     }
 
     @Test
-    void sendRealTimeUpdate_unknownUser_skips() {
+    void sendRealTimeUpdate_unknownUser_skips() throws Exception {
         handler.sendRealTimeUpdate("999", Map.of("type", "update"));
         verifyNoInteractions(session);
     }
@@ -459,7 +459,7 @@ class CareConnectWebSocketHandlerTest {
     }
 
     @Test
-    void isUserOnline_unknownUser_returnsFalse() {
+    void isUserOnline_unknownUser_returnsFalse() throws Exception {
         assertThat(handler.isUserOnline("999")).isFalse();
     }
 
@@ -480,7 +480,7 @@ class CareConnectWebSocketHandlerTest {
     }
 
     @Test
-    void sendEmailVerificationNotification_noSession_logsWarning() {
+    void sendEmailVerificationNotification_noSession_logsWarning() throws Exception {
         handler.sendEmailVerificationNotification("nobody@nowhere.com");
         verifyNoInteractions(session);
     }
@@ -499,7 +499,7 @@ class CareConnectWebSocketHandlerTest {
     // ─── registerUser() ──────────────────────────────────────────────────────
 
     @Test
-    void registerUser_storesUserInSessionMap() {
+    void registerUser_storesUserInSessionMap() throws Exception {
         handler.registerUser("42", "TestUser");
         // Verified indirectly — getOnlineUsersCount includes "dummy" session registrations
         assertThat(handler.getOnlineUsersCount()).isGreaterThanOrEqualTo(0);

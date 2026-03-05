@@ -65,21 +65,21 @@ class TextractServiceTest {
     // ----- Input validation (fast — no Thread.sleep) -----
 
     @Test
-    void analyzeAndGetResult_null_throwsIllegalArgument() {
+    void analyzeAndGetResult_null_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> textractService.analyzeAndGetResult(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("File list cannot be null or empty.");
     }
 
     @Test
-    void analyzeAndGetResult_emptyList_throwsIllegalArgument() {
+    void analyzeAndGetResult_emptyList_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> textractService.analyzeAndGetResult(List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("File list cannot be null or empty.");
     }
 
     @Test
-    void analyzeAndGetResult_allEmptyFiles_throwsIllegalArgument() {
+    void analyzeAndGetResult_allEmptyFiles_throwsIllegalArgument() throws Exception {
         MultipartFile emptyFile = mock(MultipartFile.class);
         when(emptyFile.isEmpty()).thenReturn(true);
         assertThatThrownBy(() -> textractService.analyzeAndGetResult(List.of(emptyFile)))
@@ -112,7 +112,7 @@ class TextractServiceTest {
     }
 
     @Test
-    void getBlocksFromFiles_null_throwsIllegalArgument() {
+    void getBlocksFromFiles_null_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> textractService.getBlocksFromFiles(null))
                 .isInstanceOf(IllegalArgumentException.class);
     }

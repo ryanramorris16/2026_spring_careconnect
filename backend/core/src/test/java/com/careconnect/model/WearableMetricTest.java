@@ -12,7 +12,7 @@ class WearableMetricTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         WearableMetric wm = new WearableMetric();
 
         assertThat(wm).isNotNull();
@@ -26,7 +26,7 @@ class WearableMetricTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         User patient = new User();
         Instant now = Instant.now();
 
@@ -48,7 +48,7 @@ class WearableMetricTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         WearableMetric wm = new WearableMetric();
         Instant now = Instant.now();
 
@@ -66,7 +66,7 @@ class WearableMetricTest {
     // ─── MetricType enum ──────────────────────────────────────────────────────
 
     @Test
-    void metricType_allValues() {
+    void metricType_allValues() throws Exception {
         assertThat(MetricType.values()).containsExactly(
                 MetricType.HEART_RATE, MetricType.SPO2, MetricType.TEMPERATURE,
                 MetricType.BLOOD_PRESSURE_SYS, MetricType.BLOOD_PRESSURE_DIA, MetricType.WEIGHT);
@@ -75,7 +75,7 @@ class WearableMetricTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Instant now = Instant.now();
         WearableMetric w1 = WearableMetric.builder()
                 .id(1L).metric(MetricType.HEART_RATE).metricValue(72.0).recordedAt(now).build();

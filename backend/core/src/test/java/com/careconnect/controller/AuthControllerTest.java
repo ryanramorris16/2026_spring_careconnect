@@ -6,12 +6,14 @@ import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
 import com.careconnect.security.TokenHashService;
 import com.careconnect.service.AlexaCodeStoreService;
 import com.careconnect.service.AuthService;
 import com.careconnect.service.PasswordResetService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.Cookie;
@@ -105,6 +107,12 @@ class AuthControllerTest {
 
     @MockBean
     private AlexaCodeStoreService alexaCodeStore;
+
+    @MockBean
+    private SecurityUtil securityUtil;
+
+    @MockBean
+    private AuthorizationService authorizationService;
 
     // ==========================================
     // REGISTER
@@ -643,13 +651,13 @@ class AuthControllerTest {
     // ==========================================
 
     /** Returns a valid Basic Auth header using the test-configured client credentials. */
-    private String validBasicAuth() {
+    private String validBasicAuth() throws Exception {
         return "Basic " + Base64.getEncoder()
                 .encodeToString("test-client-id:test-client-secret".getBytes());
     }
 
     /** Returns a Basic Auth header with wrong credentials. */
-    private String wrongBasicAuth() {
+    private String wrongBasicAuth() throws Exception {
         return "Basic " + Base64.getEncoder()
                 .encodeToString("wrong-id:wrong-secret".getBytes());
     }

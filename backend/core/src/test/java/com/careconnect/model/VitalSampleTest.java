@@ -12,7 +12,7 @@ class VitalSampleTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         VitalSample vs = new VitalSample();
 
         assertThat(vs).isNotNull();
@@ -33,7 +33,7 @@ class VitalSampleTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         Instant now = Instant.now();
 
@@ -69,7 +69,7 @@ class VitalSampleTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         VitalSample vs = new VitalSample();
         Instant now = Instant.now();
 
@@ -124,7 +124,7 @@ class VitalSampleTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Instant now = Instant.now();
         VitalSample vs1 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();
         VitalSample vs2 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();

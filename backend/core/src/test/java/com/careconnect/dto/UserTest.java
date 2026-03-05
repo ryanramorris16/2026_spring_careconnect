@@ -17,7 +17,7 @@ class UserTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         User user = new User();
 
         assertThat(user).isNotNull();
@@ -28,7 +28,7 @@ class UserTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         Timestamp now = new Timestamp(System.currentTimeMillis());
         LocalDate today = LocalDate.now();
 
@@ -70,7 +70,7 @@ class UserTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults_areApplied() {
+    void builder_defaults_areApplied() throws Exception {
         User user = User.builder()
                 .email("test@example.com")
                 .password("pass")
@@ -86,7 +86,7 @@ class UserTest {
     // ─── isActive() ───────────────────────────────────────────────────────────
 
     @Test
-    void isActive_statusACTIVE_returnsTrue() {
+    void isActive_statusACTIVE_returnsTrue() throws Exception {
         User user = User.builder()
                 .email("a@b.com")
                 .password("pass")
@@ -98,7 +98,7 @@ class UserTest {
     }
 
     @Test
-    void isActive_statusActiveLowercase_returnsTrue() {
+    void isActive_statusActiveLowercase_returnsTrue() throws Exception {
         User user = new User();
         user.setStatus("active");
 
@@ -106,7 +106,7 @@ class UserTest {
     }
 
     @Test
-    void isActive_statusInactive_returnsFalse() {
+    void isActive_statusInactive_returnsFalse() throws Exception {
         User user = new User();
         user.setStatus("INACTIVE");
 
@@ -116,7 +116,7 @@ class UserTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateAllFields() {
+    void setters_updateAllFields() throws Exception {
         LocalDate today = LocalDate.now();
         User user = new User();
 
@@ -154,7 +154,7 @@ class UserTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
         User u2 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
 
@@ -163,7 +163,7 @@ class UserTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
         User u2 = User.builder().id(2L).email("c@d.com").password("pw").role(Role.ADMIN).build();
 
@@ -171,13 +171,13 @@ class UserTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         User user = new User();
         assertThat(user).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         User user = new User();
         assertThat(user).isNotEqualTo("a string");
     }
@@ -185,7 +185,7 @@ class UserTest {
     // ─── toString() ───────────────────────────────────────────────────────────
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         User user = User.builder()
                 .id(42L)
                 .email("check@example.com")

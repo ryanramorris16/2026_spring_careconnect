@@ -26,13 +26,13 @@ class AlexaCodeStoreServiceTest {
     private AlexaCodeStoreService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new AlexaCodeStoreService();
     }
 
     @Test
     @DisplayName("generateCode returns a non-null code and consumeCode retrieves the JWT")
-    void generateCode_returnsCode_consumeCode_retrievesJwt() {
+    void generateCode_returnsCode_consumeCode_retrievesJwt() throws Exception {
         String jwt = "my.jwt.token";
         String code = service.generateCode(jwt);
         assertThat(code).isNotNull().isNotBlank();
@@ -42,14 +42,14 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("consumeCode returns null for an unknown code")
-    void consumeCode_returnsNull_forUnknownCode() {
+    void consumeCode_returnsNull_forUnknownCode() throws Exception {
         String result = service.consumeCode("non-existent-code");
         assertThat(result).isNull();
     }
 
     @Test
     @DisplayName("consumeCode returns null on second call (one-time use)")
-    void consumeCode_returnsNull_onSecondConsumption() {
+    void consumeCode_returnsNull_onSecondConsumption() throws Exception {
         String jwt = "one-time.jwt";
         String code = service.generateCode(jwt);
         assertThat(service.consumeCode(code)).isEqualTo(jwt);
@@ -68,7 +68,7 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("saveRefreshToken stores the token and findJwtByRefreshToken retrieves it")
-    void saveRefreshToken_and_findJwtByRefreshToken_roundTrip() {
+    void saveRefreshToken_and_findJwtByRefreshToken_roundTrip() throws Exception {
         String refreshToken = "refresh-abc";
         String jwt = "jwt-xyz";
         service.saveRefreshToken(refreshToken, jwt);
@@ -77,7 +77,7 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("findJwtByRefreshToken returns null for an unknown refresh token")
-    void findJwtByRefreshToken_returnsNull_forUnknownToken() {
+    void findJwtByRefreshToken_returnsNull_forUnknownToken() throws Exception {
         assertThat(service.findJwtByRefreshToken("unknown-refresh")).isNull();
     }
 
@@ -94,7 +94,7 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredCodes does nothing when all entries are valid")
-    void cleanupExpiredCodes_noOp_whenAllValid() {
+    void cleanupExpiredCodes_noOp_whenAllValid() throws Exception {
         String code = service.generateCode("still-good.jwt");
         service.cleanupExpiredCodes();
         assertThat(service.consumeCode(code)).isEqualTo("still-good.jwt");
@@ -102,13 +102,13 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("cleanupExpiredCodes does nothing on an empty store")
-    void cleanupExpiredCodes_noOp_whenEmpty() {
+    void cleanupExpiredCodes_noOp_whenEmpty() throws Exception {
         service.cleanupExpiredCodes();
     }
 
     @Test
     @DisplayName("multiple codes for different JWTs are stored and consumed independently")
-    void multipleCodesCoexistIndependently() {
+    void multipleCodesCoexistIndependently() throws Exception {
         String jwt1 = "jwt-1";
         String jwt2 = "jwt-2";
         String code1 = service.generateCode(jwt1);
@@ -120,7 +120,7 @@ class AlexaCodeStoreServiceTest {
 
     @Test
     @DisplayName("saveRefreshToken overwrites a previously stored JWT for the same refresh token")
-    void saveRefreshToken_overwritesPreviousValue() {
+    void saveRefreshToken_overwritesPreviousValue() throws Exception {
         String refreshToken = "rt-1";
         service.saveRefreshToken(refreshToken, "old-jwt");
         service.saveRefreshToken(refreshToken, "new-jwt");
@@ -156,7 +156,7 @@ class AlexaCodeStoreServiceTest {
         private AlexaCodeStoreService.ChatAnalyticsService analyticsService;
 
         @BeforeEach
-        void setUp() {
+        void setUp() throws Exception {
             MockitoAnnotations.openMocks(this);
             analyticsService = new AlexaCodeStoreService.ChatAnalyticsService(
                     chatConversationRepository, chatMessageRepository);
@@ -175,7 +175,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_validConversationWithMessages_logsAnalytics")
-        void collectAnalytics_validConversationWithMessages_logsAnalytics() {
+        void collectAnalytics_validConversationWithMessages_logsAnalytics() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-1");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -191,7 +191,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_nullUpdatedAt_sessionDurationZero")
-        void collectAnalytics_nullUpdatedAt_sessionDurationZero() {
+        void collectAnalytics_nullUpdatedAt_sessionDurationZero() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-2");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -205,7 +205,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_nullCreatedAt_sessionDurationZero")
-        void collectAnalytics_nullCreatedAt_sessionDurationZero() {
+        void collectAnalytics_nullCreatedAt_sessionDurationZero() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-3");
             conversation.setCreatedAt(null);
@@ -219,7 +219,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_exceptionInProcessing_caughtGracefully")
-        void collectAnalytics_exceptionInProcessing_caughtGracefully() {
+        void collectAnalytics_exceptionInProcessing_caughtGracefully() throws Exception {
             // Pass null conversation to trigger NPE inside try block
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-err");
@@ -232,7 +232,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_emptyMessages_noTopicsExtracted")
-        void collectAnalytics_emptyMessages_noTopicsExtracted() {
+        void collectAnalytics_emptyMessages_noTopicsExtracted() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-4");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -244,7 +244,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_allTopicCategories_extractedCorrectly")
-        void collectAnalytics_allTopicCategories_extractedCorrectly() {
+        void collectAnalytics_allTopicCategories_extractedCorrectly() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-5");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -265,7 +265,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_generalInquiryOnly_whenNoKeywordsMatch")
-        void collectAnalytics_generalInquiryOnly_whenNoKeywordsMatch() {
+        void collectAnalytics_generalInquiryOnly_whenNoKeywordsMatch() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-6");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -280,7 +280,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_assistantMessagesOnly_noTopicsExtracted")
-        void collectAnalytics_assistantMessagesOnly_noTopicsExtracted() {
+        void collectAnalytics_assistantMessagesOnly_noTopicsExtracted() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-7");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -294,7 +294,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_multipleAiMessagesWithProcessingTime_calculatesAverage")
-        void collectAnalytics_multipleAiMessagesWithProcessingTime_calculatesAverage() {
+        void collectAnalytics_multipleAiMessagesWithProcessingTime_calculatesAverage() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-8");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -310,7 +310,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_aiMessagesWithNullProcessingTime_avgResponseTimeZero")
-        void collectAnalytics_aiMessagesWithNullProcessingTime_avgResponseTimeZero() {
+        void collectAnalytics_aiMessagesWithNullProcessingTime_avgResponseTimeZero() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-9");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -325,7 +325,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("collectAnalytics_systemMessages_notCountedAsUserOrAi")
-        void collectAnalytics_systemMessages_notCountedAsUserOrAi() {
+        void collectAnalytics_systemMessages_notCountedAsUserOrAi() throws Exception {
             ChatConversation conversation = new ChatConversation();
             conversation.setConversationId("conv-10");
             conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0));
@@ -342,7 +342,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("getAggregatedAnalytics_returnsExpectedKeys")
-        void getAggregatedAnalytics_returnsExpectedKeys() {
+        void getAggregatedAnalytics_returnsExpectedKeys() throws Exception {
             LocalDateTime from = LocalDateTime.of(2025, 1, 1, 0, 0);
             LocalDateTime to = LocalDateTime.of(2025, 12, 31, 23, 59);
 
@@ -362,7 +362,7 @@ class AlexaCodeStoreServiceTest {
 
         @Test
         @DisplayName("chatAnalytics_builderAndGetters_workCorrectly")
-        void chatAnalytics_builderAndGetters_workCorrectly() {
+        void chatAnalytics_builderAndGetters_workCorrectly() throws Exception {
             AlexaCodeStoreService.ChatAnalyticsService.ChatAnalytics analytics =
                     AlexaCodeStoreService.ChatAnalyticsService.ChatAnalytics.builder()
                             .sessionId("sess-1")

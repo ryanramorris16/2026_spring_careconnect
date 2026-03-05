@@ -11,7 +11,7 @@ class SymptomEntryTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         SymptomEntry e = new SymptomEntry();
 
         assertThat(e).isNotNull();
@@ -29,7 +29,7 @@ class SymptomEntryTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults() {
+    void builder_defaults() throws Exception {
         SymptomEntry e = SymptomEntry.builder()
                 .takenAt(Instant.now())
                 .build();
@@ -40,7 +40,7 @@ class SymptomEntryTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         Caregiver caregiver = new Caregiver();
         Instant now = Instant.now();
@@ -71,7 +71,7 @@ class SymptomEntryTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         SymptomEntry e = new SymptomEntry();
         Instant now = Instant.now();
 

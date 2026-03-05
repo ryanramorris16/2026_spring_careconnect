@@ -46,7 +46,7 @@ class PrivacyAwareMedicalContextServiceTest {
     private UserAIConfig aiConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         patientId = 1L;
         aiConfig = new UserAIConfig();
@@ -57,7 +57,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - all flags false - returns only demographics and disclaimer")
-    void buildAnonymizedPatientContext_allFlagsFalse_returnsOnlyDemographicsAndDisclaimer() {
+    void buildAnonymizedPatientContext_allFlagsFalse_returnsOnlyDemographicsAndDisclaimer() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -82,7 +82,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - include vitals true but aiConfig false - skips vitals")
-    void buildAnonymizedPatientContext_includeVitalsTrueAiConfigFalse_skipsVitals() {
+    void buildAnonymizedPatientContext_includeVitalsTrueAiConfigFalse_skipsVitals() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -106,7 +106,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - all sections enabled - includes vitals medications and notes")
-    void buildAnonymizedPatientContext_allSectionsEnabled_includesVitalsMedicationsAndNotes() {
+    void buildAnonymizedPatientContext_allSectionsEnabled_includesVitalsMedicationsAndNotes() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(true)
@@ -136,7 +136,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - differential privacy enabled - calls addDifferentialPrivacyNoise")
-    void buildAnonymizedPatientContext_differentialPrivacyEnabled_callsAddDifferentialPrivacyNoise() {
+    void buildAnonymizedPatientContext_differentialPrivacyEnabled_callsAddDifferentialPrivacyNoise() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -160,7 +160,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - user not found - returns demographics not available")
-    void buildAnonymizedPatientContext_userNotFound_returnsDemographicsNotAvailable() {
+    void buildAnonymizedPatientContext_userNotFound_returnsDemographicsNotAvailable() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -180,7 +180,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - user found - returns formatted demographics")
-    void buildAnonymizedPatientContext_userFound_returnsFormattedDemographics() {
+    void buildAnonymizedPatientContext_userFound_returnsFormattedDemographics() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -203,7 +203,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals enabled but empty list - returns no recent vitals message")
-    void buildAnonymizedPatientContext_vitalsEnabledEmptyList_returnsNoRecentVitalsMessage() {
+    void buildAnonymizedPatientContext_vitalsEnabledEmptyList_returnsNoRecentVitalsMessage() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -226,7 +226,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals with STATISTICAL level - returns statistical summary")
-    void buildAnonymizedPatientContext_vitalsWithStatisticalLevel_returnsStatisticalSummary() {
+    void buildAnonymizedPatientContext_vitalsWithStatisticalLevel_returnsStatisticalSummary() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -252,7 +252,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals with stable numeric trend - returns stable")
-    void buildAnonymizedPatientContext_vitalsWithStableNumericTrend_returnsStable() {
+    void buildAnonymizedPatientContext_vitalsWithStableNumericTrend_returnsStable() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -278,7 +278,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals with increasing trend - returns increasing")
-    void buildAnonymizedPatientContext_vitalsWithIncreasingTrend_returnsIncreasing() {
+    void buildAnonymizedPatientContext_vitalsWithIncreasingTrend_returnsIncreasing() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -304,7 +304,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - notes enabled but empty - returns no clinical notes message")
-    void buildAnonymizedPatientContext_notesEnabledButEmpty_returnsNoClinicalNotesMessage() {
+    void buildAnonymizedPatientContext_notesEnabledButEmpty_returnsNoClinicalNotesMessage() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -327,7 +327,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - medications enabled both flags true - includes medication classes")
-    void buildAnonymizedPatientContext_medicationsEnabledBothFlagsTrue_includesMedicationClasses() {
+    void buildAnonymizedPatientContext_medicationsEnabledBothFlagsTrue_includesMedicationClasses() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(true)
@@ -350,7 +350,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("contextContainsPHI - context with PHI - returns true")
-    void contextContainsPHI_contextWithPHI_returnsTrue() {
+    void contextContainsPHI_contextWithPHI_returnsTrue() throws Exception {
         when(anonymizer.containsPHI("John Smith is a patient")).thenReturn(true);
 
         boolean result = service.contextContainsPHI("John Smith is a patient");
@@ -361,7 +361,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("contextContainsPHI - context without PHI - returns false")
-    void contextContainsPHI_contextWithoutPHI_returnsFalse() {
+    void contextContainsPHI_contextWithoutPHI_returnsFalse() throws Exception {
         when(anonymizer.containsPHI("anonymized data")).thenReturn(false);
 
         boolean result = service.contextContainsPHI("anonymized data");
@@ -372,7 +372,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildStatisticalContext - valid patient id - returns statistical summary with pseudo id")
-    void buildStatisticalContext_validPatientId_returnsStatisticalSummaryWithPseudoId() {
+    void buildStatisticalContext_validPatientId_returnsStatisticalSummaryWithPseudoId() throws Exception {
         when(anonymizer.generatePseudoId(patientId)).thenReturn("Patient_5678");
 
         String result = service.buildStatisticalContext(patientId);
@@ -387,7 +387,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with elevated blood pressure - returns elevated range")
-    void buildAnonymizedPatientContext_aggressiveWithElevatedBP_returnsElevatedRange() {
+    void buildAnonymizedPatientContext_aggressiveWithElevatedBP_returnsElevatedRange() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -413,7 +413,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with high-normal blood pressure - returns high-normal range")
-    void buildAnonymizedPatientContext_aggressiveWithHighNormalBP_returnsHighNormalRange() {
+    void buildAnonymizedPatientContext_aggressiveWithHighNormalBP_returnsHighNormalRange() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -439,7 +439,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with normal blood pressure - returns normal range")
-    void buildAnonymizedPatientContext_aggressiveWithNormalBP_returnsNormalRange() {
+    void buildAnonymizedPatientContext_aggressiveWithNormalBP_returnsNormalRange() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -465,7 +465,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with numeric vital - returns normal range category")
-    void buildAnonymizedPatientContext_aggressiveWithNumericVital_returnsNormalRangeCategory() {
+    void buildAnonymizedPatientContext_aggressiveWithNumericVital_returnsNormalRangeCategory() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -491,7 +491,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with non-numeric vital - returns normal range fallback")
-    void buildAnonymizedPatientContext_aggressiveWithNonNumericVital_returnsNormalRangeFallback() {
+    void buildAnonymizedPatientContext_aggressiveWithNonNumericVital_returnsNormalRangeFallback() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -520,7 +520,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - single vital reading - returns insufficient data trend")
-    void buildAnonymizedPatientContext_singleVitalReading_returnsInsufficientDataTrend() {
+    void buildAnonymizedPatientContext_singleVitalReading_returnsInsufficientDataTrend() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -545,7 +545,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - blood pressure trend - returns stable")
-    void buildAnonymizedPatientContext_bloodPressureTrend_returnsStable() {
+    void buildAnonymizedPatientContext_bloodPressureTrend_returnsStable() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -571,7 +571,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals with decreasing trend - returns decreasing")
-    void buildAnonymizedPatientContext_vitalsWithDecreasingTrend_returnsDecreasing() {
+    void buildAnonymizedPatientContext_vitalsWithDecreasingTrend_returnsDecreasing() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -597,7 +597,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - vitals with non-numeric values - analyzeTrend returns stable on exception")
-    void buildAnonymizedPatientContext_vitalsNonNumericValues_analyzeTrendReturnsStableOnException() {
+    void buildAnonymizedPatientContext_vitalsNonNumericValues_analyzeTrendReturnsStableOnException() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -626,7 +626,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - notes with STATISTICAL level - returns note count summary")
-    void buildAnonymizedPatientContext_notesWithStatisticalLevel_returnsNoteCountSummary() {
+    void buildAnonymizedPatientContext_notesWithStatisticalLevel_returnsNoteCountSummary() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -652,7 +652,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - notes with long content - truncates to 100 chars")
-    void buildAnonymizedPatientContext_notesWithLongContent_truncatesTo100Chars() {
+    void buildAnonymizedPatientContext_notesWithLongContent_truncatesTo100Chars() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -679,7 +679,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - notes with null content - handles null gracefully")
-    void buildAnonymizedPatientContext_notesWithNullContent_handlesNullGracefully() {
+    void buildAnonymizedPatientContext_notesWithNullContent_handlesNullGracefully() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -709,7 +709,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - include notes true but aiConfig false - skips notes")
-    void buildAnonymizedPatientContext_includeNotesTrueAiConfigFalse_skipsNotes() {
+    void buildAnonymizedPatientContext_includeNotesTrueAiConfigFalse_skipsNotes() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(false)
@@ -733,7 +733,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - include medications true but aiConfig false - skips medications")
-    void buildAnonymizedPatientContext_includeMedicationsTrueAiConfigFalse_skipsMedications() {
+    void buildAnonymizedPatientContext_includeMedicationsTrueAiConfigFalse_skipsMedications() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(false)
                 .includeMedications(true)
@@ -757,7 +757,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with elevated BP via diastolic only - returns elevated range")
-    void buildAnonymizedPatientContext_aggressiveElevatedBPViaDiastolicOnly_returnsElevatedRange() {
+    void buildAnonymizedPatientContext_aggressiveElevatedBPViaDiastolicOnly_returnsElevatedRange() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)
@@ -784,7 +784,7 @@ class PrivacyAwareMedicalContextServiceTest {
 
     @Test
     @DisplayName("buildAnonymizedPatientContext - AGGRESSIVE with high-normal BP via diastolic only - returns high-normal range")
-    void buildAnonymizedPatientContext_aggressiveHighNormalBPViaDiastolicOnly_returnsHighNormalRange() {
+    void buildAnonymizedPatientContext_aggressiveHighNormalBPViaDiastolicOnly_returnsHighNormalRange() throws Exception {
         ChatRequest request = ChatRequest.builder()
                 .includeVitals(true)
                 .includeMedications(false)

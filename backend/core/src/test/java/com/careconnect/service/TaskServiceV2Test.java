@@ -65,7 +65,7 @@ class TaskServiceV2Test {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         // Construct the service manually so the real ObjectMapper is wired in
         taskService = new TaskServiceV2(taskRepository, patientRepository, mapper);
@@ -77,7 +77,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTaskById: returns the task entity when the ID exists")
-    void testGetTaskById_found() {
+    void testGetTaskById_found() throws Exception {
         // Verify that a task stored in the repository is returned unchanged
         Task task = Task.builder().id(1L).name("Test Task").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
@@ -91,7 +91,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTaskById: throws TaskNotFoundException when the ID does not exist")
-    void testGetTaskById_notFound() {
+    void testGetTaskById_notFound() throws Exception {
         // A missing task must surface as a domain exception, not a null return
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -105,7 +105,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTaskDtoById: maps the found entity to a DTO with correct id and name")
-    void testGetTaskDtoById_found() {
+    void testGetTaskDtoById_found() throws Exception {
         // Confirms that the entity-to-DTO mapping preserves core identifying fields
         Task task = Task.builder().id(7L).name("Morning Walk").date("2025-06-01").build();
         when(taskRepository.findById(7L)).thenReturn(Optional.of(task));
@@ -119,7 +119,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTaskDtoById: throws TaskNotFoundException for an unknown task ID")
-    void testGetTaskDtoById_notFound() {
+    void testGetTaskDtoById_notFound() throws Exception {
         // The DTO lookup must propagate the not-found exception just like getTaskById
         when(taskRepository.findById(42L)).thenReturn(Optional.empty());
 
@@ -132,7 +132,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTasksByPatient: maps each task entity to a DTO and returns the full list")
-    void testGetTasksByPatient() {
+    void testGetTasksByPatient() throws Exception {
         // Both entities must appear in the result list in order
         Task t1 = Task.builder().id(1L).name("Check Vitals").build();
         Task t2 = Task.builder().id(2L).name("Take Medication").build();
@@ -147,7 +147,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getTasksByPatient: returns an empty (non-null) list when no tasks exist for the patient")
-    void testGetTasksByPatient_emptyReturnsEmptyList() {
+    void testGetTasksByPatient_emptyReturnsEmptyList() throws Exception {
         // Optional.empty() from the repository should produce an empty list, not throw
         when(taskRepository.findByPatientId(99L)).thenReturn(Optional.empty());
 
@@ -163,7 +163,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("createTask: persists a new one-time task and returns its DTO with the generated ID")
-    void testCreateTask_savesNewTask() {
+    void testCreateTask_savesNewTask() throws Exception {
         // The happy path: a valid patient and a non-recurring task DTO
         Patient patient = Patient.builder().id(5L).build();
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
@@ -198,7 +198,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("createTask: throws PatientNotFoundException when the patient ID does not exist")
-    void testCreateTask_patientNotFound() {
+    void testCreateTask_patientNotFound() throws Exception {
         // A task must not be created without a valid owning patient
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -213,7 +213,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("createTask: calls saveAll to persist child occurrences when count > 1")
-    void testCreateTask_withRecurrence_savesOccurrences() {
+    void testCreateTask_withRecurrence_savesOccurrences() throws Exception {
         // When frequency is set and count > 1, the service must expand the recurring
         // series by saving additional occurrence tasks via saveAll
         Patient patient = Patient.builder().id(5L).build();
@@ -245,7 +245,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("createTask: attaches ScheduledNotification entities to the parent task before saving")
-    void testCreateTask_withNotifications_attached() {
+    void testCreateTask_withNotifications_attached() throws Exception {
         // Notifications provided in the DTO must be mapped to entities and linked
         // to the saved task without throwing during construction
         Patient patient = Patient.builder().id(5L).build();
@@ -279,7 +279,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("updateCompletionStatus: sets isCompleted to true and persists the change")
-    void testUpdateCompletionStatus_markComplete() {
+    void testUpdateCompletionStatus_markComplete() throws Exception {
         // Completing a task must flip the flag and trigger a save
         Task task = Task.builder().id(1L).isCompleted(false).name("Do something").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
@@ -293,7 +293,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("updateCompletionStatus: sets isCompleted to false (un-completing a task)")
-    void testUpdateCompletionStatus_markIncomplete() {
+    void testUpdateCompletionStatus_markIncomplete() throws Exception {
         // The method must work symmetrically for clearing the completion flag
         Task task = Task.builder().id(2L).isCompleted(true).name("Done Task").build();
         when(taskRepository.findById(2L)).thenReturn(Optional.of(task));
@@ -307,7 +307,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("updateCompletionStatus: throws TaskNotFoundException for an unknown task ID")
-    void testUpdateCompletionStatus_notFound() {
+    void testUpdateCompletionStatus_notFound() throws Exception {
         // Attempting to update a non-existent task must raise the domain exception
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -321,7 +321,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("updateTask single mode: updates only the targeted task without touching series siblings")
-    void testUpdateTask_singleUpdate_updatesFieldAndSaves() {
+    void testUpdateTask_singleUpdate_updatesFieldAndSaves() throws Exception {
         // updateSeries=false means the update must be scoped to one task;
         // findByParentTaskId must never be called in this path
         Task existing = Task.builder()
@@ -351,7 +351,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("updateTask series mode: propagates name change to all child tasks in the series")
-    void testUpdateTask_seriesUpdate_nameChangeUpdatesChildren() {
+    void testUpdateTask_seriesUpdate_nameChangeUpdatesChildren() throws Exception {
         // When only a non-recurrence field (name) changes, the service must update
         // all children via saveAll without deleting/regenerating occurrences
         Task parent = Task.builder()
@@ -395,7 +395,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("deleteTask single: deletes only the specified task when it has no children")
-    void testDeleteTask_single_noChildren_deletesTask() {
+    void testDeleteTask_single_noChildren_deletesTask() throws Exception {
         // A lone task (no series) must be directly deleted; no promotion logic runs
         Task task = Task.builder().id(1L).parentTaskId(null).name("Solo Task").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
@@ -410,7 +410,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("deleteTask single parent: promotes the first child to series parent and re-parents the rest")
-    void testDeleteTask_single_parentWithChildren_promotesFirstChild() {
+    void testDeleteTask_single_parentWithChildren_promotesFirstChild() throws Exception {
         // Deleting the series parent without deleting the series must re-root the
         // series so the first child becomes the new parent
         Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
@@ -436,7 +436,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("deleteTask series: removes the entire recurring series (parent + all children)")
-    void testDeleteTask_series_deletesAll() {
+    void testDeleteTask_series_deletesAll() throws Exception {
         // deleteSeries=true must collect all tasks in the series and call deleteAll
         Task child = Task.builder().id(2L).parentTaskId(1L).name("Child Task").build();
         Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
@@ -454,7 +454,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("deleteTask: throws TaskNotFoundException when the task ID does not exist")
-    void testDeleteTask_taskNotFound_throws() {
+    void testDeleteTask_taskNotFound_throws() throws Exception {
         // A delete request for a non-existent ID must fail with the domain exception
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -467,7 +467,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("existsById: returns true when the task is present in the repository")
-    void testExistsById_true() {
+    void testExistsById_true() throws Exception {
         when(taskRepository.findById(7L)).thenReturn(Optional.of(Task.builder().id(7L).build()));
 
         assertTrue(taskService.existsById(7L));
@@ -475,7 +475,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("existsById: returns false when no task matches the given ID")
-    void testExistsById_false() {
+    void testExistsById_false() throws Exception {
         when(taskRepository.findById(8L)).thenReturn(Optional.empty());
 
         assertFalse(taskService.existsById(8L));
@@ -487,7 +487,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getAllTasks: maps all persisted task entities to DTOs")
-    void testGetAllTasks() {
+    void testGetAllTasks() throws Exception {
         Task t1 = Task.builder().id(1L).name("Task1").build();
         Task t2 = Task.builder().id(2L).name("Task2").build();
         when(taskRepository.findAll()).thenReturn(List.of(t1, t2));
@@ -501,7 +501,7 @@ class TaskServiceV2Test {
 
     @Test
     @DisplayName("getAllTasks: throws TaskNotFoundException when the repository contains no tasks")
-    void testGetAllTasks_emptyThrows() {
+    void testGetAllTasks_emptyThrows() throws Exception {
         // An empty task table is treated as an error condition for this endpoint
         when(taskRepository.findAll()).thenReturn(List.of());
 

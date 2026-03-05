@@ -11,7 +11,7 @@ class PostTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         Post post = new Post();
 
         assertThat(post).isNotNull();
@@ -25,7 +25,7 @@ class PostTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         Post post = new Post(1L, 10L, "Hello World", "http://img.example.com/pic.jpg", now);
 
@@ -39,7 +39,7 @@ class PostTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Post post = new Post();
         LocalDateTime now = LocalDateTime.now();
 

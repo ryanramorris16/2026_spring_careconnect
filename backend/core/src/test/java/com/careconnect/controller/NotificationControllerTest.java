@@ -3,7 +3,11 @@ package com.careconnect.controller;
 import com.careconnect.dto.FirebaseNotificationRequest;
 import com.careconnect.dto.NotificationResponse;
 import com.careconnect.model.DeviceToken;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.Role;
 import com.careconnect.service.NotificationService;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.websocket.NotificationWebSocketHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +31,9 @@ class NotificationControllerTest {
     @Mock private NotificationWebSocketHandler notificationWebSocketHandler;
     @Mock private NotificationService notificationService;
 
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
+
     @InjectMocks
     private NotificationController controller;
 
@@ -36,7 +43,7 @@ class NotificationControllerTest {
     // ─── sendWebSocketNotificationToUser ──────────────────────────────────────
 
     @Test
-    void sendWebSocketNotification_sent_returns200() {
+    void sendWebSocketNotification_sent_returns200() throws Exception {
         when(notificationWebSocketHandler.sendNotificationToUser("user-123", "Hello"))
                 .thenReturn(true);
 
@@ -48,7 +55,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void sendWebSocketNotification_notSent_returns404() {
+    void sendWebSocketNotification_notSent_returns404() throws Exception {
         when(notificationWebSocketHandler.sendNotificationToUser("user-123", "Hello"))
                 .thenReturn(false);
 
@@ -60,7 +67,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void sendWebSocketNotification_noMessageKey_usesEmptyString() {
+    void sendWebSocketNotification_noMessageKey_usesEmptyString() throws Exception {
         when(notificationWebSocketHandler.sendNotificationToUser("u1", "")).thenReturn(true);
 
         ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
@@ -72,7 +79,7 @@ class NotificationControllerTest {
     // ─── sendNotification ─────────────────────────────────────────────────────
 
     @Test
-    void sendNotification_returns200() {
+    void sendNotification_returns200() throws Exception {
         FirebaseNotificationRequest request = mock(FirebaseNotificationRequest.class);
         NotificationResponse notifResponse = NotificationResponse.success("msg-id");
         when(notificationService.sendNotification(request)).thenReturn(notifResponse);
@@ -86,7 +93,7 @@ class NotificationControllerTest {
     // ─── sendBulkNotifications ────────────────────────────────────────────────
 
     @Test
-    void sendBulkNotifications_returns200() {
+    void sendBulkNotifications_returns200() throws Exception {
         FirebaseNotificationRequest req = mock(FirebaseNotificationRequest.class);
         List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
         when(notificationService.sendBulkNotifications(anyList())).thenReturn(responses);
@@ -101,7 +108,7 @@ class NotificationControllerTest {
     // ─── sendNotificationToUser ───────────────────────────────────────────────
 
     @Test
-    void sendNotificationToUser_returns200() {
+    void sendNotificationToUser_returns200() throws Exception {
         List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
         when(notificationService.sendNotificationToUser(USER_ID, "Title", "Body", "GENERAL", null))
                 .thenReturn(responses);
@@ -117,6 +124,8 @@ class NotificationControllerTest {
 
     @Test
     void sendVitalAlert_returns200_async() throws Exception {
+        User currentUser = User.builder().id(USER_ID).email("caregiver@test.com").role(Role.CAREGIVER).password("p").status("ACTIVE").build();
+        when(securityUtil.resolveCurrentUser()).thenReturn(currentUser);
         List<NotificationResponse> responses = List.of(NotificationResponse.success("alert-1"));
         when(notificationService.sendVitalAlert(PATIENT_ID, "HR", "120bpm", "HIGH"))
                 .thenReturn(CompletableFuture.completedFuture(responses));
@@ -164,7 +173,7 @@ class NotificationControllerTest {
     // ─── registerDeviceToken ──────────────────────────────────────────────────
 
     @Test
-    void registerDeviceToken_success_returns200() {
+    void registerDeviceToken_success_returns200() throws Exception {
         doNothing().when(notificationService).registerDeviceToken(
                 USER_ID, "fcm-token-abc", "device-001", DeviceToken.DeviceType.ANDROID);
 
@@ -176,7 +185,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void registerDeviceToken_throws_returns400() {
+    void registerDeviceToken_throws_returns400() throws Exception {
         doThrow(new RuntimeException("DB error")).when(notificationService).registerDeviceToken(
                 any(), anyString(), anyString(), any());
 
@@ -190,7 +199,7 @@ class NotificationControllerTest {
     // ─── unregisterDeviceToken ────────────────────────────────────────────────
 
     @Test
-    void unregisterDeviceToken_success_returns200() {
+    void unregisterDeviceToken_success_returns200() throws Exception {
         doNothing().when(notificationService).unregisterDeviceToken("fcm-token-xyz");
 
         ResponseEntity<Map<String, String>> response = controller.unregisterDeviceToken("fcm-token-xyz");
@@ -200,7 +209,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void unregisterDeviceToken_throws_returns400() {
+    void unregisterDeviceToken_throws_returns400() throws Exception {
         doThrow(new RuntimeException("Token not found")).when(notificationService)
                 .unregisterDeviceToken(anyString());
 

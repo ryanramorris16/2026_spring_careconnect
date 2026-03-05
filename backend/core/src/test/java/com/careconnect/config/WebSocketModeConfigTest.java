@@ -33,12 +33,12 @@ class WebSocketModeConfigTest {
     private WebSocketModeConfig config;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         config = new WebSocketModeConfig();
     }
 
     @Test
-    void returnsLocalWhenAwsEndpointPropertyIsNull() {
+    void returnsLocalWhenAwsEndpointPropertyIsNull() throws Exception {
         // Verifies that a null property value (property not set at all) triggers the
         // local mode, which is the expected default for local development environments.
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn(null);
@@ -49,7 +49,7 @@ class WebSocketModeConfigTest {
     }
 
     @Test
-    void returnsLocalWhenAwsEndpointPropertyIsEmpty() {
+    void returnsLocalWhenAwsEndpointPropertyIsEmpty() throws Exception {
         // Verifies that an empty string (property present but empty) also triggers
         // local mode, guarding against misconfigured environments.
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("");
@@ -60,7 +60,7 @@ class WebSocketModeConfigTest {
     }
 
     @Test
-    void returnsLocalWhenAwsEndpointPropertyIsBlank() {
+    void returnsLocalWhenAwsEndpointPropertyIsBlank() throws Exception {
         // Verifies that a whitespace-only value is also treated as absent,
         // preventing accidental "aws" mode from a property set to spaces.
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("   ");
@@ -71,7 +71,7 @@ class WebSocketModeConfigTest {
     }
 
     @Test
-    void returnsAwsWhenAwsEndpointPropertyIsSet() {
+    void returnsAwsWhenAwsEndpointPropertyIsSet() throws Exception {
         // Verifies that a real AWS API Gateway endpoint URL triggers "aws" mode,
         // which causes the application to route WebSocket traffic to AWS rather than
         // the local server.
@@ -83,7 +83,7 @@ class WebSocketModeConfigTest {
     }
 
     @Test
-    void returnsAwsWhenAwsEndpointPropertyIsMinimalNonBlankString() {
+    void returnsAwsWhenAwsEndpointPropertyIsMinimalNonBlankString() throws Exception {
         // Verifies that any non-blank string (not just a valid AWS URL) triggers "aws"
         // mode, confirming the logic checks for presence/non-blankness only.
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("wss://example.com");

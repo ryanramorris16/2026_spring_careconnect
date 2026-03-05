@@ -11,7 +11,9 @@ import com.careconnect.repository.UserRepository;
 import com.careconnect.security.Role;
 import com.careconnect.service.AnalyticsService;
 import com.careconnect.service.CaregiverService;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.VitalSampleService;
+import com.careconnect.util.SecurityUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -60,6 +62,11 @@ class AnalyticsControllerTest {
     @Mock
     private SecurityContext securityContext;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private AnalyticsController controller;
 
@@ -86,14 +93,14 @@ class AnalyticsControllerTest {
     }
 
     /** Wire up SecurityContextHolder so auth.getName() returns USER_EMAIL. */
-    private void mockAuth() {
+    private void mockAuth() throws Exception {
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
         when(authentication.getName()).thenReturn(USER_EMAIL);
     }
 
     @BeforeEach
-    void resetSecurityContext() {
+    void resetSecurityContext() throws Exception {
         SecurityContextHolder.clearContext();
         ReflectionTestUtils.setField(controller, "analyticsService", analyticsService);
         ReflectionTestUtils.setField(controller, "vitalSampleService", vitalSampleService);
@@ -105,7 +112,7 @@ class AnalyticsControllerTest {
     class Dashboard {
 
         @Test
-        void returnsDto() {
+        void returnsDto() throws Exception {
             DashboardDTO dto = mock(DashboardDTO.class);
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(7))).thenReturn(dto);
 
@@ -115,7 +122,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void clampsNegativeDaysToOne() {
+        void clampsNegativeDaysToOne() throws Exception {
             DashboardDTO dto = mock(DashboardDTO.class);
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(1))).thenReturn(dto);
 
@@ -132,7 +139,7 @@ class AnalyticsControllerTest {
     class ExportCsv {
 
         @Test
-        void returnsCsvBytes() {
+        void returnsCsvBytes() throws Exception {
             byte[] csv = "col1,col2\n1,2\n".getBytes();
             when(analyticsService.exportVitalsCsv(PATIENT_ID, Period.ofDays(7))).thenReturn(csv);
 
@@ -145,7 +152,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void clampsNegativeDaysToOne() {
+        void clampsNegativeDaysToOne() throws Exception {
             byte[] csv = new byte[0];
             when(analyticsService.exportVitalsCsv(PATIENT_ID, Period.ofDays(1))).thenReturn(csv);
 
@@ -161,7 +168,7 @@ class AnalyticsControllerTest {
     class ExportPdf {
 
         @Test
-        void returnsPdfBytes() {
+        void returnsPdfBytes() throws Exception {
             byte[] pdf = new byte[] { 1, 2, 3 };
             when(analyticsService.exportVitalsPdf(PATIENT_ID, Period.ofDays(7))).thenReturn(pdf);
 
@@ -174,7 +181,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void clampsNegativeDaysToOne() {
+        void clampsNegativeDaysToOne() throws Exception {
             byte[] pdf = new byte[0];
             when(analyticsService.exportVitalsPdf(PATIENT_ID, Period.ofDays(1))).thenReturn(pdf);
 
@@ -190,7 +197,7 @@ class AnalyticsControllerTest {
     class Live {
 
         @Test
-        void returnsNonNullEmitter() throws InterruptedException {
+        void returnsNonNullEmitter() throws Exception {
             // Throw immediately so the infinite loop exits after one iteration
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(1)))
                     .thenThrow(new RuntimeException("stop"));
@@ -211,7 +218,7 @@ class AnalyticsControllerTest {
     class GetVitals {
 
         @Test
-        void patientCanAccessOwnVitals() {
+        void patientCanAccessOwnVitals() throws Exception {
             mockAuth();
             User patientUser = makeUser(USER_ID, Role.PATIENT);
             Patient patient = makePatient(patientUser);
@@ -227,7 +234,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void patientCannotAccessOtherPatientsVitals() {
+        void patientCannotAccessOtherPatientsVitals() throws Exception {
             mockAuth();
             User requestingUser = makeUser(OTHER_ID, Role.PATIENT); // different id
             User patientUser = makeUser(USER_ID, Role.PATIENT);
@@ -242,7 +249,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithAccessCanReadVitals() {
+        void caregiverWithAccessCanReadVitals() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -258,7 +265,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithoutAccessIsRejected() {
+        void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -273,7 +280,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void familyMemberWithAccessCanReadVitals() {
+        void familyMemberWithAccessCanReadVitals() throws Exception {
             mockAuth();
             User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -289,7 +296,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void adminCanAccessAnyPatientsVitals() {
+        void adminCanAccessAnyPatientsVitals() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -304,7 +311,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsNotFoundWhenPatientMissing() {
+        void returnsNotFoundWhenPatientMissing() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
 
@@ -317,7 +324,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsEmptyListOnServiceException() {
+        void returnsEmptyListOnServiceException() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -339,12 +346,12 @@ class AnalyticsControllerTest {
     @Nested
     class CreateVitalSample {
 
-        private VitalSampleDTO sampleDto() {
+        private VitalSampleDTO sampleDto() throws Exception {
             return new VitalSampleDTO(1L, PATIENT_ID, Instant.now(), 65.0, 98.0, 120, 80, 190.0, 8, 4);
         }
 
         @Test
-        void patientCanCreateOwnVitalSample() {
+        void patientCanCreateOwnVitalSample() throws Exception {
             mockAuth();
             User patientUser = makeUser(USER_ID, Role.PATIENT);
             Patient patient = makePatient(patientUser);
@@ -362,7 +369,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void patientCannotCreateVitalSampleForAnotherPatient() {
+        void patientCannotCreateVitalSampleForAnotherPatient() throws Exception {
             mockAuth();
             User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
             Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
@@ -376,7 +383,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithAccessCanCreateVitalSample() {
+        void caregiverWithAccessCanCreateVitalSample() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -393,7 +400,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithoutAccessIsRejected() {
+        void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -408,7 +415,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void familyMemberWithAccessCanCreateVitalSample() {
+        void familyMemberWithAccessCanCreateVitalSample() throws Exception {
             mockAuth();
             User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -425,7 +432,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void familyMemberWithoutAccessIsRejected() {
+        void familyMemberWithoutAccessIsRejected() throws Exception {
             mockAuth();
             User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -440,7 +447,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void adminCanCreateVitalSampleForAnyPatient() {
+        void adminCanCreateVitalSampleForAnyPatient() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -456,7 +463,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsNotFoundWhenPatientMissing() {
+        void returnsNotFoundWhenPatientMissing() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
 
@@ -469,7 +476,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsBadRequestOnIllegalArgument() {
+        void returnsBadRequestOnIllegalArgument() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -487,7 +494,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsInternalServerErrorOnUnexpectedException() {
+        void returnsInternalServerErrorOnUnexpectedException() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -510,16 +517,16 @@ class AnalyticsControllerTest {
 
         private static final Long VITAL_ID = 55L;
 
-        private VitalSampleDTO existingDto() {
+        private VitalSampleDTO existingDto() throws Exception {
             return new VitalSampleDTO(VITAL_ID, PATIENT_ID, null, null, null, null, null, null, null, null);
         }
 
-        private VitalSampleDTO updateDto() {
+        private VitalSampleDTO updateDto() throws Exception {
             return new VitalSampleDTO(VITAL_ID, PATIENT_ID, null, null, null, null, null, null, null, null);
         }
 
         @Test
-        void patientCanUpdateOwnVitalSample() {
+        void patientCanUpdateOwnVitalSample() throws Exception {
             mockAuth();
             User patientUser = makeUser(USER_ID, Role.PATIENT);
             Patient patient = makePatient(patientUser);
@@ -536,7 +543,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void patientCannotUpdateAnotherPatientsVitalSample() {
+        void patientCannotUpdateAnotherPatientsVitalSample() throws Exception {
             mockAuth();
             User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
             Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
@@ -551,7 +558,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithAccessCanUpdate() {
+        void caregiverWithAccessCanUpdate() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -568,7 +575,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void caregiverWithoutAccessIsRejected() {
+        void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
             User caregiver = makeUser(USER_ID, Role.CAREGIVER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -584,7 +591,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void familyMemberWithAccessCanUpdate() {
+        void familyMemberWithAccessCanUpdate() throws Exception {
             mockAuth();
             User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -601,7 +608,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void familyMemberWithoutAccessIsRejected() {
+        void familyMemberWithoutAccessIsRejected() throws Exception {
             mockAuth();
             User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -617,7 +624,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsNotFoundWhenPatientMissingAfterVitalFound() {
+        void returnsNotFoundWhenPatientMissingAfterVitalFound() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
 
@@ -631,7 +638,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void adminCanUpdateAnyVitalSample() {
+        void adminCanUpdateAnyVitalSample() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -647,7 +654,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsNotFoundWhenVitalSampleMissing() {
+        void returnsNotFoundWhenVitalSampleMissing() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
 
@@ -660,7 +667,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsBadRequestOnIllegalArgument() {
+        void returnsBadRequestOnIllegalArgument() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
@@ -677,7 +684,7 @@ class AnalyticsControllerTest {
         }
 
         @Test
-        void returnsInternalServerErrorOnUnexpectedException() {
+        void returnsInternalServerErrorOnUnexpectedException() throws Exception {
             mockAuth();
             User admin = makeUser(USER_ID, Role.ADMIN);
             Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));

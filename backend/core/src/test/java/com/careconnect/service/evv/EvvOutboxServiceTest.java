@@ -32,7 +32,7 @@ class EvvOutboxServiceTest {
     @InjectMocks
     private EvvOutboxService evvOutboxService;
 
-    private EvvRecord buildMinimalRecord() {
+    private EvvRecord buildMinimalRecord() throws Exception {
         EvvRecord record = mock(EvvRecord.class);
         lenient().when(record.getId()).thenReturn(1L);
         lenient().when(record.getServiceType()).thenReturn("HOME_HEALTH");
@@ -181,13 +181,13 @@ class EvvOutboxServiceTest {
     }
 
     @Test
-    void markSent_callsJdbcUpdate() {
+    void markSent_callsJdbcUpdate() throws Exception {
         evvOutboxService.markSent(10L);
         verify(jdbc).update(anyString(), any(MapSqlParameterSource.class));
     }
 
     @Test
-    void markFailed_callsJdbcUpdate() {
+    void markFailed_callsJdbcUpdate() throws Exception {
         evvOutboxService.markFailed(10L, "some error");
         verify(jdbc).update(anyString(), any(MapSqlParameterSource.class));
     }

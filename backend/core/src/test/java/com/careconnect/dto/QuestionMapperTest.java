@@ -33,7 +33,7 @@ class QuestionMapperTest {
     // ─── toDto() ──────────────────────────────────────────────────────────────
 
     @Test
-    void toDto_mapsAllFieldsCorrectly() {
+    void toDto_mapsAllFieldsCorrectly() throws Exception {
         when(mockQuestion.getId()).thenReturn(1L);
         when(mockQuestion.getPrompt()).thenReturn("How are you feeling?");
         when(mockQuestion.getType()).thenReturn(QuestionType.TEXT);
@@ -52,7 +52,7 @@ class QuestionMapperTest {
     }
 
     @Test
-    void toDto_yesNoType_convertsToString() {
+    void toDto_yesNoType_convertsToString() throws Exception {
         when(mockQuestion.getId()).thenReturn(2L);
         when(mockQuestion.getPrompt()).thenReturn("Did you sleep well?");
         when(mockQuestion.getType()).thenReturn(QuestionType.YES_NO);
@@ -70,7 +70,7 @@ class QuestionMapperTest {
     // ─── applyUpsert() ────────────────────────────────────────────────────────
 
     @Test
-    void applyUpsert_setsAllFieldsOnTarget() {
+    void applyUpsert_setsAllFieldsOnTarget() throws Exception {
         QuestionUpsertDTO src = new QuestionUpsertDTO(
                 "Rate your pain 1-10", QuestionType.NUMBER, true, 5);
 
@@ -83,7 +83,7 @@ class QuestionMapperTest {
     }
 
     @Test
-    void applyUpsert_optionalFields_appliedCorrectly() {
+    void applyUpsert_optionalFields_appliedCorrectly() throws Exception {
         QuestionUpsertDTO src = new QuestionUpsertDTO(
                 "True or false?", QuestionType.TRUE_FALSE, false, 0);
 

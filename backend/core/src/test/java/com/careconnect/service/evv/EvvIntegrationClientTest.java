@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 class EvvIntegrationClientTest {
 
     @Test
-    void destination_mockReturnsExpectedValue() {
+    void destination_mockReturnsExpectedValue() throws Exception {
         EvvIntegrationClient client = mock(EvvIntegrationClient.class);
         when(client.destination()).thenReturn("test-destination");
 

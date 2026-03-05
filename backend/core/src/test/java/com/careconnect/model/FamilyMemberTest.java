@@ -9,7 +9,7 @@ class FamilyMemberTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         FamilyMember fm = new FamilyMember();
 
         assertThat(fm).isNotNull();
@@ -25,7 +25,7 @@ class FamilyMemberTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         User user = new User();
         Address address = new Address("1 Oak St", null, "Towson", "MD", "21204");
 
@@ -43,7 +43,7 @@ class FamilyMemberTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         FamilyMember fm = FamilyMember.builder()
                 .id(2L)
                 .firstName("Bob")
@@ -62,7 +62,7 @@ class FamilyMemberTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         FamilyMember fm = new FamilyMember();
         User user = new User();
         Address address = new Address();

@@ -9,7 +9,7 @@ class FriendshipTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Friendship friendship = new Friendship();
 
         assertThat(friendship).isNotNull();
@@ -22,7 +22,7 @@ class FriendshipTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         User user1 = User.builder().id(1L).name("Alice").build();
         User user2 = User.builder().id(2L).name("Bob").build();
 
@@ -37,7 +37,7 @@ class FriendshipTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsFields() {
+    void builder_setsFields() throws Exception {
         User user1 = User.builder().id(3L).build();
         User user2 = User.builder().id(4L).build();
 
@@ -57,7 +57,7 @@ class FriendshipTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Friendship friendship = new Friendship();
         User user1 = new User();
         User user2 = new User();
@@ -76,7 +76,7 @@ class FriendshipTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Friendship f1 = Friendship.builder().id(1L).status("CONFIRMED").build();
         Friendship f2 = Friendship.builder().id(1L).status("CONFIRMED").build();
 
@@ -85,7 +85,7 @@ class FriendshipTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         Friendship f1 = Friendship.builder().id(1L).build();
         Friendship f2 = Friendship.builder().id(2L).build();
 

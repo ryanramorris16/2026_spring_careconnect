@@ -11,7 +11,7 @@ class MoodEntryTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         MoodEntry entry = new MoodEntry();
 
         assertThat(entry).isNotNull();
@@ -24,7 +24,7 @@ class MoodEntryTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         Instant now = Instant.now();
 
@@ -44,7 +44,7 @@ class MoodEntryTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         MoodEntry entry = new MoodEntry();
         Patient patient = new Patient();
         Instant now = Instant.now();
@@ -63,7 +63,7 @@ class MoodEntryTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         MoodEntry e1 = MoodEntry.builder().id(1L).moodScore(3).build();
         MoodEntry e2 = MoodEntry.builder().id(1L).moodScore(3).build();
 

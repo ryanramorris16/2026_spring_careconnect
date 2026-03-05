@@ -41,7 +41,7 @@ class JwtAuthenticationFilterTest {
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
     }
@@ -70,7 +70,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("resolveToken should return token from Authorization header")
-    void resolveToken_ShouldReturnTokenFromHeader() {
+    void resolveToken_ShouldReturnTokenFromHeader() throws Exception {
         when(request.getHeader("Authorization")).thenReturn("Bearer test-token");
         String token = jwtAuthenticationFilter.resolveToken(request);
         assert token.equals("test-token");
@@ -78,7 +78,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("resolveToken should return token from cookie")
-    void resolveToken_ShouldReturnTokenFromCookie() {
+    void resolveToken_ShouldReturnTokenFromCookie() throws Exception {
         Cookie cookie = new Cookie("AUTH", "cookie-token");
         when(request.getCookies()).thenReturn(new Cookie[]{cookie});
         when(request.getHeader("Authorization")).thenReturn(null);
@@ -88,7 +88,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("resolveToken should return null when no token present")
-    void resolveToken_ShouldReturnNullWhenNoToken() {
+    void resolveToken_ShouldReturnNullWhenNoToken() throws Exception {
         when(request.getHeader("Authorization")).thenReturn(null);
         when(request.getCookies()).thenReturn(null);
         String token = jwtAuthenticationFilter.resolveToken(request);

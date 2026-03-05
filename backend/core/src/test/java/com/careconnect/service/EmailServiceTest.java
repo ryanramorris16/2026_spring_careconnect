@@ -47,7 +47,7 @@ class EmailServiceTest {
   private MimeMessage mimeMessage;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws Exception {
     MockitoAnnotations.openMocks(this);
     mimeMessage = mock(MimeMessage.class);
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -71,14 +71,14 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailProvider returns configured provider")
-  void getEmailProvider_configured_returnsProvider() {
+  void getEmailProvider_configured_returnsProvider() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "sendgrid");
     assertThat(emailService.getEmailProvider()).isEqualTo("sendgrid");
   }
 
   @Test
   @DisplayName("getFromEmail returns configured from address")
-  void getFromEmail_configured_returnsFromEmail() {
+  void getFromEmail_configured_returnsFromEmail() throws Exception {
     assertThat(emailService.getFromEmail())
         .isEqualTo("noreply@careconnect.com");
   }
@@ -87,7 +87,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendTestEmail with SMTP provider sends via SMTP")
-  void sendTestEmail_smtpProvider_sendsViaSMTP() {
+  void sendTestEmail_smtpProvider_sendsViaSMTP() throws Exception {
     emailService.sendTestEmail("user@test.com", "Test Subject",
         "Test body");
     verify(mailSender).createMimeMessage();
@@ -98,7 +98,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendHtmlEmail strips HTML tags for text fallback")
-  void sendHtmlEmail_htmlContent_stripsTagsForTextContent() {
+  void sendHtmlEmail_htmlContent_stripsTagsForTextContent() throws Exception {
     emailService.sendHtmlEmail("user@test.com", "Sub",
         "<p>Hello World</p>");
     verify(mailSender).send(any(MimeMessage.class));
@@ -108,7 +108,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendHtmlEmail with contentType delegates to two-arg")
-  void sendHtmlEmail_withContentType_delegatesToTwoArgOverload() {
+  void sendHtmlEmail_withContentType_delegatesToTwoArgOverload() throws Exception {
     emailService.sendHtmlEmail("user@test.com", "Sub",
         "<b>Bold</b>", "text/html");
     verify(mailSender).send(any(MimeMessage.class));
@@ -118,7 +118,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendVerificationEmail with SMTP provider sends email")
-  void sendVerificationEmail_smtpProvider_sendsEmail() {
+  void sendVerificationEmail_smtpProvider_sendsEmail() throws Exception {
     emailService.sendVerificationEmail("user@test.com",
         "http://localhost:3000/verify?token=abc");
     verify(mailSender).send(any(MimeMessage.class));
@@ -128,7 +128,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordSetupEmail with SMTP provider sends email")
-  void sendPasswordSetupEmail_smtpProvider_sendsEmail() {
+  void sendPasswordSetupEmail_smtpProvider_sendsEmail() throws Exception {
     emailService.sendPasswordSetupEmail("user@test.com",
         "token123", "Alice");
     verify(mailSender).send(any(MimeMessage.class));
@@ -136,7 +136,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordSetupEmail with null first name does not throw")
-  void sendPasswordSetupEmail_nullFirstName_doesNotThrow() {
+  void sendPasswordSetupEmail_nullFirstName_doesNotThrow() throws Exception {
     assertDoesNotThrow(
         () -> emailService.sendPasswordSetupEmail("user@test.com",
             "token123", null));
@@ -147,7 +147,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordResetEmail with SMTP provider sends email")
-  void sendPasswordResetEmail_smtpProvider_sendsEmail() {
+  void sendPasswordResetEmail_smtpProvider_sendsEmail() throws Exception {
     emailService.sendPasswordResetEmail("user@test.com",
         "http://localhost:3000/reset?token=xyz");
     verify(mailSender).send(any(MimeMessage.class));
@@ -157,7 +157,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendFamilyMemberInviteEmail with SMTP sends email")
-  void sendFamilyMemberInviteEmail_smtpProvider_sendsEmail() {
+  void sendFamilyMemberInviteEmail_smtpProvider_sendsEmail() throws Exception {
     emailService.sendFamilyMemberInviteEmail("family@test.com",
         "Bob", "inviteToken", "John Doe");
     verify(mailSender).send(any(MimeMessage.class));
@@ -165,7 +165,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendFamilyMemberInviteEmail with null name no throw")
-  void sendFamilyMemberInviteEmail_nullFirstName_doesNotThrow() {
+  void sendFamilyMemberInviteEmail_nullFirstName_doesNotThrow() throws Exception {
     assertDoesNotThrow(
         () -> emailService.sendFamilyMemberInviteEmail(
             "family@test.com", null, "inviteToken", "John Doe"));
@@ -175,7 +175,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendFamilyMemberAccessGrantedEmail sends via SMTP")
-  void sendFamilyMemberAccessGrantedEmail_smtpProvider_sendsEmail() {
+  void sendFamilyMemberAccessGrantedEmail_smtpProvider_sendsEmail() throws Exception {
     emailService.sendFamilyMemberAccessGrantedEmail(
         "family@test.com", "Alice", "John Doe");
     verify(mailSender).send(any(MimeMessage.class));
@@ -183,7 +183,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendFamilyMemberAccessGrantedEmail null name no throw")
-  void sendFamilyMemberAccessGrantedEmail_nullFirstName_doesNotThrow() {
+  void sendFamilyMemberAccessGrantedEmail_nullFirstName_doesNotThrow() throws Exception {
     assertDoesNotThrow(
         () -> emailService.sendFamilyMemberAccessGrantedEmail(
             "family@test.com", null, "John Doe"));
@@ -193,7 +193,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordSetupEmailWithCredentials temp password")
-  void sendPasswordSetupEmailWithCredentials_tempPassword_sendsEmail() {
+  void sendPasswordSetupEmailWithCredentials_tempPassword_sendsEmail() throws Exception {
     // A 12-char password matching the temp pattern
     String tempPassword = "Ab1!xxxxxxxx";
     emailService.sendPasswordSetupEmailWithCredentials(
@@ -204,7 +204,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordSetupEmailWithCredentials regular password")
-  void sendPasswordSetupEmailWithCredentials_regularPassword() {
+  void sendPasswordSetupEmailWithCredentials_regularPassword() throws Exception {
     emailService.sendPasswordSetupEmailWithCredentials(
         "user@test.com", "tokenABC", "Jane",
         "janeuser", "simplePass");
@@ -213,7 +213,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendPasswordSetupEmailWithCredentials null name no throw")
-  void sendPasswordSetupEmailWithCredentials_nullFirstName() {
+  void sendPasswordSetupEmailWithCredentials_nullFirstName() throws Exception {
     assertDoesNotThrow(
         () -> emailService.sendPasswordSetupEmailWithCredentials(
             "user@test.com", "token", null,
@@ -224,7 +224,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail with console provider logs to console only")
-  void sendEmail_consoleProvider_logsToConsole() {
+  void sendEmail_consoleProvider_logsToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "console");
     emailService.sendTestEmail("user@test.com", "Test", "Body");
@@ -233,7 +233,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail with dev provider logs to console only")
-  void sendEmail_devProvider_logsToConsole() {
+  void sendEmail_devProvider_logsToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "dev");
     emailService.sendTestEmail("user@test.com", "Test", "Body");
     verify(mailSender, never()).send(any(MimeMessage.class));
@@ -243,7 +243,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend no API key falls back to console")
-  void sendEmail_resendProviderNoApiKey_fallsBackToConsole() {
+  void sendEmail_resendProviderNoApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey", "");
     assertDoesNotThrow(
@@ -252,7 +252,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend null API key falls back to console")
-  void sendEmail_resendProviderNullApiKey_fallsBackToConsole() {
+  void sendEmail_resendProviderNullApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey", null);
     assertDoesNotThrow(
@@ -261,7 +261,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend valid key sends via REST API")
-  void sendEmail_resendProviderValidKey_sendsViaRestApi() {
+  void sendEmail_resendProviderValidKey_sendsViaRestApi() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey",
         "re_123456");
@@ -285,7 +285,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend non-2xx falls back to console")
-  void sendEmail_resendProviderNon2xx_fallsBackToConsole() {
+  void sendEmail_resendProviderNon2xx_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey",
         "re_123456");
@@ -304,7 +304,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend REST exception falls back to console")
-  void sendEmail_resendProviderRestException_fallsBackToConsole() {
+  void sendEmail_resendProviderRestException_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey",
         "re_123456");
@@ -322,7 +322,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun no API key falls back to console")
-  void sendEmail_mailgunProviderNoApiKey_fallsBackToConsole() {
+  void sendEmail_mailgunProviderNoApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey", "");
@@ -334,7 +334,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun null API key falls back to console")
-  void sendEmail_mailgunProviderNullApiKey_fallsBackToConsole() {
+  void sendEmail_mailgunProviderNullApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey", null);
@@ -346,7 +346,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun no domain falls back to console")
-  void sendEmail_mailgunProviderNoDomain_fallsBackToConsole() {
+  void sendEmail_mailgunProviderNoDomain_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -358,7 +358,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun null domain falls back to console")
-  void sendEmail_mailgunProviderNullDomain_fallsBackToConsole() {
+  void sendEmail_mailgunProviderNullDomain_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -370,7 +370,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun valid config sends via REST API")
-  void sendEmail_mailgunProviderValidConfig_sendsViaRestApi() {
+  void sendEmail_mailgunProviderValidConfig_sendsViaRestApi() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -397,7 +397,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun non-2xx falls back to console")
-  void sendEmail_mailgunProviderNon2xx_fallsBackToConsole() {
+  void sendEmail_mailgunProviderNon2xx_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -420,7 +420,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun REST exception falls back to console")
-  void sendEmail_mailgunProviderRestException_fallsBackToConsole() {
+  void sendEmail_mailgunProviderRestException_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -441,7 +441,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail sendgrid no API key falls back to console")
-  void sendEmail_sendgridProviderNoApiKey_fallsBackToConsole() {
+  void sendEmail_sendgridProviderNoApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey", "");
@@ -451,7 +451,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail sendgrid null API key falls back to console")
-  void sendEmail_sendgridProviderNullApiKey_fallsBackToConsole() {
+  void sendEmail_sendgridProviderNullApiKey_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey", null);
@@ -576,7 +576,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailtrap provider sends via SMTP")
-  void sendEmail_mailtrapProvider_sendsViaSmtp() {
+  void sendEmail_mailtrapProvider_sendsViaSmtp() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailtrap");
     emailService.sendTestEmail("user@test.com", "Sub", "Body");
@@ -585,7 +585,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail gmail provider sends via SMTP")
-  void sendEmail_gmailProvider_sendsViaSmtp() {
+  void sendEmail_gmailProvider_sendsViaSmtp() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "gmail");
     emailService.sendTestEmail("user@test.com", "Sub", "Body");
     verify(mailSender).send(any(MimeMessage.class));
@@ -593,7 +593,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail unknown provider falls through to SMTP")
-  void sendEmail_unknownProvider_fallsThroughToDefaultSmtp() {
+  void sendEmail_unknownProvider_fallsThroughToDefaultSmtp() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "something");
     emailService.sendTestEmail("user@test.com", "Sub", "Body");
@@ -602,7 +602,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail null mailSender falls back to console")
-  void sendEmail_nullMailSender_fallsBackToConsole() {
+  void sendEmail_nullMailSender_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "mailSender", null);
     assertDoesNotThrow(
         () -> emailService.sendTestEmail("u@test.com", "S", "B"));
@@ -610,7 +610,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail null fromEmail falls back to console")
-  void sendEmail_nullFromEmail_fallsBackToConsole() {
+  void sendEmail_nullFromEmail_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "fromEmail", null);
     assertDoesNotThrow(
         () -> emailService.sendTestEmail("u@test.com", "S", "B"));
@@ -618,7 +618,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail empty fromEmail falls back to console")
-  void sendEmail_emptyFromEmail_fallsBackToConsole() {
+  void sendEmail_emptyFromEmail_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "fromEmail", "");
     assertDoesNotThrow(
         () -> emailService.sendTestEmail("u@test.com", "S", "B"));
@@ -626,7 +626,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail blank fromEmail falls back to console")
-  void sendEmail_blankFromEmail_fallsBackToConsole() {
+  void sendEmail_blankFromEmail_fallsBackToConsole() throws Exception {
     ReflectionTestUtils.setField(emailService, "fromEmail", "   ");
     assertDoesNotThrow(
         () -> emailService.sendTestEmail("u@test.com", "S", "B"));
@@ -634,7 +634,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail SMTP messaging exception falls back")
-  void sendEmail_smtpMessagingException_fallsBackToConsole() {
+  void sendEmail_smtpMessagingException_fallsBackToConsole() throws Exception {
     doThrow(new RuntimeException("SMTP error"))
         .when(mailSender).send(any(MimeMessage.class));
     assertDoesNotThrow(
@@ -645,7 +645,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail console provider no double fallback")
-  void sendEmail_consoleProviderException_noDoubleFallback() {
+  void sendEmail_consoleProviderException_noDoubleFallback() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "console");
     assertDoesNotThrow(
@@ -654,7 +654,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail dev provider no double fallback")
-  void sendEmail_devProviderException_noDoubleFallback() {
+  void sendEmail_devProviderException_noDoubleFallback() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "dev");
     assertDoesNotThrow(
         () -> emailService.sendTestEmail("u@test.com", "S", "B"));
@@ -664,7 +664,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration resend configured returns true")
-  void getEmailConfiguration_resendProvider_returnsResendConfig() {
+  void getEmailConfiguration_resendProvider_returnsResendConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey",
@@ -677,7 +677,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration resend empty key not configured")
-  void getEmailConfiguration_resendProviderEmptyKey_notConfigured() {
+  void getEmailConfiguration_resendProviderEmptyKey_notConfigured() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey", "");
@@ -687,7 +687,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration mailgun configured returns true")
-  void getEmailConfiguration_mailgunProvider_returnsMailgunConfig() {
+  void getEmailConfiguration_mailgunProvider_returnsMailgunConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -702,7 +702,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration mailgun empty not configured")
-  void getEmailConfiguration_mailgunProviderEmptyKeys_notConfigured() {
+  void getEmailConfiguration_mailgunProviderEmptyKeys_notConfigured() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey", "");
@@ -713,7 +713,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration sendgrid configured returns true")
-  void getEmailConfiguration_sendgridProvider_returnsSendgridConfig() {
+  void getEmailConfiguration_sendgridProvider_returnsSendgridConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
@@ -727,7 +727,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration sendgrid empty not configured")
-  void getEmailConfiguration_sendgridProviderEmptyKey_notConfigured() {
+  void getEmailConfiguration_sendgridProviderEmptyKey_notConfigured() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey", "");
@@ -737,7 +737,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration SMTP returns smtp config")
-  void getEmailConfiguration_smtpProvider_returnsSmtpConfig() {
+  void getEmailConfiguration_smtpProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "smtp");
     Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("smtp");
@@ -747,7 +747,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration SMTP null sender not configured")
-  void getEmailConfiguration_smtpProviderNullMailSender() {
+  void getEmailConfiguration_smtpProviderNullMailSender() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "smtp");
     ReflectionTestUtils.setField(emailService, "mailSender", null);
     Map<String, Object> config = emailService.getEmailConfiguration();
@@ -756,7 +756,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration mailtrap returns smtp config")
-  void getEmailConfiguration_mailtrapProvider_returnsSmtpConfig() {
+  void getEmailConfiguration_mailtrapProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailtrap");
     Map<String, Object> config = emailService.getEmailConfiguration();
@@ -767,7 +767,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration gmail returns smtp config")
-  void getEmailConfiguration_gmailProvider_returnsSmtpConfig() {
+  void getEmailConfiguration_gmailProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "gmail");
     Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo"))
@@ -777,7 +777,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration console returns always available")
-  void getEmailConfiguration_consoleProvider_returnsAlwaysAvailable() {
+  void getEmailConfiguration_consoleProvider_returnsAlwaysAvailable() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "console");
     Map<String, Object> config = emailService.getEmailConfiguration();
@@ -789,7 +789,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration dev returns always available")
-  void getEmailConfiguration_devProvider_returnsAlwaysAvailable() {
+  void getEmailConfiguration_devProvider_returnsAlwaysAvailable() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "dev");
     Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo"))
@@ -799,7 +799,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration unknown returns default branch")
-  void getEmailConfiguration_unknownProvider_returnsDefaultBranch() {
+  void getEmailConfiguration_unknownProvider_returnsDefaultBranch() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "customProvider");
     Map<String, Object> config = emailService.getEmailConfiguration();
@@ -809,7 +809,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("getEmailConfiguration includes base fields")
-  void getEmailConfiguration_always_includesBaseFieldsInConfig() {
+  void getEmailConfiguration_always_includesBaseFieldsInConfig() throws Exception {
     Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("fromEmail"))
         .isEqualTo("noreply@careconnect.com");
@@ -821,7 +821,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail upper-case provider uses lowercase match")
-  void sendEmail_upperCaseProvider_usesLowercaseMatch() {
+  void sendEmail_upperCaseProvider_usesLowercaseMatch() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "SMTP");
     emailService.sendTestEmail("user@test.com", "Sub", "Body");
     verify(mailSender).send(any(MimeMessage.class));
@@ -831,7 +831,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail resend whitespace key falls back to console")
-  void sendEmail_resendProviderWhitespaceApiKey_fallsBack() {
+  void sendEmail_resendProviderWhitespaceApiKey_fallsBack() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey", "   ");
     assertDoesNotThrow(
@@ -842,7 +842,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun whitespace key falls back to console")
-  void sendEmail_mailgunProviderWhitespaceApiKey_fallsBack() {
+  void sendEmail_mailgunProviderWhitespaceApiKey_fallsBack() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey", "   ");
@@ -854,7 +854,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail mailgun whitespace domain falls back")
-  void sendEmail_mailgunProviderWhitespaceDomain_fallsBack() {
+  void sendEmail_mailgunProviderWhitespaceDomain_fallsBack() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey",
@@ -868,7 +868,7 @@ class EmailServiceTest {
 
   @Test
   @DisplayName("sendEmail sendgrid whitespace key falls back")
-  void sendEmail_sendgridProviderWhitespaceApiKey_fallsBack() {
+  void sendEmail_sendgridProviderWhitespaceApiKey_fallsBack() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey", "   ");

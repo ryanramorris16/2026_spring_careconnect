@@ -9,7 +9,7 @@ class QuestionTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Question q = new Question();
 
         assertThat(q).isNotNull();
@@ -25,7 +25,7 @@ class QuestionTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Question q = Question.builder()
                 .id(1L)
                 .prompt("How are you feeling?")
@@ -46,7 +46,7 @@ class QuestionTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Question q = new Question();
 
         q.setId(2L);
@@ -67,7 +67,7 @@ class QuestionTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Question q1 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
         Question q2 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
 

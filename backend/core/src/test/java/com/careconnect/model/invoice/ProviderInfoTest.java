@@ -9,7 +9,7 @@ class ProviderInfoTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         ProviderInfo provider = ProviderInfo.builder()
                 .name("Dr. Alice Brown")
                 .address("200 Health Ave, Chicago, IL")
@@ -24,7 +24,7 @@ class ProviderInfoTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         ProviderInfo provider = ProviderInfo.builder().build();
 
         assertThat(provider.getName()).isNull();
@@ -36,7 +36,7 @@ class ProviderInfoTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         ProviderInfo provider = new ProviderInfo("Dr. Bob White", "300 Clinic Rd", "800-555-0200", "bwhite@health.org");
 
         assertThat(provider.getName()).isEqualTo("Dr. Bob White");
@@ -48,7 +48,7 @@ class ProviderInfoTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ProviderInfo provider = ProviderInfo.builder().build();
 
         provider.setName("Dr. Carol Green");
@@ -65,7 +65,7 @@ class ProviderInfoTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
         ProviderInfo p2 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
 
@@ -74,7 +74,7 @@ class ProviderInfoTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").build();
         ProviderInfo p2 = ProviderInfo.builder().name("Dr. Y").build();
 

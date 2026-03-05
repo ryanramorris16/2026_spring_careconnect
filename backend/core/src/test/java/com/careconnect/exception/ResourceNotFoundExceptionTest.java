@@ -10,7 +10,7 @@ class ResourceNotFoundExceptionTest {
 
     @Test
     @DisplayName("can be instantiated")
-    void constructor_createsInstance() {
+    void constructor_createsInstance() throws Exception {
         assertNotNull(new ResourceNotFoundException());
     }
 }

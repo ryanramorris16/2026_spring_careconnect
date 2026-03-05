@@ -12,7 +12,7 @@ class DeviceTokenTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         DeviceToken dt = new DeviceToken();
 
         assertThat(dt).isNotNull();
@@ -26,7 +26,7 @@ class DeviceTokenTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_isActive_defaultsToTrue() {
+    void builder_isActive_defaultsToTrue() throws Exception {
         DeviceToken dt = DeviceToken.builder()
                 .user(new User())
                 .fcmToken("fcm-token-001")
@@ -38,7 +38,7 @@ class DeviceTokenTest {
     }
 
     @Test
-    void builder_createdAt_defaultsToNow() {
+    void builder_createdAt_defaultsToNow() throws Exception {
         DeviceToken dt = DeviceToken.builder()
                 .user(new User())
                 .fcmToken("tok")
@@ -52,7 +52,7 @@ class DeviceTokenTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         User user = new User();
         Instant now = Instant.now();
 
@@ -95,7 +95,7 @@ class DeviceTokenTest {
     // ─── DeviceType enum ─────────────────────────────────────────────────────
 
     @Test
-    void deviceTypeEnum_containsAllValues() {
+    void deviceTypeEnum_containsAllValues() throws Exception {
         assertThat(DeviceToken.DeviceType.values()).containsExactly(
                 DeviceToken.DeviceType.ANDROID,
                 DeviceToken.DeviceType.IOS,
@@ -106,7 +106,7 @@ class DeviceTokenTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Instant ts = Instant.now();
         DeviceToken d1 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();
         DeviceToken d2 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();

@@ -457,7 +457,7 @@ class CallNotificationHandlerTest {
     }
 
     @Test
-    void sendNotificationToUser_unknownUser_skips() {
+    void sendNotificationToUser_unknownUser_skips() throws Exception {
         handler.sendNotificationToUser("999", Map.of("type", "test"));
         // No interaction with session
         verifyNoInteractions(session);

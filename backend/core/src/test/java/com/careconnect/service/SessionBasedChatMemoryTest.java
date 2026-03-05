@@ -34,7 +34,7 @@ class SessionBasedChatMemoryTest {
     private SessionBasedChatMemory chatMemory;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         conversation = ChatConversation.builder()
@@ -51,7 +51,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("id_returnsConversationId_matchesExpectedValue")
-    void id_returnsConversationId_matchesExpectedValue() {
+    void id_returnsConversationId_matchesExpectedValue() throws Exception {
         assertEquals("conv-123", chatMemory.id());
     }
 
@@ -59,7 +59,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_userMessage_savesToDatabase")
-    void add_userMessage_savesToDatabase() {
+    void add_userMessage_savesToDatabase() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(new ArrayList<>());
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(1);
@@ -78,7 +78,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_aiMessage_savesToDatabaseAsAssistant")
-    void add_aiMessage_savesToDatabaseAsAssistant() {
+    void add_aiMessage_savesToDatabaseAsAssistant() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(new ArrayList<>());
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(1);
@@ -95,7 +95,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_systemMessage_savesToDatabaseAsSystem")
-    void add_systemMessage_savesToDatabaseAsSystem() {
+    void add_systemMessage_savesToDatabaseAsSystem() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(new ArrayList<>());
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(1);
@@ -112,7 +112,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_unknownMessageType_fallsBackToUser")
-    void add_unknownMessageType_fallsBackToUser() {
+    void add_unknownMessageType_fallsBackToUser() throws Exception {
         // Create a mock of a ChatMessage that is none of the known types
         ChatMessage unknownMessage = mock(ChatMessage.class);
         when(unknownMessage.toString()).thenReturn("unknown content");
@@ -132,7 +132,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_exceedsMaxMessages_cleansUpOldMessages")
-    void add_exceedsMaxMessages_cleansUpOldMessages() {
+    void add_exceedsMaxMessages_cleansUpOldMessages() throws Exception {
         // Create a memory with max 2 messages
         SessionBasedChatMemory smallMemory = new SessionBasedChatMemory(
                 chatMessageRepository, conversation, 2, 15);
@@ -158,7 +158,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_cleanupOldMessagesThrowsException_doesNotPropagateError")
-    void add_cleanupOldMessagesThrowsException_doesNotPropagateError() {
+    void add_cleanupOldMessagesThrowsException_doesNotPropagateError() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenThrow(new RuntimeException("DB error"));
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(1);
@@ -169,7 +169,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_sessionExpired_stillSavesMessage")
-    void add_sessionExpired_clearsOldMessagesBeforeAdding() {
+    void add_sessionExpired_clearsOldMessagesBeforeAdding() throws Exception {
         // Set lastActivity far in the past to simulate an expired session
         ReflectionTestUtils.setField(chatMemory, "lastActivity",
                 Instant.now().minus(20, ChronoUnit.MINUTES));
@@ -189,7 +189,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_withinMaxMessages_doesNotCleanUp")
-    void add_withinMaxMessages_doesNotCleanUp() {
+    void add_withinMaxMessages_doesNotCleanUp() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(new ArrayList<>());
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(1);
@@ -205,7 +205,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("messages_sessionActive_returnsConvertedMessages")
-    void messages_sessionActive_returnsConvertedMessages() {
+    void messages_sessionActive_returnsConvertedMessages() throws Exception {
         com.careconnect.model.ChatMessage userMsg = com.careconnect.model.ChatMessage.builder()
                 .id(1L).conversation(conversation).messageType(MessageType.USER).content("Hi").build();
         com.careconnect.model.ChatMessage aiMsg = com.careconnect.model.ChatMessage.builder()
@@ -225,7 +225,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("messages_sessionExpired_returnsMessagesNormally")
-    void messages_sessionExpired_returnsEmptyListAndClears() {
+    void messages_sessionExpired_returnsEmptyListAndClears() throws Exception {
         // Set lastActivity far in the past to simulate an expired session
         ReflectionTestUtils.setField(chatMemory, "lastActivity",
                 Instant.now().minus(20, ChronoUnit.MINUTES));
@@ -243,7 +243,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("messages_emptyDatabase_returnsEmptyList")
-    void messages_emptyDatabase_returnsEmptyList() {
+    void messages_emptyDatabase_returnsEmptyList() throws Exception {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(Collections.emptyList());
 
@@ -253,7 +253,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("messages_unknownMessageType_filtersOutNulls")
-    void messages_unknownMessageType_filtersOutNulls() {
+    void messages_unknownMessageType_filtersOutNulls() throws Exception {
         // Create a message with an unknown/default type that would yield null from the switch
         // The MessageType enum only has USER, ASSISTANT, SYSTEM - we need to trigger the default
         // We can't easily add a new enum value, but we can test the other branches are covered
@@ -271,7 +271,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("clear_messagesExist_deletesAllMessages")
-    void clear_messagesExist_deletesAllMessages() {
+    void clear_messagesExist_deletesAllMessages() throws Exception {
         com.careconnect.model.ChatMessage msg1 = com.careconnect.model.ChatMessage.builder()
                 .id(1L).conversation(conversation).messageType(MessageType.USER).content("msg1").build();
         com.careconnect.model.ChatMessage msg2 = com.careconnect.model.ChatMessage.builder()
@@ -287,7 +287,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("clear_noMessages_callsDeleteAllWithEmptyList")
-    void clear_noMessages_callsDeleteAllWithEmptyList() {
+    void clear_noMessages_callsDeleteAllWithEmptyList() throws Exception {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(Collections.emptyList());
 
@@ -300,7 +300,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("getSessionStats_sessionActive_returnsValidStats")
-    void getSessionStats_sessionActive_returnsValidStats() {
+    void getSessionStats_sessionActive_returnsValidStats() throws Exception {
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(5);
 
         SessionBasedChatMemory.SessionStats stats = chatMemory.getSessionStats();
@@ -313,7 +313,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("getSessionStats_sessionExpired_returnsExpiredTrue")
-    void getSessionStats_sessionExpired_returnsExpiredTrue() {
+    void getSessionStats_sessionExpired_returnsExpiredTrue() throws Exception {
         ReflectionTestUtils.setField(chatMemory, "lastActivity",
                 Instant.now().minus(20, ChronoUnit.MINUTES));
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(0);
@@ -327,7 +327,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("constructor_initializesFields_allFieldsCorrect")
-    void constructor_initializesFields_allFieldsCorrect() {
+    void constructor_initializesFields_allFieldsCorrect() throws Exception {
         SessionBasedChatMemory memory = new SessionBasedChatMemory(
                 chatMessageRepository, conversation, 20, 30);
 
@@ -342,7 +342,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("add_sessionNotExpired_doesNotClearMessages")
-    void add_sessionNotExpired_doesNotClearMessages() {
+    void add_sessionNotExpired_doesNotClearMessages() throws Exception {
         // Session timeout is 15 minutes; lastActivity is recent (default from constructor)
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(new ArrayList<>());
@@ -357,7 +357,7 @@ class SessionBasedChatMemoryTest {
 
     @Test
     @DisplayName("messages_exactlyAtTimeout_sessionNotExpired")
-    void messages_exactlyAtTimeout_sessionNotExpired() {
+    void messages_exactlyAtTimeout_sessionNotExpired() throws Exception {
         // Set lastActivity to exactly sessionTimeoutMinutes ago
         // ChronoUnit.MINUTES.between checks if > sessionTimeoutMinutes, so exactly at boundary is not expired
         ReflectionTestUtils.setField(chatMemory, "lastActivity",

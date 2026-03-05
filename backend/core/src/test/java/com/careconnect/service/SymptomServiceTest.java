@@ -43,7 +43,7 @@ class SymptomServiceTest {
     private Patient patient;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         patient = Patient.builder().id(1L).firstName("Jane").lastName("Doe").build();
     }
@@ -54,7 +54,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("create: saves entry and returns DTO with all fields mapped correctly")
-    void testCreate_happyPath() {
+    void testCreate_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, the service must
         // save the entry and return a DTO that mirrors every input field.
         Instant ts = Instant.parse("2025-06-01T10:00:00Z");
@@ -92,7 +92,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("create: uses Instant.now() when takenAt is null in the DTO")
-    void testCreate_nullTakenAt_usesNow() {
+    void testCreate_nullTakenAt_usesNow() throws Exception {
         // When the caller omits takenAt the service must substitute Instant.now()
         // so the persisted entry always has a valid timestamp.
         SymptomDTO dto = SymptomDTO.builder()
@@ -120,7 +120,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("create: defaults completed to true when the DTO provides null")
-    void testCreate_nullCompleted_defaultsTrue() {
+    void testCreate_nullCompleted_defaultsTrue() throws Exception {
         // When the caller does not specify a completed flag the service must
         // default it to true, matching the business rule for new entries.
         SymptomDTO dto = SymptomDTO.builder()
@@ -140,7 +140,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("create: preserves completed=false when explicitly set in the DTO")
-    void testCreate_completedFalse_preserved() {
+    void testCreate_completedFalse_preserved() throws Exception {
         // An explicit false must survive — the default-true logic must not
         // override a value the caller intentionally provided.
         SymptomDTO dto = SymptomDTO.builder()
@@ -160,7 +160,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("create: throws IllegalArgumentException when patient does not exist")
-    void testCreate_patientNotFound_throws() {
+    void testCreate_patientNotFound_throws() throws Exception {
         // The service must refuse to create an entry without a valid patient
         // and must not call save under any circumstances.
         SymptomDTO dto = SymptomDTO.builder().patientId(99L).symptomKey("pain").build();
@@ -181,7 +181,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("update: applies all non-null DTO fields to the existing entry")
-    void testUpdate_allFieldsChanged() {
+    void testUpdate_allFieldsChanged() throws Exception {
         // Every non-null field in the patch DTO must overwrite the stored value.
         Instant newTs = Instant.parse("2025-07-01T08:00:00Z");
         SymptomEntry existing = SymptomEntry.builder()
@@ -216,7 +216,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("update: leaves existing fields unchanged when DTO fields are null (partial patch)")
-    void testUpdate_nullFieldsNotOverwritten() {
+    void testUpdate_nullFieldsNotOverwritten() throws Exception {
         // Null fields in the patch DTO represent "no change"; the service
         // must leave the stored values untouched for those fields.
         SymptomEntry existing = SymptomEntry.builder()
@@ -243,7 +243,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("update: throws IllegalArgumentException when the symptom entry does not exist")
-    void testUpdate_notFound_throws() {
+    void testUpdate_notFound_throws() throws Exception {
         // An update targeting an unknown ID must fail with a descriptive
         // exception before any save is attempted.
         when(symptomRepo.findById(99L)).thenReturn(Optional.empty());
@@ -260,7 +260,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("update: returns updated DTO with patientId correctly mapped from the entity")
-    void testUpdate_returnsDtoWithPatientId() {
+    void testUpdate_returnsDtoWithPatientId() throws Exception {
         // The patientId must be taken from the existing entity's patient
         // relationship, not from the patch DTO (which has no patientId).
         SymptomEntry existing = SymptomEntry.builder()
@@ -284,7 +284,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("get: returns a populated Optional<SymptomDTO> when the entry exists")
-    void testGet_found() {
+    void testGet_found() throws Exception {
         // The returned Optional must contain a DTO with all fields from the entity.
         SymptomEntry entry = SymptomEntry.builder()
                 .id(5L).patient(patient)
@@ -304,7 +304,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("get: returns an empty Optional when the entry does not exist")
-    void testGet_notFound() {
+    void testGet_notFound() throws Exception {
         // A missing entry must produce Optional.empty(), not throw or return null.
         when(symptomRepo.findById(99L)).thenReturn(Optional.empty());
 
@@ -319,7 +319,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("listByPatient: returns ordered DTOs for all entries belonging to the patient")
-    void testListByPatient_returnsMappedList() {
+    void testListByPatient_returnsMappedList() throws Exception {
         // The repository already returns entries in descending takenAt order;
         // the service must map every entry to a DTO and preserve that order.
         SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
@@ -341,7 +341,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("listByPatient: returns an empty list when the patient has no symptom entries")
-    void testListByPatient_noEntries_returnsEmpty() {
+    void testListByPatient_noEntries_returnsEmpty() throws Exception {
         // An empty repository result must produce an empty list, not null or an exception.
         when(symptomRepo.findByPatientIdOrderByTakenAtDesc(2L)).thenReturn(List.of());
 
@@ -353,7 +353,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("listByPatient: maps all DTO fields from each entity correctly")
-    void testListByPatient_fieldMapping() {
+    void testListByPatient_fieldMapping() throws Exception {
         // Spot-check that the private toDto helper transfers every field
         // correctly when called via listByPatient.
         Instant ts = Instant.parse("2025-05-15T12:00:00Z");
@@ -383,7 +383,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("delete: calls deleteById when the entry exists")
-    void testDelete_exists_deletesEntry() {
+    void testDelete_exists_deletesEntry() throws Exception {
         // The happy path: existsById returns true, so the service delegates to deleteById.
         when(symptomRepo.existsById(1L)).thenReturn(true);
 
@@ -394,7 +394,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("delete: throws IllegalArgumentException when the entry does not exist")
-    void testDelete_notFound_throws() {
+    void testDelete_notFound_throws() throws Exception {
         // A delete on a non-existent entry must surface as a descriptive
         // IllegalArgumentException before any deletion is attempted.
         when(symptomRepo.existsById(99L)).thenReturn(false);
@@ -409,7 +409,7 @@ class SymptomServiceTest {
 
     @Test
     @DisplayName("delete: does not call deleteById when the entry is absent")
-    void testDelete_notFound_noSideEffects() {
+    void testDelete_notFound_noSideEffects() throws Exception {
         // Verify no repository mutation occurs when the guard throws.
         when(symptomRepo.existsById(42L)).thenReturn(false);
 

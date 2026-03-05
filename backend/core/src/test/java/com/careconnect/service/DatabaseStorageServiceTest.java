@@ -29,7 +29,7 @@ class DatabaseStorageServiceTest {
     private DatabaseStorageService storageService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -39,7 +39,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_validPathWithSlash_extractsFilenameAndSaves")
-    void upload_validPathWithSlash_extractsFilenameAndSaves() {
+    void upload_validPathWithSlash_extractsFilenameAndSaves() throws Exception {
         byte[] content = "file-content".getBytes();
         UserFile saved = UserFile.builder().id(42L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -65,7 +65,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithoutSlash_generatesTimestampedFilename")
-    void upload_pathWithoutSlash_generatesTimestampedFilename() {
+    void upload_pathWithoutSlash_generatesTimestampedFilename() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(10L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -82,7 +82,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithUserPrefix_extractsUserIdCorrectly")
-    void upload_pathWithUserPrefix_extractsUserIdCorrectly() {
+    void upload_pathWithUserPrefix_extractsUserIdCorrectly() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -96,7 +96,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithoutUserPrefix_defaultsToUserId1")
-    void upload_pathWithoutUserPrefix_defaultsToUserId1() {
+    void upload_pathWithoutUserPrefix_defaultsToUserId1() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -110,7 +110,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithUserPrefixInvalidNumber_defaultsToUserId1")
-    void upload_pathWithUserPrefixInvalidNumber_defaultsToUserId1() {
+    void upload_pathWithUserPrefixInvalidNumber_defaultsToUserId1() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -124,7 +124,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithUserPrefixNoSlash_extractsUserIdFromRemainingString")
-    void upload_pathWithUserPrefixNoSlash_extractsUserIdFromRemainingString() {
+    void upload_pathWithUserPrefixNoSlash_extractsUserIdFromRemainingString() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -138,7 +138,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathContainsPatient_ownerTypeIsPatient")
-    void upload_pathContainsPatient_ownerTypeIsPatient() {
+    void upload_pathContainsPatient_ownerTypeIsPatient() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -152,7 +152,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathContainsCaregiver_ownerTypeIsCaregiver")
-    void upload_pathContainsCaregiver_ownerTypeIsCaregiver() {
+    void upload_pathContainsCaregiver_ownerTypeIsCaregiver() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -166,7 +166,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathContainsFamily_ownerTypeIsFamilyMember")
-    void upload_pathContainsFamily_ownerTypeIsFamilyMember() {
+    void upload_pathContainsFamily_ownerTypeIsFamilyMember() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -180,7 +180,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_pathWithNoRecognizedOwnerType_defaultsToPatient")
-    void upload_pathWithNoRecognizedOwnerType_defaultsToPatient() {
+    void upload_pathWithNoRecognizedOwnerType_defaultsToPatient() throws Exception {
         byte[] content = "data".getBytes();
         UserFile saved = UserFile.builder().id(1L).build();
         when(userFileRepository.save(any(UserFile.class))).thenReturn(saved);
@@ -194,7 +194,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("upload_repositoryThrowsException_wrapsInRuntimeException")
-    void upload_repositoryThrowsException_wrapsInRuntimeException() {
+    void upload_repositoryThrowsException_wrapsInRuntimeException() throws Exception {
         when(userFileRepository.save(any(UserFile.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -266,7 +266,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("uploadFile_emptyFile_throwsIllegalArgumentExceptionWrappedInRuntimeException")
-    void uploadFile_emptyFile_throwsIllegalArgumentExceptionWrappedInRuntimeException() {
+    void uploadFile_emptyFile_throwsIllegalArgumentExceptionWrappedInRuntimeException() throws Exception {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(true);
 
@@ -619,7 +619,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_validDbPath_returnsFileData")
-    void download_validDbPath_returnsFileData() {
+    void download_validDbPath_returnsFileData() throws Exception {
         byte[] data = "hello-world".getBytes();
         UserFile userFile = UserFile.builder()
                 .id(42L)
@@ -636,7 +636,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_numericPath_returnsFileData")
-    void download_numericPath_returnsFileData() {
+    void download_numericPath_returnsFileData() throws Exception {
         byte[] data = "content".getBytes();
         UserFile userFile = UserFile.builder()
                 .id(7L)
@@ -653,7 +653,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_fileNotFound_throwsRuntimeException")
-    void download_fileNotFound_throwsRuntimeException() {
+    void download_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(999L)).thenReturn(Optional.empty());
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
@@ -663,7 +663,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_fileIsInactive_throwsRuntimeException")
-    void download_fileIsInactive_throwsRuntimeException() {
+    void download_fileIsInactive_throwsRuntimeException() throws Exception {
         UserFile userFile = UserFile.builder()
                 .id(42L)
                 .fileData("data".getBytes())
@@ -678,7 +678,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_invalidPathFormat_throwsRuntimeException")
-    void download_invalidPathFormat_throwsRuntimeException() {
+    void download_invalidPathFormat_throwsRuntimeException() throws Exception {
         RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> storageService.download("invalid-path"));
         assertTrue(thrown.getMessage().contains("Failed to download file from database"));
@@ -690,7 +690,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("getFileUrl_validDbPath_returnsApiDownloadUrl")
-    void getFileUrl_validDbPath_returnsApiDownloadUrl() {
+    void getFileUrl_validDbPath_returnsApiDownloadUrl() throws Exception {
         String result = storageService.getFileUrl("db://files/42");
 
         assertEquals("/v1/api/files/42/download", result);
@@ -698,7 +698,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("getFileUrl_numericPath_returnsApiDownloadUrl")
-    void getFileUrl_numericPath_returnsApiDownloadUrl() {
+    void getFileUrl_numericPath_returnsApiDownloadUrl() throws Exception {
         String result = storageService.getFileUrl("100");
 
         assertEquals("/v1/api/files/100/download", result);
@@ -706,7 +706,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("getFileUrl_invalidPathFormat_returnsOriginalPathAsFallback")
-    void getFileUrl_invalidPathFormat_returnsOriginalPathAsFallback() {
+    void getFileUrl_invalidPathFormat_returnsOriginalPathAsFallback() throws Exception {
         String result = storageService.getFileUrl("not-a-valid-path");
 
         assertEquals("not-a-valid-path", result);
@@ -718,7 +718,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("deleteFile_validPathWithExistingFile_softDeletesFile")
-    void deleteFile_validPathWithExistingFile_softDeletesFile() {
+    void deleteFile_validPathWithExistingFile_softDeletesFile() throws Exception {
         UserFile userFile = UserFile.builder()
                 .id(42L)
                 .isActive(true)
@@ -735,7 +735,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("deleteFile_fileNotFound_throwsRuntimeException")
-    void deleteFile_fileNotFound_throwsRuntimeException() {
+    void deleteFile_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(999L)).thenReturn(Optional.empty());
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
@@ -745,7 +745,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("deleteFile_invalidPathFormat_throwsRuntimeException")
-    void deleteFile_invalidPathFormat_throwsRuntimeException() {
+    void deleteFile_invalidPathFormat_throwsRuntimeException() throws Exception {
         RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> storageService.deleteFile("invalid-path"));
         assertTrue(thrown.getMessage().contains("Failed to delete file from database"));
@@ -757,7 +757,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_userHasFiles_returnsDbPathsList")
-    void listUserFiles_userHasFiles_returnsDbPathsList() {
+    void listUserFiles_userHasFiles_returnsDbPathsList() throws Exception {
         UserFile file1 = UserFile.builder().id(1L).build();
         UserFile file2 = UserFile.builder().id(2L).build();
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(10L, UserFile.OwnerType.PATIENT))
@@ -770,7 +770,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_noFiles_returnsEmptyList")
-    void listUserFiles_noFiles_returnsEmptyList() {
+    void listUserFiles_noFiles_returnsEmptyList() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(10L, UserFile.OwnerType.CAREGIVER))
                 .thenReturn(Collections.emptyList());
 
@@ -781,7 +781,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_invalidUserType_throwsRuntimeException")
-    void listUserFiles_invalidUserType_throwsRuntimeException() {
+    void listUserFiles_invalidUserType_throwsRuntimeException() throws Exception {
         RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> storageService.listUserFiles(10L, "INVALID_TYPE"));
         assertTrue(thrown.getMessage().contains("Failed to list user files"));
@@ -789,7 +789,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_repositoryThrows_wrapsInRuntimeException")
-    void listUserFiles_repositoryThrows_wrapsInRuntimeException() {
+    void listUserFiles_repositoryThrows_wrapsInRuntimeException() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(10L, UserFile.OwnerType.PATIENT))
                 .thenThrow(new RuntimeException("DB error"));
 
@@ -800,7 +800,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_lowercaseUserType_convertsToUppercaseAndWorks")
-    void listUserFiles_lowercaseUserType_convertsToUppercaseAndWorks() {
+    void listUserFiles_lowercaseUserType_convertsToUppercaseAndWorks() throws Exception {
         when(userFileRepository.findByOwnerIdAndOwnerTypeAndIsActiveTrue(10L, UserFile.OwnerType.FAMILY_MEMBER))
                 .thenReturn(List.of(UserFile.builder().id(5L).build()));
 
@@ -815,7 +815,7 @@ class DatabaseStorageServiceTest {
 
     @Test
     @DisplayName("download_dbFilesPrefixPath_correctlyExtractsId")
-    void download_dbFilesPrefixPath_correctlyExtractsId() {
+    void download_dbFilesPrefixPath_correctlyExtractsId() throws Exception {
         byte[] data = "test".getBytes();
         UserFile userFile = UserFile.builder()
                 .id(123L)

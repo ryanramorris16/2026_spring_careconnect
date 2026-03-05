@@ -11,7 +11,7 @@ class MealEntryTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         MealEntry entry = new MealEntry();
 
         assertThat(entry).isNotNull();
@@ -25,7 +25,7 @@ class MealEntryTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         Caregiver caregiver = new Caregiver();
         Instant now = Instant.now();
@@ -48,7 +48,7 @@ class MealEntryTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         MealEntry entry = new MealEntry();
         Patient patient = new Patient();
         Caregiver caregiver = new Caregiver();
@@ -70,7 +70,7 @@ class MealEntryTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         MealEntry e1 = MealEntry.builder().id(1L).calories(400).build();
         MealEntry e2 = MealEntry.builder().id(1L).calories(400).build();
 

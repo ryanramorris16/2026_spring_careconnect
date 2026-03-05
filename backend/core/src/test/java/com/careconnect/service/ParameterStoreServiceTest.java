@@ -25,7 +25,7 @@ class ParameterStoreServiceTest {
     private ParameterStoreService parameterStoreService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
@@ -33,14 +33,14 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("constructor_withSsmClient_createsValidInstance")
-    void constructor_withSsmClient_createsValidInstance() {
+    void constructor_withSsmClient_createsValidInstance() throws Exception {
         ParameterStoreService service = new ParameterStoreService(ssmClient);
         assertNotNull(service);
     }
 
     @Test
     @DisplayName("constructor_withNullSsmClient_createsInstance")
-    void constructor_withNullSsmClient_createsInstance() {
+    void constructor_withNullSsmClient_createsInstance() throws Exception {
         ParameterStoreService service = new ParameterStoreService(null);
         assertNotNull(service);
     }
@@ -49,7 +49,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_ssmCallSucceedsWithDecryptionTrue_returnsValue")
-    void getParameter_ssmCallSucceedsWithDecryptionTrue_returnsValue() {
+    void getParameter_ssmCallSucceedsWithDecryptionTrue_returnsValue() throws Exception {
         String paramName = "/careconnect/db/password";
         String expectedValue = "super-secret";
 
@@ -65,7 +65,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_ssmCallSucceedsWithDecryptionFalse_returnsValue")
-    void getParameter_ssmCallSucceedsWithDecryptionFalse_returnsValue() {
+    void getParameter_ssmCallSucceedsWithDecryptionFalse_returnsValue() throws Exception {
         String paramName = "/careconnect/app/config";
         String expectedValue = "plain-text-value";
 
@@ -81,7 +81,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_ssmExceptionThrown_returnsParameterName")
-    void getParameter_ssmExceptionThrown_returnsParameterName() {
+    void getParameter_ssmExceptionThrown_returnsParameterName() throws Exception {
         String paramName = "/careconnect/missing/param";
 
         SsmException ssmException = (SsmException) SsmException.builder()
@@ -97,7 +97,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_ssmExceptionThrownWithDecryptionFalse_returnsParameterName")
-    void getParameter_ssmExceptionThrownWithDecryptionFalse_returnsParameterName() {
+    void getParameter_ssmExceptionThrownWithDecryptionFalse_returnsParameterName() throws Exception {
         String paramName = "/careconnect/nonexistent";
 
         SsmException ssmException = (SsmException) SsmException.builder()
@@ -112,7 +112,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_emptyParameterValue_returnsEmptyString")
-    void getParameter_emptyParameterValue_returnsEmptyString() {
+    void getParameter_emptyParameterValue_returnsEmptyString() throws Exception {
         String paramName = "/careconnect/empty/param";
 
         Parameter parameter = Parameter.builder().value("").build();
@@ -126,7 +126,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getParameter_longParameterValue_returnsFullValue")
-    void getParameter_longParameterValue_returnsFullValue() {
+    void getParameter_longParameterValue_returnsFullValue() throws Exception {
         String paramName = "/careconnect/long/param";
         String longValue = "a".repeat(4096);
 
@@ -144,7 +144,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getSecureParameter_validParameter_returnsDecryptedValue")
-    void getSecureParameter_validParameter_returnsDecryptedValue() {
+    void getSecureParameter_validParameter_returnsDecryptedValue() throws Exception {
         String paramName = "/careconnect/secrets/api-key";
         String expectedValue = "api-key-12345";
 
@@ -160,7 +160,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getSecureParameter_ssmExceptionThrown_returnsParameterName")
-    void getSecureParameter_ssmExceptionThrown_returnsParameterName() {
+    void getSecureParameter_ssmExceptionThrown_returnsParameterName() throws Exception {
         String paramName = "/careconnect/secrets/missing";
 
         SsmException ssmException = (SsmException) SsmException.builder()
@@ -175,7 +175,7 @@ class ParameterStoreServiceTest {
 
     @Test
     @DisplayName("getSecureParameter_delegatesToGetParameterWithDecryptionTrue_verifiedViaRequest")
-    void getSecureParameter_delegatesToGetParameterWithDecryptionTrue_verifiedViaRequest() {
+    void getSecureParameter_delegatesToGetParameterWithDecryptionTrue_verifiedViaRequest() throws Exception {
         String paramName = "/careconnect/secrets/key";
         String expectedValue = "decrypted-value";
 

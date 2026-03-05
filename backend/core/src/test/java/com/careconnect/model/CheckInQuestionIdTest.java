@@ -9,7 +9,7 @@ class CheckInQuestionIdTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_fieldsAreNull() {
+    void defaultConstructor_fieldsAreNull() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId();
 
         assertThat(id.getCheckInId()).isNull();
@@ -19,7 +19,7 @@ class CheckInQuestionIdTest {
     // ─── Parameterized constructor ────────────────────────────────────────────
 
     @Test
-    void parameterizedConstructor_setsFields() {
+    void parameterizedConstructor_setsFields() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId(10L, 20L);
 
         assertThat(id.getCheckInId()).isEqualTo(10L);
@@ -29,7 +29,7 @@ class CheckInQuestionIdTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId();
         id.setCheckInId(5L);
         id.setQuestionId(15L);
@@ -41,7 +41,7 @@ class CheckInQuestionIdTest {
     // ─── equals() ────────────────────────────────────────────────────────────
 
     @Test
-    void equals_sameValues_returnsTrue() {
+    void equals_sameValues_returnsTrue() throws Exception {
         CheckInQuestionId id1 = new CheckInQuestionId(1L, 2L);
         CheckInQuestionId id2 = new CheckInQuestionId(1L, 2L);
 
@@ -49,13 +49,13 @@ class CheckInQuestionIdTest {
     }
 
     @Test
-    void equals_sameReference_returnsTrue() {
+    void equals_sameReference_returnsTrue() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId(1L, 2L);
         assertThat(id).isEqualTo(id);
     }
 
     @Test
-    void equals_differentCheckInId_returnsFalse() {
+    void equals_differentCheckInId_returnsFalse() throws Exception {
         CheckInQuestionId id1 = new CheckInQuestionId(1L, 2L);
         CheckInQuestionId id2 = new CheckInQuestionId(9L, 2L);
 
@@ -63,7 +63,7 @@ class CheckInQuestionIdTest {
     }
 
     @Test
-    void equals_differentQuestionId_returnsFalse() {
+    void equals_differentQuestionId_returnsFalse() throws Exception {
         CheckInQuestionId id1 = new CheckInQuestionId(1L, 2L);
         CheckInQuestionId id2 = new CheckInQuestionId(1L, 9L);
 
@@ -71,13 +71,13 @@ class CheckInQuestionIdTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId(1L, 2L);
         assertThat(id).isNotEqualTo(null);
     }
 
     @Test
-    void equals_differentType_returnsFalse() {
+    void equals_differentType_returnsFalse() throws Exception {
         CheckInQuestionId id = new CheckInQuestionId(1L, 2L);
         assertThat(id).isNotEqualTo("not-an-id");
     }
@@ -85,7 +85,7 @@ class CheckInQuestionIdTest {
     // ─── hashCode() ──────────────────────────────────────────────────────────
 
     @Test
-    void hashCode_sameValues_sameHashCode() {
+    void hashCode_sameValues_sameHashCode() throws Exception {
         CheckInQuestionId id1 = new CheckInQuestionId(1L, 2L);
         CheckInQuestionId id2 = new CheckInQuestionId(1L, 2L);
 

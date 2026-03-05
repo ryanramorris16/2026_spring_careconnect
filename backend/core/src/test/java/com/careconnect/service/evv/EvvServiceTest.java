@@ -65,7 +65,7 @@ class EvvServiceTest {
                 .build();
     }
 
-    private EvvRecordRequestDto.EvvRecordRequestDtoBuilder baseReqBuilder() {
+    private EvvRecordRequestDto.EvvRecordRequestDtoBuilder baseReqBuilder() throws Exception {
         return EvvRecordRequestDto.builder()
                 .patientId(5L)
                 .serviceType("HOME_HEALTH")
@@ -103,7 +103,7 @@ class EvvServiceTest {
     // ─── createRecord ──────────────────────────────────────────────────────────
 
     @Test
-    void createRecord_patientNotFound_throwsIllegalArgument() {
+    void createRecord_patientNotFound_throwsIllegalArgument() throws Exception {
         when(patientRepository.findById(5L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> evvService.createRecord(baseReqBuilder().build(), 1L))
@@ -112,7 +112,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_noLocation_createsRecordWithoutLocation() {
+    void createRecord_noLocation_createsRecordWithoutLocation() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder().build(); // all location fields null
 
@@ -130,7 +130,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withGpsCheckinAndCoords_savesLocation() {
+    void createRecord_withGpsCheckinAndCoords_savesLocation() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkinLocationSource("GPS")
@@ -158,7 +158,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withGpsCheckinNoCoords_skipsSave() {
+    void createRecord_withGpsCheckinNoCoords_skipsSave() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkinLocationSource("GPS")
@@ -177,7 +177,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withPatientAddressCheckin_savesLocation() {
+    void createRecord_withPatientAddressCheckin_savesLocation() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkinLocationSource("PATIENT_ADDRESS")
@@ -201,7 +201,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withLegacyGpsSource_convertsToGps() {
+    void createRecord_withLegacyGpsSource_convertsToGps() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .locationSource("gps")
@@ -228,7 +228,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withLegacyManualSource_convertsToPatientAddress() {
+    void createRecord_withLegacyManualSource_convertsToPatientAddress() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .locationSource("manual")
@@ -253,7 +253,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withGpsCheckout_savesLocation() {
+    void createRecord_withGpsCheckout_savesLocation() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkoutLocationSource("GPS")
@@ -279,7 +279,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withGpsCheckoutNoCoords_skipsSave() {
+    void createRecord_withGpsCheckoutNoCoords_skipsSave() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkoutLocationSource("GPS")
@@ -298,7 +298,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withPatientAddressCheckout_savesLocation() {
+    void createRecord_withPatientAddressCheckout_savesLocation() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .checkoutLocationSource("PATIENT_ADDRESS")
@@ -322,7 +322,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withScheduledVisit_marksCompleted() {
+    void createRecord_withScheduledVisit_marksCompleted() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .scheduledVisitId(20L)
@@ -347,7 +347,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_withScheduledVisitNotFound_ignores() {
+    void createRecord_withScheduledVisitNotFound_ignores() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .scheduledVisitId(99L)
@@ -368,7 +368,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createRecord_scheduledVisitException_ignores() {
+    void createRecord_scheduledVisitException_ignores() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .scheduledVisitId(20L)
@@ -390,7 +390,7 @@ class EvvServiceTest {
     // ─── review ────────────────────────────────────────────────────────────────
 
     @Test
-    void review_approve_marksApprovedAndLogs() {
+    void review_approve_marksApprovedAndLogs() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
 
@@ -406,7 +406,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void review_reject_marksRejectedAndLogs() {
+    void review_reject_marksRejectedAndLogs() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
 
@@ -422,7 +422,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void review_populatesLocationFields() {
+    void review_populatesLocationFields() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
 
@@ -456,7 +456,7 @@ class EvvServiceTest {
     // ─── createOfflineRecord ───────────────────────────────────────────────────
 
     @Test
-    void createOfflineRecord_patientNotFound_throwsIllegalArgument() {
+    void createOfflineRecord_patientNotFound_throwsIllegalArgument() throws Exception {
         when(patientRepository.findById(5L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> evvService.createOfflineRecord(baseReqBuilder().build(), 1L, "device-001"))
@@ -465,7 +465,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void createOfflineRecord_success_savesAndQueues() {
+    void createOfflineRecord_success_savesAndQueues() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecordRequestDto req = baseReqBuilder()
                 .locationLat(38.9)
@@ -504,7 +504,7 @@ class EvvServiceTest {
     // ─── correctRecord ─────────────────────────────────────────────────────────
 
     @Test
-    void correctRecord_originalNotFound_throwsIllegalArgument() {
+    void correctRecord_originalNotFound_throwsIllegalArgument() throws Exception {
         EvvCorrectionRequestDto req = EvvCorrectionRequestDto.builder()
                 .originalRecordId(99L)
                 .reasonCode("WRONG_TIME")
@@ -519,7 +519,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void correctRecord_withNullFields_usesOriginalValues() {
+    void correctRecord_withNullFields_usesOriginalValues() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord original = buildSavedRecord(1L, patient);
 
@@ -545,7 +545,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void correctRecord_withNewFields_usesNewValues() {
+    void correctRecord_withNewFields_usesNewValues() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord original = buildSavedRecord(1L, patient);
 
@@ -598,7 +598,7 @@ class EvvServiceTest {
     // ─── approveEor ────────────────────────────────────────────────────────────
 
     @Test
-    void approveEor_recordNotFound_throwsIllegalArgument() {
+    void approveEor_recordNotFound_throwsIllegalArgument() throws Exception {
         EorApprovalRequestDto req = EorApprovalRequestDto.builder()
                 .recordId(99L)
                 .comment("Approved")
@@ -612,7 +612,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void approveEor_success_approvesAndLogs() {
+    void approveEor_success_approvesAndLogs() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
 
@@ -634,7 +634,7 @@ class EvvServiceTest {
     // ─── searchRecords ─────────────────────────────────────────────────────────
 
     @Test
-    void searchRecords_returnsPagedResults() {
+    void searchRecords_returnsPagedResults() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
         Page<EvvRecord> page = new PageImpl<>(List.of(rec));
@@ -656,7 +656,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void searchRecords_populatesLocationFields() {
+    void searchRecords_populatesLocationFields() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
         Page<EvvRecord> page = new PageImpl<>(List.of(rec));
@@ -683,7 +683,7 @@ class EvvServiceTest {
     // ─── getPendingEorApprovals ────────────────────────────────────────────────
 
     @Test
-    void getPendingEorApprovals_returnsRepositoryResult() {
+    void getPendingEorApprovals_returnsRepositoryResult() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord rec = buildSavedRecord(1L, patient);
         when(recordRepository.findPendingEorApprovals()).thenReturn(List.of(rec));
@@ -696,7 +696,7 @@ class EvvServiceTest {
     // ─── getPendingCorrections ─────────────────────────────────────────────────
 
     @Test
-    void getPendingCorrections_returnsRepositoryResult() {
+    void getPendingCorrections_returnsRepositoryResult() throws Exception {
         EvvCorrection correction = EvvCorrection.builder()
                 .id(1L)
                 .reasonCode("WRONG_TIME")
@@ -716,7 +716,7 @@ class EvvServiceTest {
     // ─── approveCorrection ─────────────────────────────────────────────────────
 
     @Test
-    void approveCorrection_notFound_throwsIllegalArgument() {
+    void approveCorrection_notFound_throwsIllegalArgument() throws Exception {
         when(correctionRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> evvService.approveCorrection(99L, 1L, "Approved"))
@@ -725,7 +725,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void approveCorrection_success_approvesAndLogs() {
+    void approveCorrection_success_approvesAndLogs() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord correctedRec = buildSavedRecord(2L, patient);
 
@@ -754,7 +754,7 @@ class EvvServiceTest {
     // ─── rejectCorrection ──────────────────────────────────────────────────────
 
     @Test
-    void rejectCorrection_notFound_throwsIllegalArgument() {
+    void rejectCorrection_notFound_throwsIllegalArgument() throws Exception {
         when(correctionRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> evvService.rejectCorrection(99L, 1L, "Rejected"))
@@ -763,7 +763,7 @@ class EvvServiceTest {
     }
 
     @Test
-    void rejectCorrection_success_rejectsAndLogs() {
+    void rejectCorrection_success_rejectsAndLogs() throws Exception {
         Patient patient = buildPatient(5L);
         EvvRecord correctedRec = buildSavedRecord(2L, patient);
 
@@ -792,7 +792,7 @@ class EvvServiceTest {
     // ─── getOfflineQueue ───────────────────────────────────────────────────────
 
     @Test
-    void getOfflineQueue_returnsRepositoryResult() {
+    void getOfflineQueue_returnsRepositoryResult() throws Exception {
         EvvOfflineQueue item = EvvOfflineQueue.builder()
                 .id(1L)
                 .recordId(1L)

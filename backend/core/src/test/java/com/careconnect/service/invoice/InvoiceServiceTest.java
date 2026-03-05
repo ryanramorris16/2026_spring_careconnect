@@ -41,7 +41,7 @@ class InvoiceServiceTest {
     private InvoiceService service;
 
     @AfterEach
-    void clearSecurityContext() {
+    void clearSecurityContext() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
@@ -51,7 +51,7 @@ class InvoiceServiceTest {
      * Builds a minimal InvoiceDto with all required fields populated so that
      * InvoiceMapper.toEntity() / toDto() will not NPE.
      */
-    private InvoiceDto minimalDto() {
+    private InvoiceDto minimalDto() throws Exception {
         InvoiceDto dto = new InvoiceDto();
         dto.paymentStatus = "pending";
 
@@ -103,7 +103,7 @@ class InvoiceServiceTest {
         SecurityContextHolder.setContext(ctx);
     }
 
-    private void setUnauthenticated() {
+    private void setUnauthenticated() throws Exception {
         SecurityContext ctx = mock(SecurityContext.class);
         when(ctx.getAuthentication()).thenReturn(null);
         SecurityContextHolder.setContext(ctx);
@@ -112,7 +112,7 @@ class InvoiceServiceTest {
     // ─── create ──────────────────────────────────────────────────────────────
 
     @Test
-    void create_withNullId_generatesUuid() {
+    void create_withNullId_generatesUuid() throws Exception {
         InvoiceDto dto = minimalDto();
         dto.id = null;
 
@@ -126,7 +126,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void create_withExistingId_keepsId() {
+    void create_withExistingId_keepsId() throws Exception {
         InvoiceDto dto = minimalDto();
         dto.id = "existing-id";
 
@@ -139,7 +139,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void create_withAuthenticatedUser_setsCreatedBy() {
+    void create_withAuthenticatedUser_setsCreatedBy() throws Exception {
         setAuthenticatedUser("nurse-bob");
 
         InvoiceDto dto = minimalDto();
@@ -158,7 +158,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void create_withNoAuthentication_usesSystem() {
+    void create_withNoAuthentication_usesSystem() throws Exception {
         setUnauthenticated();
 
         InvoiceDto dto = minimalDto();
@@ -177,7 +177,7 @@ class InvoiceServiceTest {
     // ─── update ──────────────────────────────────────────────────────────────
 
     @Test
-    void update_found_updatesAndReturns() {
+    void update_found_updatesAndReturns() throws Exception {
         Invoice existing = minimalSavedInvoice("upd-id");
         existing.setCreatedBy("original-user");
 
@@ -199,7 +199,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void update_notFound_throwsNoSuchElement() {
+    void update_notFound_throwsNoSuchElement() throws Exception {
         when(repo.findById("missing")).thenReturn(Optional.empty());
 
         InvoiceDto dto = minimalDto();
@@ -212,7 +212,7 @@ class InvoiceServiceTest {
     // ─── delete ──────────────────────────────────────────────────────────────
 
     @Test
-    void delete_callsDeleteById() {
+    void delete_callsDeleteById() throws Exception {
         doNothing().when(repo).deleteById("del-id");
 
         service.delete("del-id");
@@ -223,7 +223,7 @@ class InvoiceServiceTest {
     // ─── get ─────────────────────────────────────────────────────────────────
 
     @Test
-    void get_found_returnsDto() {
+    void get_found_returnsDto() throws Exception {
         Invoice inv = minimalSavedInvoice("get-id");
         when(repo.findById("get-id")).thenReturn(Optional.of(inv));
 
@@ -234,7 +234,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void get_notFound_returnsEmpty() {
+    void get_notFound_returnsEmpty() throws Exception {
         when(repo.findById("none")).thenReturn(Optional.empty());
 
         Optional<InvoiceDto> result = service.get("none");
@@ -246,7 +246,7 @@ class InvoiceServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void list_returnsPage() {
+    void list_returnsPage() throws Exception {
         Invoice inv = minimalSavedInvoice("list-id");
         Page<Invoice> page = new PageImpl<>(List.of(inv));
         when(repo.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
@@ -262,49 +262,49 @@ class InvoiceServiceTest {
     // ─── resolveSort ─────────────────────────────────────────────────────────
 
     @Test
-    void resolveSort_null_returnsDefaultSort() {
+    void resolveSort_null_returnsDefaultSort() throws Exception {
         Sort sort = InvoiceService.resolveSort(null);
         assertThat(sort.getOrderFor("statementDate")).isNotNull();
         assertThat(sort.getOrderFor("statementDate").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 
     @Test
-    void resolveSort_blank_returnsDefaultSort() {
+    void resolveSort_blank_returnsDefaultSort() throws Exception {
         Sort sort = InvoiceService.resolveSort("   ");
         assertThat(sort.getOrderFor("statementDate")).isNotNull();
         assertThat(sort.getOrderFor("statementDate").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 
     @Test
-    void resolveSort_dueDesc() {
+    void resolveSort_dueDesc() throws Exception {
         Sort sort = InvoiceService.resolveSort("due_desc");
         assertThat(sort.getOrderFor("dueDate")).isNotNull();
         assertThat(sort.getOrderFor("dueDate").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 
     @Test
-    void resolveSort_dueAsc() {
+    void resolveSort_dueAsc() throws Exception {
         Sort sort = InvoiceService.resolveSort("due_asc");
         assertThat(sort.getOrderFor("dueDate")).isNotNull();
         assertThat(sort.getOrderFor("dueDate").getDirection()).isEqualTo(Sort.Direction.ASC);
     }
 
     @Test
-    void resolveSort_amountDesc() {
+    void resolveSort_amountDesc() throws Exception {
         Sort sort = InvoiceService.resolveSort("amount_desc");
         assertThat(sort.getOrderFor("amountDue")).isNotNull();
         assertThat(sort.getOrderFor("amountDue").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 
     @Test
-    void resolveSort_amountAsc() {
+    void resolveSort_amountAsc() throws Exception {
         Sort sort = InvoiceService.resolveSort("amount_asc");
         assertThat(sort.getOrderFor("amountDue")).isNotNull();
         assertThat(sort.getOrderFor("amountDue").getDirection()).isEqualTo(Sort.Direction.ASC);
     }
 
     @Test
-    void resolveSort_unknown_returnsDefault() {
+    void resolveSort_unknown_returnsDefault() throws Exception {
         Sort sort = InvoiceService.resolveSort("not_a_real_sort");
         assertThat(sort.getOrderFor("statementDate")).isNotNull();
         assertThat(sort.getOrderFor("statementDate").getDirection()).isEqualTo(Sort.Direction.DESC);
@@ -313,19 +313,19 @@ class InvoiceServiceTest {
     // ─── parseStatuses ────────────────────────────────────────────────────────
 
     @Test
-    void parseStatuses_null_returnsEmpty() {
+    void parseStatuses_null_returnsEmpty() throws Exception {
         Set<PaymentStatus> result = InvoiceService.parseStatuses(null);
         assertThat(result).isEmpty();
     }
 
     @Test
-    void parseStatuses_blank_returnsEmpty() {
+    void parseStatuses_blank_returnsEmpty() throws Exception {
         Set<PaymentStatus> result = InvoiceService.parseStatuses("   ");
         assertThat(result).isEmpty();
     }
 
     @Test
-    void parseStatuses_allStatuses() {
+    void parseStatuses_allStatuses() throws Exception {
         String csv = "pending,overdue,pendingInsurance,sent,paid,partialPayment,rejectedInsurance";
         Set<PaymentStatus> result = InvoiceService.parseStatuses(csv);
         assertThat(result).containsExactlyInAnyOrder(
@@ -340,7 +340,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void parseStatuses_unknownStatus_mapsToPending() {
+    void parseStatuses_unknownStatus_mapsToPending() throws Exception {
         Set<PaymentStatus> result = InvoiceService.parseStatuses("unknownXYZ");
         assertThat(result).containsExactly(PaymentStatus.pending);
     }
@@ -348,7 +348,7 @@ class InvoiceServiceTest {
     // ─── recordPayment ────────────────────────────────────────────────────────
 
     @Test
-    void recordPayment_invoiceNotFound_throws() {
+    void recordPayment_invoiceNotFound_throws() throws Exception {
         when(repo.findById("no-inv")).thenReturn(Optional.empty());
 
         PaymentDto pdto = new PaymentDto();
@@ -362,7 +362,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void recordPayment_fullyPaid_statusSetToPaid() {
+    void recordPayment_fullyPaid_statusSetToPaid() throws Exception {
         Invoice invoice = minimalSavedInvoice("pay-id");
         invoice.setTotal(BigDecimal.valueOf(100.00));
         invoice.setAmountDue(BigDecimal.valueOf(100.00));
@@ -387,7 +387,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void recordPayment_partialPaid_statusSetToPartialPayment() {
+    void recordPayment_partialPaid_statusSetToPartialPayment() throws Exception {
         Invoice invoice = minimalSavedInvoice("partial-id");
         invoice.setTotal(BigDecimal.valueOf(200.00));
         invoice.setAmountDue(BigDecimal.valueOf(200.00));
@@ -411,7 +411,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void recordPayment_createdBySet_whenBlankInPayment() {
+    void recordPayment_createdBySet_whenBlankInPayment() throws Exception {
         Invoice invoice = minimalSavedInvoice("createdby-id");
         invoice.setTotal(BigDecimal.valueOf(50.00));
         invoice.setAmountDue(BigDecimal.valueOf(50.00));
@@ -441,7 +441,7 @@ class InvoiceServiceTest {
     // ─── deletePayment ────────────────────────────────────────────────────────
 
     @Test
-    void deletePayment_invoiceNotFound_throws() {
+    void deletePayment_invoiceNotFound_throws() throws Exception {
         when(repo.findById("no-inv")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deletePayment("no-inv", "pay-1"))
@@ -450,7 +450,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void deletePayment_paymentNotFound_throws() {
+    void deletePayment_paymentNotFound_throws() throws Exception {
         Invoice invoice = minimalSavedInvoice("inv-1");
         // no payments on the invoice
         when(repo.findById("inv-1")).thenReturn(Optional.of(invoice));
@@ -461,7 +461,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void deletePayment_fullyPaidAfterDelete_statusPaid() {
+    void deletePayment_fullyPaidAfterDelete_statusPaid() throws Exception {
         // Invoice has total=100, one payment of 100, delete a *second* payment of 0
         // After deletion, paidSum is still 100 → fully paid
         Invoice invoice = minimalSavedInvoice("dpay-full");
@@ -494,7 +494,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void deletePayment_partialAfterDelete_statusPartialPayment() {
+    void deletePayment_partialAfterDelete_statusPartialPayment() throws Exception {
         // Invoice total=200, two payments of 50 each; delete one → paidSum=50, due=150 → partial
         Invoice invoice = minimalSavedInvoice("dpay-partial");
         invoice.setTotal(BigDecimal.valueOf(200.00));
@@ -526,7 +526,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void deletePayment_noPaymentsAfterDelete_statusPending() {
+    void deletePayment_noPaymentsAfterDelete_statusPending() throws Exception {
         // Invoice total=100, one payment of 100; delete it → paidSum=0 → pending
         Invoice invoice = minimalSavedInvoice("dpay-pending");
         invoice.setTotal(BigDecimal.valueOf(100.00));
@@ -553,21 +553,21 @@ class InvoiceServiceTest {
     // ─── findDuplicateByProviderAndTotal ─────────────────────────────────────
 
     @Test
-    void findDuplicateByProviderAndTotal_nullProvider_returnsEmpty() {
+    void findDuplicateByProviderAndTotal_nullProvider_returnsEmpty() throws Exception {
         Optional<Invoice> result = service.findDuplicateByProviderAndTotal(null, 100.0, "INV-001");
         assertThat(result).isEmpty();
         verifyNoInteractions(repo);
     }
 
     @Test
-    void findDuplicateByProviderAndTotal_nullTotal_returnsEmpty() {
+    void findDuplicateByProviderAndTotal_nullTotal_returnsEmpty() throws Exception {
         Optional<Invoice> result = service.findDuplicateByProviderAndTotal("Provider A", null, "INV-001");
         assertThat(result).isEmpty();
         verifyNoInteractions(repo);
     }
 
     @Test
-    void findDuplicateByProviderAndTotal_withInvoiceNumber_callsStrictMethod() {
+    void findDuplicateByProviderAndTotal_withInvoiceNumber_callsStrictMethod() throws Exception {
         Invoice inv = minimalSavedInvoice("dup-id");
         when(repo.findTopByProviderNameIgnoreCaseAndTotalAndInvoiceNumberOrderByCreatedAtDesc(
                 eq("Provider A"), any(BigDecimal.class), eq("INV-001")))
@@ -581,7 +581,7 @@ class InvoiceServiceTest {
     }
 
     @Test
-    void findDuplicateByProviderAndTotal_withoutInvoiceNumber_callsRangeMethod() {
+    void findDuplicateByProviderAndTotal_withoutInvoiceNumber_callsRangeMethod() throws Exception {
         Invoice inv = minimalSavedInvoice("range-id");
         when(repo.findTopByProviderNameIgnoreCaseAndTotalBetweenOrderByCreatedAtDesc(
                 eq("Provider B"), any(BigDecimal.class), any(BigDecimal.class)))

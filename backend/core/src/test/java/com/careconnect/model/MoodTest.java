@@ -11,7 +11,7 @@ class MoodTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         Mood mood = new Mood();
         assertThat(mood).isNotNull();
         assertThat(mood.getId()).isNull();
@@ -20,7 +20,7 @@ class MoodTest {
     // ─── Parameterized constructor ────────────────────────────────────────────
 
     @Test
-    void parameterizedConstructor_setsFields() {
+    void parameterizedConstructor_setsFields() throws Exception {
         Mood mood = new Mood(42L, 4, "Happy");
 
         assertThat(mood.getUserId()).isEqualTo(42L);
@@ -32,7 +32,7 @@ class MoodTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         Mood mood = new Mood();
         LocalDateTime now = LocalDateTime.now();
 

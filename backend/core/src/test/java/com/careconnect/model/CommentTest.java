@@ -11,7 +11,7 @@ class CommentTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         Comment comment = new Comment();
 
         assertThat(comment).isNotNull();
@@ -26,7 +26,7 @@ class CommentTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         Comment comment = new Comment();
         LocalDateTime now = LocalDateTime.now();
 

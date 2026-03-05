@@ -40,21 +40,21 @@ class CommentControllerTest {
     private CommentController controller;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .build();
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         SecurityContextHolder.clearContext();
         /*
          * Ensures no authentication leaks between tests.
          */
     }
 
-    private void mockAuthenticated() {
+    private void mockAuthenticated() throws Exception {
         Authentication authentication = mock(Authentication.class);
         SecurityContext securityContext = mock(SecurityContext.class);
 

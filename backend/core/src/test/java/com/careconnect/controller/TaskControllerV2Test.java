@@ -26,7 +26,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.controller.v2.TaskControllerV2;
 import com.careconnect.dto.v2.TaskDtoV2;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.v2.TaskServiceV2;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -62,6 +64,12 @@ class TaskControllerV2Test {
     @MockBean
     private TaskServiceV2 taskService;
 
+    @MockBean
+    private SecurityUtil securityUtil;
+
+    @MockBean
+    private AuthorizationService authorizationService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -72,7 +80,7 @@ class TaskControllerV2Test {
     private TaskDtoV2 sampleTask;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         sampleTask = TaskDtoV2.builder()
                 .id(1L)
                 .name("Check Blood Pressure")

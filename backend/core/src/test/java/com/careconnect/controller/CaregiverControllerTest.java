@@ -12,7 +12,9 @@ import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.Role;
 import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.CaregiverService;
+import com.careconnect.util.SecurityUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,9 @@ class CaregiverControllerTest {
     @Mock private UserRepository userRepository;
     @Mock private PatientRepository patientRepository;
     @Mock private CaregiverRepository caregiverRepository;
+
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private CaregiverController controller;
@@ -83,7 +88,7 @@ class CaregiverControllerTest {
     class GetPatientsByCaregiver {
 
         @Test
-        void returnsListOfPatientsWithNoFilters() {
+        void returnsListOfPatientsWithNoFilters() throws Exception {
             PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
             when(caregiverService.getPatientsByCaregiver(CAREGIVER_ID, null, null))
                     .thenReturn(List.of(dto));
@@ -96,7 +101,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void passesEmailAndNameFiltersToService() {
+        void passesEmailAndNameFiltersToService() throws Exception {
             when(caregiverService.getPatientsByCaregiver(CAREGIVER_ID, PATIENT_EMAIL, "Jane"))
                     .thenReturn(List.of());
 
@@ -112,7 +117,7 @@ class CaregiverControllerTest {
     class GetCaregiver {
 
         @Test
-        void returnsCaregiver() {
+        void returnsCaregiver() throws Exception {
             Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
             when(caregiverService.getCaregiverById(CAREGIVER_ID)).thenReturn(caregiver);
 
@@ -130,7 +135,7 @@ class CaregiverControllerTest {
     class RegisterCaregiver {
 
         @Test
-        void returnsCreatedStatusWithCaregiver() {
+        void returnsCreatedStatusWithCaregiver() throws Exception {
             CaregiverRegistration reg = new CaregiverRegistration();
             Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
             when(auth.registerCaregiver(reg)).thenReturn(caregiver);
@@ -148,7 +153,7 @@ class CaregiverControllerTest {
     class UpdateCaregiver {
 
         @Test
-        void returnsUpdatedCaregiver() {
+        void returnsUpdatedCaregiver() throws Exception {
             Caregiver incoming = new Caregiver();
             Caregiver saved    = new Caregiver();
             when(caregiverService.updateCaregiver(CAREGIVER_ID, incoming)).thenReturn(saved);
@@ -166,7 +171,7 @@ class CaregiverControllerTest {
     class RegisterPatient {
 
         @Test
-        void setsCaregiverIdOnRegistrationAndReturnsPatient() {
+        void setsCaregiverIdOnRegistrationAndReturnsPatient() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             Patient patient = mock(Patient.class);
             when(auth.registerPatient(reg)).thenReturn(patient);
@@ -186,7 +191,7 @@ class CaregiverControllerTest {
     class AddPatient {
 
         @Test
-        void throwsBadRequestWhenEmailKeyIsAbsent() {
+        void throwsBadRequestWhenEmailKeyIsAbsent() throws Exception {
             // emptyMap().get("email") == null, triggering the null guard
             assertThatThrownBy(() -> controller.addPatient(CAREGIVER_ID, Collections.emptyMap()))
                     .isInstanceOf(AppException.class)
@@ -194,14 +199,14 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void throwsBadRequestWhenEmailIsBlank() {
+        void throwsBadRequestWhenEmailIsBlank() throws Exception {
             assertThatThrownBy(() -> controller.addPatient(CAREGIVER_ID, emailBody("   ")))
                     .isInstanceOf(AppException.class)
                     .hasMessage("Patient email is required");
         }
 
         @Test
-        void throwsNotFoundWhenCaregiverDoesNotExist() {
+        void throwsNotFoundWhenCaregiverDoesNotExist() throws Exception {
             when(caregiverRepository.findById(CAREGIVER_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> controller.addPatient(CAREGIVER_ID, emailBody(PATIENT_EMAIL)))
@@ -210,7 +215,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void returnsAcceptedWithInvitationWhenPatientNotRegistered() {
+        void returnsAcceptedWithInvitationWhenPatientNotRegistered() throws Exception {
             when(caregiverRepository.findById(CAREGIVER_ID))
                     .thenReturn(Optional.of(makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER))));
             when(userRepository.findByEmailAndRole(PATIENT_EMAIL, Role.PATIENT))
@@ -223,7 +228,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void throwsNotFoundWhenPatientRecordMissingForExistingUser() {
+        void throwsNotFoundWhenPatientRecordMissingForExistingUser() throws Exception {
             User patientUser = makeUser(PT_USER_ID, Role.PATIENT);
             when(caregiverRepository.findById(CAREGIVER_ID))
                     .thenReturn(Optional.of(makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER))));
@@ -237,7 +242,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void throwsBadRequestWhenLinkAlreadyExists() {
+        void throwsBadRequestWhenLinkAlreadyExists() throws Exception {
             User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
             User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
             Patient patient    = mock(Patient.class);
@@ -254,7 +259,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void returnsOkAndCreatesLinkWhenSuccessful() {
+        void returnsOkAndCreatesLinkWhenSuccessful() throws Exception {
             User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
             User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
             Patient patient    = mock(Patient.class);
@@ -287,7 +292,7 @@ class CaregiverControllerTest {
     class GetPatientForCaregiver {
 
         @Test
-        void returnsForbiddenWhenCaregiverHasNoAccess() {
+        void returnsForbiddenWhenCaregiverHasNoAccess() throws Exception {
             when(caregiverService.caregiverHasAccessToPatient(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(false);
 
@@ -298,7 +303,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void returnsNotFoundWhenServiceReturnsNull() {
+        void returnsNotFoundWhenServiceReturnsNull() throws Exception {
             when(caregiverService.caregiverHasAccessToPatient(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(true);
             when(caregiverService.getPatientWithLinkById(CAREGIVER_ID, PATIENT_ID))
@@ -311,7 +316,7 @@ class CaregiverControllerTest {
         }
 
         @Test
-        void returnsOkWithPatientDto() {
+        void returnsOkWithPatientDto() throws Exception {
             PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
             when(caregiverService.caregiverHasAccessToPatient(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(true);

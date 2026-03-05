@@ -52,7 +52,7 @@ class MedicalContextServiceTest {
     }
 
     /** All include-by-default flags false so only explicit request overrides trigger sections */
-    private UserAIConfig cfg() {
+    private UserAIConfig cfg() throws Exception {
         UserAIConfig c = new UserAIConfig();
         c.setUserId(1L);
         c.setPreferredAiProvider(UserAIConfig.AIProvider.OPENAI);
@@ -65,7 +65,7 @@ class MedicalContextServiceTest {
     }
 
     /** Request with every Boolean include-flag null → defers to aiConfig defaults */
-    private ChatRequest bareRequest() {
+    private ChatRequest bareRequest() throws Exception {
         return new ChatRequest();
     }
 
@@ -74,13 +74,13 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void buildPatientContext_patientNotFound_returnsEmptyString() {
+    void buildPatientContext_patientNotFound_returnsEmptyString() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.empty());
         assertThat(service.buildPatientContext(1L, bareRequest(), cfg())).isEmpty();
     }
 
     @Test
-    void buildPatientContext_minimalPatient_containsNameAndFooter() {
+    void buildPatientContext_minimalPatient_containsNameAndFooter() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         String result = service.buildPatientContext(1L, bareRequest(), cfg());
         assertThat(result).contains("John Doe");
@@ -88,7 +88,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withSystemPrompt_appended() {
+    void buildPatientContext_withSystemPrompt_appended() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         UserAIConfig c = cfg();
         c.setSystemPrompt("Be concise");
@@ -97,7 +97,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withBlankSystemPrompt_notAppended() {
+    void buildPatientContext_withBlankSystemPrompt_notAppended() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         UserAIConfig c = cfg();
         c.setSystemPrompt("   ");
@@ -106,7 +106,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withNullSystemPrompt_notAppended() {
+    void buildPatientContext_withNullSystemPrompt_notAppended() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         UserAIConfig c = cfg();
         c.setSystemPrompt(null);
@@ -115,7 +115,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withDob_included() {
+    void buildPatientContext_withDob_included() throws Exception {
         Patient p = Patient.builder().id(1L).firstName("Jane").lastName("Smith")
                 .dob("1985-05-20").build();
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
@@ -124,7 +124,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withGender_included() {
+    void buildPatientContext_withGender_included() throws Exception {
         Patient p = Patient.builder().id(1L).firstName("Jane").lastName("Smith")
                 .gender(Gender.FEMALE).build();
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
@@ -133,7 +133,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withAdditionalContext_allItemsPresent() {
+    void buildPatientContext_withAdditionalContext_allItemsPresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         ChatRequest req = bareRequest();
         req.setAdditionalContext(List.of("Context A", "Context B"));
@@ -144,7 +144,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void buildPatientContext_withUploadedFile_contentExtracted() {
+    void buildPatientContext_withUploadedFile_contentExtracted() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         UploadedFileDTO file = UploadedFileDTO.builder()
                 .filename("report.pdf").contentType("application/pdf").build();
@@ -162,7 +162,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void shouldIncludeVitals_requestOverrideTrue_callsRepo() {
+    void shouldIncludeVitals_requestOverrideTrue_callsRepo() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(vitalsRepository.findByPatientIdOrderByRecordedAtDesc(1L)).thenReturn(Collections.emptyList());
         ChatRequest req = bareRequest();
@@ -171,7 +171,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeVitals_requestOverrideFalse_skipsVitals() {
+    void shouldIncludeVitals_requestOverrideFalse_skipsVitals() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         ChatRequest req = bareRequest();
         req.setIncludeVitals(false);
@@ -179,7 +179,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeVitals_requestNullAiConfigTrue_callsRepo() {
+    void shouldIncludeVitals_requestNullAiConfigTrue_callsRepo() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(vitalsRepository.findByPatientIdOrderByRecordedAtDesc(1L)).thenReturn(Collections.emptyList());
         UserAIConfig c = cfg();
@@ -188,7 +188,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeMedications_requestNullAiConfigTrue_callsRepo() {
+    void shouldIncludeMedications_requestNullAiConfigTrue_callsRepo() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(medicationRepository.findActiveByPatientId(1L)).thenReturn(Collections.emptyList());
         UserAIConfig c = cfg();
@@ -197,7 +197,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeNotes_requestNullAiConfigTrue_callsRepo() {
+    void shouldIncludeNotes_requestNullAiConfigTrue_callsRepo() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(clinicalNotesRepository.findByPatientIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
         UserAIConfig c = cfg();
@@ -206,7 +206,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeMoodPainLogs_requestNullAiConfigTrue_callsRepo() {
+    void shouldIncludeMoodPainLogs_requestNullAiConfigTrue_callsRepo() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(p)).thenReturn(Collections.emptyList());
@@ -216,7 +216,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void shouldIncludeAllergies_requestNullAiConfigTrue_callsRepo() {
+    void shouldIncludeAllergies_requestNullAiConfigTrue_callsRepo() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(allergyRepository.findByPatientId(1L)).thenReturn(Collections.emptyList());
         UserAIConfig c = cfg();
@@ -229,7 +229,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void addVitalsContext_emptyList_noHeader() {
+    void addVitalsContext_emptyList_noHeader() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(vitalsRepository.findByPatientIdOrderByRecordedAtDesc(1L)).thenReturn(Collections.emptyList());
         ChatRequest req = bareRequest();
@@ -238,7 +238,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addVitalsContext_withUnit_unitLinePresent() {
+    void addVitalsContext_withUnit_unitLinePresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Vital v = Vital.builder().vitalType("BLOOD_PRESSURE").value("120/80").unit("mmHg")
                 .recordedAt(LocalDateTime.of(2025, 1, 10, 9, 0)).build();
@@ -252,7 +252,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addVitalsContext_withoutUnit_noUnitLine() {
+    void addVitalsContext_withoutUnit_noUnitLine() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Vital v = Vital.builder().vitalType("HEART_RATE").value("72").unit(null)
                 .recordedAt(LocalDateTime.of(2025, 1, 10, 9, 0)).build();
@@ -265,7 +265,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addVitalsContext_moreThan10_limitedTo10() {
+    void addVitalsContext_moreThan10_limitedTo10() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         List<Vital> vitals = new ArrayList<>();
         for (int i = 0; i < 15; i++) {
@@ -281,7 +281,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addVitalsContext_repoThrows_exceptionSuppressed() {
+    void addVitalsContext_repoThrows_exceptionSuppressed() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(vitalsRepository.findByPatientIdOrderByRecordedAtDesc(1L))
                 .thenThrow(new RuntimeException("DB error"));
@@ -296,7 +296,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void addMedicationsContext_emptyList_noHeader() {
+    void addMedicationsContext_emptyList_noHeader() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(medicationRepository.findActiveByPatientId(1L)).thenReturn(Collections.emptyList());
         ChatRequest req = bareRequest();
@@ -305,7 +305,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMedicationsContext_withAllOptionalFields_allPresent() {
+    void addMedicationsContext_withAllOptionalFields_allPresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Medication med = Medication.builder()
                 .medicationName("Aspirin").dosage("100mg")
@@ -319,7 +319,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMedicationsContext_withNullOptionalFields_onlyNamePresent() {
+    void addMedicationsContext_withNullOptionalFields_onlyNamePresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Medication med = Medication.builder()
                 .medicationName("Vitamin D").dosage(null).frequency(null).notes(null).build();
@@ -332,7 +332,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMedicationsContext_repoThrows_exceptionSuppressed() {
+    void addMedicationsContext_repoThrows_exceptionSuppressed() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(medicationRepository.findActiveByPatientId(1L)).thenThrow(new RuntimeException("DB error"));
         ChatRequest req = bareRequest();
@@ -345,7 +345,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void addNotesContext_emptyList_noHeader() {
+    void addNotesContext_emptyList_noHeader() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(clinicalNotesRepository.findByPatientIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
         ChatRequest req = bareRequest();
@@ -354,7 +354,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addNotesContext_withCaregiverId_caregiverLinePresent() {
+    void addNotesContext_withCaregiverId_caregiverLinePresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         ClinicalNote note = ClinicalNote.builder()
                 .noteType("ASSESSMENT").content("Patient is stable").caregiverId(42L)
@@ -368,7 +368,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addNotesContext_withNullCaregiverId_noCaregiverLine() {
+    void addNotesContext_withNullCaregiverId_noCaregiverLine() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         ClinicalNote note = ClinicalNote.builder()
                 .noteType("OBSERVATION").content("Good progress").caregiverId(null)
@@ -380,7 +380,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addNotesContext_moreThan5Notes_limitedTo5() {
+    void addNotesContext_moreThan5Notes_limitedTo5() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         List<ClinicalNote> notes = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
@@ -396,7 +396,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addNotesContext_repoThrows_exceptionSuppressed() {
+    void addNotesContext_repoThrows_exceptionSuppressed() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(clinicalNotesRepository.findByPatientIdOrderByCreatedAtDesc(1L))
                 .thenThrow(new RuntimeException("DB error"));
@@ -410,7 +410,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void addMoodPainLogsContext_secondPatientLookupNull_returnsEarly() {
+    void addMoodPainLogsContext_secondPatientLookupNull_returnsEarly() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L))
                 .thenReturn(Optional.of(p))     // first call in buildPatientContext
@@ -421,7 +421,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMoodPainLogsContext_emptyList_noHeader() {
+    void addMoodPainLogsContext_emptyList_noHeader() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(p)).thenReturn(Collections.emptyList());
@@ -431,7 +431,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMoodPainLogsContext_withAllOptionalFields_allPresent() {
+    void addMoodPainLogsContext_withAllOptionalFields_allPresent() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         MoodPainLog entry = MoodPainLog.builder().patient(p)
@@ -448,7 +448,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMoodPainLogsContext_withNullOptionalFields_noExtraLines() {
+    void addMoodPainLogsContext_withNullOptionalFields_noExtraLines() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         MoodPainLog entry = MoodPainLog.builder().patient(p)
@@ -463,7 +463,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMoodPainLogsContext_moreThan10Logs_limitedTo10() {
+    void addMoodPainLogsContext_moreThan10Logs_limitedTo10() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         List<MoodPainLog> logs = new ArrayList<>();
@@ -480,7 +480,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addMoodPainLogsContext_repoThrows_exceptionSuppressed() {
+    void addMoodPainLogsContext_repoThrows_exceptionSuppressed() throws Exception {
         Patient p = patient(1L);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(p));
         when(moodPainLogRepository.findByPatientOrderByTimestampDesc(p))
@@ -495,7 +495,7 @@ class MedicalContextServiceTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void addAllergiesContext_emptyList_noHeader() {
+    void addAllergiesContext_emptyList_noHeader() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(allergyRepository.findByPatientId(1L)).thenReturn(Collections.emptyList());
         ChatRequest req = bareRequest();
@@ -504,7 +504,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addAllergiesContext_withReactionAndSeverity_allPresent() {
+    void addAllergiesContext_withReactionAndSeverity_allPresent() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Allergy allergy = Allergy.builder()
                 .allergen("Peanuts").reaction("Anaphylaxis")
@@ -519,7 +519,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addAllergiesContext_withNullOptionals_noExtraFields() {
+    void addAllergiesContext_withNullOptionals_noExtraFields() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         Allergy allergy = Allergy.builder().allergen("Shellfish").reaction(null).severity(null).build();
         when(allergyRepository.findByPatientId(1L)).thenReturn(List.of(allergy));
@@ -531,7 +531,7 @@ class MedicalContextServiceTest {
     }
 
     @Test
-    void addAllergiesContext_repoThrows_exceptionSuppressed() {
+    void addAllergiesContext_repoThrows_exceptionSuppressed() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient(1L)));
         when(allergyRepository.findByPatientId(1L)).thenThrow(new RuntimeException("DB error"));
         ChatRequest req = bareRequest();

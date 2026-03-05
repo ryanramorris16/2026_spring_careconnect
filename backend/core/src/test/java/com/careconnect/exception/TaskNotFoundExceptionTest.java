@@ -10,7 +10,7 @@ class TaskNotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor with Long formats message with taskId")
-    void longConstructor_formatsMessage() {
+    void longConstructor_formatsMessage() throws Exception {
         TaskNotFoundException ex = new TaskNotFoundException(7L);
         assertEquals("Task not found: id=7", ex.getMessage());
         assertInstanceOf(NotFoundException.class, ex);
@@ -18,7 +18,7 @@ class TaskNotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor with String sets custom message")
-    void stringConstructor_setsMessage() {
+    void stringConstructor_setsMessage() throws Exception {
         TaskNotFoundException ex = new TaskNotFoundException("gone");
         assertEquals("gone", ex.getMessage());
     }

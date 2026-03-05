@@ -24,13 +24,13 @@ class TokenHashServiceTest {
     private String hashedToken;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         plainToken = "test-refresh-token";
         hashedToken = "hashed-token-value";
     }
 
     @Test
-    void hashToken_ShouldReturnHashedToken_WhenTokenIsValid() {
+    void hashToken_ShouldReturnHashedToken_WhenTokenIsValid() throws Exception {
         // Arrange
         when(passwordEncoder.encode(plainToken)).thenReturn(hashedToken);
 
@@ -43,7 +43,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void hashToken_ShouldReturnNull_WhenTokenIsNull() {
+    void hashToken_ShouldReturnNull_WhenTokenIsNull() throws Exception {
         // Act
         String result = tokenHashService.hashToken(null);
 
@@ -53,7 +53,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void hashToken_ShouldReturnNull_WhenTokenIsBlank() {
+    void hashToken_ShouldReturnNull_WhenTokenIsBlank() throws Exception {
         // Act
         String result = tokenHashService.hashToken("");
 
@@ -63,7 +63,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void hashToken_ShouldReturnNull_WhenTokenIsWhitespace() {
+    void hashToken_ShouldReturnNull_WhenTokenIsWhitespace() throws Exception {
         // Act
         String result = tokenHashService.hashToken("   ");
 
@@ -73,7 +73,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void verifyToken_ShouldReturnTrue_WhenTokensMatch() {
+    void verifyToken_ShouldReturnTrue_WhenTokensMatch() throws Exception {
         // Arrange
         when(passwordEncoder.matches(plainToken, hashedToken)).thenReturn(true);
 
@@ -86,7 +86,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void verifyToken_ShouldReturnFalse_WhenTokensDoNotMatch() {
+    void verifyToken_ShouldReturnFalse_WhenTokensDoNotMatch() throws Exception {
         // Arrange
         when(passwordEncoder.matches(plainToken, hashedToken)).thenReturn(false);
 
@@ -99,7 +99,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void verifyToken_ShouldReturnFalse_WhenPlainTokenIsNull() {
+    void verifyToken_ShouldReturnFalse_WhenPlainTokenIsNull() throws Exception {
         // Act
         boolean result = tokenHashService.verifyToken(null, hashedToken);
 
@@ -109,7 +109,7 @@ class TokenHashServiceTest {
     }
 
     @Test
-    void verifyToken_ShouldReturnFalse_WhenHashedTokenIsNull() {
+    void verifyToken_ShouldReturnFalse_WhenHashedTokenIsNull() throws Exception {
         // Act
         boolean result = tokenHashService.verifyToken(plainToken, null);
 

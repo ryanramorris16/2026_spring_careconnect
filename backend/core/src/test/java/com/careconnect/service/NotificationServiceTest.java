@@ -20,7 +20,7 @@ class NotificationServiceTest {
     private NotificationService notificationService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         notificationService = new NotificationService();
     }
@@ -29,7 +29,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotification_validRequest_returnsSuccessResponse")
-    void sendNotification_validRequest_returnsSuccessResponse() {
+    void sendNotification_validRequest_returnsSuccessResponse() throws Exception {
         FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Test Title")
                 .body("Test Body")
@@ -50,7 +50,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotification_requestWithAllFields_returnsSuccessResponse")
-    void sendNotification_requestWithAllFields_returnsSuccessResponse() {
+    void sendNotification_requestWithAllFields_returnsSuccessResponse() throws Exception {
         Map<String, String> data = new HashMap<>();
         data.put("key1", "value1");
 
@@ -75,7 +75,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotification_requestWithMinimalFields_returnsSuccessResponse")
-    void sendNotification_requestWithMinimalFields_returnsSuccessResponse() {
+    void sendNotification_requestWithMinimalFields_returnsSuccessResponse() throws Exception {
         FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Reminder")
                 .body("Take your medication")
@@ -90,7 +90,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotification_nullRequest_returnsSuccessResponse")
-    void sendNotification_nullRequest_returnsSuccessResponse() {
+    void sendNotification_nullRequest_returnsSuccessResponse() throws Exception {
         NotificationResponse response = notificationService.sendNotification(null);
 
         assertNotNull(response);
@@ -102,7 +102,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendBulkNotifications_singleRequestList_returnsListWithOneSuccessResponse")
-    void sendBulkNotifications_singleRequestList_returnsListWithOneSuccessResponse() {
+    void sendBulkNotifications_singleRequestList_returnsListWithOneSuccessResponse() throws Exception {
         FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Bulk Title")
                 .body("Bulk Body")
@@ -120,7 +120,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendBulkNotifications_multipleRequests_returnsListWithSuccessResponse")
-    void sendBulkNotifications_multipleRequests_returnsListWithSuccessResponse() {
+    void sendBulkNotifications_multipleRequests_returnsListWithSuccessResponse() throws Exception {
         FirebaseNotificationRequest request1 = FirebaseNotificationRequest.builder()
                 .title("Title 1")
                 .body("Body 1")
@@ -144,7 +144,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse")
-    void sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse() {
+    void sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse() throws Exception {
         List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of());
 
         assertNotNull(responses);
@@ -156,7 +156,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotificationToUser_validUserWithAllParameters_returnsSuccessResponseList")
-    void sendNotificationToUser_validUserWithAllParameters_returnsSuccessResponseList() {
+    void sendNotificationToUser_validUserWithAllParameters_returnsSuccessResponseList() throws Exception {
         Map<String, String> data = Map.of("alertLevel", "HIGH");
 
         List<NotificationResponse> responses = notificationService.sendNotificationToUser(
@@ -171,7 +171,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotificationToUser_nullDataMap_returnsSuccessResponseList")
-    void sendNotificationToUser_nullDataMap_returnsSuccessResponseList() {
+    void sendNotificationToUser_nullDataMap_returnsSuccessResponseList() throws Exception {
         List<NotificationResponse> responses = notificationService.sendNotificationToUser(
                 2L, "Medication Reminder", "Time to take Aspirin", "MEDICATION_REMINDER", null);
 
@@ -182,7 +182,7 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("sendNotificationToUser_emergencyNotificationType_returnsSuccessResponseList")
-    void sendNotificationToUser_emergencyNotificationType_returnsSuccessResponseList() {
+    void sendNotificationToUser_emergencyNotificationType_returnsSuccessResponseList() throws Exception {
         Map<String, String> data = Map.of("location", "Home");
 
         List<NotificationResponse> responses = notificationService.sendNotificationToUser(
@@ -319,28 +319,28 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("registerDeviceToken_androidDevice_completesWithoutException")
-    void registerDeviceToken_androidDevice_completesWithoutException() {
+    void registerDeviceToken_androidDevice_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.registerDeviceToken(1L, "fcm-token-abc", "device-123", DeviceToken.DeviceType.ANDROID));
     }
 
     @Test
     @DisplayName("registerDeviceToken_iosDevice_completesWithoutException")
-    void registerDeviceToken_iosDevice_completesWithoutException() {
+    void registerDeviceToken_iosDevice_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.registerDeviceToken(2L, "fcm-token-def", "device-456", DeviceToken.DeviceType.IOS));
     }
 
     @Test
     @DisplayName("registerDeviceToken_webDevice_completesWithoutException")
-    void registerDeviceToken_webDevice_completesWithoutException() {
+    void registerDeviceToken_webDevice_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.registerDeviceToken(3L, "fcm-token-ghi", "device-789", DeviceToken.DeviceType.WEB));
     }
 
     @Test
     @DisplayName("registerDeviceToken_nullParams_completesWithoutException")
-    void registerDeviceToken_nullParams_completesWithoutException() {
+    void registerDeviceToken_nullParams_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.registerDeviceToken(null, null, null, null));
     }
@@ -349,21 +349,21 @@ class NotificationServiceTest {
 
     @Test
     @DisplayName("unregisterDeviceToken_validToken_completesWithoutException")
-    void unregisterDeviceToken_validToken_completesWithoutException() {
+    void unregisterDeviceToken_validToken_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.unregisterDeviceToken("fcm-token-abc"));
     }
 
     @Test
     @DisplayName("unregisterDeviceToken_nullToken_completesWithoutException")
-    void unregisterDeviceToken_nullToken_completesWithoutException() {
+    void unregisterDeviceToken_nullToken_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.unregisterDeviceToken(null));
     }
 
     @Test
     @DisplayName("unregisterDeviceToken_emptyToken_completesWithoutException")
-    void unregisterDeviceToken_emptyToken_completesWithoutException() {
+    void unregisterDeviceToken_emptyToken_completesWithoutException() throws Exception {
         assertDoesNotThrow(() ->
                 notificationService.unregisterDeviceToken(""));
     }

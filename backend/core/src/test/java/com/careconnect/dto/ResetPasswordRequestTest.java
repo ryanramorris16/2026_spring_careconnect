@@ -12,7 +12,7 @@ class ResetPasswordRequestTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
 
         assertThat(request).isNotNull();
@@ -24,21 +24,21 @@ class ResetPasswordRequestTest {
     // ─── Setters and Getters ──────────────────────────────────────────────────
 
     @Test
-    void setUsername_getUsername_roundTrips() {
+    void setUsername_getUsername_roundTrips() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setUsername("user@example.com");
         assertThat(request.getUsername()).isEqualTo("user@example.com");
     }
 
     @Test
-    void setResetToken_getResetToken_roundTrips() {
+    void setResetToken_getResetToken_roundTrips() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setResetToken("abc-reset-token-123");
         assertThat(request.getResetToken()).isEqualTo("abc-reset-token-123");
     }
 
     @Test
-    void setNewPassword_getNewPassword_roundTrips() {
+    void setNewPassword_getNewPassword_roundTrips() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setNewPassword("Secur3P@ssword!");
         assertThat(request.getNewPassword()).isEqualTo("Secur3P@ssword!");
@@ -47,7 +47,7 @@ class ResetPasswordRequestTest {
     // ─── All fields set together ──────────────────────────────────────────────
 
     @Test
-    void allSetters_allFieldsUpdated() {
+    void allSetters_allFieldsUpdated() throws Exception {
         ResetPasswordRequest request = new ResetPasswordRequest();
 
         request.setUsername("admin@careconnect.com");

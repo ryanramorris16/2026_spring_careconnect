@@ -12,7 +12,7 @@ class PatientNotetakerConfigTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientNotetakerConfig config = new PatientNotetakerConfig();
 
         assertThat(config).isNotNull();
@@ -27,7 +27,7 @@ class PatientNotetakerConfigTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         PatientNotetakerKeyword keyword = new PatientNotetakerKeyword("chest pain", PatientNotetakerKeyword.EventType.ALERT);
 
@@ -51,7 +51,7 @@ class PatientNotetakerConfigTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientNotetakerConfig config = new PatientNotetakerConfig();
         LocalDateTime now = LocalDateTime.now();
 
@@ -73,7 +73,7 @@ class PatientNotetakerConfigTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         PatientNotetakerConfig c1 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
         PatientNotetakerConfig c2 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
 
