@@ -22,18 +22,18 @@ class SecurityConfigTest {
     private SecurityConfig securityConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         securityConfig = new SecurityConfig();
     }
 
     @Test
-    void passwordEncoder_IsCreated() {
+    void passwordEncoder_IsCreated() throws Exception {
         // Sanity check that passwordEncoder() returns a non-null bean.
         assertNotNull(securityConfig.passwordEncoder());
     }
 
     @Test
-    void passwordEncoder_ReturnsBCrypt() {
+    void passwordEncoder_ReturnsBCrypt() throws Exception {
         // Verifies that the returned encoder is specifically a BCryptPasswordEncoder,
         // confirming the algorithm choice rather than accepting any PasswordEncoder
         // implementation (e.g. NoOpPasswordEncoder used only for legacy/dev scenarios).
@@ -45,7 +45,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void passwordEncoder_CanEncodeAndMatch() {
+    void passwordEncoder_CanEncodeAndMatch() throws Exception {
         // Verifies the core encode/match round-trip: a raw password is hashed, the hash
         // differs from the plaintext (i.e. it is actually encoded), and matches() confirms
         // the original password against the stored hash — the critical login-time check.
@@ -58,7 +58,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void passwordEncoder_RejectsMismatch() {
+    void passwordEncoder_RejectsMismatch() throws Exception {
         // Verifies that matches() returns false for a wrong password, ensuring that
         // incorrect credentials are rejected during authentication.
         var encoder = securityConfig.passwordEncoder();
@@ -68,7 +68,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void passwordEncoder_ProducesDifferentHashesForSameInput() {
+    void passwordEncoder_ProducesDifferentHashesForSameInput() throws Exception {
         // Verifies BCrypt's random-salt property: two calls to encode() with the same
         // plaintext produce different hashes, yet both hashes still match the original.
         // This prevents attackers from deducing which users share the same password.
