@@ -12,7 +12,7 @@ class ChatMessageTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ChatMessage msg = new ChatMessage();
 
         assertThat(msg).isNotNull();
@@ -25,7 +25,7 @@ class ChatMessageTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         ChatMessage msg = new ChatMessage();
         ChatConversation conv = ChatConversation.builder().id(1L).build();
         LocalDateTime now = LocalDateTime.now();
@@ -69,14 +69,14 @@ class ChatMessageTest {
     // ─── MessageType enum ─────────────────────────────────────────────────────
 
     @Test
-    void messageTypeEnum_getValue() {
+    void messageTypeEnum_getValue() throws Exception {
         assertThat(ChatMessage.MessageType.USER.getValue()).isEqualTo("user");
         assertThat(ChatMessage.MessageType.ASSISTANT.getValue()).isEqualTo("assistant");
         assertThat(ChatMessage.MessageType.SYSTEM.getValue()).isEqualTo("system");
     }
 
     @Test
-    void messageTypeEnum_containsAllValues() {
+    void messageTypeEnum_containsAllValues() throws Exception {
         assertThat(ChatMessage.MessageType.values()).containsExactly(
                 ChatMessage.MessageType.USER,
                 ChatMessage.MessageType.ASSISTANT,
