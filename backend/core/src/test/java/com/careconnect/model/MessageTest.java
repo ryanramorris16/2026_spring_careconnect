@@ -11,7 +11,7 @@ class MessageTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         Message msg = new Message();
 
         assertThat(msg).isNotNull();
@@ -26,7 +26,7 @@ class MessageTest {
     // ─── 3-arg constructor ────────────────────────────────────────────────────
 
     @Test
-    void threeArgConstructor_setsFields() {
+    void threeArgConstructor_setsFields() throws Exception {
         Message msg = new Message(1L, 2L, "Hello there!");
 
         assertThat(msg.getSenderId()).isEqualTo(1L);
@@ -39,7 +39,7 @@ class MessageTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateFields() {
+    void settersAndGetters_updateFields() throws Exception {
         Message msg = new Message();
         LocalDateTime now = LocalDateTime.now();
 
