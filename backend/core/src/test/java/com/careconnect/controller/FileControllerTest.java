@@ -55,14 +55,14 @@ class FileControllerTest {
     private static final Long   FILE_ID    = 10L;
 
     @BeforeEach
-    void setUp() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+    void setUp() throws Exception {
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(USER_EMAIL);
+        lenient().when(authentication.getName()).thenReturn(USER_EMAIL);
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
@@ -86,14 +86,14 @@ class FileControllerTest {
                 .build();
     }
 
-    private MockMultipartFile makeFile() {
+    private MockMultipartFile makeFile() throws Exception {
         return new MockMultipartFile("file", "test.pdf", "application/pdf", "content".getBytes());
     }
 
     // ─── uploadFile ───────────────────────────────────────────────────────────
 
     @Test
-    void uploadFile_success_noPatientId() {
+    void uploadFile_success_noPatientId() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).filename("f.pdf").build();
@@ -110,7 +110,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_adminAccessToPatient_success() {
+    void uploadFile_adminAccessToPatient_success() throws Exception {
         User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
@@ -123,7 +123,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_patientAccessingOwnId_success() {
+    void uploadFile_patientAccessingOwnId_success() throws Exception {
         User user = makeUser(Role.PATIENT);
         user.setId(PATIENT_ID); // same id as patientId
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
@@ -137,7 +137,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_patientAccessingOtherPatient_forbidden() {
+    void uploadFile_patientAccessingOtherPatient_forbidden() throws Exception {
         User user = makeUser(Role.PATIENT); // USER_ID=1, patientId=2
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
@@ -147,7 +147,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_caregiverHasAccess_success() {
+    void uploadFile_caregiverHasAccess_success() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
@@ -162,7 +162,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_caregiverNoAccess_forbidden() {
+    void uploadFile_caregiverNoAccess_forbidden() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
@@ -174,7 +174,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_caregiverPatientNotFound_forbidden() {
+    void uploadFile_caregiverPatientNotFound_forbidden() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
@@ -185,7 +185,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_familyMemberRole_forbidden() {
+    void uploadFile_familyMemberRole_forbidden() throws Exception {
         User user = makeUser(Role.FAMILY_MEMBER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
@@ -195,7 +195,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_illegalArgumentException_returns400() {
+    void uploadFile_illegalArgumentException_returns400() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.uploadFile(any(), any(), any(), any(), any(), any()))
@@ -207,7 +207,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFile_genericException_returns500() {
+    void uploadFile_genericException_returns500() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.uploadFile(any(), any(), any(), any(), any(), any()))
@@ -221,7 +221,7 @@ class FileControllerTest {
     // ─── downloadFile (new DB endpoint) ──────────────────────────────────────
 
     @Test
-    void downloadFile_notFound() {
+    void downloadFile_notFound() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.empty());
@@ -232,7 +232,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_forbidden_differentOwner_noPatientId() {
+    void downloadFile_forbidden_differentOwner_noPatientId() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         UserFileDTO dto = makeFileDto(999L, null);
@@ -244,7 +244,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_success_ownerAccess() {
+    void downloadFile_success_ownerAccess() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         UserFileDTO dto = makeFileDto(USER_ID, null);
@@ -257,7 +257,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_success_adminAccess() {
+    void downloadFile_success_adminAccess() throws Exception {
         User admin = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
         UserFileDTO dto = makeFileDto(999L, null);
@@ -270,7 +270,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_viaPatientAccess_caregiver() {
+    void downloadFile_viaPatientAccess_caregiver() throws Exception {
         User caregiver = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
         UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
@@ -285,7 +285,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_caregiverNoAccessToPatient_forbidden() {
+    void downloadFile_caregiverNoAccessToPatient_forbidden() throws Exception {
         User caregiver = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
         UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
@@ -299,7 +299,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFile_exception_returns500() {
+    void downloadFile_exception_returns500() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenThrow(new RuntimeException("oops"));
@@ -312,7 +312,7 @@ class FileControllerTest {
     // ─── listMyFiles ──────────────────────────────────────────────────────────
 
     @Test
-    void listMyFiles_noCategory_returns200() {
+    void listMyFiles_noCategory_returns200() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(USER_ID, "PATIENT", null)).thenReturn(List.of());
@@ -326,7 +326,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listMyFiles_withCategory_returns200() {
+    void listMyFiles_withCategory_returns200() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(USER_ID, "CAREGIVER", "documents")).thenReturn(List.of());
@@ -337,7 +337,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listMyFiles_exception_returns500() {
+    void listMyFiles_exception_returns500() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(any(), any(), any()))
@@ -351,7 +351,7 @@ class FileControllerTest {
     // ─── listPatientFiles ─────────────────────────────────────────────────────
 
     @Test
-    void listPatientFiles_forbidden_caregiverNoAccess() {
+    void listPatientFiles_forbidden_caregiverNoAccess() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
@@ -363,7 +363,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_caregiverNoPatientRecord_forbidden() {
+    void listPatientFiles_caregiverNoPatientRecord_forbidden() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
@@ -374,7 +374,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_patientRole_ownData_success() {
+    void listPatientFiles_patientRole_ownData_success() throws Exception {
         User user = makeUser(Role.PATIENT);
         user.setId(PATIENT_ID); // same id → access granted
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
@@ -386,7 +386,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_caregiverRole_withCategory_success() {
+    void listPatientFiles_caregiverRole_withCategory_success() throws Exception {
         User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
@@ -400,7 +400,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_adminRole_success() {
+    void listPatientFiles_adminRole_success() throws Exception {
         User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listFilesForCaregiverPatient(PATIENT_ID, null)).thenReturn(List.of());
@@ -411,7 +411,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_familyMemberRole_forbidden() {
+    void listPatientFiles_familyMemberRole_forbidden() throws Exception {
         User user = makeUser(Role.FAMILY_MEMBER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
@@ -421,7 +421,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listPatientFiles_exception_returns500() {
+    void listPatientFiles_exception_returns500() throws Exception {
         User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listFilesForCaregiverPatient(any(), any()))
@@ -435,7 +435,7 @@ class FileControllerTest {
     // ─── deleteFile (new DB endpoint) ─────────────────────────────────────────
 
     @Test
-    void deleteFile_new_notFound() {
+    void deleteFile_new_notFound() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.empty());
@@ -446,7 +446,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFile_new_forbidden_notOwner() {
+    void deleteFile_new_forbidden_notOwner() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         UserFileDTO dto = makeFileDto(999L, null);
@@ -458,7 +458,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFile_new_success() {
+    void deleteFile_new_success() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         UserFileDTO dto = makeFileDto(USER_ID, null);
@@ -471,7 +471,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFile_new_exception_returns500() {
+    void deleteFile_new_exception_returns500() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenThrow(new RuntimeException("err"));
@@ -484,7 +484,7 @@ class FileControllerTest {
     // ─── getProfileImage ──────────────────────────────────────────────────────
 
     @Test
-    void getProfileImage_notFound() {
+    void getProfileImage_notFound() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getUserProfileImage(USER_ID, "PATIENT")).thenReturn(Optional.empty());
@@ -495,7 +495,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getProfileImage_found() {
+    void getProfileImage_found() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         UserFileDTO dto = makeFileDto(USER_ID, null);
@@ -510,7 +510,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getProfileImage_exception_returns500() {
+    void getProfileImage_exception_returns500() throws Exception {
         User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getUserProfileImage(any(), any()))
@@ -524,7 +524,7 @@ class FileControllerTest {
     // ─── uploadFileLegacy (S3 endpoint) ──────────────────────────────────────
 
     @Test
-    void uploadFileLegacy_success() {
+    void uploadFileLegacy_success() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -544,7 +544,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFileLegacy_emptyFile_returns400() {
+    void uploadFileLegacy_emptyFile_returns400() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -557,7 +557,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFileLegacy_fileTooLarge_returns400() {
+    void uploadFileLegacy_fileTooLarge_returns400() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -571,7 +571,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFileLegacy_userNotFound_returns500() {
+    void uploadFileLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, makeFile(), "documents");
@@ -580,7 +580,7 @@ class FileControllerTest {
     }
 
     @Test
-    void uploadFileLegacy_s3Throws_returns500() {
+    void uploadFileLegacy_s3Throws_returns500() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -596,7 +596,7 @@ class FileControllerTest {
     // ─── downloadFile (S3 endpoint) ───────────────────────────────────────────
 
     @Test
-    void downloadFileLegacy_success() {
+    void downloadFileLegacy_success() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -609,7 +609,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFileLegacy_forbidden_wrongPrefix() {
+    void downloadFileLegacy_forbidden_wrongPrefix() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -621,7 +621,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFileLegacy_userNotFound_returns404() {
+    void downloadFileLegacy_userNotFound_returns404() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
@@ -630,7 +630,7 @@ class FileControllerTest {
     }
 
     @Test
-    void downloadFileLegacy_s3Throws_returns404() {
+    void downloadFileLegacy_s3Throws_returns404() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -645,7 +645,7 @@ class FileControllerTest {
     // ─── deleteFile legacy (S3 endpoint) ─────────────────────────────────────
 
     @Test
-    void deleteFileLegacy_success() {
+    void deleteFileLegacy_success() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -658,7 +658,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFileLegacy_forbidden_wrongPrefix() {
+    void deleteFileLegacy_forbidden_wrongPrefix() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -670,7 +670,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFileLegacy_userNotFound_returns500() {
+    void deleteFileLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
@@ -679,7 +679,7 @@ class FileControllerTest {
     }
 
     @Test
-    void deleteFileLegacy_s3Throws_returns500() {
+    void deleteFileLegacy_s3Throws_returns500() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -694,7 +694,7 @@ class FileControllerTest {
     // ─── listUserFiles (S3 endpoint) ──────────────────────────────────────────
 
     @Test
-    void listUserFilesLegacy_noCategory() {
+    void listUserFilesLegacy_noCategory() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -710,7 +710,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listUserFilesLegacy_withCategory_matchingFile() {
+    void listUserFilesLegacy_withCategory_matchingFile() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -729,7 +729,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listUserFilesLegacy_withCategory_noMatch() {
+    void listUserFilesLegacy_withCategory_noMatch() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -748,7 +748,7 @@ class FileControllerTest {
     }
 
     @Test
-    void listUserFilesLegacy_userNotFound_returns500() {
+    void listUserFilesLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.listUserFiles(USER_ID, null);
@@ -759,7 +759,7 @@ class FileControllerTest {
     // ─── getValidCategories ───────────────────────────────────────────────────
 
     @Test
-    void getValidCategories_patient() {
+    void getValidCategories_patient() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
@@ -776,7 +776,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getValidCategories_caregiver() {
+    void getValidCategories_caregiver() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.CAREGIVER);
@@ -793,7 +793,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getValidCategories_familyMember() {
+    void getValidCategories_familyMember() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.FAMILY_MEMBER);
@@ -810,7 +810,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getValidCategories_admin_defaultList() {
+    void getValidCategories_admin_defaultList() throws Exception {
         User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.ADMIN);
@@ -827,7 +827,7 @@ class FileControllerTest {
     }
 
     @Test
-    void getValidCategories_userNotFound_returns500() {
+    void getValidCategories_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<?> response = controller.getValidCategories(USER_ID);
