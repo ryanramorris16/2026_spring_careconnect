@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TokenCryptorTest {
 
     @Test
-    void roundTripEncryptionAndDecryption() {
+    void roundTripEncryptionAndDecryption() throws Exception {
         var cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
 
         String encrypted = cryptor.encrypt("sensitive-token");
@@ -18,7 +18,7 @@ class TokenCryptorTest {
     }
 
     @Test
-    void handlesNullAndBlankValuesGracefully() {
+    void handlesNullAndBlankValuesGracefully() throws Exception {
         var cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
 
         assertNull(cryptor.encrypt(null));
