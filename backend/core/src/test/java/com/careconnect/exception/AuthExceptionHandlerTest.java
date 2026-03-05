@@ -20,7 +20,7 @@ class AuthExceptionHandlerTest {
     // ─── handleAuthenticationException() ─────────────────────────────────────
 
     @Test
-    void handleAuthenticationException_returns401WithErrorBody() {
+    void handleAuthenticationException_returns401WithErrorBody() throws Exception {
         AuthenticationException ex = new AuthenticationException("Invalid credentials");
 
         ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
@@ -33,7 +33,7 @@ class AuthExceptionHandlerTest {
     }
 
     @Test
-    void handleAuthenticationException_differentMessage_returnsCorrectBody() {
+    void handleAuthenticationException_differentMessage_returnsCorrectBody() throws Exception {
         AuthenticationException ex = new AuthenticationException("Token expired");
 
         ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
@@ -47,7 +47,7 @@ class AuthExceptionHandlerTest {
     // ─── handleRegistrationException() ───────────────────────────────────────
 
     @Test
-    void handleRegistrationException_returns409WithErrorBody() {
+    void handleRegistrationException_returns409WithErrorBody() throws Exception {
         RegistrationException ex = new RegistrationException("Email already in use");
 
         ResponseEntity<Object> response = handler.handleRegistrationException(ex);
@@ -60,7 +60,7 @@ class AuthExceptionHandlerTest {
     }
 
     @Test
-    void handleRegistrationException_differentMessage_returnsCorrectBody() {
+    void handleRegistrationException_differentMessage_returnsCorrectBody() throws Exception {
         RegistrationException ex = new RegistrationException("Username taken");
 
         ResponseEntity<Object> response = handler.handleRegistrationException(ex);
