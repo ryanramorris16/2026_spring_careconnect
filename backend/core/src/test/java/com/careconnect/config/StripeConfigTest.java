@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StripeConfigTest {
 
     @AfterEach
-    void cleanup() {
+    void cleanup() throws Exception {
         // Reset the static Stripe.apiKey after each test so that one test's assignment
         // does not influence subsequent tests (static state is shared across the JVM).
         Stripe.apiKey = null;
