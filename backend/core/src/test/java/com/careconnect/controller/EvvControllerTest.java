@@ -6,7 +6,9 @@ import com.careconnect.model.evv.EvvOfflineQueue;
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.service.evv.EvvOfflineSyncService;
 import com.careconnect.service.evv.EvvService;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.evv.EvvSubmissionService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,6 +30,8 @@ class EvvControllerTest {
     @Mock private EvvService evvService;
     @Mock private EvvSubmissionService submitter;
     @Mock private EvvOfflineSyncService offlineSyncService;
+    @Mock private SecurityUtil securityUtil;
+    @Mock private AuthorizationService authorizationService;
 
     @InjectMocks
     private EvvController controller;
@@ -46,7 +50,7 @@ class EvvControllerTest {
     class Create {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -56,7 +60,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(record);
@@ -67,7 +71,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithDefaultUserId() {
+        void callsServiceWithDefaultUserId() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -83,7 +87,7 @@ class EvvControllerTest {
     class Review {
 
         @Test
-        void returns200_whenApproveIsTrue() {
+        void returns200_whenApproveIsTrue() throws Exception {
             EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
@@ -93,7 +97,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returns200_whenApproveIsFalse() {
+        void returns200_whenApproveIsFalse() throws Exception {
             EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
@@ -103,7 +107,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
             EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
@@ -114,7 +118,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void queuesForSubmission_whenApproveIsTrue() {
+        void queuesForSubmission_whenApproveIsTrue() throws Exception {
             EvvRecord record = new EvvRecord();
             EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
@@ -125,7 +129,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void doesNotQueueForSubmission_whenApproveIsFalse() {
+        void doesNotQueueForSubmission_whenApproveIsFalse() throws Exception {
             EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
@@ -135,7 +139,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithAllArguments() {
+        void callsServiceWithAllArguments() throws Exception {
             EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
@@ -151,7 +155,7 @@ class EvvControllerTest {
     class CreateOfflineRecord {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
 
@@ -161,7 +165,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             EvvRecord record = EvvRecord.builder().id(5L).build();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(record);
@@ -172,7 +176,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithDeviceIdAndDefaultUserId() {
+        void callsServiceWithDeviceIdAndDefaultUserId() throws Exception {
             EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
 
@@ -188,7 +192,7 @@ class EvvControllerTest {
     class CorrectRecord {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -198,7 +202,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
             EvvRecord record = EvvRecord.builder().id(7L).build();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(record);
@@ -209,7 +213,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithDefaultUserId() {
+        void callsServiceWithDefaultUserId() throws Exception {
             EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -225,7 +229,7 @@ class EvvControllerTest {
     class ApproveEor {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             EorApprovalRequestDto req = new EorApprovalRequestDto();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -235,7 +239,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EorApprovalRequestDto req = new EorApprovalRequestDto();
             EvvRecord record = EvvRecord.builder().id(9L).build();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(record);
@@ -246,7 +250,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithDefaultUserId() {
+        void callsServiceWithDefaultUserId() throws Exception {
             EorApprovalRequestDto req = new EorApprovalRequestDto();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
@@ -262,7 +266,7 @@ class EvvControllerTest {
     class SearchRecords {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             Page<EvvRecord> page = mock(Page.class);
@@ -274,7 +278,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsPageFromService() {
+        void returnsPageFromService() throws Exception {
             EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             Page<EvvRecord> page = mock(Page.class);
@@ -286,7 +290,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithSearchRequest() {
+        void callsServiceWithSearchRequest() throws Exception {
             EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             Page<EvvRecord> page = mock(Page.class);
@@ -304,7 +308,7 @@ class EvvControllerTest {
     class GetPendingEorApprovals {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             when(evvService.getPendingEorApprovals()).thenReturn(List.of());
 
             ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
@@ -313,7 +317,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsListFromService() {
+        void returnsListFromService() throws Exception {
             EvvRecord record = new EvvRecord();
             when(evvService.getPendingEorApprovals()).thenReturn(List.of(record));
 
@@ -323,7 +327,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsGetPendingEorApprovals() {
+        void callsGetPendingEorApprovals() throws Exception {
             when(evvService.getPendingEorApprovals()).thenReturn(List.of());
 
             controller.getPendingEorApprovals();
@@ -338,7 +342,7 @@ class EvvControllerTest {
     class GetPendingCorrections {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             when(evvService.getPendingCorrections()).thenReturn(List.of());
 
             ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
@@ -347,7 +351,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsListFromService() {
+        void returnsListFromService() throws Exception {
             EvvCorrection correction = new EvvCorrection();
             when(evvService.getPendingCorrections()).thenReturn(List.of(correction));
 
@@ -357,7 +361,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsGetPendingCorrections() {
+        void callsGetPendingCorrections() throws Exception {
             when(evvService.getPendingCorrections()).thenReturn(List.of());
 
             controller.getPendingCorrections();
@@ -372,7 +376,7 @@ class EvvControllerTest {
     class ApproveCorrection {
 
         @Test
-        void returns200_withComment() {
+        void returns200_withComment() throws Exception {
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
                     .thenReturn(new EvvCorrection());
 
@@ -382,7 +386,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returns200_withNullComment() {
+        void returns200_withNullComment() throws Exception {
             // comment is @RequestParam(required = false) — null is a valid value
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null))
                     .thenReturn(new EvvCorrection());
@@ -393,7 +397,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsServiceResult() {
+        void returnsServiceResult() throws Exception {
             EvvCorrection correction = EvvCorrection.builder().id(CORRECTION_ID).build();
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
                     .thenReturn(correction);
@@ -404,7 +408,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithCorrectionIdDefaultUserIdAndComment() {
+        void callsServiceWithCorrectionIdDefaultUserIdAndComment() throws Exception {
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
                     .thenReturn(new EvvCorrection());
 
@@ -414,7 +418,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithNullComment_whenCommentIsAbsent() {
+        void callsServiceWithNullComment_whenCommentIsAbsent() throws Exception {
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null))
                     .thenReturn(new EvvCorrection());
 
@@ -430,7 +434,7 @@ class EvvControllerTest {
     class GetOfflineQueue {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of());
 
             ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
@@ -439,7 +443,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsListFromService() {
+        void returnsListFromService() throws Exception {
             EvvOfflineQueue item = new EvvOfflineQueue();
             when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of(item));
 
@@ -449,7 +453,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsServiceWithDefaultUserId() {
+        void callsServiceWithDefaultUserId() throws Exception {
             when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of());
 
             controller.getOfflineQueue();
@@ -464,35 +468,35 @@ class EvvControllerTest {
     class SyncOfflineData {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             ResponseEntity<String> response = controller.syncOfflineData();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
-        void bodyIsFixedConfirmationMessage() {
+        void bodyIsFixedConfirmationMessage() throws Exception {
             ResponseEntity<String> response = controller.syncOfflineData();
 
             assertThat(response.getBody()).isEqualTo("Offline data sync initiated");
         }
 
         @Test
-        void callsOfflineSyncServiceWithDefaultUserId() {
+        void callsOfflineSyncServiceWithDefaultUserId() throws Exception {
             controller.syncOfflineData();
 
             verify(offlineSyncService).syncCaregiverOfflineData(DEFAULT_USER_ID);
         }
 
         @Test
-        void doesNotInteractWithEvvService() {
+        void doesNotInteractWithEvvService() throws Exception {
             controller.syncOfflineData();
 
             verifyNoInteractions(evvService);
         }
 
         @Test
-        void doesNotInteractWithSubmissionService() {
+        void doesNotInteractWithSubmissionService() throws Exception {
             controller.syncOfflineData();
 
             verifyNoInteractions(submitter);
@@ -505,7 +509,7 @@ class EvvControllerTest {
     class GetOfflineStatus {
 
         @Test
-        void returns200() {
+        void returns200() throws Exception {
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
 
             ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
@@ -514,7 +518,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void returnsListFromService() {
+        void returnsListFromService() throws Exception {
             EvvOfflineQueue item = new EvvOfflineQueue();
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of(item));
 
@@ -524,7 +528,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void callsOfflineSyncServiceWithDefaultUserId() {
+        void callsOfflineSyncServiceWithDefaultUserId() throws Exception {
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
 
             controller.getOfflineStatus();
@@ -533,7 +537,7 @@ class EvvControllerTest {
         }
 
         @Test
-        void doesNotInteractWithEvvService() {
+        void doesNotInteractWithEvvService() throws Exception {
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
 
             controller.getOfflineStatus();
