@@ -24,7 +24,7 @@ class SsmParameterServiceTest {
     private SsmParameterService ssmParameterService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         ssmParameterService = new SsmParameterService(ssmClient);
     }
@@ -33,7 +33,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_parameterExists_returnsValue")
-    void getParameter_parameterExists_returnsValue() {
+    void getParameter_parameterExists_returnsValue() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("secret-value").build())
                 .build();
@@ -51,7 +51,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_withoutDecryption_sendsWithDecryptionFalse")
-    void getParameter_withoutDecryption_sendsWithDecryptionFalse() {
+    void getParameter_withoutDecryption_sendsWithDecryptionFalse() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("plain-value").build())
                 .build();
@@ -68,7 +68,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_parameterNotFound_returnsNull")
-    void getParameter_parameterNotFound_returnsNull() {
+    void getParameter_parameterNotFound_returnsNull() throws Exception {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
@@ -79,7 +79,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_generalException_returnsNull")
-    void getParameter_generalException_returnsNull() {
+    void getParameter_generalException_returnsNull() throws Exception {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(new RuntimeException("Connection error"));
 
@@ -90,7 +90,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_cachedValue_returnsCachedWithoutCallingSSM")
-    void getParameter_cachedValue_returnsCachedWithoutCallingSSM() {
+    void getParameter_cachedValue_returnsCachedWithoutCallingSSM() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("cached-value").build())
                 .build();
@@ -110,7 +110,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_differentDecryptionFlags_cachedSeparately")
-    void getParameter_differentDecryptionFlags_cachedSeparately() {
+    void getParameter_differentDecryptionFlags_cachedSeparately() throws Exception {
         GetParameterResponse response1 = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("decrypted-value").build())
                 .build();
@@ -138,7 +138,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_singleArgOverload_callsWithDecryptionTrue")
-    void getParameter_singleArgOverload_callsWithDecryptionTrue() {
+    void getParameter_singleArgOverload_callsWithDecryptionTrue() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("auto-decrypted").build())
                 .build();
@@ -155,7 +155,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameter_singleArgNotFound_returnsNull")
-    void getParameter_singleArgNotFound_returnsNull() {
+    void getParameter_singleArgNotFound_returnsNull() throws Exception {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
@@ -168,7 +168,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameterOrDefault_parameterExists_returnsParameterValue")
-    void getParameterOrDefault_parameterExists_returnsParameterValue() {
+    void getParameterOrDefault_parameterExists_returnsParameterValue() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("real-value").build())
                 .build();
@@ -181,7 +181,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameterOrDefault_parameterNotFound_returnsDefaultValue")
-    void getParameterOrDefault_parameterNotFound_returnsDefaultValue() {
+    void getParameterOrDefault_parameterNotFound_returnsDefaultValue() throws Exception {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
@@ -192,7 +192,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("getParameterOrDefault_generalException_returnsDefaultValue")
-    void getParameterOrDefault_generalException_returnsDefaultValue() {
+    void getParameterOrDefault_generalException_returnsDefaultValue() throws Exception {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(new RuntimeException("Connection error"));
 
@@ -205,7 +205,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("clearCache_afterCaching_forcesNextCallToSSM")
-    void clearCache_afterCaching_forcesNextCallToSSM() {
+    void clearCache_afterCaching_forcesNextCallToSSM() throws Exception {
         GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("value1").build())
                 .build();
@@ -232,7 +232,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("clearCache_emptyCache_doesNotThrow")
-    void clearCache_emptyCache_doesNotThrow() {
+    void clearCache_emptyCache_doesNotThrow() throws Exception {
         assertDoesNotThrow(() -> ssmParameterService.clearCache());
     }
 
@@ -240,7 +240,7 @@ class SsmParameterServiceTest {
 
     @Test
     @DisplayName("constructor_validSsmClient_createsServiceSuccessfully")
-    void constructor_validSsmClient_createsServiceSuccessfully() {
+    void constructor_validSsmClient_createsServiceSuccessfully() throws Exception {
         SsmParameterService service = new SsmParameterService(ssmClient);
         assertNotNull(service);
     }
