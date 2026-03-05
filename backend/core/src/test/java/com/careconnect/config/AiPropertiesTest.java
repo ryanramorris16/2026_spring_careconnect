@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AiPropertiesTest {
 
     @Test
-    void providerProps_DefaultValuesAreCorrect() {
+    void providerProps_DefaultValuesAreCorrect() throws Exception {
         // Verifies that ProviderProps ships with safe defaults so callers can rely on
         // temperature (0.2) and maxTokens (1500) even when no explicit values are bound,
         // while optional string fields start as null so missing config is detectable.
@@ -33,7 +33,7 @@ class AiPropertiesTest {
     }
 
     @Test
-    void providerProps_SettersAndGettersWorkCorrectly() {
+    void providerProps_SettersAndGettersWorkCorrectly() throws Exception {
         // Verifies that all five setters store values that are then returned by the
         // corresponding getters — a basic contract check for the POJO's data binding.
         AiProperties.ProviderProps props = new AiProperties.ProviderProps();
@@ -52,7 +52,7 @@ class AiPropertiesTest {
     }
 
     @Test
-    void providerProps_AllowsNullValuesForOptionalFields() {
+    void providerProps_AllowsNullValuesForOptionalFields() throws Exception {
         // Confirms that all fields accept null, which is required so that absent YAML
         // properties do not cause a NullPointerException during Spring binding.
         AiProperties.ProviderProps props = new AiProperties.ProviderProps();
@@ -71,7 +71,7 @@ class AiPropertiesTest {
     }
 
     @Test
-    void aiProperties_ProvidersMapCanBeSetAndRetrieved() {
+    void aiProperties_ProvidersMapCanBeSetAndRetrieved() throws Exception {
         // Verifies that AiProperties stores a providers map keyed by provider name
         // (e.g. "openai") and that entries retain the values they were populated with.
         // This mirrors how Spring binds a YAML block like `ai.providers.openai.*`.
@@ -95,7 +95,7 @@ class AiPropertiesTest {
     }
 
     @Test
-    void aiProperties_ProvidersMapCanBeNull() {
+    void aiProperties_ProvidersMapCanBeNull() throws Exception {
         // Ensures the class does not enforce a non-null providers map, allowing the
         // application to start even when no AI provider section is present in config.
         AiProperties properties = new AiProperties();
@@ -106,7 +106,7 @@ class AiPropertiesTest {
     }
 
     @Test
-    void aiProperties_SupportsMultipleProviders() {
+    void aiProperties_SupportsMultipleProviders() throws Exception {
         // Confirms that multiple providers (e.g. OpenAI and DeepSeek) can coexist in
         // the same map and are independently retrievable by their provider-name key.
         AiProperties properties = new AiProperties();
