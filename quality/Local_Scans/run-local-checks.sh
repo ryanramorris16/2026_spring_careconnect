@@ -1,4 +1,5 @@
 #!/bin/sh
+
 # ==========================================================
 # CareConnect Local Quality Gate — Entry Point
 # ----------------------------------------------------------
@@ -8,7 +9,7 @@
 # Usage:
 #   sh quality/local/run-local-checks.sh
 #
-# Requires: java, mvn, python, flutter
+# Requires: java, mvn, python3, flutter
 # ==========================================================
 
 set -eu
@@ -19,9 +20,12 @@ CHECKS_DIR="${SCRIPT_DIR}/checks"
 REPORT_DIR="${SCRIPT_DIR}/report"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
 
+# Ensure Python can resolve the repository package root.
+export PYTHONPATH="${REPO_ROOT}"
+
 TIMESTAMP="$(date '+%Y-%m-%d-%H%M%S')"
 unset TMPDIR
-WORK_DIR="$(python -c "import tempfile; print(tempfile.mkdtemp())")"
+WORK_DIR="$(python3 -c "import tempfile; print(tempfile.mkdtemp())")"
 ZIP_NAME="careconnect-local-report-${TIMESTAMP}.zip"
 ZIP_PATH="${HOME}/Downloads/${ZIP_NAME}"
 GENERATED_AT="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -108,14 +112,14 @@ export FAILED
 # ----------------------------------------------------------
 echo ""
 echo "Generating HTML report..."
-python "${REPORT_DIR}/generate_report.py"
+python3 "${REPORT_DIR}/generate_report.py"
 
 # ----------------------------------------------------------
 # Package zip
 # ----------------------------------------------------------
 echo ""
 echo "Packaging report..."
-python - <<'PY'
+python3 - <<'PY'
 import os
 import zipfile
 from pathlib import Path
@@ -138,7 +142,7 @@ PY
 # ----------------------------------------------------------
 echo ""
 echo "Opening report in browser..."
-python "${REPORT_DIR}/open_report.py"
+python3 "${REPORT_DIR}/open_report.py"
 
 # ----------------------------------------------------------
 # Summary
