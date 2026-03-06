@@ -236,42 +236,6 @@ def _summary_row(result: dict) -> str:
     )
 
 
-def _summary_row(result: dict) -> str:
-    """Render a summary table row for a tool."""
-    tool = result.get("tool", "unknown")
-    category = CATEGORY_MAP.get(tool, "Analysis")
-    violation = result.get("policy_violation", False)
-    blocking = result.get("blocking", False)
-    reason = result.get("reason", "")
-    normalized = result.get("normalized", {})
-    finding_count = normalized.get("violation_count", 0)
-
-    if reason == "disabled":
-        status_cell = '<span style="color:#7f8c8d;">DISABLED</span>'
-    elif violation:
-        status_cell = '<span style="color:#c0392b;">FAILURE</span>'
-    else:
-        status_cell = '<span style="color:#27ae60;">SUCCESS</span>'
-
-    role_cell = (
-        '<span style="color:#c0392b;">Enforced</span>'
-        if blocking
-        else '<span style="color:#e67e22;">Advisory</span>'
-    )
-
-    findings_cell = str(finding_count) if finding_count else "&mdash;"
-
-    return (
-        "<tr>"
-        f'<td><a class="tool-link" href="#tool-{tool}"><code>{tool}</code></a></td>'
-        f"<td>{category}</td>"
-        f"<td>{status_cell}</td>"
-        f"<td>{role_cell}</td>"
-        f"<td>{findings_cell}</td>"
-        "</tr>\n"
-    )
-
-
 def _pr_block(env: dict) -> str:
     """Render the pull request metadata block when applicable."""
     if env.get("event_name") != "pull_request" or not env.get("pr_number"):
