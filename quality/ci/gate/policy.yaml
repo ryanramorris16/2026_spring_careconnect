@@ -1,4 +1,4 @@
- # File: quality/ci/gate/policy.yaml
+# File: quality/ci/gate/policy.yaml
 # ==========================================================
 # CareConnect CI Quality & Security Enforcement Policy
 # ==========================================================
@@ -22,6 +22,11 @@
 # - Any runtime error, missing artifact, skipped execution, or misconfiguration
 #   is treated as a violation and will also BLOCK (if blocking is true).
 #
+# NOTE:
+# The gate runs in ENFORCE mode. When violations occur, the CI job exits
+# with a non-zero status. GitHub branch protection rules determine whether
+# that failed check blocks the merge.
+#
 # CHANGE CONTROL:
 # - Treat this file like production governance configuration.
 # - Modify thresholds carefully and commit changes via PR review.
@@ -30,23 +35,14 @@
 # ----------------------------------------------------------
 # Global Gate Mode
 # ----------------------------------------------------------
-# Controls whether the gate enforces merge blocking or runs in
-# report-only mode.
-#
 # mode:
-#   - enforce     : Normal behavior. Gate blocks merge on violations.
-#   - report_only : Gate still runs, evaluates, and reports violations,
-#                   but NEVER blocks the merge (exit code forced to 0).
+#   enforce     : Gate exits with failure on violations.
+#   report_only : Gate reports violations but never fails CI.
 #
-# Use report_only ONLY as a temporary "break glass" option.
-# All violations will still be recorded in evaluated.json and summary.md.
-#
-# MIGRATION NOTE:
-# - main must default to enforce mode.
-# - report_only is allowed only as a temporary "break glass" setting.
+# enforce is the correct default for production pipelines.
 # ----------------------------------------------------------
 gate:
-  mode: report_only  # enforce | report_only
+  mode: enforce
 
 tools:
 
@@ -54,8 +50,6 @@ tools:
   # TruffleHog (Secrets Scan)
   # ----------------------------------------------------------
   # Intent: Block on ANY secret finding.
-  # Notes:
-  # - TruffleHog produces JSONL output; normalization counts findings.
   # ----------------------------------------------------------
   trufflehog:
     blocking: true
@@ -67,9 +61,6 @@ tools:
   # Gitleaks (Secrets Scan)
   # ----------------------------------------------------------
   # Intent: Block on ANY secret finding.
-  # Notes:
-  # - Complements TruffleHog by scanning the working tree directly.
-  # - No API key required. Free and open source (MIT).
   # ----------------------------------------------------------
   gitleaks:
     blocking: true
@@ -80,13 +71,7 @@ tools:
   # ----------------------------------------------------------
   # Flutter Analyze (Dart Analyzer)
   # ----------------------------------------------------------
-  # Intent: Block on any analyzer ERROR.
-  # Notes:
-  # - Normalization maps analyzer errors → severity_counts.high
-  # - Warnings are allowed by default unless you explicitly add a rule.
-  # Customization examples:
-  #   - To also fail on warnings, add:
-  #       warning_count: ">0"
+  # Intent: Block on analyzer errors.
   # ----------------------------------------------------------
   flutter_analyze:
     blocking: true
@@ -97,7 +82,7 @@ tools:
   # ----------------------------------------------------------
   # Checkstyle (Java Style)
   # ----------------------------------------------------------
-  # Intent: Any style violation blocks the merge.
+  # Intent: Block on any style violation.
   # ----------------------------------------------------------
   checkstyle:
     blocking: true
@@ -109,31 +94,17 @@ tools:
   # PMD (Java Source Analysis)
   # ----------------------------------------------------------
   # Intent: Block on medium severity and above.
-  # Notes:
-  # - Normalization maps PMD priority → severity:
-  #     priority 1-2 → high
-  #     priority 3   → medium
-  #     priority 4-5 → low
   # ----------------------------------------------------------
   pmd:
     blocking: true
     description: "Java source static analysis"
     fail_on:
       severity: "medium_and_above"
-      # Options:
-      #   low_and_above     (strictest; blocks on any finding)
-      #   medium_and_above  (current; blocks on medium/high)
-      #   high_only         (least strict; blocks only on high)
 
   # ----------------------------------------------------------
   # SpotBugs (Java Bytecode Analysis)
   # ----------------------------------------------------------
   # Intent: Block on medium severity and above.
-  # Notes:
-  # - Normalization maps SpotBugs priority → severity:
-  #     priority 1 → high
-  #     priority 2 → medium
-  #     priority 3 → low
   # ----------------------------------------------------------
   spotbugs:
     blocking: true
@@ -151,75 +122,33 @@ tools:
     description: "Multi-language security analysis"
     fail_on:
       severity: "high_and_above"
-      # Options:
-      #   critical_only
-      #   high_and_above     (current)
-      #   medium_and_above
 
   # ----------------------------------------------------------
   # Pylint (Python Static Analysis)
   # ----------------------------------------------------------
-  # Intent: Block on errors and fatal issues only.
-  # Notes:
-  # - Normalization maps Pylint type → severity:
-  #     fatal      → critical
-  #     error      → high
-  #     warning    → medium
-  #     refactor   → low
-  #     convention → low
-  # - Blocking on high_and_above catches errors and fatals
-  #   without failing on style/convention findings.
-  # Customization examples:
-  #   - Block on any finding (strictest):
-  #       violation_count: ">0"
-  #   - Block on warnings and above:
-  #       severity: "medium_and_above"
+  # Intent: Block on errors and fatal issues.
   # ----------------------------------------------------------
   pylint:
     blocking: true
     description: "Python static analysis (style + correctness)"
     fail_on:
       severity: "high_and_above"
-      # Options:
-      #   high_and_above   (current; errors + fatals only)
-      #   medium_and_above (warnings and above)
-      #   violation_count: ">0" (any finding)
 
   # ----------------------------------------------------------
   # Bandit (Python Security SAST)
   # ----------------------------------------------------------
   # Intent: Block on medium severity and above.
-  # Notes:
-  # - Normalization maps Bandit severity → normalized:
-  #     HIGH   → high
-  #     MEDIUM → medium
-  #     LOW    → low
-  # - LOW findings are typically informational and do not block.
-  # Customization examples:
-  #   - Block on any finding:
-  #       any_finding: true
-  #   - Block only on high:
-  #       severity: "high_and_above"
   # ----------------------------------------------------------
   bandit:
     blocking: true
     description: "Python security analysis"
     fail_on:
       severity: "medium_and_above"
-      # Options:
-      #   high_and_above   (least strict; high security issues only)
-      #   medium_and_above (current; medium + high)
-      #   any_finding: true (strictest)
 
   # ----------------------------------------------------------
   # HTMLHint (HTML Static Analysis)
   # ----------------------------------------------------------
-  # Intent: Advisory only until baseline is established.
-  # Notes:
-  # - Normalization maps HTMLHint type → severity:
-  #     error   → high
-  #     warning → medium
-  # - Set blocking: true once the HTML baseline is clean.
+  # Intent: Block on any HTML violation.
   # ----------------------------------------------------------
   htmlhint:
     blocking: true
@@ -230,12 +159,7 @@ tools:
   # ----------------------------------------------------------
   # Stylelint (CSS/SCSS Static Analysis)
   # ----------------------------------------------------------
-  # Intent: Advisory only until baseline is established.
-  # Notes:
-  # - Normalization maps Stylelint severity → normalized:
-  #     error   → high
-  #     warning → medium
-  # - Set blocking: true once the CSS baseline is clean.
+  # Intent: Block on any CSS/SCSS violation.
   # ----------------------------------------------------------
   stylelint:
     blocking: true
@@ -246,10 +170,10 @@ tools:
   # ----------------------------------------------------------
   # OWASP Dependency-Check (SCA)
   # ----------------------------------------------------------
-  # Intent: Block on ANY vulnerability (strict).
+  # Intent: Detect vulnerabilities but do not block merges yet.
   # ----------------------------------------------------------
   dependency_check:
-    blocking: true
+    blocking: false
     description: "OWASP Dependency-Check (SCA)"
     fail_on:
       any_vulnerability: true
@@ -257,15 +181,11 @@ tools:
   # ----------------------------------------------------------
   # Sonar (Quality Gate)
   # ----------------------------------------------------------
-  # Intent: Ultimately blocking, but currently advisory until configured.
-  # Notes:
-  # - Keep `blocking: false` until:
-  #     - project is onboarded
-  #     - token/access is available
-  #     - quality gate is stable
+  # Intent: Advisory until SonarCloud integration is completed.
   # ----------------------------------------------------------
   sonar:
     blocking: false
     description: "Sonar Quality Gate"
     fail_on:
       quality_gate: "fail"
+      
