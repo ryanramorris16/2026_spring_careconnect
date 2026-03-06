@@ -2,5 +2,15 @@
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.project.sourcePaths": [
         "quality/sandbox/passing/java-sandbox"
-    ]
+    ],
+
+    "editor.fontSize": 14,
+    "editor.lineHeight": 20,
+    "editor.padding.top": 0,
+    "editor.padding.bottom": 0,
+
+    "editor.stickyScroll.enabled": true,
+
+    "breadcrumbs.enabled": true,
+    "breadcrumbs.symbolPath": "on"
 }

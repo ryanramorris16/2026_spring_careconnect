@@ -1,32 +1,30 @@
-# File: quality/local/report/report_html.py
-# ==========================================================
-# Report HTML Builder
-# ----------------------------------------------------------
-# Builds the complete HTML report string from parsed findings.
-# Matches the CI report style from quality/ci/gate/report.py.
-#
-# Functions:
-#   build_html(context) → str
-#
-# context dict keys:
-#   generated_at  — UTC timestamp string
-#   scan_user     — local username
-#   repo_root     — repository root path
-#   failed        — number of failed tools
-#   fl_status     — passed | failed | skipped
-#   cs_status     — passed | failed | skipped
-#   pmd_status    — passed | failed | skipped
-#   sb_status     — passed | failed | skipped
-#   fl_findings   — list of finding dicts
-#   cs_findings   — list of finding dicts
-#   pmd_findings  — list of finding dicts
-#   sb_findings   — list of finding dicts
-#   fl_sev        — severity count dict
-#   cs_sev        — severity count dict
-#   pmd_sev       — severity count dict
-#   sb_sev        — severity count dict
-# ==========================================================
+"""
+Report HTML Builder
 
+Builds the complete HTML report string from parsed findings.
+Matches the CI report style from quality/ci/gate/report.py.
+
+Functions:
+  build_html(context) → str
+
+context dict keys:
+  generated_at  — UTC timestamp string
+  scan_user     — local username
+  repo_root     — repository root path
+  failed        — number of failed tools
+  fl_status     — passed | failed | skipped
+  cs_status     — passed | failed | skipped
+  pmd_status    — passed | failed | skipped
+  sb_status     — passed | failed | skipped
+  fl_findings   — list of finding dicts
+  cs_findings   — list of finding dicts
+  pmd_findings  — list of finding dicts
+  sb_findings   — list of finding dicts
+  fl_sev        — severity count dict
+  cs_sev        — severity count dict
+  pmd_sev       — severity count dict
+  sb_sev        — severity count dict
+"""
 
 # ----------------------------------------------------------
 # Constants
@@ -34,10 +32,10 @@
 
 SEVERITY_COLORS = {
     "critical": "#7c0000",
-    "high":     "#c0392b",
-    "medium":   "#e67e22",
-    "low":      "#f1c40f",
-    "info":     "#3498db",
+    "high": "#c0392b",
+    "medium": "#e67e22",
+    "low": "#f1c40f",
+    "info": "#3498db",
 }
 
 CSS = """
@@ -95,12 +93,15 @@ a:hover { text-decoration: underline; }
 # Component builders
 # ----------------------------------------------------------
 
+
 def _severity_badge(sev: str) -> str:
-    sev   = (sev or "info").lower()
+    sev = (sev or "info").lower()
     color = SEVERITY_COLORS.get(sev, "#95a5a6")
-    return (f'<span style="background:{color};color:#fff;padding:2px 8px;'
-            f'border-radius:4px;font-size:0.85em;font-weight:bold;">'
-            f'{sev.upper()}</span>')
+    return (
+        f'<span style="background:{color};color:#fff;padding:2px 8px;'
+        f'border-radius:4px;font-size:0.85em;font-weight:bold;">'
+        f"{sev.upper()}</span>"
+    )
 
 
 def _status_html(status: str) -> str:
@@ -112,8 +113,10 @@ def _status_html(status: str) -> str:
 
 
 def _border_color(status: str) -> str:
-    if status == "passed": return "#27ae60"
-    if status == "failed": return "#c0392b"
+    if status == "passed":
+        return "#27ae60"
+    if status == "failed":
+        return "#c0392b"
     return "#7f8c8d"
 
 
@@ -122,11 +125,13 @@ def _sev_pills(counts: dict) -> str:
     for level in ["critical", "high", "medium", "low", "info"]:
         c = counts.get(level, 0)
         if c:
-            color  = SEVERITY_COLORS.get(level, "#95a5a6")
-            pills += (f'<span style="background:{color};color:#fff;'
-                      f'padding:2px 8px;border-radius:4px;'
-                      f'font-size:0.8em;margin-right:4px;">'
-                      f'{level.upper()}: {c}</span>')
+            color = SEVERITY_COLORS.get(level, "#95a5a6")
+            pills += (
+                f'<span style="background:{color};color:#fff;'
+                f"padding:2px 8px;border-radius:4px;"
+                f'font-size:0.8em;margin-right:4px;">'
+                f"{level.upper()}: {c}</span>"
+            )
     return pills or '<span style="color:#7f8c8d;">No findings</span>'
 
 
@@ -135,26 +140,30 @@ def _finding_rows(findings: list) -> str:
         return "<p><em>No findings detected.</em></p>"
     rows = ""
     for f in findings:
-        msg   = (f["message"] or "").replace("<", "&lt;").replace(">", "&gt;")
-        rows += (f'<tr>'
-                 f'<td>{_severity_badge(f["severity"])}</td>'
-                 f'<td><code>{f["file"]}</code></td>'
-                 f'<td>{f["line"]}</td>'
-                 f'<td>{f["rule"]}</td>'
-                 f'<td>{msg}</td>'
-                 f'</tr>')
-    return (f'<table><thead><tr>'
-            f'<th>Severity</th><th>File</th><th>Line</th>'
-            f'<th>Rule</th><th>Message</th>'
-            f'</tr></thead><tbody>{rows}</tbody></table>')
+        msg = (f["message"] or "").replace("<", "&lt;").replace(">", "&gt;")
+        rows += (
+            f"<tr>"
+            f'<td>{_severity_badge(f["severity"])}</td>'
+            f'<td><code>{f["file"]}</code></td>'
+            f'<td>{f["line"]}</td>'
+            f'<td>{f["rule"]}</td>'
+            f"<td>{msg}</td>"
+            f"</tr>"
+        )
+    return (
+        f"<table><thead><tr>"
+        f"<th>Severity</th><th>File</th><th>Line</th>"
+        f"<th>Rule</th><th>Message</th>"
+        f"</tr></thead><tbody>{rows}</tbody></table>"
+    )
 
 
-def _tool_section(tool: str, category: str, status: str,
-                  counts: dict, findings: list) -> str:
-    bc    = _border_color(status)
+def _tool_section(
+    tool: str, category: str, status: str, counts: dict, findings: list
+) -> str:
+    bc = _border_color(status)
     total = sum(counts.values())
-    pills = (f'<div class="sev-counts">{_sev_pills(counts)}</div>'
-             if total > 0 else "")
+    pills = f'<div class="sev-counts">{_sev_pills(counts)}</div>' if total > 0 else ""
     return f"""
     <div class="tool-section" id="tool-{tool}">
       <div class="tool-header" style="border-left:4px solid {bc};">
@@ -174,46 +183,51 @@ def _tool_section(tool: str, category: str, status: str,
 
 def _summary_row(tool: str, category: str, status: str, count: int) -> str:
     c = str(count) if count > 0 else "&#x2014;"
-    return (f'<tr>'
-            f'<td><a class="tool-link" href="#tool-{tool}">'
-            f'<code>{tool}</code></a></td>'
-            f'<td>{category}</td>'
-            f'<td>{_status_html(status)}</td>'
-            f'<td>&#x1F6AB; Enforced</td>'
-            f'<td>{c}</td>'
-            f'</tr>')
+    return (
+        f"<tr>"
+        f'<td><a class="tool-link" href="#tool-{tool}">'
+        f"<code>{tool}</code></a></td>"
+        f"<td>{category}</td>"
+        f"<td>{_status_html(status)}</td>"
+        f"<td>&#x1F6AB; Enforced</td>"
+        f"<td>{c}</td>"
+        f"</tr>"
+    )
 
 
 # ----------------------------------------------------------
 # Main builder
 # ----------------------------------------------------------
 
+
 def build_html(context: dict) -> str:
     generated_at = context["generated_at"]
-    scan_user    = context["scan_user"]
-    repo_root    = context["repo_root"]
-    failed       = context["failed"]
-    fl_status    = context["fl_status"]
-    cs_status    = context["cs_status"]
-    pmd_status   = context["pmd_status"]
-    sb_status    = context["sb_status"]
-    fl_findings  = context["fl_findings"]
-    cs_findings  = context["cs_findings"]
+    scan_user = context["scan_user"]
+    repo_root = context["repo_root"]
+    failed = context["failed"]
+    fl_status = context["fl_status"]
+    cs_status = context["cs_status"]
+    pmd_status = context["pmd_status"]
+    sb_status = context["sb_status"]
+    fl_findings = context["fl_findings"]
+    cs_findings = context["cs_findings"]
     pmd_findings = context["pmd_findings"]
-    sb_findings  = context["sb_findings"]
-    fl_sev       = context["fl_sev"]
-    cs_sev       = context["cs_sev"]
-    pmd_sev      = context["pmd_sev"]
-    sb_sev       = context["sb_sev"]
+    sb_findings = context["sb_findings"]
+    fl_sev = context["fl_sev"]
+    cs_sev = context["cs_sev"]
+    pmd_sev = context["pmd_sev"]
+    sb_sev = context["sb_sev"]
 
     # Banner
     if failed == 0:
         banner_color = "#27ae60"
-        banner_text  = "&#x2705; APPROVED &#x2014; All required checks passed."
+        banner_text = "&#x2705; APPROVED &#x2014; All required checks passed."
     else:
         banner_color = "#c0392b"
-        banner_text  = (f"&#x1F6AB; BLOCKED &#x2014; {failed} tool(s) failed. "
-                        f"Fix the issues below before committing.")
+        banner_text = (
+            f"&#x1F6AB; BLOCKED &#x2014; {failed} tool(s) failed. "
+            f"Fix the issues below before committing."
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
