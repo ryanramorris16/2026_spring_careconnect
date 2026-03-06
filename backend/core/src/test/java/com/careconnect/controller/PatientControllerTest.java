@@ -909,7 +909,7 @@ class PatientControllerTest {
         void patientUpdatesProfile() throws Exception {
             mockCurrentUser(patientUser);
             when(patientService.getPatientById(10L)).thenReturn(patient);
-            PatientProfileUpdateDTO updateDTO = mock(PatientProfileUpdateDTO.class);
+            // PatientProfileUpdateDTO updateDTO = mock(PatientProfileUpdateDTO.class);
             PatientProfileDTO updatedDTO = mock(PatientProfileDTO.class);
             when(patientService.updatePatientProfile(eq(10L), any())).thenReturn(updatedDTO);
 

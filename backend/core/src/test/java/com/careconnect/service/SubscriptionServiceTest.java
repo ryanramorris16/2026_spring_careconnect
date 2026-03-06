@@ -2449,7 +2449,7 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.list(anyMap())).thenReturn(mockCustCollection);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(2L);
+            subscriptionService.syncUserSubscriptionsFromStripe(2L);
 
             assertEquals("cus_found", user.getStripeCustomerId());
             verify(userRepository).save(user);
@@ -2479,7 +2479,7 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockNewCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(3L);
+            subscriptionService.syncUserSubscriptionsFromStripe(3L);
 
             assertEquals("cus_brand_new", user.getStripeCustomerId());
         }
@@ -3085,7 +3085,8 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.create(anyMap())).thenReturn(mockStripeSub);
 
-            Subscription result = subscriptionService.createSubscriptionDirectly(5L, "price_nn");
+
+            subscriptionService.createSubscriptionDirectly(5L, "price_nn");
 
             assertEquals("cus_noname", user.getStripeCustomerId());
         }
@@ -3142,7 +3143,8 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockNewCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(6L);
+
+            subscriptionService.syncUserSubscriptionsFromStripe(6L);
 
             assertEquals("cus_with_name", user.getStripeCustomerId());
         }

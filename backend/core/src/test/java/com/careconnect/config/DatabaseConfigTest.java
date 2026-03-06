@@ -4,7 +4,6 @@ import com.careconnect.service.ParameterStoreService;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -89,6 +88,7 @@ class DatabaseConfigTest {
         HikariDataSource hikari = (HikariDataSource) dataSource;
         assertEquals("jdbc:h2:mem:testdb", hikari.getJdbcUrl());
         assertEquals("sa", hikari.getUsername());
+        hikari.close();
     }
 
     @Test
@@ -128,5 +128,6 @@ class DatabaseConfigTest {
         HikariDataSource hikari = (HikariDataSource) dataSource;
 
         assertEquals(7, hikari.getMaximumPoolSize());
+        hikari.close();
     }
 }

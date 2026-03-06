@@ -21,11 +21,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -68,22 +68,22 @@ class AllergyControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real allergy storage, user lookup, or caregiver logic.
 
-    @MockBean
+    @MockitoBean
     private AllergyService allergyService;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private CaregiverService caregiverService;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     @Autowired

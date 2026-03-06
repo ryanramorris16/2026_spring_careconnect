@@ -100,12 +100,14 @@ class UserDetailsServiceImplTest {
         verify(userRepository).findByEmail("test@example.com");
     }
 
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Test
     void extractUserProfile_ShouldReturnOAuth2UserProfile_WhenPrincipalIsOAuth2User() throws Exception {
         // Arrange
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getAttribute("email")).thenReturn("oauth@example.com");
         when(oAuth2User.getAttribute("name")).thenReturn("OAuth User");
+        @SuppressWarnings("rawtypes")
         Collection authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         when(oAuth2User.getAuthorities()).thenReturn(authorities);
@@ -121,6 +123,7 @@ class UserDetailsServiceImplTest {
         assertEquals("ROLE_USER", body.get("role"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void extractUserProfile_ShouldReturnUserDetailsProfile_WhenPrincipalIsUserDetails() throws Exception {
         // Arrange
@@ -132,11 +135,13 @@ class UserDetailsServiceImplTest {
 
         // Assert
         assertEquals(200, response.getStatusCodeValue());
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("user@example.com", body.get("email"));
         assertEquals("ROLE_PATIENT", body.get("role"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void extractUserProfile_ShouldReturnUnauthorized_WhenPrincipalIsInvalid() throws Exception {
         // Act

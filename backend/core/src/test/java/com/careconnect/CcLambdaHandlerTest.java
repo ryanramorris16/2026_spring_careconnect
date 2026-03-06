@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -32,8 +31,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CcLambdaHandlerTest {
 
-    @SuppressWarnings("unchecked")
     private static SpringBootLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse> mockStaticHandler;
+    @SuppressWarnings("rawtypes")
     private static MockedStatic<SpringBootLambdaContainerHandler> staticMock;
 
     private CcLambdaHandler handler;
@@ -57,6 +56,7 @@ class CcLambdaHandlerTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         clearInvocations(mockStaticHandler);
