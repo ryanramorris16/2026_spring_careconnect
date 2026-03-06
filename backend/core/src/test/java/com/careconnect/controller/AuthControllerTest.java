@@ -23,10 +23,10 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Base64;
@@ -42,7 +42,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.hamcrest.Matchers;
 
 /**
  * Unit tests for {@link AuthController}, covering the HTTP layer of all
@@ -87,31 +86,31 @@ class AuthControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real infrastructure (DB, JWT signing keys, etc.).
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
-    @MockBean
+    @MockitoBean
     private PasswordResetService reset;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwt;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TokenHashService tokenHashService;
 
-    @MockBean
+    @MockitoBean
     private AlexaCodeStoreService alexaCodeStore;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     // ==========================================
