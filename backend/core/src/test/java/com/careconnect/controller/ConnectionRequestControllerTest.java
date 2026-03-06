@@ -1,6 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.dto.ConnectionRequestDto;
 import com.careconnect.model.ConnectionRequest;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.ConnectionRequestService;
