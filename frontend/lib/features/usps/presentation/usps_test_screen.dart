@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/config/env_constant.dart';
-import 'dart:html' as html;
 
 class UspsTestScreen extends StatefulWidget {
   const UspsTestScreen({super.key});
@@ -246,8 +245,8 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
 
     final base = getBackendBaseUrl();
 
-    // Get actual current page URL from browser window
-    final currentUrl = html.window.location.href;
+    // Uri.base works across web/mobile/desktop without importing dart:html.
+    final currentUrl = Uri.base.toString();
     final authUrl = '$base/oauth/google/start?userId=${Uri.encodeComponent(user.id.toString())}&returnUrl=${Uri.encodeComponent(currentUrl)}';
 
     final uri = Uri.parse(authUrl);

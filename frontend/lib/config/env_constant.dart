@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 // Set your local dev URL in defaultValue
 const String _backendBaseUrl = String.fromEnvironment(
   'BACKEND_URL',
-  defaultValue: 'http://localhost:8080',
+  defaultValue: '',
 );
 
 const String _wsOverrideUrl = String.fromEnvironment('WEBSOCKET_SERVER_URL');
@@ -99,18 +99,25 @@ String getCallNotificationWebSocketUrl() {
 ///
 /// This is now controlled by a single --dart-define=BACKEND_URL variable.
 String getBackendBaseUrl() {
-  // The old platform-specific logic is no longer needed,
-  // as the build command now defines the correct URL.
-  // We just return the value passed in.
-  if (_backendBaseUrl.isEmpty) {
-    throw Exception('BACKEND_URL not set via --dart-define');
-  }
+  // Prefer explicit --dart-define when provided.
+  final resolvedBaseUrl = _backendBaseUrl.isNotEmpty
+      ? _backendBaseUrl
+      : (() {
+          // Local-dev fallback when no BACKEND_URL is defined.
+          if (kIsWeb) {
+            return 'http://localhost:8080';
+          }
+          if (defaultTargetPlatform == TargetPlatform.android) {
+            return 'http://10.0.2.2:8080';
+          }
+          return 'http://localhost:8080';
+        })();
 
-  if (!kDebugMode && !_backendBaseUrl.startsWith('https://')) {
+  if (!kDebugMode && !resolvedBaseUrl.startsWith('https://')) {
     throw Exception('BACKEND_URL must use https:// in release builds.');
   }
 
-  return _backendBaseUrl;
+  return resolvedBaseUrl;
 }
 
 String getBackendToken() {
