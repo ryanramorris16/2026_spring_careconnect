@@ -18,25 +18,14 @@ Environment variables (set by run-local-checks.sh):
 """
 
 import os
-import sys
-from pathlib import Path
 
-# ----------------------------------------------------------
-# Resolve local module directory so imports work when called
-# from any working directory
-# ----------------------------------------------------------
-LOCAL_DIR = Path(__file__).parent
-
-if str(LOCAL_DIR) not in sys.path:
-    sys.path.insert(0, str(LOCAL_DIR))
-
-from report_parsers import ( 
-    parse_flutter,
+from quality.Local_Scans.report.report_html import build_html
+from quality.Local_Scans.report.report_parsers import (
     parse_checkstyle,
+    parse_flutter,
     parse_pmd,
     parse_spotbugs,
 )
-from report_html import build_html 
 
 # ----------------------------------------------------------
 # Environment

@@ -114,7 +114,7 @@ export FAILED
 # ----------------------------------------------------------
 echo ""
 echo "Generating HTML report..."
-python3 "${REPORT_DIR}/generate_report.py"
+python3 -m quality.Local_Scans.report.generate_report
 
 # ----------------------------------------------------------
 # Package zip
