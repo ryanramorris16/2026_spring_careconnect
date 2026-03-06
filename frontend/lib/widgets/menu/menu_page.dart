@@ -124,23 +124,23 @@ class _MenuPageState extends State<MenuPage> {
         label: local.notetakerAssistant,
         route: '/notetaker-search',
       ),
-      _MenuItem(
-        icon: Icons.person_add,
-        label: local.addPatient,
-        route: '/add-patient',
-        visibleFor: const {'CAREGIVER'},
-      ),
+      // _MenuItem(
+      //   icon: Icons.person_add,
+      //   label: local.addPatient,
+      //   route: '/add-patient',
+      //   visibleFor: const {'CAREGIVER'},
+      // ),
       _MenuItem(
         icon: Icons.mail,
         label: local.informedDelivery,
         route: '/informed-delivery',
       ),
-      _MenuItem(
-        icon: Icons.settings,
-        label: local.settings,
-        route: '/settings',
-        section: _Section.settings,
-      ),
+      // _MenuItem(
+      //   icon: Icons.settings,
+      //   label: local.settings,
+      //   route: '/settings',
+      //   section: _Section.settings,
+      // ),
       _MenuItem(
         icon: Icons.devices,
         label: local.smartDevices,

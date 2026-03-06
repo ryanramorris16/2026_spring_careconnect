@@ -100,13 +100,12 @@ String getWebSocketNotificationUrl() {
 ///
 /// This is now controlled by a single --dart-define=BACKEND_URL variable.
 String getBackendBaseUrl() {
-  // The old platform-specific logic is no longer needed,
-  // as the build command now defines the correct URL.
-  // We just return the value passed in.
-  if (_backendBaseUrl.isEmpty) {
+  // Normalize to avoid malformed URLs (leading/trailing spaces, trailing slash).
+  final normalized = _backendBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+  if (normalized.isEmpty) {
     throw Exception('BACKEND_URL not set via --dart-define');
   }
-  return _backendBaseUrl;
+  return normalized;
 }
 
 String getBackendToken() {
