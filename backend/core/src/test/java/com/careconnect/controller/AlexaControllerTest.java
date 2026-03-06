@@ -20,8 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.dto.v2.TaskDtoV2;
@@ -68,22 +68,22 @@ class AlexaControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real JWT infrastructure, a database, or task storage.
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TaskServiceV2 taskService;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     // --- Shared test constants ---
