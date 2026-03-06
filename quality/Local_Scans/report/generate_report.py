@@ -18,7 +18,7 @@ Environment variables (set by run-local-checks.sh):
 """
 
 import os
-
+from pathlib import Path
 from quality.Local_Scans.report.report_html import build_html
 from quality.Local_Scans.report.report_parsers import (
     parse_checkstyle,
