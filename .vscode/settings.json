@@ -12,5 +12,9 @@
     "editor.stickyScroll.enabled": true,
 
     "breadcrumbs.enabled": true,
-    "breadcrumbs.symbolPath": "on"
+    "breadcrumbs.symbolPath": "on",
+
+    "files.exclude": {
+        "**/__pycache__": true
+    }
 }
