@@ -4,8 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
@@ -118,6 +116,7 @@ class SsmPropertySourceInitializerTest {
 
         method.setAccessible(true);
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
@@ -146,6 +145,7 @@ class SsmPropertySourceInitializerTest {
 
         method.setAccessible(true);
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
@@ -239,6 +239,7 @@ class SsmPropertySourceInitializerTest {
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
         method.setAccessible(true);
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
@@ -283,6 +284,7 @@ class SsmPropertySourceInitializerTest {
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
         method.setAccessible(true);
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
