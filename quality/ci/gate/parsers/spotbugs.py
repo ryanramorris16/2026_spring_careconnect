@@ -58,8 +58,8 @@ SpotBugs XML Structure
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
 
 SEVERITY_MAP = {
@@ -153,12 +153,8 @@ def parse_spotbugs(raw_dir: Path) -> dict:
         result["violation_count"] = len(findings)
         result["max_severity"] = determine_max_severity(result["severity_counts"])
 
-    except ET.ParseError as e:
+    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
         result["runtime_error"] = True
-        result["metadata"]["error"] = f"XML parse error: {e}"
-
-    except Exception as e:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Unexpected error: {e}"
+        result["metadata"]["error"] = f"SpotBugs parse error: {error}"
 
     return result

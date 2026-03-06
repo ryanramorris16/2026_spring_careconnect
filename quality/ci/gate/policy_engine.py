@@ -48,7 +48,7 @@ from pathlib import Path
 
 import yaml
 
-from .utils import is_severity_at_least
+from quality.ci.gate.utils import is_severity_at_least
 
 
 NORMALIZED_FILE = Path("quality/analysis/normalized/normalized.json")
@@ -365,9 +365,9 @@ def evaluate() -> bool:
 
 
 if __name__ == "__main__":
-    blocked = evaluate()
+    is_blocked = evaluate()
 
-    if blocked:
+    if is_blocked:
         print("Policy violation detected. Merge blocked.")
         raise SystemExit(1)
 

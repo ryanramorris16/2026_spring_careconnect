@@ -1,5 +1,4 @@
 #!/bin/sh
-# File: quality/local/run-local-checks.sh
 # ==========================================================
 # CareConnect Local Quality Gate — Entry Point
 # ----------------------------------------------------------
@@ -108,21 +107,37 @@ export FAILED
 # Generate HTML report
 # ----------------------------------------------------------
 echo ""
-echo "📄 Generating HTML report..."
+echo "Generating HTML report..."
 python "${REPORT_DIR}/generate_report.py"
 
 # ----------------------------------------------------------
 # Package zip
 # ----------------------------------------------------------
 echo ""
-echo "📦 Packaging report..."
-python "${REPORT_DIR}/package_report.py"
+echo "Packaging report..."
+python - <<'PY'
+import os
+import zipfile
+from pathlib import Path
+
+work_dir = Path(os.environ["WORK_DIR"])
+zip_path = Path(os.environ["ZIP_PATH"])
+
+zip_path.parent.mkdir(parents=True, exist_ok=True)
+
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+    for file_path in sorted(work_dir.rglob("*")):
+        if file_path.is_file():
+            zip_file.write(file_path, arcname=file_path.relative_to(work_dir))
+
+print(f"[package] ZIP written to: {zip_path}")
+PY
 
 # ----------------------------------------------------------
 # Open in browser
 # ----------------------------------------------------------
 echo ""
-echo "🌐 Opening report in browser..."
+echo "Opening report in browser..."
 python "${REPORT_DIR}/open_report.py"
 
 # ----------------------------------------------------------
@@ -132,35 +147,52 @@ echo ""
 echo "=============================="
 echo " Results"
 echo "=============================="
+
 printf " Flutter       "
-if [ "${FL_STATUS}" = "passed" ]; then printf "✅ PASSED\n"
-elif [ "${FL_STATUS}" = "failed" ]; then printf "❌ FAILED\n"
-else printf "⏸️  SKIPPED\n"; fi
+if [ "${FL_STATUS}" = "passed" ]; then
+  printf "PASSED\n"
+elif [ "${FL_STATUS}" = "failed" ]; then
+  printf "FAILED\n"
+else
+  printf "SKIPPED\n"
+fi
 
 printf " Checkstyle    "
-if [ "${CS_STATUS}" = "passed" ]; then printf "✅ PASSED\n"
-elif [ "${CS_STATUS}" = "failed" ]; then printf "❌ FAILED\n"
-else printf "⏸️  SKIPPED\n"; fi
+if [ "${CS_STATUS}" = "passed" ]; then
+  printf "PASSED\n"
+elif [ "${CS_STATUS}" = "failed" ]; then
+  printf "FAILED\n"
+else
+  printf "SKIPPED\n"
+fi
 
 printf " PMD           "
-if [ "${PMD_STATUS}" = "passed" ]; then printf "✅ PASSED\n"
-elif [ "${PMD_STATUS}" = "failed" ]; then printf "❌ FAILED\n"
-else printf "⏸️  SKIPPED\n"; fi
+if [ "${PMD_STATUS}" = "passed" ]; then
+  printf "PASSED\n"
+elif [ "${PMD_STATUS}" = "failed" ]; then
+  printf "FAILED\n"
+else
+  printf "SKIPPED\n"
+fi
 
 printf " SpotBugs      "
-if [ "${SB_STATUS}" = "passed" ]; then printf "✅ PASSED\n"
-elif [ "${SB_STATUS}" = "failed" ]; then printf "❌ FAILED\n"
-else printf "⏸️  SKIPPED\n"; fi
+if [ "${SB_STATUS}" = "passed" ]; then
+  printf "PASSED\n"
+elif [ "${SB_STATUS}" = "failed" ]; then
+  printf "FAILED\n"
+else
+  printf "SKIPPED\n"
+fi
 
 echo "------------------------------"
 if [ "${FAILED}" -eq 0 ]; then
-  echo " Result: ✅ All checks passed"
+  echo " Result: All checks passed"
 else
-  echo " Result: ❌ ${FAILED} tool(s) failed"
+  echo " Result: ${FAILED} tool(s) failed"
 fi
 echo "=============================="
 echo ""
-echo "📦 Report saved to: ${ZIP_PATH}"
+echo " Report saved to: ${ZIP_PATH}"
 echo ""
 
 exit "${FAILED}"

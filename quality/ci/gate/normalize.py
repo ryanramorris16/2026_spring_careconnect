@@ -60,21 +60,21 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .parsers.bandit import parse_bandit
-from .parsers.checkstyle import parse_checkstyle
-from .parsers.dependency_check import parse_dependency_check
-from .parsers.flutter import parse_flutter
-from .parsers.gitleaks import parse_gitleaks
-from .parsers.htmlhint import parse_htmlhint
-from .parsers.pmd import parse_pmd
-from .parsers.pylint import parse_pylint
-from .parsers.semgrep import parse_semgrep
-from .parsers.sonar import parse_sonar
-from .parsers.spotbugs import parse_spotbugs
-from .parsers.stylelint import parse_stylelint
-from .parsers.trufflehog import parse_trufflehog
-from .schemas import base_tool_result
-from .utils import SEVERITY_ORDER, determine_max_severity
+from quality.ci.gate.parsers.bandit import parse_bandit
+from quality.ci.gate.parsers.checkstyle import parse_checkstyle
+from quality.ci.gate.parsers.dependency_check import parse_dependency_check
+from quality.ci.gate.parsers.flutter import parse_flutter
+from quality.ci.gate.parsers.gitleaks import parse_gitleaks
+from quality.ci.gate.parsers.htmlhint import parse_htmlhint
+from quality.ci.gate.parsers.pmd import parse_pmd
+from quality.ci.gate.parsers.pylint import parse_pylint
+from quality.ci.gate.parsers.semgrep import parse_semgrep
+from quality.ci.gate.parsers.sonar import parse_sonar
+from quality.ci.gate.parsers.spotbugs import parse_spotbugs
+from quality.ci.gate.parsers.stylelint import parse_stylelint
+from quality.ci.gate.parsers.trufflehog import parse_trufflehog
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import SEVERITY_ORDER, determine_max_severity
 
 
 RAW_DIR = Path("quality/analysis/raw")
@@ -130,20 +130,20 @@ def normalize() -> list[dict]:
         try:
             result = parser(RAW_DIR)
             results.append(result)
-        except Exception as e:
+        except (OSError, ValueError, TypeError, KeyError, RuntimeError) as error:
             error_result = base_tool_result(tool_name)
             error_result["executed"] = False
             error_result["runtime_error"] = True
             error_result["metadata"][
                 "error"
-            ] = f"Parser raised an unhandled exception: {e}"
+            ] = f"Parser raised an unhandled exception: {error}"
             results.append(error_result)
 
-    total_violations = sum(r.get("violation_count", 0) for r in results)
+    total_violations = sum(result.get("violation_count", 0) for result in results)
 
     combined_severity_counts: dict[str, int] = dict.fromkeys(SEVERITY_ORDER, 0)
-    for r in results:
-        for level, count in r.get("severity_counts", {}).items():
+    for result in results:
+        for level, count in result.get("severity_counts", {}).items():
             if level in combined_severity_counts:
                 combined_severity_counts[level] += count
 
@@ -158,8 +158,8 @@ def normalize() -> list[dict]:
         "results": results,
     }
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(normalized_doc, f, indent=2)
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as file_handle:
+        json.dump(normalized_doc, file_handle, indent=2)
 
     print(f"[normalize] {len(results)} tool(s) processed.")
     print(f"[normalize] Total violations : {total_violations}")
@@ -171,4 +171,3 @@ def normalize() -> list[dict]:
 
 if __name__ == "__main__":
     normalize()
-    

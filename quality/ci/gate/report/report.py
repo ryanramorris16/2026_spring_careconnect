@@ -85,9 +85,9 @@ def generate_report() -> None:
         sys.exit(1)
 
     try:
-        with open(EVALUATED_FILE, "r", encoding="utf-8") as f:
-            evaluated_doc = json.load(f)
-    except Exception as e:
+        with open(EVALUATED_FILE, "r", encoding="utf-8") as file_handle:
+            evaluated_doc = json.load(file_handle)
+    except (OSError, json.JSONDecodeError) as e:
         print(f"[report] Failed to parse evaluated.json: {e}")
         sys.exit(1)
 

@@ -34,7 +34,7 @@ by other users.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 
 def base_tool_result(tool_name: str) -> Dict[str, Any]:
@@ -85,7 +85,7 @@ def base_tool_result(tool_name: str) -> Dict[str, Any]:
         # ------------------------------------------------------
         # Findings (normalized)
         # ------------------------------------------------------
-        "findings": [],  # type: List[Dict[str, Any]]
+        "findings": [],
 
         # ------------------------------------------------------
         # Finding counts
@@ -106,10 +106,10 @@ def base_tool_result(tool_name: str) -> Dict[str, Any]:
         # ------------------------------------------------------
         # Maximum severity encountered
         # ------------------------------------------------------
-        "max_severity": None,  # type: Optional[str]
+        "max_severity": None,
 
         # ------------------------------------------------------
         # Tool-specific metadata
         # ------------------------------------------------------
-        "metadata": {},  # type: Dict[str, Any]
+        "metadata": {},
     }

@@ -68,8 +68,8 @@ It must never appear in findings, metadata, or any output artifact.
 import json
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
 
 def parse_trufflehog(raw_dir: Path) -> dict:
@@ -110,9 +110,9 @@ def parse_trufflehog(raw_dir: Path) -> dict:
 
     try:
         lines = artifact.read_text(encoding="utf-8", errors="replace").splitlines()
-    except Exception as e:
+    except OSError as error:
         result["runtime_error"] = True
-        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {e}"
+        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {error}"
         return result
 
     result["executed"] = True

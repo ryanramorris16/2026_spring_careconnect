@@ -46,8 +46,8 @@ HTMLHint JSON Structure
 import json
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
 
 SEVERITY_MAP = {
@@ -90,8 +90,8 @@ def parse_htmlhint(raw_dir: Path) -> dict:
     result["executed"] = True
 
     try:
-        with open(artifact, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        with open(artifact, "r", encoding="utf-8") as file_handle:
+            data = json.load(file_handle)
 
         file_results = data if isinstance(data, list) else []
         findings = []
@@ -126,11 +126,8 @@ def parse_htmlhint(raw_dir: Path) -> dict:
         result["violation_count"] = len(findings)
         result["max_severity"] = determine_max_severity(result["severity_counts"])
 
-    except json.JSONDecodeError as e:
+    except (OSError, TypeError, ValueError, KeyError) as error:
         result["runtime_error"] = True
-        result["metadata"]["error"] = f"JSON parse error: {e}"
-    except Exception as e:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Unexpected error: {e}"
+        result["metadata"]["error"] = f"HTMLHint parse error: {error}"
 
     return result

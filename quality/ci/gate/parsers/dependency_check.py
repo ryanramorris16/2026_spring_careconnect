@@ -1,3 +1,4 @@
+# File: quality/ci/gate/parsers/dependency_check.py
 """
 OWASP Dependency-Check Parser (Software Composition Analysis)
 
@@ -97,8 +98,8 @@ Step 3
 import json
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
 
 SEVERITY_MAP = {
@@ -108,6 +109,65 @@ SEVERITY_MAP = {
     "low": "low",
     "informational": "info",
 }
+
+
+def _get_package_id(dependency: dict) -> str:
+    """Extract the first package ID from a dependency record."""
+    packages = dependency.get("packages", [])
+    if packages and isinstance(packages[0], dict):
+        return packages[0].get("id", "unknown")
+    return "unknown"
+
+
+def _normalize_cwes(cwes: list | str | None) -> list:
+    """Normalize CWE values to a list."""
+    if cwes is None:
+        return []
+    if isinstance(cwes, str):
+        return [cwes]
+    return cwes
+
+
+def _get_nvd_url(references: list) -> str:
+    """Extract the NVD reference URL if present."""
+    for reference in references:
+        if isinstance(reference, dict) and reference.get("name", "").upper() == "NVD":
+            return reference.get("url", "")
+    return ""
+
+
+def _truncate_description(description: str, max_length: int = 500) -> str:
+    """Trim long vulnerability descriptions for report readability."""
+    if len(description) > max_length:
+        return description[:max_length] + "..."
+    return description
+
+
+def _build_finding(file_name: str, package_id: str, vulnerability: dict) -> tuple[dict, str]:
+    """Build one normalized finding and return it with its normalized severity."""
+    cve = vulnerability.get("name", "unknown")
+    native_severity = vulnerability.get("severity", "INFORMATIONAL")
+    normalized_severity = SEVERITY_MAP.get(native_severity.lower(), "info")
+
+    cvss_v3 = vulnerability.get("cvssv3", {})
+    cvss_v2 = vulnerability.get("cvssv2", {})
+    references = vulnerability.get("references", [])
+
+    finding = {
+        "file": file_name,
+        "package": package_id,
+        "cve": cve,
+        "rule": cve,
+        "severity": normalized_severity,
+        "native_severity": native_severity,
+        "cvss_score": cvss_v3.get("baseScore") or cvss_v2.get("score"),
+        "cvss_vector": cvss_v3.get("attackVector", ""),
+        "cwe": _normalize_cwes(vulnerability.get("cwes", [])),
+        "nvd_url": _get_nvd_url(references),
+        "references": references,
+        "description": _truncate_description(vulnerability.get("description", "")),
+    }
+    return finding, normalized_severity
 
 
 def parse_dependency_check(raw_dir: Path) -> dict:
@@ -145,75 +205,32 @@ def parse_dependency_check(raw_dir: Path) -> dict:
     result["executed"] = True
 
     try:
-        with open(artifact, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        with open(artifact, "r", encoding="utf-8") as file_handle:
+            data = json.load(file_handle)
 
-        dependencies = data.get("dependencies", [])
         findings = []
+        dependencies = data.get("dependencies", [])
 
-        for dep in dependencies:
-            file_name = dep.get("fileName", "unknown")
-            packages = dep.get("packages", [])
-            package_id = packages[0].get("id", "unknown") if packages else "unknown"
-            vulnerabilities = dep.get("vulnerabilities", [])
+        for dependency in dependencies:
+            file_name = dependency.get("fileName", "unknown")
+            package_id = _get_package_id(dependency)
+            vulnerabilities = dependency.get("vulnerabilities", [])
 
-            for vuln in vulnerabilities:
-                cve = vuln.get("name", "unknown")
-                native_severity = vuln.get("severity", "INFORMATIONAL")
-                normalized_severity = SEVERITY_MAP.get(
-                    native_severity.lower(),
-                    "info",
+            for vulnerability in vulnerabilities:
+                finding, normalized_severity = _build_finding(
+                    file_name,
+                    package_id,
+                    vulnerability,
                 )
-
-                cvss_v3 = vuln.get("cvssv3", {})
-                cvss_v2 = vuln.get("cvssv2", {})
-                cvss_score = cvss_v3.get("baseScore") or cvss_v2.get("score")
-                cvss_vector = cvss_v3.get("attackVector", "")
-
-                cwes = vuln.get("cwes", [])
-                if isinstance(cwes, str):
-                    cwes = [cwes]
-
-                references = vuln.get("references", [])
-
-                nvd_url = ""
-                for ref in references:
-                    if isinstance(ref, dict) and ref.get("name", "").upper() == "NVD":
-                        nvd_url = ref.get("url", "")
-                        break
-
-                description = vuln.get("description", "")
-                if len(description) > 500:
-                    description = description[:500] + "..."
-
                 result["severity_counts"][normalized_severity] += 1
-
-                finding = {
-                    "file": file_name,
-                    "package": package_id,
-                    "cve": cve,
-                    "rule": cve,
-                    "severity": normalized_severity,
-                    "native_severity": native_severity,
-                    "cvss_score": cvss_score,
-                    "cvss_vector": cvss_vector,
-                    "cwe": cwes,
-                    "nvd_url": nvd_url,
-                    "references": references,
-                    "description": description,
-                }
                 findings.append(finding)
 
         result["findings"] = findings
         result["violation_count"] = len(findings)
         result["max_severity"] = determine_max_severity(result["severity_counts"])
 
-    except json.JSONDecodeError as e:
+    except (OSError, TypeError, ValueError, KeyError) as error:
         result["runtime_error"] = True
-        result["metadata"]["error"] = f"JSON parse error: {e}"
-
-    except Exception as e:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Unexpected error: {e}"
+        result["metadata"]["error"] = f"Dependency-Check parse error: {error}"
 
     return result

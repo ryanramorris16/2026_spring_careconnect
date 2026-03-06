@@ -65,9 +65,9 @@ from pathlib import Path
 
 import yaml
 
-from .humanize import generate_human_readable_outputs
-from .normalize import normalize
-from .policy_engine import evaluate
+from quality.ci.gate.humanize import generate_human_readable_outputs
+from quality.ci.gate.normalize import normalize
+from quality.ci.gate.policy_engine import evaluate
 
 
 ANALYSIS_DIR = Path("quality/analysis")
@@ -93,14 +93,13 @@ def _load_gate_mode() -> str:
     as a fail-safe behavior.
     """
     try:
-        with open(POLICY_FILE, "r", encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
+        with open(POLICY_FILE, "r", encoding="utf-8") as file_handle:
+            data = yaml.safe_load(file_handle) or {}
 
         mode = str((data.get("gate", {}) or {}).get("mode", "enforce")).strip().lower()
-
         return mode if mode in {"enforce", "report_only"} else "enforce"
 
-    except Exception:
+    except (OSError, TypeError, ValueError, yaml.YAMLError):
         return "enforce"
 
 
@@ -179,17 +178,17 @@ def main() -> None:
     print("[gate] Layer 1: Running normalization...")
     try:
         normalize()
-    except Exception as e:
-        print(f"[gate] Normalization failed: {e}")
-        _write_failsafe_evaluated("normalization", e)
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as error:
+        print(f"[gate] Normalization failed: {error}")
+        _write_failsafe_evaluated("normalization", error)
         _exit(blocked=True, mode=mode)
 
     print("[gate] Layer 2: Applying policy rules...")
     try:
         blocked = evaluate()
-    except Exception as e:
-        print(f"[gate] Policy evaluation failed: {e}")
-        _write_failsafe_evaluated("policy_evaluation", e)
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as error:
+        print(f"[gate] Policy evaluation failed: {error}")
+        _write_failsafe_evaluated("policy_evaluation", error)
         _exit(blocked=True, mode=mode)
 
     print("[gate] Layer 3: Generating human-readable pages...")
@@ -200,8 +199,8 @@ def main() -> None:
             normalized_path=NORMALIZED_FILE.resolve(),
             evaluated_path=EVALUATED_FILE.resolve(),
         )
-    except Exception as e:
-        print(f"[gate] Human-readable report generation failed (non-fatal): {e}")
+    except (OSError, ValueError, TypeError, KeyError, RuntimeError) as error:
+        print(f"[gate] Human-readable report generation failed (non-fatal): {error}")
 
     _exit(blocked=blocked, mode=mode)
 
@@ -240,4 +239,3 @@ def _exit(blocked: bool, mode: str) -> None:
 
 if __name__ == "__main__":
     main()
-    

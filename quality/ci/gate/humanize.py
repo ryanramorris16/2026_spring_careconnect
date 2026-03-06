@@ -51,7 +51,7 @@ def _read_json(path: Path, default: Any) -> Any:
     """
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
+    except (OSError, TypeError, ValueError):
         return default
 
 
@@ -71,7 +71,7 @@ def _safe_int(value: Any) -> int | None:
     """
     try:
         return None if value is None else int(str(value))
-    except Exception:
+    except (TypeError, ValueError):
         return None
 
 
@@ -169,7 +169,7 @@ def _read_snippet(
 
         return "```text\n" + "\n".join(buffer) + "\n```"
 
-    except Exception:
+    except (OSError, TypeError, ValueError):
         return None
 
 

@@ -21,15 +21,20 @@ import os
 import sys
 from pathlib import Path
 
-"""
-Resolve local module directory so imports work when called
-from any working directory
-"""
+# ----------------------------------------------------------
+# Resolve local module directory so imports work when called
+# from any working directory
+# ----------------------------------------------------------
 LOCAL_DIR = Path(__file__).parent
 sys.path.insert(0, str(LOCAL_DIR))
 
-from report_parsers import parse_flutter, parse_checkstyle, parse_pmd, parse_spotbugs
-from report_html import build_html
+from report_parsers import (  # noqa: E402
+    parse_flutter,
+    parse_checkstyle,
+    parse_pmd,
+    parse_spotbugs,
+)
+from report_html import build_html  # noqa: E402
 
 # ----------------------------------------------------------
 # Environment
@@ -38,16 +43,22 @@ WORK_DIR = os.environ["WORK_DIR"]
 REPO_ROOT = os.environ["REPO_ROOT"]
 GENERATED_AT = os.environ["GENERATED_AT"]
 SCAN_USER = os.environ["SCAN_USER"]
+
 FL_STATUS = os.environ["FL_STATUS"]
 CS_STATUS = os.environ["CS_STATUS"]
 PMD_STATUS = os.environ["PMD_STATUS"]
 SB_STATUS = os.environ["SB_STATUS"]
+
 FAILED = int(os.environ["FAILED"])
 
+# ----------------------------------------------------------
+# Input artifacts
+# ----------------------------------------------------------
 RAW_FL = Path(WORK_DIR) / "flutter_analyze.txt"
 RAW_CS = Path(WORK_DIR) / "checkstyle.xml"
 RAW_PMD = Path(WORK_DIR) / "pmd.xml"
 RAW_SB = Path(WORK_DIR) / "spotbugs.xml"
+
 OUT = Path(WORK_DIR) / "local-report.html"
 
 # ----------------------------------------------------------
