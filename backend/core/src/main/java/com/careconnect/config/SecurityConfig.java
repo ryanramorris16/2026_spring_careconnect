@@ -67,9 +67,6 @@ public class SecurityConfig {
                         "/", "/index.html", "/favicon.ico", "/static/**"
                 ).permitAll()
 
-                        /* ---------- Static assets ------------------------------------- */
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
-
                         /* ---------- Admin-only endpoints ------------------------------- */
                         .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
 
