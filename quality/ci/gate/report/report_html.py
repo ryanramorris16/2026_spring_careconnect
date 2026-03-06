@@ -118,6 +118,65 @@ def _sev_pills(sev_counts: dict) -> str:
     return pills or '<span style="color:#7f8c8d;">No findings</span>'
 
 
+def _tool_status(reason: str, violation: bool) -> tuple[str, str]:
+    """Return status HTML and header color for a tool result."""
+    if reason == "disabled":
+        return '<span style="color:#7f8c8d;">DISABLED</span>', "#7f8c8d"
+    if violation:
+        return '<span style="color:#c0392b;">FAILURE</span>', "#c0392b"
+    return '<span style="color:#27ae60;">SUCCESS</span>', "#27ae60"
+
+
+def _tool_role(blocking: bool) -> str:
+    """Return role HTML for a tool result."""
+    return (
+        '<span style="color:#c0392b;">Enforced</span>'
+        if blocking
+        else '<span style="color:#e67e22;">Advisory</span>'
+    )
+
+
+def _tool_reason_html(reason: str) -> str:
+    """Return optional reason HTML for a tool result."""
+    if not reason or reason == "disabled":
+        return ""
+
+    return (
+        f'<span style="margin-left:12px;color:#7f8c8d;font-size:0.85em;">'
+        f"Reason: <code>{reason}</code></span>"
+    )
+
+
+def _tool_findings_html(
+    findings: list[dict],
+    reason: str,
+    normalized: dict,
+) -> str:
+    """Render the findings section for a tool result."""
+    if findings:
+        rows = "\n".join(_finding_row(finding) for finding in findings)
+        return f"""
+        <table>
+            <thead><tr>
+                <th>Severity</th><th>File</th><th>Line</th>
+                <th>Rule</th><th>Message</th>
+            </tr></thead>
+            <tbody>{rows}</tbody>
+        </table>"""
+
+    if reason == "disabled":
+        return "<p><em>Tool is disabled.</em></p>"
+
+    if normalized.get("runtime_error", False):
+        error_message = (normalized.get("metadata") or {}).get("error", "Unknown error")
+        return f"<p><em>Runtime error: {error_message}</em></p>"
+
+    if not normalized.get("executed", False):
+        return "<p><em>Tool did not execute.</em></p>"
+
+    return "<p><em>No findings detected.</em></p>"
+
+
 def _tool_section(result: dict) -> str:
     """Render a full tool detail section."""
     tool = result.get("tool", "unknown")
@@ -127,52 +186,12 @@ def _tool_section(result: dict) -> str:
     reason = result.get("reason", "")
     normalized = result.get("normalized", {})
     findings = normalized.get("findings", [])
-    sev_counts = normalized.get("severity_counts", {})
-    executed = normalized.get("executed", False)
-    runtime_err = normalized.get("runtime_error", False)
+    severity_counts = normalized.get("severity_counts", {})
 
-    if reason == "disabled":
-        status_html = '<span style="color:#7f8c8d;">DISABLED</span>'
-        header_color = "#7f8c8d"
-    elif violation:
-        status_html = '<span style="color:#c0392b;">FAILURE</span>'
-        header_color = "#c0392b"
-    else:
-        status_html = '<span style="color:#27ae60;">SUCCESS</span>'
-        header_color = "#27ae60"
-
-    role_html = (
-        '<span style="color:#c0392b;">Enforced</span>'
-        if blocking
-        else '<span style="color:#e67e22;">Advisory</span>'
-    )
-
-    reason_html = (
-        f'<span style="margin-left:12px;color:#7f8c8d;font-size:0.85em;">'
-        f"Reason: <code>{reason}</code></span>"
-        if reason and reason != "disabled"
-        else ""
-    )
-
-    if findings:
-        rows = "\n".join(_finding_row(finding) for finding in findings)
-        findings_html = f"""
-        <table>
-            <thead><tr>
-                <th>Severity</th><th>File</th><th>Line</th>
-                <th>Rule</th><th>Message</th>
-            </tr></thead>
-            <tbody>{rows}</tbody>
-        </table>"""
-    elif reason == "disabled":
-        findings_html = "<p><em>Tool is disabled.</em></p>"
-    elif runtime_err:
-        err_msg = (normalized.get("metadata") or {}).get("error", "Unknown error")
-        findings_html = f"<p><em>Runtime error: {err_msg}</em></p>"
-    elif not executed:
-        findings_html = "<p><em>Tool did not execute.</em></p>"
-    else:
-        findings_html = "<p><em>No findings detected.</em></p>"
+    status_html, header_color = _tool_status(reason, violation)
+    role_html = _tool_role(blocking)
+    reason_html = _tool_reason_html(reason)
+    findings_html = _tool_findings_html(findings, reason, normalized)
 
     return f"""
     <div class="tool-section" id="tool-{tool}">
@@ -186,7 +205,7 @@ def _tool_section(result: dict) -> str:
                 <span style="margin-left:12px;">Role: {role_html}</span>
                 {reason_html}
             </div>
-            <div class="sev-counts">{_sev_pills(sev_counts)}</div>
+            <div class="sev-counts">{_sev_pills(severity_counts)}</div>
         </div>
         <div class="tool-findings">{findings_html}</div>
     </div>"""
@@ -202,19 +221,8 @@ def _summary_row(result: dict) -> str:
     normalized = result.get("normalized", {})
     finding_count = normalized.get("violation_count", 0)
 
-    if reason == "disabled":
-        status_cell = '<span style="color:#7f8c8d;">DISABLED</span>'
-    elif violation:
-        status_cell = '<span style="color:#c0392b;">FAILURE</span>'
-    else:
-        status_cell = '<span style="color:#27ae60;">SUCCESS</span>'
-
-    role_cell = (
-        '<span style="color:#c0392b;">Enforced</span>'
-        if blocking
-        else '<span style="color:#e67e22;">Advisory</span>'
-    )
-
+    status_cell, _ = _tool_status(reason, violation)
+    role_cell = _tool_role(blocking)
     findings_cell = str(finding_count) if finding_count else "&mdash;"
 
     return (

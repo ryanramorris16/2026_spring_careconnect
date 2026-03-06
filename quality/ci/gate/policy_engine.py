@@ -364,7 +364,10 @@ def evaluate() -> bool:
     return overall_block
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """
+    Run policy evaluation as a standalone script and exit with the proper code.
+    """
     blocked = evaluate()
 
     if blocked:
@@ -373,3 +376,8 @@ if __name__ == "__main__":
 
     print("All policy checks passed.")
     raise SystemExit(0)
+
+
+if __name__ == "__main__":
+    main()
+    
