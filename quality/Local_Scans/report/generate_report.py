@@ -26,15 +26,17 @@ from pathlib import Path
 # from any working directory
 # ----------------------------------------------------------
 LOCAL_DIR = Path(__file__).parent
-sys.path.insert(0, str(LOCAL_DIR))
 
-from report_parsers import (  # noqa: E402
+if str(LOCAL_DIR) not in sys.path:
+    sys.path.insert(0, str(LOCAL_DIR))
+
+from report_parsers import ( 
     parse_flutter,
     parse_checkstyle,
     parse_pmd,
     parse_spotbugs,
 )
-from report_html import build_html  # noqa: E402
+from report_html import build_html 
 
 # ----------------------------------------------------------
 # Environment

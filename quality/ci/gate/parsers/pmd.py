@@ -76,6 +76,107 @@ SEVERITY_MAP = {
 }
 
 
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _load_pmd_root(artifact: Path, result: dict) -> ET.Element | None:
+    """
+    Load and parse the PMD XML artifact.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to the PMD XML report.
+    result : dict
+        Result dictionary updated on parse failure.
+
+    Returns
+    -------
+    ET.Element | None
+        Parsed XML root element, or None on failure.
+    """
+    try:
+        tree = ET.parse(artifact)
+        root = tree.getroot()
+        _strip_pmd_namespaces(root)
+        return root
+    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"PMD parse error: {error}"
+        return None
+
+
+def _strip_pmd_namespaces(root: ET.Element) -> None:
+    """
+    Remove XML namespaces in-place from the PMD tree.
+
+    Parameters
+    ----------
+    root : ET.Element
+        Root XML element.
+    """
+    for element in root.iter():
+        if "}" in element.tag:
+            element.tag = element.tag.split("}", 1)[1]
+
+
+def _to_int(value: str | int) -> int:
+    """
+    Convert an XML attribute value to an integer safely.
+
+    Parameters
+    ----------
+    value : str | int
+        Attribute value.
+
+    Returns
+    -------
+    int
+        Parsed integer, or 0 if parsing fails.
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _build_pmd_finding(file_path: str, violation: ET.Element) -> tuple[dict, str]:
+    """
+    Convert one PMD <violation> node into a normalized finding.
+
+    Parameters
+    ----------
+    file_path : str
+        Source file path from the parent <file> node.
+    violation : ET.Element
+        PMD <violation> element.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    native_priority = violation.attrib.get("priority", "5")
+    normalized_severity = SEVERITY_MAP.get(native_priority, "info")
+
+    finding = {
+        "file": file_path,
+        "line": _to_int(violation.attrib.get("beginline", 0)),
+        "severity": normalized_severity,
+        "native_severity": f"priority {native_priority}",
+        "rule": violation.attrib.get("rule", "unknown"),
+        "ruleset": violation.attrib.get("ruleset", "unknown"),
+        "message": (violation.text or "").strip(),
+        "rule_url": violation.attrib.get("externalInfoUrl", ""),
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
+
 def parse_pmd(raw_dir: Path) -> dict:
     """
     Parse PMD XML and return a standardized result dictionary.
@@ -98,8 +199,7 @@ def parse_pmd(raw_dir: Path) -> dict:
     - Missing artifact sets artifact_present=False and runtime_error=True.
     - Malformed XML sets runtime_error=True and records the error in metadata.
     """
-    tool_name = "pmd"
-    result = base_tool_result(tool_name)
+    result = base_tool_result("pmd")
     artifact = raw_dir / "pmd.xml"
 
     if not artifact.exists():
@@ -110,44 +210,22 @@ def parse_pmd(raw_dir: Path) -> dict:
     result["artifact_present"] = True
     result["executed"] = True
 
-    try:
-        tree = ET.parse(artifact)
-        root = tree.getroot()
+    root = _load_pmd_root(artifact, result)
+    if root is None:
+        return result
 
-        for elem in root.iter():
-            if "}" in elem.tag:
-                elem.tag = elem.tag.split("}", 1)[1]
+    findings: list[dict] = []
 
-        findings = []
+    for file_node in root.findall("file"):
+        file_path = file_node.attrib.get("name", "unknown")
 
-        for file_node in root.findall("file"):
-            file_path = file_node.attrib.get("name", "unknown")
+        for violation in file_node.findall("violation"):
+            finding, normalized_severity = _build_pmd_finding(file_path, violation)
+            result["severity_counts"][normalized_severity] += 1
+            findings.append(finding)
 
-            for violation in file_node.findall("violation"):
-                native_priority = violation.attrib.get("priority", "5")
-                normalized_severity = SEVERITY_MAP.get(native_priority, "info")
-                result["severity_counts"][normalized_severity] += 1
-
-                message = (violation.text or "").strip()
-
-                finding = {
-                    "file": file_path,
-                    "line": int(violation.attrib.get("beginline", 0)),
-                    "severity": normalized_severity,
-                    "native_severity": f"priority {native_priority}",
-                    "rule": violation.attrib.get("rule", "unknown"),
-                    "ruleset": violation.attrib.get("ruleset", "unknown"),
-                    "message": message,
-                    "rule_url": violation.attrib.get("externalInfoUrl", ""),
-                }
-                findings.append(finding)
-
-        result["findings"] = findings
-        result["violation_count"] = len(findings)
-        result["max_severity"] = determine_max_severity(result["severity_counts"])
-
-    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"PMD parse error: {error}"
+    result["findings"] = findings
+    result["violation_count"] = len(findings)
+    result["max_severity"] = determine_max_severity(result["severity_counts"])
 
     return result

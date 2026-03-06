@@ -867,9 +867,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: quality-analysis-report
+          name: ${{ github.run_number }}_${{ env.SHORT_SHA }}_quality_analysis_report
           path: |
             quality/analysis/
             !quality/analysis/dc-data/**
           if-no-files-found: warn
-

@@ -62,6 +62,90 @@ SEVERITY_MAP = {
 }
 
 
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _load_checkstyle_root(artifact: Path, result: dict) -> ET.Element | None:
+    """
+    Load and parse the Checkstyle XML artifact.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to the Checkstyle XML report.
+    result : dict
+        Result dictionary updated on parse failure.
+
+    Returns
+    -------
+    ET.Element | None
+        Parsed XML root element, or None on failure.
+    """
+    try:
+        tree = ET.parse(artifact)
+        return tree.getroot()
+    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"Checkstyle parse error: {error}"
+        return None
+
+
+def _to_int(value: str) -> int:
+    """
+    Convert a numeric string to int safely.
+
+    Parameters
+    ----------
+    value : str
+        String value from an XML attribute.
+
+    Returns
+    -------
+    int
+        Parsed integer value, or 0 if not numeric.
+    """
+    return int(value) if value.isdigit() else 0
+
+
+def _build_checkstyle_finding(
+    file_path: str,
+    error_node: ET.Element,
+) -> tuple[dict, str]:
+    """
+    Convert one Checkstyle <error> node into a normalized finding.
+
+    Parameters
+    ----------
+    file_path : str
+        Source file path from the parent <file> node.
+    error_node : ET.Element
+        Checkstyle <error> element.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    native_severity = error_node.attrib.get("severity", "info")
+    normalized_severity = SEVERITY_MAP.get(native_severity, "low")
+
+    finding = {
+        "file": file_path,
+        "line": _to_int(error_node.attrib.get("line", "0")),
+        "column": _to_int(error_node.attrib.get("column", "0")),
+        "severity": normalized_severity,
+        "native_severity": native_severity,
+        "message": error_node.attrib.get("message", ""),
+        "rule": error_node.attrib.get("source", "unknown"),
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
+
 def parse_checkstyle(raw_dir: Path) -> dict:
     """
     Parse Checkstyle XML and return a standardized result dictionary.
@@ -84,8 +168,7 @@ def parse_checkstyle(raw_dir: Path) -> dict:
     - Missing artifact sets artifact_present=False and runtime_error=True.
     - Malformed XML sets runtime_error=True and records the error in metadata.
     """
-    tool_name = "checkstyle"
-    result = base_tool_result(tool_name)
+    result = base_tool_result("checkstyle")
     artifact = raw_dir / "checkstyle.xml"
 
     if not artifact.exists():
@@ -96,41 +179,25 @@ def parse_checkstyle(raw_dir: Path) -> dict:
     result["artifact_present"] = True
     result["executed"] = True
 
-    try:
-        tree = ET.parse(artifact)
-        root = tree.getroot()
-        findings = []
+    root = _load_checkstyle_root(artifact, result)
+    if root is None:
+        return result
 
-        for file_node in root.findall("file"):
-            file_path = file_node.attrib.get("name", "unknown")
+    findings: list[dict] = []
 
-            for error_node in file_node.findall("error"):
-                native_severity = error_node.attrib.get("severity", "info")
-                message = error_node.attrib.get("message", "")
-                line = error_node.attrib.get("line", "0")
-                column = error_node.attrib.get("column", "0")
-                rule = error_node.attrib.get("source", "unknown")
+    for file_node in root.findall("file"):
+        file_path = file_node.attrib.get("name", "unknown")
 
-                normalized_severity = SEVERITY_MAP.get(native_severity, "low")
-                result["severity_counts"][normalized_severity] += 1
+        for error_node in file_node.findall("error"):
+            finding, normalized_severity = _build_checkstyle_finding(
+                file_path,
+                error_node,
+            )
+            result["severity_counts"][normalized_severity] += 1
+            findings.append(finding)
 
-                finding = {
-                    "file": file_path,
-                    "line": int(line) if line.isdigit() else 0,
-                    "column": int(column) if column.isdigit() else 0,
-                    "severity": normalized_severity,
-                    "native_severity": native_severity,
-                    "message": message,
-                    "rule": rule,
-                }
-                findings.append(finding)
-
-        result["findings"] = findings
-        result["violation_count"] = len(findings)
-        result["max_severity"] = determine_max_severity(result["severity_counts"])
-
-    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Checkstyle parse error: {error}"
+    result["findings"] = findings
+    result["violation_count"] = len(findings)
+    result["max_severity"] = determine_max_severity(result["severity_counts"])
 
     return result

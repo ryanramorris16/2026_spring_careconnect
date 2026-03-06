@@ -69,6 +69,138 @@ SEVERITY_MAP = {
 }
 
 
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _load_spotbugs_root(artifact: Path, result: dict) -> ET.Element | None:
+    """
+    Load and parse the SpotBugs XML artifact.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to the SpotBugs XML report.
+    result : dict
+        Result dictionary updated on parse failure.
+
+    Returns
+    -------
+    ET.Element | None
+        Parsed XML root element, or None on failure.
+    """
+    try:
+        tree = ET.parse(artifact)
+        return tree.getroot()
+    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"SpotBugs parse error: {error}"
+        return None
+
+
+def _extract_source_info(bug: ET.Element) -> tuple[str, int]:
+    """
+    Extract source file and starting line from a BugInstance.
+
+    Parameters
+    ----------
+    bug : ET.Element
+        SpotBugs BugInstance element.
+
+    Returns
+    -------
+    tuple[str, int]
+        Source file path and starting line number.
+    """
+    source_line = bug.find("SourceLine")
+    if source_line is None:
+        return "unknown", 0
+
+    source_file = source_line.attrib.get("sourcepath", "unknown")
+    line_start = int(source_line.attrib.get("start", 0))
+    return source_file, line_start
+
+
+def _extract_message(bug: ET.Element) -> str:
+    """
+    Extract the short human-readable message from a BugInstance.
+
+    Parameters
+    ----------
+    bug : ET.Element
+        SpotBugs BugInstance element.
+
+    Returns
+    -------
+    str
+        Short message text, or empty string if unavailable.
+    """
+    short_message = bug.find("ShortMessage")
+    if short_message is not None and short_message.text:
+        return short_message.text.strip()
+    return ""
+
+
+def _extract_class_name(bug: ET.Element) -> str:
+    """
+    Extract the Java class name from a BugInstance.
+
+    Parameters
+    ----------
+    bug : ET.Element
+        SpotBugs BugInstance element.
+
+    Returns
+    -------
+    str
+        Java class name, or 'unknown' if unavailable.
+    """
+    class_node = bug.find("Class")
+    if class_node is not None:
+        return class_node.attrib.get("classname", "unknown")
+    return "unknown"
+
+
+def _build_spotbugs_finding(bug: ET.Element) -> tuple[dict, str]:
+    """
+    Convert one SpotBugs BugInstance into a normalized finding.
+
+    Parameters
+    ----------
+    bug : ET.Element
+        SpotBugs BugInstance element.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    native_priority = bug.attrib.get("priority", "")
+    normalized_severity = SEVERITY_MAP.get(native_priority, "info")
+
+    source_file, line_start = _extract_source_info(bug)
+    message = _extract_message(bug)
+    class_name = _extract_class_name(bug)
+
+    finding = {
+        "file": source_file,
+        "line": line_start,
+        "severity": normalized_severity,
+        "native_severity": (
+            f"priority {native_priority}" if native_priority else "unknown"
+        ),
+        "rule": bug.attrib.get("type", "unknown"),
+        "category": bug.attrib.get("category", "unknown"),
+        "class": class_name,
+        "message": message,
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
+
 def parse_spotbugs(raw_dir: Path) -> dict:
     """
     Parse spotbugs.xml and return a standardized result dictionary.
@@ -91,8 +223,7 @@ def parse_spotbugs(raw_dir: Path) -> dict:
     - Missing artifact sets artifact_present=False and runtime_error=True.
     - Malformed XML sets runtime_error=True and records the error in metadata.
     """
-    tool_name = "spotbugs"
-    result = base_tool_result(tool_name)
+    result = base_tool_result("spotbugs")
     artifact = raw_dir / "spotbugs.xml"
 
     if not artifact.exists():
@@ -103,58 +234,19 @@ def parse_spotbugs(raw_dir: Path) -> dict:
     result["artifact_present"] = True
     result["executed"] = True
 
-    try:
-        tree = ET.parse(artifact)
-        root = tree.getroot()
-        findings = []
+    root = _load_spotbugs_root(artifact, result)
+    if root is None:
+        return result
 
-        for bug in root.iter("BugInstance"):
-            native_priority = bug.attrib.get("priority", "")
-            normalized_severity = SEVERITY_MAP.get(native_priority, "info")
-            result["severity_counts"][normalized_severity] += 1
+    findings: list[dict] = []
 
-            source_line = bug.find("SourceLine")
-            if source_line is not None:
-                source_file = source_line.attrib.get("sourcepath", "unknown")
-                line_start = int(source_line.attrib.get("start", 0))
-            else:
-                source_file = "unknown"
-                line_start = 0
+    for bug in root.iter("BugInstance"):
+        finding, normalized_severity = _build_spotbugs_finding(bug)
+        result["severity_counts"][normalized_severity] += 1
+        findings.append(finding)
 
-            short_msg = bug.find("ShortMessage")
-            message = (
-                short_msg.text.strip()
-                if short_msg is not None and short_msg.text
-                else ""
-            )
-
-            class_node = bug.find("Class")
-            class_name = (
-                class_node.attrib.get("classname", "unknown")
-                if class_node is not None
-                else "unknown"
-            )
-
-            finding = {
-                "file": source_file,
-                "line": line_start,
-                "severity": normalized_severity,
-                "native_severity": (
-                    f"priority {native_priority}" if native_priority else "unknown"
-                ),
-                "rule": bug.attrib.get("type", "unknown"),
-                "category": bug.attrib.get("category", "unknown"),
-                "class": class_name,
-                "message": message,
-            }
-            findings.append(finding)
-
-        result["findings"] = findings
-        result["violation_count"] = len(findings)
-        result["max_severity"] = determine_max_severity(result["severity_counts"])
-
-    except (ET.ParseError, OSError, TypeError, ValueError, KeyError) as error:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"SpotBugs parse error: {error}"
+    result["findings"] = findings
+    result["violation_count"] = len(findings)
+    result["max_severity"] = determine_max_severity(result["severity_counts"])
 
     return result

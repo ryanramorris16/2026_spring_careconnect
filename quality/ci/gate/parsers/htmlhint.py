@@ -56,6 +56,92 @@ SEVERITY_MAP = {
 }
 
 
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _load_htmlhint_data(artifact: Path, result: dict) -> list:
+    """
+    Load the HTMLHint JSON artifact safely.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to htmlhint.json.
+    result : dict
+        Result dictionary updated on load failure.
+
+    Returns
+    -------
+    list
+        Parsed list of file results, or an empty list when the JSON
+        structure is not a list or loading fails.
+    """
+    try:
+        with open(artifact, "r", encoding="utf-8") as file_handle:
+            data = json.load(file_handle)
+    except (OSError, TypeError, ValueError, KeyError) as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"HTMLHint parse error: {error}"
+        return []
+
+    return data if isinstance(data, list) else []
+
+
+def _extract_rule_id(rule_value: object) -> str:
+    """
+    Extract the HTMLHint rule identifier.
+
+    Parameters
+    ----------
+    rule_value : object
+        Rule field from an HTMLHint message.
+
+    Returns
+    -------
+    str
+        Rule identifier as a string.
+    """
+    if isinstance(rule_value, dict):
+        return rule_value.get("id", "unknown")
+    return str(rule_value)
+
+
+def _build_htmlhint_finding(file_path: str, message: dict) -> tuple[dict, str]:
+    """
+    Convert one HTMLHint message into a normalized finding.
+
+    Parameters
+    ----------
+    file_path : str
+        Source file path for the message.
+    message : dict
+        Raw HTMLHint message dictionary.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    native_severity = (message.get("type") or "warning").lower()
+    normalized_severity = SEVERITY_MAP.get(native_severity, "low")
+
+    finding = {
+        "file": file_path,
+        "line": message.get("line", 0),
+        "column": message.get("col", 0),
+        "severity": normalized_severity,
+        "native_severity": native_severity,
+        "rule": _extract_rule_id(message.get("rule", {})),
+        "message": message.get("message", ""),
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
+
 def parse_htmlhint(raw_dir: Path) -> dict:
     """
     Parse htmlhint.json and return a standardized result dictionary.
@@ -89,45 +175,23 @@ def parse_htmlhint(raw_dir: Path) -> dict:
     result["artifact_present"] = True
     result["executed"] = True
 
-    try:
-        with open(artifact, "r", encoding="utf-8") as file_handle:
-            data = json.load(file_handle)
+    file_results = _load_htmlhint_data(artifact, result)
+    if result["runtime_error"]:
+        return result
 
-        file_results = data if isinstance(data, list) else []
-        findings = []
+    findings: list[dict] = []
 
-        for file_result in file_results:
-            file_path = file_result.get("file", file_result.get("filePath", "unknown"))
-            messages = file_result.get("messages", [])
+    for file_result in file_results:
+        file_path = file_result.get("file", file_result.get("filePath", "unknown"))
+        messages = file_result.get("messages", [])
 
-            for msg in messages:
-                native_sev = (msg.get("type") or "warning").lower()
-                norm_sev = SEVERITY_MAP.get(native_sev, "low")
-                result["severity_counts"][norm_sev] += 1
+        for message in messages:
+            finding, normalized_severity = _build_htmlhint_finding(file_path, message)
+            result["severity_counts"][normalized_severity] += 1
+            findings.append(finding)
 
-                rule = msg.get("rule", {})
-                rule_id = (
-                    rule.get("id", "unknown") if isinstance(rule, dict) else str(rule)
-                )
-
-                findings.append(
-                    {
-                        "file": file_path,
-                        "line": msg.get("line", 0),
-                        "column": msg.get("col", 0),
-                        "severity": norm_sev,
-                        "native_severity": native_sev,
-                        "rule": rule_id,
-                        "message": msg.get("message", ""),
-                    }
-                )
-
-        result["findings"] = findings
-        result["violation_count"] = len(findings)
-        result["max_severity"] = determine_max_severity(result["severity_counts"])
-
-    except (OSError, TypeError, ValueError, KeyError) as error:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"HTMLHint parse error: {error}"
+    result["findings"] = findings
+    result["violation_count"] = len(findings)
+    result["max_severity"] = determine_max_severity(result["severity_counts"])
 
     return result

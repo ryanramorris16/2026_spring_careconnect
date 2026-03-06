@@ -264,19 +264,24 @@ LEGEND_BLOCK = """
         </table>
     </div>"""
 
+# ----------------------------------------------------------
+# Report assembly helpers
+# ----------------------------------------------------------
 
-def build_html_report(evaluated_doc: dict, env: dict) -> str:
-    """Build the complete HTML report from evaluated results."""
-    overall_block = bool(evaluated_doc.get("overall_block", True))
-    blocking_results = evaluated_doc.get("blocking_results", [])
-    non_blocking_results = evaluated_doc.get("non_blocking_results", [])
-    all_results = blocking_results + non_blocking_results
+def _build_banner(overall_block: bool) -> tuple[str, str]:
+    """
+    Build the banner color and text shown at the top of the report.
 
-    sha_short = env["sha"][:7] if env.get("sha") else "unknown"
-    run_url = f"{env['server_url']}/{env['repository']}/actions/runs/{env['run_id']}"
-    commit_url = f"{env['server_url']}/{env['repository']}/commit/{env['sha']}"
-    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    Parameters
+    ----------
+    overall_block : bool
+        True when one or more enforced tools failed policy.
 
+    Returns
+    -------
+    tuple[str, str]
+        Banner color and banner message.
+    """
     banner_color = "#c0392b" if overall_block else "#27ae60"
     banner_text = (
         "BLOCKED — One or more required checks failed. "
@@ -284,9 +289,65 @@ def build_html_report(evaluated_doc: dict, env: dict) -> str:
         if overall_block
         else "APPROVED — All required checks passed."
     )
+    return banner_color, banner_text
 
-    summary_rows = "".join(_summary_row(result) for result in all_results)
 
+def _build_run_metadata(env: dict) -> tuple[str, str, str]:
+    """
+    Build run-specific metadata used in the report header.
+
+    Parameters
+    ----------
+    env : dict
+        Environment metadata collected by report.py.
+
+    Returns
+    -------
+    tuple[str, str, str]
+        Short SHA, run URL, and commit URL.
+    """
+    sha_short = env["sha"][:7] if env.get("sha") else "unknown"
+    run_url = f"{env['server_url']}/{env['repository']}/actions/runs/{env['run_id']}"
+    commit_url = f"{env['server_url']}/{env['repository']}/commit/{env['sha']}"
+    return sha_short, run_url, commit_url
+
+
+def _build_summary_rows(all_results: list[dict]) -> str:
+    """
+    Render the summary table rows for all evaluated tools.
+
+    Parameters
+    ----------
+    all_results : list[dict]
+        Combined blocking and non-blocking evaluated results.
+
+    Returns
+    -------
+    str
+        HTML table rows for the summary table.
+    """
+    return "".join(_summary_row(result) for result in all_results)
+
+
+def _build_tool_sections(
+    blocking_results: list[dict],
+    non_blocking_results: list[dict],
+) -> tuple[str, str]:
+    """
+    Render the enforced and advisory tool sections.
+
+    Parameters
+    ----------
+    blocking_results : list[dict]
+        Evaluated results for enforced tools.
+    non_blocking_results : list[dict]
+        Evaluated results for advisory tools.
+
+    Returns
+    -------
+    tuple[str, str]
+        HTML for enforced-tool sections and advisory-tool sections.
+    """
     blocking_sections = (
         "\n".join(_tool_section(result) for result in blocking_results)
         or "<p><em>No enforced tools configured.</em></p>"
@@ -297,6 +358,52 @@ def build_html_report(evaluated_doc: dict, env: dict) -> str:
         or "<p><em>No advisory tools configured.</em></p>"
     )
 
+    return blocking_sections, non_blocking_sections
+
+
+# ----------------------------------------------------------
+# Main report builder
+# ----------------------------------------------------------
+
+def build_html_report(evaluated_doc: dict, env: dict) -> str:
+    """
+    Build the complete HTML report from evaluated results.
+
+    Parameters
+    ----------
+    evaluated_doc : dict
+        Evaluated quality gate document.
+    env : dict
+        Environment metadata for report rendering.
+
+    Returns
+    -------
+    str
+        Full HTML report string.
+    """
+    # ------------------------------------------------------
+    # Extract evaluated result groups
+    # ------------------------------------------------------
+    overall_block = bool(evaluated_doc.get("overall_block", True))
+    blocking_results = evaluated_doc.get("blocking_results", [])
+    non_blocking_results = evaluated_doc.get("non_blocking_results", [])
+    all_results = blocking_results + non_blocking_results
+
+    # ------------------------------------------------------
+    # Build reusable display values
+    # ------------------------------------------------------
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    banner_color, banner_text = _build_banner(overall_block)
+    sha_short, run_url, commit_url = _build_run_metadata(env)
+    summary_rows = _build_summary_rows(all_results)
+    blocking_sections, non_blocking_sections = _build_tool_sections(
+        blocking_results,
+        non_blocking_results,
+    )
+
+    # ------------------------------------------------------
+    # Render final HTML document
+    # ------------------------------------------------------
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>

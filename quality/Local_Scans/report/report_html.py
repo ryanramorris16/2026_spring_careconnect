@@ -5,7 +5,7 @@ Builds the complete HTML report string from parsed findings.
 Matches the CI report style from quality/ci/gate/report.py.
 
 Functions:
-  build_html(context) → str
+  build_html(context) -> str
 
 context dict keys:
   generated_at  — UTC timestamp string
@@ -71,46 +71,39 @@ code { background: #f0f2f5; padding: 2px 6px; border-radius: 3px;
 .tool-title { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
 .tool-name { font-weight: bold; font-size: 1.05em;
              font-family: "SFMono-Regular", Consolas, monospace; }
-.tool-category { color: #7f8c8d; font-size: 0.85em; }
-.tool-meta { display: flex; align-items: center;
-             margin-bottom: 8px; font-size: 0.9em; }
+.tool-meta { margin-bottom: 8px; font-size: 0.9em; }
 .sev-counts { margin-top: 6px; }
 .tool-findings { padding: 16px 20px; }
-.section-header { background: #2c3e50; color: #fff; padding: 10px 20px;
-                  border-radius: 6px; margin: 24px 0 12px;
-                  font-weight: bold; font-size: 1.05em; }
 footer { margin-top: 32px; padding-top: 12px;
          border-top: 1px solid #dde; color: #7f8c8d; font-size: 0.85em; }
-a.tool-link { color: #2980b9; text-decoration: none;
-              font-family: "SFMono-Regular", Consolas, monospace; }
-a.tool-link:hover { text-decoration: underline; }
-a { color: #2980b9; text-decoration: none; }
-a:hover { text-decoration: underline; }
 """
 
 # ----------------------------------------------------------
-# Component builders
+# Small UI helpers
 # ----------------------------------------------------------
 
-def _severity_badge(sev: str) -> str:
-    sev = (sev or "info").lower()
-    color = SEVERITY_COLORS.get(sev, "#95a5a6")
+def _severity_badge(severity: str) -> str:
+    """Render a severity badge."""
+    severity = (severity or "info").lower()
+    color = SEVERITY_COLORS.get(severity, "#95a5a6")
     return (
         f'<span style="background:{color};color:#fff;padding:2px 8px;'
         f'border-radius:4px;font-size:0.85em;font-weight:bold;">'
-        f'{sev.upper()}</span>'
+        f"{severity.upper()}</span>"
     )
 
 
 def _status_html(status: str) -> str:
+    """Render pass/fail/skipped status text."""
     if status == "passed":
-        return '<span style="color:#27ae60;">&#x2705; PASSED</span>'
+        return '<span style="color:#27ae60;">PASSED</span>'
     if status == "failed":
-        return '<span style="color:#c0392b;">&#x274C; FAILED</span>'
-    return '<span style="color:#7f8c8d;">&#x23F8;&#xFE0F; SKIPPED</span>'
+        return '<span style="color:#c0392b;">FAILED</span>'
+    return '<span style="color:#7f8c8d;">SKIPPED</span>'
 
 
 def _border_color(status: str) -> str:
+    """Return the left-border color for a tool section."""
     if status == "passed":
         return "#27ae60"
     if status == "failed":
@@ -119,15 +112,183 @@ def _border_color(status: str) -> str:
 
 
 def _sev_pills(counts: dict) -> str:
+    """Render severity summary pills."""
     pills = ""
+
     for level in ["critical", "high", "medium", "low", "info"]:
-        c = counts.get(level, 0)
-        if c:
+        count = counts.get(level, 0)
+        if count:
             color = SEVERITY_COLORS.get(level, "#95a5a6")
             pills += (
                 f'<span style="background:{color};color:#fff;'
                 f'padding:2px 8px;border-radius:4px;'
                 f'font-size:0.8em;margin-right:4px;">'
-                f'{level.upper()}: {c}</span>'
+                f"{level.upper()}: {count}</span>"
             )
+
     return pills or '<span style="color:#7f8c8d;">No findings</span>'
+
+
+# ----------------------------------------------------------
+# Findings and section builders
+# ----------------------------------------------------------
+
+def _finding_rows(findings: list) -> str:
+    """Render HTML table rows for all findings in a tool section."""
+    rows = ""
+
+    for finding in findings:
+        rows += (
+            "<tr>"
+            f"<td>{_severity_badge(finding.get('severity'))}</td>"
+            f"<td><code>{finding.get('file', '')}</code></td>"
+            f"<td>{finding.get('line', '')}</td>"
+            f"<td>{finding.get('rule', '')}</td>"
+            f"<td>{finding.get('message', '')}</td>"
+            "</tr>"
+        )
+
+    if not rows:
+        rows = '<tr><td colspan="5" style="color:#7f8c8d;">No findings</td></tr>'
+
+    return rows
+
+
+def _tool_section(
+    tool_name: str,
+    status: str,
+    findings: list,
+    severity_counts: dict,
+) -> str:
+    """
+    Build one tool section including status, severity summary,
+    and findings table.
+    """
+    return f"""
+<div class="tool-section" style="border-left:6px solid {_border_color(status)};">
+<div class="tool-header">
+<div class="tool-title">
+<span class="tool-name">{tool_name}</span>
+</div>
+<div class="tool-meta">{_status_html(status)}</div>
+<div class="sev-counts">{_sev_pills(severity_counts)}</div>
+</div>
+
+<div class="tool-findings">
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>File</th>
+<th>Line</th>
+<th>Rule</th>
+<th>Message</th>
+</tr>
+</thead>
+<tbody>
+{_finding_rows(findings)}
+</tbody>
+</table>
+</div>
+</div>
+"""
+
+
+def _build_sections(context: dict) -> str:
+    """Render all tool sections for the local report."""
+    sections = [
+        _tool_section(
+            "Flutter Analyze",
+            context["fl_status"],
+            context["fl_findings"],
+            context["fl_sev"],
+        ),
+        _tool_section(
+            "Checkstyle",
+            context["cs_status"],
+            context["cs_findings"],
+            context["cs_sev"],
+        ),
+        _tool_section(
+            "PMD",
+            context["pmd_status"],
+            context["pmd_findings"],
+            context["pmd_sev"],
+        ),
+        _tool_section(
+            "SpotBugs",
+            context["sb_status"],
+            context["sb_findings"],
+            context["sb_sev"],
+        ),
+    ]
+    return "\n".join(sections)
+
+
+def _build_banner(context: dict) -> tuple[str, str]:
+    """Build banner color and banner text."""
+    banner_color = "#c0392b" if context["failed"] else "#27ae60"
+    banner_text = (
+        "BLOCKED — One or more required checks failed."
+        if context["failed"]
+        else "APPROVED — All required checks passed."
+    )
+    return banner_color, banner_text
+
+
+# ----------------------------------------------------------
+# Main report builder
+# ----------------------------------------------------------
+
+def build_html(context: dict) -> str:
+    """
+    Build the complete local HTML report.
+
+    Parameters
+    ----------
+    context : dict
+        Report context produced by generate_report.py.
+
+    Returns
+    -------
+    str
+        Full HTML document.
+    """
+    banner_color, banner_text = _build_banner(context)
+    sections_html = _build_sections(context)
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CareConnect Local Quality Gate</title>
+<style>{CSS}</style>
+</head>
+
+<body>
+
+<h1>CareConnect Local Quality Gate Report</h1>
+
+<div class="banner" style="background:{banner_color};">
+{banner_text}
+</div>
+
+<div class="info-card">
+<table class="info-table">
+<tr><td><strong>Generated</strong></td><td>{context["generated_at"]}</td></tr>
+<tr><td><strong>User</strong></td><td>{context["scan_user"]}</td></tr>
+<tr><td><strong>Repository</strong></td><td><code>{context["repo_root"]}</code></td></tr>
+</table>
+</div>
+
+<h2>Tool Results</h2>
+
+{sections_html}
+
+<footer>
+Generated by CareConnect Local Quality Gate — {context["generated_at"]}
+</footer>
+
+</body>
+</html>
+"""

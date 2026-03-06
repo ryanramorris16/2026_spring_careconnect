@@ -365,9 +365,9 @@ def evaluate() -> bool:
 
 
 if __name__ == "__main__":
-    is_blocked = evaluate()
+    blocked = evaluate()
 
-    if is_blocked:
+    if blocked:
         print("Policy violation detected. Merge blocked.")
         raise SystemExit(1)
 

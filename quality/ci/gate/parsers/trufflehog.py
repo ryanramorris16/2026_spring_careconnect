@@ -72,6 +72,143 @@ from quality.ci.gate.schemas import base_tool_result
 from quality.ci.gate.utils import determine_max_severity
 
 
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _read_trufflehog_lines(artifact: Path, result: dict) -> list[str] | None:
+    """
+    Read the TruffleHog JSONL artifact safely.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to the JSONL artifact.
+    result : dict
+        Output result dictionary updated on read failure.
+
+    Returns
+    -------
+    list[str] | None
+        File lines on success, otherwise None.
+    """
+    try:
+        return artifact.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {error}"
+        return None
+
+
+def _parse_record(raw_line: str) -> dict | None:
+    """
+    Parse one JSONL line into a dictionary.
+
+    Parameters
+    ----------
+    raw_line : str
+        One stripped JSONL line.
+
+    Returns
+    -------
+    dict | None
+        Parsed record or None if the line is invalid JSON.
+    """
+    try:
+        parsed = json.loads(raw_line)
+    except json.JSONDecodeError:
+        return None
+
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _extract_filesystem_data(record: dict) -> dict:
+    """
+    Extract filesystem metadata from a TruffleHog record.
+
+    Parameters
+    ----------
+    record : dict
+        Parsed TruffleHog record.
+
+    Returns
+    -------
+    dict
+        Filesystem sub-dictionary if present, otherwise empty dict.
+    """
+    source_metadata = record.get("SourceMetadata") or {}
+    source_data = source_metadata.get("Data") or {}
+    filesystem_data = source_data.get("Filesystem") or {}
+    return filesystem_data if isinstance(filesystem_data, dict) else {}
+
+
+def _is_self_referential(file_path: str | None) -> bool:
+    """
+    Detect whether TruffleHog scanned its own output artifact.
+
+    Parameters
+    ----------
+    file_path : str | None
+        Repository-relative file path.
+
+    Returns
+    -------
+    bool
+        True when the finding points to trufflehog.jsonl itself.
+    """
+    return bool(file_path and file_path.endswith("quality/analysis/raw/trufflehog.jsonl"))
+
+
+def _build_finding(record: dict) -> tuple[dict, str]:
+    """
+    Convert one TruffleHog record into a normalized finding.
+
+    Parameters
+    ----------
+    record : dict
+        Parsed TruffleHog record.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    filesystem_data = _extract_filesystem_data(record)
+    file_path = _repo_relpath(filesystem_data.get("file"))
+    line_number = filesystem_data.get("line")
+
+    detector = record.get("DetectorName") or "TruffleHog"
+    verified = bool(record.get("Verified", False))
+    normalized_severity = "critical" if verified else "high"
+
+    extra_data = record.get("ExtraData") or {}
+    rotation_guide = (
+        extra_data.get("rotation_guide")
+        if isinstance(extra_data, dict)
+        else None
+    )
+
+    message = (
+        f"{detector} secret detected "
+        f"({'VERIFIED' if verified else 'unverified'})"
+    )
+
+    finding = {
+        "severity": normalized_severity,
+        "native_severity": "verified" if verified else "unverified",
+        "rule": detector,
+        "message": message,
+        "file": file_path or "unknown",
+        "line": line_number if line_number is not None else 0,
+        "rule_url": rotation_guide or "",
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
+
 def parse_trufflehog(raw_dir: Path) -> dict:
     """
     Parse TruffleHog JSONL and return a standardized result dictionary.
@@ -96,8 +233,7 @@ def parse_trufflehog(raw_dir: Path) -> dict:
     - Malformed lines are counted in metadata and parsing continues.
     - Empty file is treated as a valid execution with zero violations.
     """
-    tool_name = "trufflehog"
-    result = base_tool_result(tool_name)
+    result = base_tool_result("trufflehog")
     artifact = raw_dir / "trufflehog.jsonl"
 
     if not artifact.exists():
@@ -108,59 +244,31 @@ def parse_trufflehog(raw_dir: Path) -> dict:
 
     result["artifact_present"] = True
 
-    try:
-        lines = artifact.read_text(encoding="utf-8", errors="replace").splitlines()
-    except OSError as error:
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {error}"
+    lines = _read_trufflehog_lines(artifact, result)
+    if lines is None:
         return result
 
     result["executed"] = True
-    findings = []
+    findings: list[dict] = []
     malformed_count = 0
 
     for raw_line in lines:
-        raw_line = raw_line.strip()
-
-        if not raw_line:
+        stripped_line = raw_line.strip()
+        if not stripped_line:
             continue
 
-        try:
-            rec = json.loads(raw_line)
-        except json.JSONDecodeError:
+        record = _parse_record(stripped_line)
+        if record is None:
             malformed_count += 1
             continue
 
-        fs = (rec.get("SourceMetadata") or {}).get("Data", {}).get("Filesystem", {})
-        file_path = _repo_relpath(fs.get("file"))
-        line_no = fs.get("line")
-
-        if file_path and file_path.endswith("quality/analysis/raw/trufflehog.jsonl"):
+        filesystem_data = _extract_filesystem_data(record)
+        file_path = _repo_relpath(filesystem_data.get("file"))
+        if _is_self_referential(file_path):
             continue
 
-        detector = rec.get("DetectorName") or "TruffleHog"
-        verified = bool(rec.get("Verified", False))
-        normalized_severity = "critical" if verified else "high"
+        finding, normalized_severity = _build_finding(record)
         result["severity_counts"][normalized_severity] += 1
-
-        extra = rec.get("ExtraData") or {}
-        rotation_guide = (
-            extra.get("rotation_guide") if isinstance(extra, dict) else None
-        )
-
-        message = (
-            f"{detector} secret detected ({'VERIFIED' if verified else 'unverified'})"
-        )
-
-        finding = {
-            "severity": normalized_severity,
-            "native_severity": "verified" if verified else "unverified",
-            "rule": detector,
-            "message": message,
-            "file": file_path or "unknown",
-            "line": line_no if line_no is not None else 0,
-            "rule_url": rotation_guide or "",
-        }
         findings.append(finding)
 
     result["findings"] = findings

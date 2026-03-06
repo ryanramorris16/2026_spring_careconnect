@@ -24,9 +24,11 @@ TOOLS_DIR="${SCRIPT_DIR}/tools"
 export PYTHONPATH="${REPO_ROOT}"
 
 TIMESTAMP="$(date '+%Y-%m-%d-%H%M%S')"
+COMMIT_SHA="$(git -C "${REPO_ROOT}" rev-parse --short HEAD 2>/dev/null || echo "no-git")"
+
 unset TMPDIR
 WORK_DIR="$(python3 -c "import tempfile; print(tempfile.mkdtemp())")"
-ZIP_NAME="careconnect-local-report-${TIMESTAMP}.zip"
+ZIP_NAME="${TIMESTAMP}-${COMMIT_SHA}-local-quality-report.zip"
 ZIP_PATH="${HOME}/Downloads/${ZIP_NAME}"
 GENERATED_AT="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 SCAN_USER="$(whoami)"
