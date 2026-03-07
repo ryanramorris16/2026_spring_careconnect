@@ -385,7 +385,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logChatSessionStart - valid inputs - logs "
         + "audit entry with correct action and metadata")
-    void logChatSessionStart_validInputs_logsAuditEntry() {
+    void logChatSessionStart_validInputs_logsAuditEntry() throws Exception {
       service.logChatSessionStart(
           1L, "session-123", "TestBrowser/1.0", "10.0.0.1");
 
@@ -411,7 +411,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logChatSessionStart - null userId - logs "
         + "with anonymous user")
-    void logChatSessionStart_nullUserId_logsAnonymous() {
+    void logChatSessionStart_nullUserId_logsAnonymous() throws Exception {
       service.logChatSessionStart(
           null, "session-456", "Agent/2.0", "192.168.1.1");
 
@@ -428,7 +428,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logChatSessionStart - null userAgent and "
         + "null IP - handles gracefully")
-    void logChatSessionStart_nullUserAgentAndIp_handlesGracefully() {
+    void logChatSessionStart_nullUserAgentAndIp_handlesGracefully() throws Exception {
       service.logChatSessionStart(
           1L, "session-789", null, null);
 
@@ -450,7 +450,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logChatSessionStart - long userAgent - "
         + "truncates to 100 chars")
-    void logChatSessionStart_longUserAgent_truncates() {
+    void logChatSessionStart_longUserAgent_truncates() throws Exception {
       String longUa = "X".repeat(200);
       service.logChatSessionStart(
           1L, "session-trunc", longUa, "1.2.3.4");
@@ -470,7 +470,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logChatSessionStart - non-IPv4 address - "
         + "anonymizes to anonymized string")
-    void logChatSessionStart_nonIpv4_anonymizes() {
+    void logChatSessionStart_nonIpv4_anonymizes() throws Exception {
       service.logChatSessionStart(
           1L, "session-ipv6", "Browser/1.0",
           "fe80::1%lo0");
@@ -498,7 +498,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logMessageSent - valid inputs - logs "
         + "MESSAGE_SENT action with metadata")
-    void logMessageSent_validInputs_logsMessageSent() {
+    void logMessageSent_validInputs_logsMessageSent() throws Exception {
       service.logMessageSent(5L, "sess-1", 256, 150L);
 
       verify(mockLogger).info(
@@ -523,7 +523,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logMessageSent - null userId - logs with "
         + "anonymous user")
-    void logMessageSent_nullUserId_logsAnonymous() {
+    void logMessageSent_nullUserId_logsAnonymous() throws Exception {
       service.logMessageSent(null, "sess-2", 100, 50L);
 
       verify(mockLogger).info(
@@ -539,7 +539,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logMessageSent - zero length and time - "
         + "logs valid entry")
-    void logMessageSent_zeroValues_logsValidEntry() {
+    void logMessageSent_zeroValues_logsValidEntry() throws Exception {
       service.logMessageSent(1L, "sess-zero", 0, 0L);
 
       verify(mockLogger).info(
@@ -569,7 +569,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logAiResponse - valid inputs - logs "
         + "AI_RESPONSE_GENERATED action")
-    void logAiResponse_validInputs_logsAiResponseGenerated() {
+    void logAiResponse_validInputs_logsAiResponseGenerated() throws Exception {
       service.logAiResponse(10L, "sess-ai", 512, 300L);
 
       verify(mockLogger).info(
@@ -594,7 +594,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logAiResponse - null userId - logs with "
         + "anonymous user")
-    void logAiResponse_nullUserId_logsAnonymous() {
+    void logAiResponse_nullUserId_logsAnonymous() throws Exception {
       service.logAiResponse(null, "sess-ai2", 100, 50L);
 
       verify(mockLogger).info(
@@ -618,7 +618,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logConversationDeleted - valid inputs - "
         + "logs CONVERSATION_DELETED action")
-    void logConversationDeleted_validInputs_logs() {
+    void logConversationDeleted_validInputs_logs() throws Exception {
       service.logConversationDeleted(
           7L, "sess-del", "user_requested");
 
@@ -642,7 +642,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logConversationDeleted - null userId - "
         + "logs with anonymous user")
-    void logConversationDeleted_nullUserId_logsAnonymous() {
+    void logConversationDeleted_nullUserId_logsAnonymous() throws Exception {
       service.logConversationDeleted(
           null, "sess-del2", "privacy");
 
@@ -667,7 +667,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logConversationShared - valid inputs - "
         + "logs CONVERSATION_SHARED with hashed provider")
-    void logConversationShared_validInputs_logs() {
+    void logConversationShared_validInputs_logs() throws Exception {
       service.logConversationShared(
           3L, "sess-share", 50L);
 
@@ -693,7 +693,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logConversationShared - null providerId - "
         + "logs anonymous provider")
-    void logConversationShared_nullProviderId_logsAnonymous() {
+    void logConversationShared_nullProviderId_logsAnonymous() throws Exception {
       service.logConversationShared(
           1L, "sess-share2", null);
 
@@ -713,7 +713,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logConversationShared - null userId and "
         + "null providerId - both anonymous")
-    void logConversationShared_bothNull_bothAnonymous() {
+    void logConversationShared_bothNull_bothAnonymous() throws Exception {
       service.logConversationShared(
           null, "sess-share3", null);
 
@@ -743,7 +743,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logSessionTimeout - valid inputs - logs "
         + "SESSION_TIMEOUT action")
-    void logSessionTimeout_validInputs_logsSessionTimeout() {
+    void logSessionTimeout_validInputs_logsSessionTimeout() throws Exception {
       service.logSessionTimeout(20L, "sess-to", 30);
 
       verify(mockLogger).info(
@@ -766,7 +766,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logSessionTimeout - null userId - logs "
         + "with anonymous user")
-    void logSessionTimeout_nullUserId_logsAnonymous() {
+    void logSessionTimeout_nullUserId_logsAnonymous() throws Exception {
       service.logSessionTimeout(null, "sess-to2", 15);
 
       verify(mockLogger).info(
@@ -790,7 +790,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logSystemError - valid inputs - logs "
         + "SYSTEM_ERROR action with error details")
-    void logSystemError_validInputs_logsSystemError() {
+    void logSystemError_validInputs_logsSystemError() throws Exception {
       service.logSystemError(
           15L, "sess-err", "ERR_500",
           "InternalServerError");
@@ -817,7 +817,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("logSystemError - null userId - logs with "
         + "anonymous user")
-    void logSystemError_nullUserId_logsAnonymous() {
+    void logSystemError_nullUserId_logsAnonymous() throws Exception {
       service.logSystemError(
           null, "sess-err2", "ERR_401", "Unauthorized");
 
@@ -842,7 +842,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry builder - creates entry with "
         + "all fields populated")
-    void auditLogEntry_builder_createsWithAllFields() {
+    void auditLogEntry_builder_createsWithAllFields() throws Exception {
       LocalDateTime now = LocalDateTime.now();
       Map<String, Object> meta = Map.of("key", "value");
 
@@ -867,7 +867,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry builder - creates entry with "
         + "null fields when not set")
-    void auditLogEntry_builder_nullFieldsWhenNotSet() {
+    void auditLogEntry_builder_nullFieldsWhenNotSet() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder().build();
 
@@ -882,7 +882,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry setters - modifies fields "
         + "via setters")
-    void auditLogEntry_setters_modifiesFields() {
+    void auditLogEntry_setters_modifiesFields() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder()
               .logId("initial")
@@ -910,7 +910,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry equals - equal objects "
         + "return true")
-    void auditLogEntry_equals_equalObjectsReturnTrue() {
+    void auditLogEntry_equals_equalObjectsReturnTrue() throws Exception {
       LocalDateTime now =
           LocalDateTime.of(2024, 6, 15, 12, 0);
 
@@ -940,7 +940,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry hashCode - equal objects "
         + "have same hashCode")
-    void auditLogEntry_hashCode_equalObjectsSameHash() {
+    void auditLogEntry_hashCode_equalObjectsSameHash() throws Exception {
       LocalDateTime now =
           LocalDateTime.of(2024, 6, 15, 12, 0);
 
@@ -970,7 +970,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry equals - different objects "
         + "return false")
-    void auditLogEntry_equals_differentObjectsReturnFalse() {
+    void auditLogEntry_equals_differentObjectsReturnFalse() throws Exception {
       ChatAuditService.AuditLogEntry entry1 =
           ChatAuditService.AuditLogEntry.builder()
               .logId("id-1")
@@ -989,7 +989,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry equals - compared to null - "
         + "returns false")
-    void auditLogEntry_equals_comparedToNull_returnsFalse() {
+    void auditLogEntry_equals_comparedToNull_returnsFalse() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder()
               .logId("id-1")
@@ -1001,7 +1001,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry equals - same instance - "
         + "returns true")
-    void auditLogEntry_equals_sameInstance_returnsTrue() {
+    void auditLogEntry_equals_sameInstance_returnsTrue() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder()
               .logId("id-1")
@@ -1013,7 +1013,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry toString - returns non-null "
         + "string containing field values")
-    void auditLogEntry_toString_returnsNonNull() {
+    void auditLogEntry_toString_returnsNonNull() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder()
               .logId("id-toString")
@@ -1029,7 +1029,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry canEqual - same type returns "
         + "true")
-    void auditLogEntry_canEqual_sameTypeReturnsTrue() {
+    void auditLogEntry_canEqual_sameTypeReturnsTrue() throws Exception {
       ChatAuditService.AuditLogEntry entry1 =
           ChatAuditService.AuditLogEntry.builder().build();
       ChatAuditService.AuditLogEntry entry2 =
@@ -1041,7 +1041,7 @@ class ChatAuditServiceTest {
     @Test
     @DisplayName("AuditLogEntry equals - compared to "
         + "different type - returns false")
-    void auditLogEntry_equals_differentType_returnsFalse() {
+    void auditLogEntry_equals_differentType_returnsFalse() throws Exception {
       ChatAuditService.AuditLogEntry entry =
           ChatAuditService.AuditLogEntry.builder()
               .logId("id-1")

@@ -55,7 +55,7 @@ class WebSocketConfigTest {
     private WebSocketConfig webSocketConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Instantiate and wire the config outside of Spring.
         // ReflectionTestUtils injects the three handler fields and the two @Value fields
         // that Spring would normally populate from application properties.
@@ -73,7 +73,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void registersCallNotificationHandlerOnWsCalls() {
+    void registersCallNotificationHandlerOnWsCalls() throws Exception {
         // Verifies that the call-notification handler is bound to "/ws/calls".
         webSocketConfig.registerWebSocketHandlers(registry);
 
@@ -81,7 +81,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void registersCareConnectHandlerOnDefaultEndpoint() {
+    void registersCareConnectHandlerOnDefaultEndpoint() throws Exception {
         // Verifies that the main chat/messaging handler is bound to "/ws/careconnect"
         // when the configurable endpoint property holds its default value.
         webSocketConfig.registerWebSocketHandlers(registry);
@@ -90,7 +90,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void registersNotificationHandlerOnWsNotifications() {
+    void registersNotificationHandlerOnWsNotifications() throws Exception {
         // Verifies that the push-notification handler is bound to "/ws/notifications".
         webSocketConfig.registerWebSocketHandlers(registry);
 
@@ -98,7 +98,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void registersExactlyThreeHandlers() {
+    void registersExactlyThreeHandlers() throws Exception {
         // Verifies that no extra handlers are accidentally registered — the total
         // must be exactly three (calls, careconnect, notifications).
         webSocketConfig.registerWebSocketHandlers(registry);
@@ -107,7 +107,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void setsAllowedOriginsOnAllHandlerRegistrations() {
+    void setsAllowedOriginsOnAllHandlerRegistrations() throws Exception {
         // Verifies that setAllowedOrigins("*") is called on every registered handler,
         // confirming that all WebSocket endpoints share the same origin policy.
         webSocketConfig.registerWebSocketHandlers(registry);
@@ -116,7 +116,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void callsAndCareConnectHandlersUseSockJs() {
+    void callsAndCareConnectHandlersUseSockJs() throws Exception {
         // Verifies that SockJS is enabled for /ws/calls and /ws/careconnect but NOT for
         // /ws/notifications. SockJS provides fallback transports (long-polling, etc.) for
         // environments where native WebSocket is unavailable (e.g. some corporate proxies).
@@ -128,7 +128,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void notificationHandlerDoesNotUseSockJs() {
+    void notificationHandlerDoesNotUseSockJs() throws Exception {
         // Uses separate mocks per handler registration (rather than the shared stub)
         // to individually verify that withSockJS() is called for calls and careconnect
         // but never for notifications, confirming the per-handler SockJS decision.
@@ -152,7 +152,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void usesCustomCareConnectEndpointWhenSet() {
+    void usesCustomCareConnectEndpointWhenSet() throws Exception {
         // Verifies that the careConnectEndpoint @Value field is actually used when
         // registering the handler, rather than being ignored in favour of a hardcoded path.
         ReflectionTestUtils.setField(webSocketConfig, "careConnectEndpoint", "/ws/custom");
@@ -163,7 +163,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void usesCustomAllowedOriginsWhenSet() {
+    void usesCustomAllowedOriginsWhenSet() throws Exception {
         // Verifies that a non-wildcard allowedOrigins value is propagated to all three
         // handler registrations, enabling production origin restriction.
         ReflectionTestUtils.setField(webSocketConfig, "allowedOrigins", "https://app.careconnect.com");
@@ -174,7 +174,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void defaultEndpointIsWsCareconnect() {
+    void defaultEndpointIsWsCareconnect() throws Exception {
         // Verifies that the careConnectWebSocketHandler is NOT inadvertently registered
         // on the calls or notifications paths — each handler has one distinct path.
         webSocketConfig.registerWebSocketHandlers(registry);
@@ -185,7 +185,7 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void eachHandlerRegisteredOnDistinctPath() {
+    void eachHandlerRegisteredOnDistinctPath() throws Exception {
         // Comprehensive registration check: every handler is on its own path, and
         // verifyNoMoreInteractions confirms no unexpected addHandler calls were made.
         webSocketConfig.registerWebSocketHandlers(registry);

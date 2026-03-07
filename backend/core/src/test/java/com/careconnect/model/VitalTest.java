@@ -11,7 +11,7 @@ class VitalTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Vital v = new Vital();
 
         assertThat(v).isNotNull();
@@ -30,7 +30,7 @@ class VitalTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults() {
+    void builder_defaults() throws Exception {
         Vital v = Vital.builder()
                 .patientId(1L)
                 .vitalType("HEART_RATE")
@@ -45,7 +45,7 @@ class VitalTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
 
         Vital v = Vital.builder()
@@ -76,7 +76,7 @@ class VitalTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Vital v = new Vital();
 
         v.setPatientId(7L);
@@ -97,7 +97,7 @@ class VitalTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         Vital v1 = Vital.builder()
                 .id(1L).patientId(5L).vitalType("HR").value("72")

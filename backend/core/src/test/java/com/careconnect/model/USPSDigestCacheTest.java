@@ -11,7 +11,7 @@ class USPSDigestCacheTest {
     // ─── Default constructor ──────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         USPSDigestCache cache = new USPSDigestCache();
         assertThat(cache).isNotNull();
     }
@@ -19,7 +19,7 @@ class USPSDigestCacheTest {
     // ─── Setters / Getters ────────────────────────────────────────────────────
 
     @Test
-    void settersAndGetters_updateAndReturnFields() {
+    void settersAndGetters_updateAndReturnFields() throws Exception {
         USPSDigestCache cache = new USPSDigestCache();
         Instant digestDate = Instant.parse("2025-01-15T08:00:00Z");
         Instant expiresAt = Instant.parse("2025-01-15T20:00:00Z");
@@ -36,7 +36,7 @@ class USPSDigestCacheTest {
     }
 
     @Test
-    void getId_returnsNull_beforePersist() {
+    void getId_returnsNull_beforePersist() throws Exception {
         USPSDigestCache cache = new USPSDigestCache();
         assertThat(cache.getId()).isNull();
     }

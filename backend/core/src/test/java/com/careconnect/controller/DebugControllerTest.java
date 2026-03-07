@@ -2,7 +2,9 @@ package com.careconnect.controller;
 
 import com.careconnect.model.Plan;
 import com.careconnect.repository.PlanRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.SubscriptionEnrichmentService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +43,11 @@ class DebugControllerTest {
      * Mocked to prevent real transactional logic from executing.
      */
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private DebugController controller;
     /*
@@ -48,7 +55,7 @@ class DebugControllerTest {
      */
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .build();

@@ -2,6 +2,8 @@ package com.careconnect.controller;
 
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.repository.evv.EvvRecordRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +21,10 @@ class EvvQueryControllerTest {
 
     @Mock
     private EvvRecordRepository evvRecordRepository;
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
 
     @InjectMocks
     private EvvQueryController controller;
@@ -39,7 +45,7 @@ class EvvQueryControllerTest {
     class List_BothNull {
 
         @Test
-        void callsFindAll_whenBothParamsAreNull() {
+        void callsFindAll_whenBothParamsAreNull() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, null);
@@ -48,7 +54,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void returnsResultFromFindAll() {
+        void returnsResultFromFindAll() throws Exception {
             EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findAll()).thenReturn(List.of(record));
 
@@ -58,7 +64,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByStatus_whenBothNull() {
+        void doesNotCallFindByStatus_whenBothNull() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, null);
@@ -67,7 +73,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByCaregiverIdAndStatus_whenBothNull() {
+        void doesNotCallFindByCaregiverIdAndStatus_whenBothNull() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, null);
@@ -80,7 +86,7 @@ class EvvQueryControllerTest {
     class List_StatusOnly {
 
         @Test
-        void callsFindByStatus_whenStatusProvidedAndCaregiverIdIsNull() {
+        void callsFindByStatus_whenStatusProvidedAndCaregiverIdIsNull() throws Exception {
             when(evvRecordRepository.findByStatus(STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, null);
@@ -89,7 +95,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void returnsResultFromFindByStatus() {
+        void returnsResultFromFindByStatus() throws Exception {
             EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findByStatus(STATUS)).thenReturn(List.of(record));
 
@@ -99,7 +105,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindAll_whenStatusProvided() {
+        void doesNotCallFindAll_whenStatusProvided() throws Exception {
             when(evvRecordRepository.findByStatus(STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, null);
@@ -108,7 +114,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByCaregiverIdAndStatus_whenOnlyStatusProvided() {
+        void doesNotCallFindByCaregiverIdAndStatus_whenOnlyStatusProvided() throws Exception {
             when(evvRecordRepository.findByStatus(STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, null);
@@ -117,7 +123,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void passesStatusValueCorrectlyToRepository() {
+        void passesStatusValueCorrectlyToRepository() throws Exception {
             String specificStatus = "APPROVED";
             when(evvRecordRepository.findByStatus(specificStatus)).thenReturn(List.of());
 
@@ -131,7 +137,7 @@ class EvvQueryControllerTest {
     class List_BothStatusAndCaregiverId {
 
         @Test
-        void callsFindByCaregiverIdAndStatus_whenBothProvided() {
+        void callsFindByCaregiverIdAndStatus_whenBothProvided() throws Exception {
             when(evvRecordRepository.findByCaregiverIdAndStatus(CAREGIVER_ID, STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, CAREGIVER_ID);
@@ -140,7 +146,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void returnsResultFromFindByCaregiverIdAndStatus() {
+        void returnsResultFromFindByCaregiverIdAndStatus() throws Exception {
             EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findByCaregiverIdAndStatus(CAREGIVER_ID, STATUS))
                     .thenReturn(List.of(record));
@@ -151,7 +157,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindAll_whenBothProvided() {
+        void doesNotCallFindAll_whenBothProvided() throws Exception {
             when(evvRecordRepository.findByCaregiverIdAndStatus(CAREGIVER_ID, STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, CAREGIVER_ID);
@@ -160,7 +166,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByStatus_whenBothProvided() {
+        void doesNotCallFindByStatus_whenBothProvided() throws Exception {
             when(evvRecordRepository.findByCaregiverIdAndStatus(CAREGIVER_ID, STATUS)).thenReturn(List.of());
 
             controller.list(STATUS, CAREGIVER_ID);
@@ -169,7 +175,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void passesBothArgumentsCorrectlyToRepository() {
+        void passesBothArgumentsCorrectlyToRepository() throws Exception {
             Long specificCaregiverId = 99L;
             String specificStatus = "SUBMITTED";
             when(evvRecordRepository.findByCaregiverIdAndStatus(specificCaregiverId, specificStatus))
@@ -190,7 +196,7 @@ class EvvQueryControllerTest {
         // "no filter" and the full record list is returned.
 
         @Test
-        void callsFindAll_whenOnlyCaregiverIdProvided() {
+        void callsFindAll_whenOnlyCaregiverIdProvided() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, CAREGIVER_ID);
@@ -199,7 +205,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void returnsResultFromFindAll_whenOnlyCaregiverIdProvided() {
+        void returnsResultFromFindAll_whenOnlyCaregiverIdProvided() throws Exception {
             EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findAll()).thenReturn(List.of(record));
 
@@ -209,7 +215,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByStatus_whenOnlyCaregiverIdProvided() {
+        void doesNotCallFindByStatus_whenOnlyCaregiverIdProvided() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, CAREGIVER_ID);
@@ -218,7 +224,7 @@ class EvvQueryControllerTest {
         }
 
         @Test
-        void doesNotCallFindByCaregiverIdAndStatus_whenStatusIsNull() {
+        void doesNotCallFindByCaregiverIdAndStatus_whenStatusIsNull() throws Exception {
             when(evvRecordRepository.findAll()).thenReturn(List.of());
 
             controller.list(null, CAREGIVER_ID);

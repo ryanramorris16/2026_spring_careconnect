@@ -71,7 +71,7 @@ class SubscriptionServiceTest {
     // -------------------------------------------------------------------------
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         // Inject the @Value fields that Spring would normally resolve from properties
         ReflectionTestUtils.setField(subscriptionService, "stripeSecretKey", "sk_test_dummy");
@@ -84,7 +84,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createPlan: delegates to StripeCheckoutService and returns its result")
-    void testCreatePlan_delegatesToStripeCheckoutService() {
+    void testCreatePlan_delegatesToStripeCheckoutService() throws Exception {
         // SubscriptionService.createPlan is a thin pass-through; the actual creation
         // logic lives in StripeCheckoutService. Verify the call is forwarded intact
         // and the returned plan is propagated back to the caller.
@@ -112,7 +112,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getPlan: returns the Plan entity when the ID is found")
-    void testGetPlan_found() {
+    void testGetPlan_found() throws Exception {
         // A plan stored in the repository must be returned unchanged.
         Plan plan = new Plan();
         plan.setId(1L);
@@ -128,7 +128,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getPlan: throws IllegalArgumentException when no plan exists for the ID")
-    void testGetPlan_notFound() {
+    void testGetPlan_notFound() throws Exception {
         // A missing plan must surface as IllegalArgumentException containing the ID
         // so callers can produce a meaningful error response.
         when(planRepository.findById(99L)).thenReturn(Optional.empty());
@@ -149,7 +149,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("findOrCreatePlanByStripeId: returns the existing plan when the code is already registered")
-    void testFindOrCreatePlanByStripeId_existingPlan() {
+    void testFindOrCreatePlanByStripeId_existingPlan() throws Exception {
         // When a plan with the given Stripe price ID already exists, it must be
         // returned as-is without creating a duplicate or overwriting its name.
         Plan existing = new Plan();
@@ -165,7 +165,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("findOrCreatePlanByStripeId: creates and saves a new plan when no matching code exists")
-    void testFindOrCreatePlanByStripeId_newPlan() {
+    void testFindOrCreatePlanByStripeId_newPlan() throws Exception {
         // When no plan is found for the Stripe price ID, a new one is created with
         // the provided nickname, amount, and sensible defaults (monthly, active).
         when(planRepository.findByCode("price_new999")).thenReturn(null);
@@ -189,7 +189,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("findOrCreatePlanByStripeId: uses 'Plan <id>' as fallback name when nickname is null")
-    void testFindOrCreatePlanByStripeId_nullNicknameUsesFallback() {
+    void testFindOrCreatePlanByStripeId_nullNicknameUsesFallback() throws Exception {
         // When no nickname is supplied, the plan name defaults to "Plan <stripePriceId>"
         // so the record remains identifiable even without a human-readable nickname.
         when(planRepository.findByCode("price_xyz")).thenReturn(null);
@@ -206,7 +206,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncPlanWithStripe: returns plan unchanged when code already starts with 'price_'")
-    void testSyncPlanWithStripe_validStripePriceId_noApiCall() {
+    void testSyncPlanWithStripe_validStripePriceId_noApiCall() throws Exception {
         // A plan whose code already matches the Stripe price ID format ("price_*")
         // requires no Stripe API interaction; it is returned immediately.
         Plan plan = new Plan();
@@ -222,7 +222,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncPlanWithStripe: throws IllegalArgumentException when code is not 'price_*' and createIfMissing=false")
-    void testSyncPlanWithStripe_invalidCode_createIfMissingFalse_throws() {
+    void testSyncPlanWithStripe_invalidCode_createIfMissingFalse_throws() throws Exception {
         // If the plan doesn't have a valid Stripe price ID and we aren't allowed to
         // create one, the service must reject the call with a clear exception.
         Plan plan = new Plan();
@@ -238,7 +238,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncPlanWithStripe: throws IllegalArgumentException when code is null and createIfMissing=false")
-    void testSyncPlanWithStripe_nullCode_createIfMissingFalse_throws() {
+    void testSyncPlanWithStripe_nullCode_createIfMissingFalse_throws() throws Exception {
         // A null plan code is treated the same as a missing Stripe price ID —
         // it doesn't start with "price_" so it must fail when createIfMissing=false.
         Plan plan = new Plan();
@@ -258,7 +258,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("cancelSubscription: throws IllegalArgumentException when the subscription ID does not exist")
-    void testCancelSubscription_notFound() {
+    void testCancelSubscription_notFound() throws Exception {
         // Attempting to cancel a subscription that doesn't exist in the DB must
         // fail immediately with a domain exception before any Stripe call is made.
         when(subscriptionRepository.findById(999L)).thenReturn(Optional.empty());
@@ -271,7 +271,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("cancelSubscription: marks subscription CANCELLED and clears all Stripe fields when stripeSubscriptionId is null")
-    void testCancelSubscription_noStripeId_updatesLocalRecord() {
+    void testCancelSubscription_noStripeId_updatesLocalRecord() throws Exception {
         // When no Stripe subscription ID is stored, the Stripe API call is skipped.
         // The local record must still be fully cleared and persisted as CANCELLED.
         Subscription sub = new Subscription();
@@ -295,7 +295,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("cancelSubscription: marks subscription CANCELLED when stripeSubscriptionId is an empty string")
-    void testCancelSubscription_emptyStripeId_updatesLocalRecord() {
+    void testCancelSubscription_emptyStripeId_updatesLocalRecord() throws Exception {
         // An empty Stripe subscription ID is treated identically to null —
         // no API call is made and only the local record is updated.
         Subscription sub = new Subscription();
@@ -317,7 +317,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("cancelSubscriptionByStripeId: is a no-op when no subscription matches the Stripe ID")
-    void testCancelSubscriptionByStripeId_notFound_noOp() {
+    void testCancelSubscriptionByStripeId_notFound_noOp() throws Exception {
         // If the Stripe subscription ID is unknown locally, no exception is thrown
         // and no save is attempted — the absent record can't be updated.
         when(subscriptionRepository.findByStripeSubscriptionId("sub_unknown"))
@@ -333,7 +333,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: throws IllegalArgumentException when the user does not exist")
-    void testSaveCheckoutSession_userNotFound() {
+    void testSaveCheckoutSession_userNotFound() throws Exception {
         // Saving a checkout session requires a valid user; a missing user must cause
         // the method to fail before any subscription or payment is persisted.
         Session mockSession = mock(Session.class);
@@ -347,7 +347,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: creates a new Subscription and Payment when none exist for the session")
-    void testSaveCheckoutSession_createsSubscriptionAndPayment() {
+    void testSaveCheckoutSession_createsSubscriptionAndPayment() throws Exception {
         // Happy path: user exists, session carries IDs, no prior records exist.
         // Both a Subscription and a Payment must be created and persisted.
         User user = User.builder()
@@ -377,7 +377,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: updates user's stripeCustomerId when the user doesn't have one yet")
-    void testSaveCheckoutSession_updatesUserStripeCustomerId() {
+    void testSaveCheckoutSession_updatesUserStripeCustomerId() throws Exception {
         // If the session provides a Stripe customer ID and the user has none stored,
         // the user record must be updated so future sessions can reuse the customer.
         User user = User.builder()
@@ -405,7 +405,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: reuses an existing subscription when stripeSubscriptionId is already in the DB")
-    void testSaveCheckoutSession_reusesExistingSubscription() {
+    void testSaveCheckoutSession_reusesExistingSubscription() throws Exception {
         // If a subscription record already exists for the Stripe subscription ID
         // in the session, it must be reused rather than a new one being created.
         User user = User.builder().id(3L).email("reuse@example.com").password("pw").build();
@@ -438,7 +438,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserSubscriptions: throws IllegalArgumentException when the user does not exist")
-    void testGetUserSubscriptions_userNotFound() {
+    void testGetUserSubscriptions_userNotFound() throws Exception {
         // Requesting subscriptions for a nonexistent user must fail with a clear
         // domain exception so the controller can return an appropriate 4xx response.
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
@@ -451,7 +451,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserSubscriptions: returns DB subscriptions without Stripe sync when user has no Stripe customer ID")
-    void testGetUserSubscriptions_noStripeCustomerId_skipsSync() {
+    void testGetUserSubscriptions_noStripeCustomerId_skipsSync() throws Exception {
         // When the user has no Stripe customer ID, the service must skip the Stripe
         // sync and return whatever is stored locally, avoiding unnecessary API calls.
         User user = User.builder().id(1L).email("user@example.com").password("pw").build();
@@ -472,7 +472,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserSubscriptions: returns empty list when user has no subscriptions")
-    void testGetUserSubscriptions_noSubscriptions_returnsEmptyList() {
+    void testGetUserSubscriptions_noSubscriptions_returnsEmptyList() throws Exception {
         // An empty result from the repository is valid; the method must not throw
         // or convert it to null.
         User user = User.builder().id(3L).email("new@example.com").password("pw").build();
@@ -491,7 +491,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserActiveSubscriptions: throws IllegalArgumentException when the user does not exist")
-    void testGetUserActiveSubscriptions_userNotFound() {
+    void testGetUserActiveSubscriptions_userNotFound() throws Exception {
         // Requesting active subscriptions for a nonexistent user must fail fast.
         when(userRepository.findById(88L)).thenReturn(Optional.empty());
 
@@ -503,7 +503,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserActiveSubscriptions: returns only ACTIVE subscriptions when user has no Stripe customer ID")
-    void testGetUserActiveSubscriptions_noStripeCustomerId_returnsActive() {
+    void testGetUserActiveSubscriptions_noStripeCustomerId_returnsActive() throws Exception {
         // Without a Stripe customer ID the sync is skipped; the repository is queried
         // directly with status="ACTIVE" and the result is returned unchanged.
         User user = User.builder().id(5L).email("active@example.com").password("pw").build();
@@ -523,7 +523,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("getUserActiveSubscriptions: returns empty list when no ACTIVE subscriptions exist")
-    void testGetUserActiveSubscriptions_noActive_returnsEmptyList() {
+    void testGetUserActiveSubscriptions_noActive_returnsEmptyList() throws Exception {
         // A user may have cancelled subscriptions but no active ones; the result
         // must be an empty list, not null or an exception.
         User user = User.builder().id(6L).email("inactive@example.com").password("pw").build();
@@ -542,7 +542,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: throws RuntimeException when the JSON payload is malformed")
-    void testHandleStripeWebhook_invalidJson_throwsRuntimeException() {
+    void testHandleStripeWebhook_invalidJson_throwsRuntimeException() throws Exception {
         // A non-JSON payload cannot be parsed by Stripe's Webhook utility.
         // The service must catch JsonSyntaxException and rethrow as RuntimeException.
         assertThrows(
@@ -557,7 +557,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: throws RuntimeException when the webhook signature is invalid")
-    void testHandleStripeWebhook_invalidSignature_throwsRuntimeException() {
+    void testHandleStripeWebhook_invalidSignature_throwsRuntimeException() throws Exception {
         // Even with a plausible JSON body, a wrong signature must be rejected.
         // SignatureVerificationException is caught and wrapped as RuntimeException.
         String validishJson = "{\"id\":\"evt_test\",\"object\":\"event\"}";
@@ -721,7 +721,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncPlanWithStripe: throws IllegalArgumentException when code is empty and createIfMissing=false")
-    void testSyncPlanWithStripe_emptyCode_createIfMissingFalse_throws() {
+    void testSyncPlanWithStripe_emptyCode_createIfMissingFalse_throws() throws Exception {
         Plan plan = new Plan();
         plan.setId(10L);
         plan.setCode("");
@@ -737,7 +737,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("findOrCreatePlanByStripeId: uses fallback name when nickname is empty string")
-    void testFindOrCreatePlanByStripeId_emptyNickname() {
+    void testFindOrCreatePlanByStripeId_emptyNickname() throws Exception {
         when(planRepository.findByCode("price_empty")).thenReturn(null);
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -753,7 +753,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: does not update user stripeCustomerId when session customer is null")
-    void testSaveCheckoutSession_nullSessionCustomer() {
+    void testSaveCheckoutSession_nullSessionCustomer() throws Exception {
         User user = User.builder().id(4L).email("test@x.com").password("pw").build();
         Session mockSession = mock(Session.class);
         when(mockSession.getCustomer()).thenReturn(null);
@@ -773,7 +773,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: does not overwrite existing user stripeCustomerId")
-    void testSaveCheckoutSession_existingCustomerId_noOverwrite() {
+    void testSaveCheckoutSession_existingCustomerId_noOverwrite() throws Exception {
         User user = User.builder().id(5L).email("test@x.com").password("pw").build();
         user.setStripeCustomerId("cus_existing");
         Session mockSession = mock(Session.class);
@@ -794,7 +794,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: sets stripeCustomerId on new subscription when session has customer")
-    void testSaveCheckoutSession_newSub_setsCustomerIdOnSubscription() {
+    void testSaveCheckoutSession_newSub_setsCustomerIdOnSubscription() throws Exception {
         User user = User.builder().id(6L).email("test@x.com").password("pw").build();
         user.setStripeCustomerId("cus_already");
         Session mockSession = mock(Session.class);
@@ -818,7 +818,7 @@ class SubscriptionServiceTest {
     // createCheckoutSession (MockedStatic)
     // ==========================================================================
 
-    private HttpServletRequest mockRequest() {
+    private HttpServletRequest mockRequest() throws Exception {
         HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getScheme()).thenReturn("https");
         when(req.getServerName()).thenReturn("localhost");
@@ -828,7 +828,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: returns checkout URL for user with existing stripeCustomerId")
-    void testCreateCheckoutSession_userWithExistingCustomerId() {
+    void testCreateCheckoutSession_userWithExistingCustomerId() throws Exception {
         User user = User.builder().id(1L).email("test@x.com").password("pw").build();
         user.setStripeCustomerId("cus_existing");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -849,7 +849,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: uses stripeCustomerId param when user has none")
-    void testCreateCheckoutSession_userWithParamCustomerId() {
+    void testCreateCheckoutSession_userWithParamCustomerId() throws Exception {
         User user = User.builder().id(2L).email("test@x.com").password("pw").build();
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
 
@@ -868,7 +868,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: creates Stripe customer when user has no customer ID")
-    void testCreateCheckoutSession_createsNewCustomer() {
+    void testCreateCheckoutSession_createsNewCustomer() throws Exception {
         User user = User.builder().id(3L).email("test@x.com").password("pw").build();
         when(userRepository.findById(3L)).thenReturn(Optional.of(user));
 
@@ -891,7 +891,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: continues without customer when Customer.create fails")
-    void testCreateCheckoutSession_customerCreationFails() {
+    void testCreateCheckoutSession_customerCreationFails() throws Exception {
         User user = User.builder().id(4L).email("test@x.com").password("pw").build();
         when(userRepository.findById(4L)).thenReturn(Optional.of(user));
 
@@ -912,7 +912,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: uses default amount when amount is null")
-    void testCreateCheckoutSession_defaultAmount_premium() {
+    void testCreateCheckoutSession_defaultAmount_premium() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -928,7 +928,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: uses stripeCustomerId without user")
-    void testCreateCheckoutSession_noUser_withStripeCustomerId() {
+    void testCreateCheckoutSession_noUser_withStripeCustomerId() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -944,7 +944,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: returns error when Session.create throws")
-    void testCreateCheckoutSession_sessionCreateFails_returnsBadRequest() {
+    void testCreateCheckoutSession_sessionCreateFails_returnsBadRequest() throws Exception {
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class)))
                     .thenThrow(new RuntimeException("Stripe API error"));
@@ -958,7 +958,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: throws when userId is nonzero but user not found")
-    void testCreateCheckoutSession_userNotFound_returnsBadRequest() {
+    void testCreateCheckoutSession_userNotFound_returnsBadRequest() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         ResponseEntity<?> result = subscriptionService.createCheckoutSession(
@@ -969,7 +969,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: uses 'update' portal path in success URL")
-    void testCreateCheckoutSession_portalUpdate() {
+    void testCreateCheckoutSession_portalUpdate() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -985,7 +985,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: non-standard port is included in domain")
-    void testCreateCheckoutSession_nonStandardPort() {
+    void testCreateCheckoutSession_nonStandardPort() throws Exception {
         HttpServletRequest req = mock(HttpServletRequest.class);
         when(req.getScheme()).thenReturn("http");
         when(req.getServerName()).thenReturn("localhost");
@@ -1006,7 +1006,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: userId=0 is treated same as null")
-    void testCreateCheckoutSession_userIdZero() {
+    void testCreateCheckoutSession_userIdZero() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -1072,7 +1072,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed with null session is no-op")
-    void testWebhook_checkoutCompleted_nullSession() {
+    void testWebhook_checkoutCompleted_nullSession() throws Exception {
         Event event = createMockWebhookEvent("checkout.session.completed", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1086,7 +1086,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed updates payment and existing subscription")
-    void testWebhook_checkoutCompleted_existingSubscription() {
+    void testWebhook_checkoutCompleted_existingSubscription() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_existing");
         when(mockSession.getCustomer()).thenReturn("cus_123");
@@ -1119,7 +1119,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed updates existing sub customer ID when empty")
-    void testWebhook_checkoutCompleted_updatesSubCustomerId() {
+    void testWebhook_checkoutCompleted_updatesSubCustomerId() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_nocust");
         when(mockSession.getCustomer()).thenReturn("cus_new");
@@ -1147,7 +1147,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — no subscriptionId prints message")
-    void testWebhook_checkoutCompleted_noSubscriptionId() {
+    void testWebhook_checkoutCompleted_noSubscriptionId() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn(null);
         when(mockSession.getCustomer()).thenReturn("cus_123");
@@ -1314,7 +1314,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — Stripe retrieve fails is caught")
-    void testWebhook_checkoutCompleted_stripeRetrieveFails() {
+    void testWebhook_checkoutCompleted_stripeRetrieveFails() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_err");
         when(mockSession.getCustomer()).thenReturn("cus_err");
@@ -1390,7 +1390,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — payment user gets stripeCustomerId updated")
-    void testWebhook_checkoutCompleted_paymentUserGetsCustomerIdUpdate() {
+    void testWebhook_checkoutCompleted_paymentUserGetsCustomerIdUpdate() throws Exception {
         User user = User.builder().id(1L).email("test@x.com").password("pw").build();
         Payment payment = Payment.builder().user(user).amountCents(2000).status("PENDING")
                 .stripeSessionId("cs_upd").build();
@@ -1422,7 +1422,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_failed sets status PAYMENT_FAILED")
-    void testWebhook_asyncPaymentFailed() {
+    void testWebhook_asyncPaymentFailed() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_apf");
 
@@ -1444,7 +1444,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_failed with null session is no-op")
-    void testWebhook_asyncPaymentFailed_nullSession() {
+    void testWebhook_asyncPaymentFailed_nullSession() throws Exception {
         Event event = createMockWebhookEvent("checkout.session.async_payment_failed", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1458,7 +1458,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_failed with null subscriptionId is no-op")
-    void testWebhook_asyncPaymentFailed_nullSubId() {
+    void testWebhook_asyncPaymentFailed_nullSubId() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn(null);
 
@@ -1479,7 +1479,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_succeeded sets status ACTIVE")
-    void testWebhook_asyncPaymentSucceeded() {
+    void testWebhook_asyncPaymentSucceeded() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_aps");
 
@@ -1501,7 +1501,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_succeeded with null session is no-op")
-    void testWebhook_asyncPaymentSucceeded_nullSession() {
+    void testWebhook_asyncPaymentSucceeded_nullSession() throws Exception {
         Event event = createMockWebhookEvent("checkout.session.async_payment_succeeded", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1519,7 +1519,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: session_expired sets status EXPIRED")
-    void testWebhook_sessionExpired() {
+    void testWebhook_sessionExpired() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_exp");
 
@@ -1541,7 +1541,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: session_expired with null session is no-op")
-    void testWebhook_sessionExpired_nullSession() {
+    void testWebhook_sessionExpired_nullSession() throws Exception {
         Event event = createMockWebhookEvent("checkout.session.expired", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1559,7 +1559,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created creates new subscription record")
-    void testWebhook_subscriptionCreated_newSub() {
+    void testWebhook_subscriptionCreated_newSub() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_created");
         when(mockStripeSub.getCustomer()).thenReturn("cus_created");
@@ -1588,7 +1588,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created with items and plan")
-    void testWebhook_subscriptionCreated_withItemsAndPlan() {
+    void testWebhook_subscriptionCreated_withItemsAndPlan() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_with_items");
         when(mockStripeSub.getCustomer()).thenReturn("cus_wi");
@@ -1627,7 +1627,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created with null stripeSub is no-op")
-    void testWebhook_subscriptionCreated_nullStripeSub() {
+    void testWebhook_subscriptionCreated_nullStripeSub() throws Exception {
         Event event = createMockWebhookEvent("customer.subscription.created", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1641,7 +1641,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created skips when subscription already exists")
-    void testWebhook_subscriptionCreated_alreadyExists() {
+    void testWebhook_subscriptionCreated_alreadyExists() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_dup");
         when(mockStripeSub.getCustomer()).thenReturn("cus_dup");
@@ -1662,7 +1662,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created user not found does not save")
-    void testWebhook_subscriptionCreated_userNotFound() {
+    void testWebhook_subscriptionCreated_userNotFound() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_nouser");
         when(mockStripeSub.getCustomer()).thenReturn("cus_nouser");
@@ -1687,7 +1687,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.updated updates existing subscription")
-    void testWebhook_subscriptionUpdated() {
+    void testWebhook_subscriptionUpdated() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_upd");
         when(mockStripeSub.getStatus()).thenReturn("past_due");
@@ -1713,7 +1713,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.updated with items updates priceId and plan")
-    void testWebhook_subscriptionUpdated_withItems() {
+    void testWebhook_subscriptionUpdated_withItems() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_upd2");
         when(mockStripeSub.getStatus()).thenReturn("active");
@@ -1749,7 +1749,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.updated with null stripeSub is no-op")
-    void testWebhook_subscriptionUpdated_nullStripeSub() {
+    void testWebhook_subscriptionUpdated_nullStripeSub() throws Exception {
         Event event = createMockWebhookEvent("customer.subscription.updated", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1767,7 +1767,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.deleted clears subscription and marks CANCELLED")
-    void testWebhook_subscriptionDeleted() {
+    void testWebhook_subscriptionDeleted() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_del");
 
@@ -1796,7 +1796,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.deleted with null stripeSub is no-op")
-    void testWebhook_subscriptionDeleted_nullStripeSub() {
+    void testWebhook_subscriptionDeleted_nullStripeSub() throws Exception {
         Event event = createMockWebhookEvent("customer.subscription.deleted", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1814,7 +1814,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid sets ACTIVE and creates payment record")
-    void testWebhook_invoicePaid() {
+    void testWebhook_invoicePaid() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_inv");
         when(mockInvoice.getId()).thenReturn("inv_123");
@@ -1843,7 +1843,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid with null invoice is no-op")
-    void testWebhook_invoicePaid_nullInvoice() {
+    void testWebhook_invoicePaid_nullInvoice() throws Exception {
         Event event = createMockWebhookEvent("invoice.paid", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1857,7 +1857,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid with null subscription in invoice is no-op")
-    void testWebhook_invoicePaid_nullSubInInvoice() {
+    void testWebhook_invoicePaid_nullSubInInvoice() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn(null);
 
@@ -1874,7 +1874,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid with null user on subscription does not create payment")
-    void testWebhook_invoicePaid_nullUser() {
+    void testWebhook_invoicePaid_nullUser() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_nouser");
         when(mockInvoice.getAmountPaid()).thenReturn(2000L);
@@ -1902,7 +1902,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.payment_failed sets status PAYMENT_FAILED")
-    void testWebhook_invoicePaymentFailed() {
+    void testWebhook_invoicePaymentFailed() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_ipf");
 
@@ -1924,7 +1924,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.payment_failed with null invoice is no-op")
-    void testWebhook_invoicePaymentFailed_nullInvoice() {
+    void testWebhook_invoicePaymentFailed_nullInvoice() throws Exception {
         Event event = createMockWebhookEvent("invoice.payment_failed", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -1942,7 +1942,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: unhandled event type returns 'Webhook received'")
-    void testWebhook_unhandledEventType() {
+    void testWebhook_unhandledEventType() throws Exception {
         Event event = createMockWebhookEvent("some.unknown.event", null);
 
         try (MockedStatic<Webhook> webhookMock = mockStatic(Webhook.class)) {
@@ -2124,7 +2124,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncAllSubscriptionsForCustomer: throws when user not found")
-    void testSyncAllSubscriptionsForCustomer_userNotFound() {
+    void testSyncAllSubscriptionsForCustomer_userNotFound() throws Exception {
         when(userRepository.findByStripeCustomerId("cus_nope")).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -2397,7 +2397,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createSubscriptionDirectly: throws when user not found")
-    void testCreateSubscriptionDirectly_userNotFound() {
+    void testCreateSubscriptionDirectly_userNotFound() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -2449,7 +2449,7 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.list(anyMap())).thenReturn(mockCustCollection);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(2L);
+            subscriptionService.syncUserSubscriptionsFromStripe(2L);
 
             assertEquals("cus_found", user.getStripeCustomerId());
             verify(userRepository).save(user);
@@ -2479,7 +2479,7 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockNewCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(3L);
+            subscriptionService.syncUserSubscriptionsFromStripe(3L);
 
             assertEquals("cus_brand_new", user.getStripeCustomerId());
         }
@@ -2501,7 +2501,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("syncUserSubscriptionsFromStripe: throws when user not found")
-    void testSyncUserSubscriptionsFromStripe_userNotFound() {
+    void testSyncUserSubscriptionsFromStripe_userNotFound() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -2533,7 +2533,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("refreshUserSubscriptionsFromStripe: wraps exception as RuntimeException")
-    void testRefreshUserSubscriptionsFromStripe_wrapsException() {
+    void testRefreshUserSubscriptionsFromStripe_wrapsException() throws Exception {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
@@ -2548,7 +2548,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: amount=0 falls through to default pricing")
-    void testCreateCheckoutSession_amountZero() {
+    void testCreateCheckoutSession_amountZero() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -2564,7 +2564,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: empty stripeCustomerId param is ignored")
-    void testCreateCheckoutSession_emptyStripeCustomerIdParam() {
+    void testCreateCheckoutSession_emptyStripeCustomerIdParam() throws Exception {
         User user = User.builder().id(10L).email("test@x.com").password("pw").build();
         when(userRepository.findById(10L)).thenReturn(Optional.of(user));
 
@@ -2587,7 +2587,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("createCheckoutSession: default plan amount for unknown plan name")
-    void testCreateCheckoutSession_unknownPlanName() {
+    void testCreateCheckoutSession_unknownPlanName() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getUrl()).thenReturn("https://checkout.stripe.com/session");
 
@@ -2603,7 +2603,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession: user with empty stripeCustomerId gets updated")
-    void testSaveCheckoutSession_emptyUserCustomerId() {
+    void testSaveCheckoutSession_emptyUserCustomerId() throws Exception {
         User user = User.builder().id(7L).email("test@x.com").password("pw").build();
         user.setStripeCustomerId("");
         Session mockSession = mock(Session.class);
@@ -2624,7 +2624,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — existing sub with non-empty customerId is not overwritten")
-    void testWebhook_checkoutCompleted_existingSubWithCustomerId() {
+    void testWebhook_checkoutCompleted_existingSubWithCustomerId() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_keep");
         when(mockSession.getCustomer()).thenReturn("cus_new_id");
@@ -2651,7 +2651,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — payment found but user is null, no customer update")
-    void testWebhook_checkoutCompleted_paymentWithNullUser() {
+    void testWebhook_checkoutCompleted_paymentWithNullUser() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn(null);
         when(mockSession.getCustomer()).thenReturn("cus_nouser");
@@ -2675,7 +2675,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: checkout.session.completed — payment lookup throws exception is caught")
-    void testWebhook_checkoutCompleted_paymentLookupFails() {
+    void testWebhook_checkoutCompleted_paymentLookupFails() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn(null);
         when(mockSession.getCustomer()).thenReturn("cus_x");
@@ -2841,7 +2841,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_failed — subscription not found is no-op")
-    void testWebhook_asyncPaymentFailed_subNotFound() {
+    void testWebhook_asyncPaymentFailed_subNotFound() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_nf");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_nf")).thenReturn(Optional.empty());
@@ -2859,7 +2859,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: async_payment_succeeded — subscription not found is no-op")
-    void testWebhook_asyncPaymentSucceeded_subNotFound() {
+    void testWebhook_asyncPaymentSucceeded_subNotFound() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_nf2");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_nf2")).thenReturn(Optional.empty());
@@ -2877,7 +2877,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: session_expired — subscription not found is no-op")
-    void testWebhook_sessionExpired_subNotFound() {
+    void testWebhook_sessionExpired_subNotFound() throws Exception {
         Session mockSession = mock(Session.class);
         when(mockSession.getSubscription()).thenReturn("sub_nf3");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_nf3")).thenReturn(Optional.empty());
@@ -2895,7 +2895,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.updated — not found locally is no-op")
-    void testWebhook_subscriptionUpdated_notFound() {
+    void testWebhook_subscriptionUpdated_notFound() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_upd_nf");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_upd_nf")).thenReturn(Optional.empty());
@@ -2913,7 +2913,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.deleted — not found locally is no-op")
-    void testWebhook_subscriptionDeleted_notFound() {
+    void testWebhook_subscriptionDeleted_notFound() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_del_nf");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_del_nf")).thenReturn(Optional.empty());
@@ -2931,7 +2931,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid — subscription not found is no-op")
-    void testWebhook_invoicePaid_subNotFound() {
+    void testWebhook_invoicePaid_subNotFound() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_inv_nf");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_inv_nf")).thenReturn(Optional.empty());
@@ -2949,7 +2949,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.payment_failed — subscription not found is no-op")
-    void testWebhook_invoicePaymentFailed_subNotFound() {
+    void testWebhook_invoicePaymentFailed_subNotFound() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_ipf_nf");
         when(subscriptionRepository.findByStripeSubscriptionId("sub_ipf_nf")).thenReturn(Optional.empty());
@@ -2967,7 +2967,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.updated — plan not found returns null plan")
-    void testWebhook_subscriptionUpdated_planNotFound() {
+    void testWebhook_subscriptionUpdated_planNotFound() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_upd_np");
         when(mockStripeSub.getStatus()).thenReturn("active");
@@ -3000,7 +3000,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: invoice.paid — payment creation failure is caught")
-    void testWebhook_invoicePaid_paymentCreationFails() {
+    void testWebhook_invoicePaid_paymentCreationFails() throws Exception {
         Invoice mockInvoice = mock(Invoice.class);
         when(mockInvoice.getSubscription()).thenReturn("sub_inv_fail");
         when(mockInvoice.getId()).thenReturn("inv_fail");
@@ -3085,7 +3085,8 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.create(anyMap())).thenReturn(mockStripeSub);
 
-            Subscription result = subscriptionService.createSubscriptionDirectly(5L, "price_nn");
+
+            subscriptionService.createSubscriptionDirectly(5L, "price_nn");
 
             assertEquals("cus_noname", user.getStripeCustomerId());
         }
@@ -3093,7 +3094,7 @@ class SubscriptionServiceTest {
 
     @Test
     @DisplayName("handleStripeWebhook: subscription.created — error during save is caught")
-    void testWebhook_subscriptionCreated_saveFails() {
+    void testWebhook_subscriptionCreated_saveFails() throws Exception {
         com.stripe.model.Subscription mockStripeSub = mock(com.stripe.model.Subscription.class);
         when(mockStripeSub.getId()).thenReturn("sub_save_err");
         when(mockStripeSub.getCustomer()).thenReturn("cus_save_err");
@@ -3142,7 +3143,8 @@ class SubscriptionServiceTest {
             customerMock.when(() -> Customer.create(anyMap())).thenReturn(mockNewCustomer);
             stripeMock.when(() -> com.stripe.model.Subscription.list(anyMap())).thenReturn(mockSubCollection);
 
-            List<Subscription> result = subscriptionService.syncUserSubscriptionsFromStripe(6L);
+
+            subscriptionService.syncUserSubscriptionsFromStripe(6L);
 
             assertEquals("cus_with_name", user.getStripeCustomerId());
         }

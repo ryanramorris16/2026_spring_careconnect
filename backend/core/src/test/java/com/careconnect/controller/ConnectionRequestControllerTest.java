@@ -1,8 +1,9 @@
 package com.careconnect.controller;
 
-import com.careconnect.dto.ConnectionRequestDto;
 import com.careconnect.model.ConnectionRequest;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.ConnectionRequestService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,11 @@ class ConnectionRequestControllerTest {
      * - Fast and deterministic unit tests
      */
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private ConnectionRequestController controller;
     /*
@@ -46,7 +52,7 @@ class ConnectionRequestControllerTest {
      */
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .build();

@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CheckInTemplateTest {
 
     @Test
-    void defaultConstructor_createsInstance() {
+    void defaultConstructor_createsInstance() throws Exception {
         CheckInTemplate template = new CheckInTemplate();
         assertThat(template).isNotNull();
     }

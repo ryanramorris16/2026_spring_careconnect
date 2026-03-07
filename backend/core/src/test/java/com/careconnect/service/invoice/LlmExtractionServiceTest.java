@@ -24,7 +24,7 @@ class LlmExtractionServiceTest {
     private LlmExtractionService llmExtractionService;
 
     @Test
-    void extractInvoiceData_validResponse_returnsTrimedText() {
+    void extractInvoiceData_validResponse_returnsTrimedText() throws Exception {
         ChatResponse chatResponse = mock(ChatResponse.class);
         AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
@@ -37,7 +37,7 @@ class LlmExtractionServiceTest {
     }
 
     @Test
-    void extractInvoiceData_nullResponse_returnsEmpty() {
+    void extractInvoiceData_nullResponse_returnsEmpty() throws Exception {
         when(chatModel.chat(anyList())).thenReturn(null);
 
         String result = llmExtractionService.extractInvoiceData("Raw invoice text");
@@ -46,7 +46,7 @@ class LlmExtractionServiceTest {
     }
 
     @Test
-    void extractInvoiceData_nullAiMessage_returnsEmpty() {
+    void extractInvoiceData_nullAiMessage_returnsEmpty() throws Exception {
         ChatResponse chatResponse = mock(ChatResponse.class);
         when(chatResponse.aiMessage()).thenReturn(null);
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
@@ -57,7 +57,7 @@ class LlmExtractionServiceTest {
     }
 
     @Test
-    void extractInvoiceData_nullText_returnsEmpty() {
+    void extractInvoiceData_nullText_returnsEmpty() throws Exception {
         ChatResponse chatResponse = mock(ChatResponse.class);
         AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
@@ -70,7 +70,7 @@ class LlmExtractionServiceTest {
     }
 
     @Test
-    void extractInvoiceData_emptyText_returnsEmpty() {
+    void extractInvoiceData_emptyText_returnsEmpty() throws Exception {
         ChatResponse chatResponse = mock(ChatResponse.class);
         AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
@@ -83,7 +83,7 @@ class LlmExtractionServiceTest {
     }
 
     @Test
-    void extractInvoiceData_whitespaceOnlyText_returnsEmpty() {
+    void extractInvoiceData_whitespaceOnlyText_returnsEmpty() throws Exception {
         ChatResponse chatResponse = mock(ChatResponse.class);
         AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);

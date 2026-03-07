@@ -40,7 +40,7 @@ class GmailClientTest {
     private static final long RECENT_DATE_MS = 1735000000000L;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         client = new GmailClient();
         ReflectionTestUtils.setField(client, "restTemplate", restTemplate);
     }
@@ -84,7 +84,7 @@ class GmailClientTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void fetchDigestForDate_exchangeThrows_returnsEmpty() {
+    void fetchDigestForDate_exchangeThrows_returnsEmpty() throws Exception {
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenThrow(new RuntimeException("network error"));
 
@@ -92,7 +92,7 @@ class GmailClientTest {
     }
 
     @Test
-    void fetchDigestForDate_nullResponseBody_returnsEmpty() {
+    void fetchDigestForDate_nullResponseBody_returnsEmpty() throws Exception {
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok((JsonNode) null));
 
@@ -203,7 +203,7 @@ class GmailClientTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Test
-    void fetchLatestDigest_exchangeThrows_returnsEmpty() {
+    void fetchLatestDigest_exchangeThrows_returnsEmpty() throws Exception {
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenThrow(new RuntimeException("network error"));
 
@@ -211,7 +211,7 @@ class GmailClientTest {
     }
 
     @Test
-    void fetchLatestDigest_nullResponseBody_returnsEmpty() {
+    void fetchLatestDigest_nullResponseBody_returnsEmpty() throws Exception {
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok((JsonNode) null));
 

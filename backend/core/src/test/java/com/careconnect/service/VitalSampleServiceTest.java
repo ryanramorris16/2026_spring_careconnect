@@ -37,7 +37,7 @@ class VitalSampleServiceTest {
     private VitalSample vitalSample;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         patient = Patient.builder().id(1L).firstName("John").lastName("Doe").build();
         vitalSample = VitalSample.builder()
@@ -58,7 +58,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_validDtoWithTimestamp_returnsMappedDto")
-    void createVitalSample_validDtoWithTimestamp_returnsMappedDto() {
+    void createVitalSample_validDtoWithTimestamp_returnsMappedDto() throws Exception {
         Instant ts = Instant.now();
         VitalSampleDTO dto = VitalSampleDTO.builder()
                 .patientId(1L)
@@ -85,7 +85,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_nullTimestamp_usesInstantNow")
-    void createVitalSample_nullTimestamp_usesInstantNow() {
+    void createVitalSample_nullTimestamp_usesInstantNow() throws Exception {
         VitalSampleDTO dto = VitalSampleDTO.builder()
                 .patientId(1L)
                 .timestamp(null)
@@ -103,7 +103,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_patientNotFound_throwsIllegalArgument")
-    void createVitalSample_patientNotFound_throwsIllegalArgument() {
+    void createVitalSample_patientNotFound_throwsIllegalArgument() throws Exception {
         VitalSampleDTO dto = VitalSampleDTO.builder().patientId(999L).build();
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -114,7 +114,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_highHeartRate_triggersAlert")
-    void createVitalSample_highHeartRate_triggersAlert() {
+    void createVitalSample_highHeartRate_triggersAlert() throws Exception {
         VitalSample highHr = VitalSample.builder()
                 .id(11L).patient(patient).timestamp(Instant.now())
                 .heartRate(110.0).build();
@@ -131,7 +131,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_lowHeartRate_triggersLowAlert")
-    void createVitalSample_lowHeartRate_triggersLowAlert() {
+    void createVitalSample_lowHeartRate_triggersLowAlert() throws Exception {
         VitalSample lowHr = VitalSample.builder()
                 .id(12L).patient(patient).timestamp(Instant.now())
                 .heartRate(50.0).build();
@@ -148,7 +148,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_criticalSpo2_triggersCriticalAlert")
-    void createVitalSample_criticalSpo2_triggersCriticalAlert() {
+    void createVitalSample_criticalSpo2_triggersCriticalAlert() throws Exception {
         VitalSample lowSpo2 = VitalSample.builder()
                 .id(13L).patient(patient).timestamp(Instant.now())
                 .spo2(85.0).build();
@@ -165,7 +165,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_highSpo2Alert_triggersHighAlert")
-    void createVitalSample_highSpo2Alert_triggersHighAlert() {
+    void createVitalSample_highSpo2Alert_triggersHighAlert() throws Exception {
         VitalSample medSpo2 = VitalSample.builder()
                 .id(14L).patient(patient).timestamp(Instant.now())
                 .spo2(93.0).build();
@@ -182,7 +182,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_normalSpo2_noAlert")
-    void createVitalSample_normalSpo2_noAlert() {
+    void createVitalSample_normalSpo2_noAlert() throws Exception {
         VitalSample normalSpo2 = VitalSample.builder()
                 .id(15L).patient(patient).timestamp(Instant.now())
                 .spo2(97.0).build();
@@ -199,7 +199,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_criticalBP_triggersCriticalBPAlert")
-    void createVitalSample_criticalBP_triggersCriticalBPAlert() {
+    void createVitalSample_criticalBP_triggersCriticalBPAlert() throws Exception {
         VitalSample critBp = VitalSample.builder()
                 .id(16L).patient(patient).timestamp(Instant.now())
                 .systolic(190).diastolic(115).build();
@@ -216,7 +216,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_highBP_triggersHighBPAlert")
-    void createVitalSample_highBP_triggersHighBPAlert() {
+    void createVitalSample_highBP_triggersHighBPAlert() throws Exception {
         VitalSample highBp = VitalSample.builder()
                 .id(17L).patient(patient).timestamp(Instant.now())
                 .systolic(150).diastolic(95).build();
@@ -233,7 +233,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_lowBP_triggersLowBPAlert")
-    void createVitalSample_lowBP_triggersLowBPAlert() {
+    void createVitalSample_lowBP_triggersLowBPAlert() throws Exception {
         VitalSample lowBp = VitalSample.builder()
                 .id(18L).patient(patient).timestamp(Instant.now())
                 .systolic(85).diastolic(55).build();
@@ -250,7 +250,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_normalBP_noAlert")
-    void createVitalSample_normalBP_noAlert() {
+    void createVitalSample_normalBP_noAlert() throws Exception {
         VitalSample normalBp = VitalSample.builder()
                 .id(19L).patient(patient).timestamp(Instant.now())
                 .systolic(120).diastolic(80).build();
@@ -267,7 +267,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_lowMood_triggersHighMoodAlert")
-    void createVitalSample_lowMood_triggersHighMoodAlert() {
+    void createVitalSample_lowMood_triggersHighMoodAlert() throws Exception {
         VitalSample lowMood = VitalSample.builder()
                 .id(20L).patient(patient).timestamp(Instant.now())
                 .moodValue(1).build();
@@ -284,7 +284,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_highPain_triggersHighPainAlert")
-    void createVitalSample_highPain_triggersHighPainAlert() {
+    void createVitalSample_highPain_triggersHighPainAlert() throws Exception {
         VitalSample highPain = VitalSample.builder()
                 .id(21L).patient(patient).timestamp(Instant.now())
                 .painValue(9).build();
@@ -301,7 +301,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_nullSystolicWithDiastolic_handlesBPBranch")
-    void createVitalSample_nullSystolicWithDiastolic_handlesBPBranch() {
+    void createVitalSample_nullSystolicWithDiastolic_handlesBPBranch() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(22L).patient(patient).timestamp(Instant.now())
                 .systolic(null).diastolic(120).build();
@@ -318,7 +318,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_systolicWithNullDiastolic_handlesBPBranch")
-    void createVitalSample_systolicWithNullDiastolic_handlesBPBranch() {
+    void createVitalSample_systolicWithNullDiastolic_handlesBPBranch() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(23L).patient(patient).timestamp(Instant.now())
                 .systolic(200).diastolic(null).build();
@@ -335,7 +335,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_normalHeartRate_noAlert")
-    void createVitalSample_normalHeartRate_noAlert() {
+    void createVitalSample_normalHeartRate_noAlert() throws Exception {
         VitalSample normalHr = VitalSample.builder()
                 .id(24L).patient(patient).timestamp(Instant.now())
                 .heartRate(75.0).build();
@@ -352,7 +352,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_moodValueOf3_noAlert")
-    void createVitalSample_moodValueOf3_noAlert() {
+    void createVitalSample_moodValueOf3_noAlert() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(25L).patient(patient).timestamp(Instant.now())
                 .moodValue(3).build();
@@ -369,7 +369,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_painValueOf7_noAlert")
-    void createVitalSample_painValueOf7_noAlert() {
+    void createVitalSample_painValueOf7_noAlert() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(26L).patient(patient).timestamp(Instant.now())
                 .painValue(7).build();
@@ -386,7 +386,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_allVitalsNull_noAlerts")
-    void createVitalSample_allVitalsNull_noAlerts() {
+    void createVitalSample_allVitalsNull_noAlerts() throws Exception {
         VitalSample nullSample = VitalSample.builder()
                 .id(27L).patient(patient).timestamp(Instant.now()).build();
 
@@ -404,7 +404,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("updateVitalSample_allFieldsProvided_updatesAll")
-    void updateVitalSample_allFieldsProvided_updatesAll() {
+    void updateVitalSample_allFieldsProvided_updatesAll() throws Exception {
         Instant newTs = Instant.now();
         VitalSampleDTO dto = VitalSampleDTO.builder()
                 .timestamp(newTs)
@@ -428,7 +428,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("updateVitalSample_allFieldsNull_updatesNothing")
-    void updateVitalSample_allFieldsNull_updatesNothing() {
+    void updateVitalSample_allFieldsNull_updatesNothing() throws Exception {
         VitalSampleDTO dto = VitalSampleDTO.builder().build();
 
         when(vitalSampleRepository.findById(10L)).thenReturn(Optional.of(vitalSample));
@@ -442,7 +442,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("updateVitalSample_notFound_throwsIllegalArgument")
-    void updateVitalSample_notFound_throwsIllegalArgument() {
+    void updateVitalSample_notFound_throwsIllegalArgument() throws Exception {
         VitalSampleDTO dto = VitalSampleDTO.builder().build();
         when(vitalSampleRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -455,7 +455,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getVitalSamples_validPatientAndPeriod_returnsList")
-    void getVitalSamples_validPatientAndPeriod_returnsList() {
+    void getVitalSamples_validPatientAndPeriod_returnsList() throws Exception {
         Period period = Period.ofDays(7);
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(vitalSampleRepository.findByPatientAndTimestampBetweenOrderByTimestampDesc(
@@ -470,7 +470,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getVitalSamples_patientNotFound_throwsIllegalArgument")
-    void getVitalSamples_patientNotFound_throwsIllegalArgument() {
+    void getVitalSamples_patientNotFound_throwsIllegalArgument() throws Exception {
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -481,7 +481,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getVitalSample_exists_returnsOptionalWithDto")
-    void getVitalSample_exists_returnsOptionalWithDto() {
+    void getVitalSample_exists_returnsOptionalWithDto() throws Exception {
         when(vitalSampleRepository.findById(10L)).thenReturn(Optional.of(vitalSample));
 
         Optional<VitalSampleDTO> result = vitalSampleService.getVitalSample(10L);
@@ -492,7 +492,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getVitalSample_notExists_returnsEmpty")
-    void getVitalSample_notExists_returnsEmpty() {
+    void getVitalSample_notExists_returnsEmpty() throws Exception {
         when(vitalSampleRepository.findById(999L)).thenReturn(Optional.empty());
 
         Optional<VitalSampleDTO> result = vitalSampleService.getVitalSample(999L);
@@ -504,7 +504,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("deleteVitalSample_exists_deletesSuccessfully")
-    void deleteVitalSample_exists_deletesSuccessfully() {
+    void deleteVitalSample_exists_deletesSuccessfully() throws Exception {
         when(vitalSampleRepository.existsById(10L)).thenReturn(true);
 
         vitalSampleService.deleteVitalSample(10L);
@@ -514,7 +514,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("deleteVitalSample_notExists_throwsIllegalArgument")
-    void deleteVitalSample_notExists_throwsIllegalArgument() {
+    void deleteVitalSample_notExists_throwsIllegalArgument() throws Exception {
         when(vitalSampleRepository.existsById(999L)).thenReturn(false);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -526,7 +526,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getLatestVitalSample_exists_returnsDto")
-    void getLatestVitalSample_exists_returnsDto() {
+    void getLatestVitalSample_exists_returnsDto() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(vitalSampleRepository.findFirstByPatientOrderByTimestampDesc(patient))
                 .thenReturn(Optional.of(vitalSample));
@@ -539,7 +539,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getLatestVitalSample_noSamples_returnsEmpty")
-    void getLatestVitalSample_noSamples_returnsEmpty() {
+    void getLatestVitalSample_noSamples_returnsEmpty() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(vitalSampleRepository.findFirstByPatientOrderByTimestampDesc(patient))
                 .thenReturn(Optional.empty());
@@ -551,7 +551,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("getLatestVitalSample_patientNotFound_throwsIllegalArgument")
-    void getLatestVitalSample_patientNotFound_throwsIllegalArgument() {
+    void getLatestVitalSample_patientNotFound_throwsIllegalArgument() throws Exception {
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
@@ -562,7 +562,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_criticalDiastolicOnly_triggersCritical")
-    void createVitalSample_criticalDiastolicOnly_triggersCritical() {
+    void createVitalSample_criticalDiastolicOnly_triggersCritical() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(30L).patient(patient).timestamp(Instant.now())
                 .systolic(null).diastolic(115).build();
@@ -579,7 +579,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_highDiastolicOnly_triggersHigh")
-    void createVitalSample_highDiastolicOnly_triggersHigh() {
+    void createVitalSample_highDiastolicOnly_triggersHigh() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(31L).patient(patient).timestamp(Instant.now())
                 .systolic(null).diastolic(95).build();
@@ -596,7 +596,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_lowDiastolicOnly_triggersLow")
-    void createVitalSample_lowDiastolicOnly_triggersLow() {
+    void createVitalSample_lowDiastolicOnly_triggersLow() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(32L).patient(patient).timestamp(Instant.now())
                 .systolic(null).diastolic(55).build();
@@ -613,7 +613,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_moodValueExactly2_triggersAlert")
-    void createVitalSample_moodValueExactly2_triggersAlert() {
+    void createVitalSample_moodValueExactly2_triggersAlert() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(33L).patient(patient).timestamp(Instant.now())
                 .moodValue(2).build();
@@ -630,7 +630,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_painValueExactly8_triggersAlert")
-    void createVitalSample_painValueExactly8_triggersAlert() {
+    void createVitalSample_painValueExactly8_triggersAlert() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(34L).patient(patient).timestamp(Instant.now())
                 .painValue(8).build();
@@ -647,7 +647,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_heartRateExactly60_normal")
-    void createVitalSample_heartRateExactly60_normal() {
+    void createVitalSample_heartRateExactly60_normal() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(35L).patient(patient).timestamp(Instant.now())
                 .heartRate(60.0).build();
@@ -664,7 +664,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_heartRateExactly100_normal")
-    void createVitalSample_heartRateExactly100_normal() {
+    void createVitalSample_heartRateExactly100_normal() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(36L).patient(patient).timestamp(Instant.now())
                 .heartRate(100.0).build();
@@ -681,7 +681,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_spo2Exactly95_normal")
-    void createVitalSample_spo2Exactly95_normal() {
+    void createVitalSample_spo2Exactly95_normal() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(37L).patient(patient).timestamp(Instant.now())
                 .spo2(95.0).build();
@@ -698,7 +698,7 @@ class VitalSampleServiceTest {
 
     @Test
     @DisplayName("createVitalSample_spo2Exactly90_highAlert")
-    void createVitalSample_spo2Exactly90_highAlert() {
+    void createVitalSample_spo2Exactly90_highAlert() throws Exception {
         VitalSample sample = VitalSample.builder()
                 .id(38L).patient(patient).timestamp(Instant.now())
                 .spo2(90.0).build();

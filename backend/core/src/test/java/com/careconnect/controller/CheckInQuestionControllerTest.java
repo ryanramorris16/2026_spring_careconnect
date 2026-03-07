@@ -34,7 +34,7 @@ class CheckInQuestionControllerTest {
     private CheckInQuestionController controller;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
                 .build();

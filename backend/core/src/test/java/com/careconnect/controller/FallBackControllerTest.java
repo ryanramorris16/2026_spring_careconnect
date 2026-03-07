@@ -35,7 +35,7 @@ class FallBackControllerTest {
      */
 
     @Test
-    void handleError_returns404_whenStatusIs404AndErrorUriIsPresent() {
+    void handleError_returns404_whenStatusIs404AndErrorUriIsPresent() throws Exception {
         /*
          * Covers:
          * - statusAttr instanceof Integer → true (status resolved from attribute)
@@ -52,7 +52,7 @@ class FallBackControllerTest {
     }
 
     @Test
-    void handleError_returnsErrorStatus_whenStatusIsNot404AndErrorUriIsPresent() {
+    void handleError_returnsErrorStatus_whenStatusIsNot404AndErrorUriIsPresent() throws Exception {
         /*
          * Covers:
          * - statusAttr instanceof Integer → true
@@ -69,7 +69,7 @@ class FallBackControllerTest {
     }
 
     @Test
-    void handleError_defaults404AndUsesRequestUri_whenStatusAttributeAndErrorUriAreNull() {
+    void handleError_defaults404AndUsesRequestUri_whenStatusAttributeAndErrorUriAreNull() throws Exception {
         /*
          * Covers:
          * - statusAttr instanceof Integer → false (null attribute, status defaults to 404)

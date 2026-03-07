@@ -1,10 +1,11 @@
 package com.careconnect.controller;
 
-import com.careconnect.dto.*;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
 import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.util.SecurityUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -12,18 +13,15 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -36,14 +34,20 @@ class CaregiverPatientLinkControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CaregiverPatientLinkService linkService;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
+
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         SecurityContextHolder.clearContext();
     }
 

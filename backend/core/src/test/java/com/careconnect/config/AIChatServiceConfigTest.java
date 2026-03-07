@@ -25,20 +25,20 @@ class AIChatServiceConfigTest {
     private AIChatServiceConfig config;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Arrange: Create mock security audit service
         securityAuditService = mock(SecurityAuditService.class);
         config = new AIChatServiceConfig(securityAuditService);
     }
 
     @Test
-    void constructorInitializesSuccessfully() {
+    void constructorInitializesSuccessfully() throws Exception {
         // Assert: Constructor should complete without throwing
         assertNotNull(config);
     }
 
     @Test
-    void chatModelBeanCreatedSuccessfullyWithValidConfiguration() {
+    void chatModelBeanCreatedSuccessfullyWithValidConfiguration() throws Exception {
         // Arrange: Set valid configuration values
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -55,7 +55,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiKeyIsMissing() {
+    void chatModelThrowsExceptionWhenApiKeyIsMissing() throws Exception {
         // Arrange: Set configuration with empty API key
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "");
@@ -77,7 +77,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiKeyIsNull() {
+    void chatModelThrowsExceptionWhenApiKeyIsNull() throws Exception {
         // Arrange: Set configuration with null API key
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", null);
@@ -99,7 +99,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiUrlIsMissing() {
+    void chatModelThrowsExceptionWhenApiUrlIsMissing() throws Exception {
         // Arrange: Set configuration with empty API URL
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -121,7 +121,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiUrlIsNull() {
+    void chatModelThrowsExceptionWhenApiUrlIsNull() throws Exception {
         // Arrange: Set configuration with null API URL
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -143,7 +143,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelLogsWarningWhenApiUrlIsNotHttps() {
+    void chatModelLogsWarningWhenApiUrlIsNotHttps() throws Exception {
         // Arrange: Set configuration with HTTP URL (insecure)
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -166,7 +166,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithShortApiKeyButNoAuditLog() {
+    void chatModelSucceedsWithShortApiKeyButNoAuditLog() throws Exception {
         // Arrange: Set configuration with short API key (< 20 chars)
         // Note: This only logs a warning, doesn't call audit service
         ReflectionTestUtils.setField(config, "provider", "openai");
@@ -184,7 +184,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithTemperatureBelowRange() {
+    void chatModelSucceedsWithTemperatureBelowRange() throws Exception {
         // Arrange: Set configuration with temperature below 0.0
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -200,7 +200,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithTemperatureAboveRange() {
+    void chatModelSucceedsWithTemperatureAboveRange() throws Exception {
         // Arrange: Set configuration with temperature above 2.0
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -216,7 +216,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithDifferentProvider() {
+    void chatModelSucceedsWithDifferentProvider() throws Exception {
         // Arrange: Set configuration with different provider (e.g., deepseek)
         ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-deepseek-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -233,7 +233,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithValidTemperatureBoundaries() {
+    void chatModelSucceedsWithValidTemperatureBoundaries() throws Exception {
         // Arrange: Test lower boundary (0.0)
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -258,7 +258,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithTypicalTemperatureValues() {
+    void chatModelSucceedsWithTypicalTemperatureValues() throws Exception {
         // Arrange: Test common temperature values (0.5, 0.7, 1.0)
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
@@ -280,7 +280,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithMinimumValidApiKey() {
+    void chatModelSucceedsWithMinimumValidApiKey() throws Exception {
         // Arrange: Set configuration with API key exactly at minimum length (20 chars)
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "12345678901234567890"); // Exactly 20 chars
@@ -296,7 +296,7 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelValidatesApiKeyBeforeApiUrl() {
+    void chatModelValidatesApiKeyBeforeApiUrl() throws Exception {
         // Arrange: Set configuration with both API key and URL missing
         // This tests the order of validation
         ReflectionTestUtils.setField(config, "provider", "openai");

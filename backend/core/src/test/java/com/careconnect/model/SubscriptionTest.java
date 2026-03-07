@@ -11,7 +11,7 @@ class SubscriptionTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Subscription s = new Subscription();
 
         assertThat(s).isNotNull();
@@ -29,7 +29,7 @@ class SubscriptionTest {
     // ─── Setters and getters ──────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Subscription s = new Subscription();
         User user = new User();
         Plan plan = new Plan();

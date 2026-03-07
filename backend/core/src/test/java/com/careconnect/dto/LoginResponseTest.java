@@ -13,7 +13,7 @@ class LoginResponseTest {
     // ─── Builder: all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         LoginResponse response = LoginResponse.builder()
                 .id(1L)
                 .email("user@example.com")
@@ -38,7 +38,7 @@ class LoginResponseTest {
     }
 
     @Test
-    void builder_caregiverRole_setsCaregiversId() {
+    void builder_caregiverRole_setsCaregiversId() throws Exception {
         LoginResponse response = LoginResponse.builder()
                 .id(2L)
                 .email("caregiver@example.com")
@@ -61,7 +61,7 @@ class LoginResponseTest {
     // ─── Builder: builder() static method ────────────────────────────────────
 
     @Test
-    void builder_staticMethod_returnsBuilderInstance() {
+    void builder_staticMethod_returnsBuilderInstance() throws Exception {
         LoginResponse.LoginResponseBuilder builder = LoginResponse.builder();
         assertThat(builder).isNotNull();
     }
@@ -69,7 +69,7 @@ class LoginResponseTest {
     // ─── Record accessors ─────────────────────────────────────────────────────
 
     @Test
-    void record_accessors_allFieldsAccessible() {
+    void record_accessors_allFieldsAccessible() throws Exception {
         LoginResponse response = new LoginResponse(
                 99L, "admin@example.com", Role.ADMIN, "admin-token",
                 null, null, "Super Admin", "ACTIVE", true
@@ -89,7 +89,7 @@ class LoginResponseTest {
     // ─── Builder chaining (each setter returns the builder) ───────────────────
 
     @Test
-    void builder_chainedSetters_buildsCorrectly() {
+    void builder_chainedSetters_buildsCorrectly() throws Exception {
         LoginResponse response = LoginResponse.builder()
                 .id(5L)
                 .name("Family Member")

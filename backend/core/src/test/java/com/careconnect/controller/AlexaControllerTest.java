@@ -20,8 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.dto.v2.TaskDtoV2;
@@ -29,8 +29,10 @@ import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.service.v2.TaskServiceV2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -66,17 +68,23 @@ class AlexaControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real JWT infrastructure, a database, or task storage.
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TaskServiceV2 taskService;
+
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
 
     // --- Shared test constants ---
 
@@ -91,7 +99,7 @@ class AlexaControllerTest {
     private TaskDtoV2 sampleTask;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         patientUser = new User();
         patientUser.setId(10L);
         patientUser.setEmail("patient@test.com");
@@ -109,6 +117,10 @@ class AlexaControllerTest {
                 .isCompleted(false)
                 .taskType("Medication")
                 .build();
+
+        // Stub securityUtil.resolveCurrentUser() so that controller-level
+        // role checks (e.g. isFamilyMember()) do not NPE.
+        Mockito.when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
         // Default: token is valid
         Mockito.when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);

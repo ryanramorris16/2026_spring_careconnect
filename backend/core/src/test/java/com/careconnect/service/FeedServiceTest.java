@@ -35,7 +35,7 @@ class FeedServiceTest {
     private User user;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(feedService, "gamificationService", gamificationService);
 
@@ -55,7 +55,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("createPost - first post by user - unlocks achievement")
-    void createPost_firstPost_unlocksAchievement() {
+    void createPost_firstPost_unlocksAchievement() throws Exception {
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postRepository.countByUserId(1L)).thenReturn(1L);
 
@@ -70,7 +70,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("createPost - not first post - does not unlock achievement")
-    void createPost_notFirstPost_doesNotUnlockAchievement() {
+    void createPost_notFirstPost_doesNotUnlockAchievement() throws Exception {
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postRepository.countByUserId(1L)).thenReturn(5L);
 
@@ -82,7 +82,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("createPost - null imageUrl - creates post with null imageUrl")
-    void createPost_nullImageUrl_createsPostWithNullImageUrl() {
+    void createPost_nullImageUrl_createsPostWithNullImageUrl() throws Exception {
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
             Post saved = invocation.getArgument(0);
             saved.setId(11L);
@@ -98,7 +98,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPosts - posts exist - returns all posts")
-    void getAllPosts_postsExist_returnsAllPosts() {
+    void getAllPosts_postsExist_returnsAllPosts() throws Exception {
         Post post2 = new Post();
         post2.setId(11L);
         post2.setUserId(2L);
@@ -114,7 +114,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPosts - no posts - returns empty list")
-    void getAllPosts_noPosts_returnsEmptyList() {
+    void getAllPosts_noPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
         List<Post> result = feedService.getAllPosts();
@@ -124,7 +124,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUser - user has posts - returns user posts")
-    void getPostsByUser_userHasPosts_returnsUserPosts() {
+    void getPostsByUser_userHasPosts_returnsUserPosts() throws Exception {
         when(postRepository.findAllByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(post));
 
         List<Post> result = feedService.getPostsByUser(1L);
@@ -135,7 +135,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUser - user has no posts - returns empty list")
-    void getPostsByUser_userHasNoPosts_returnsEmptyList() {
+    void getPostsByUser_userHasNoPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByUserIdOrderByCreatedAtDesc(999L)).thenReturn(List.of());
 
         List<Post> result = feedService.getPostsByUser(999L);
@@ -145,7 +145,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPostsWithCommentCount - user with name - returns name as username")
-    void getAllPostsWithCommentCount_userWithName_returnsNameAsUsername() {
+    void getAllPostsWithCommentCount_userWithName_returnsNameAsUsername() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(3);
@@ -161,7 +161,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPostsWithCommentCount - user with null name - returns email as username")
-    void getAllPostsWithCommentCount_userWithNullName_returnsEmailAsUsername() {
+    void getAllPostsWithCommentCount_userWithNullName_returnsEmailAsUsername() throws Exception {
         user.setName(null);
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -175,7 +175,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPostsWithCommentCount - user with empty name - returns email as username")
-    void getAllPostsWithCommentCount_userWithEmptyName_returnsEmailAsUsername() {
+    void getAllPostsWithCommentCount_userWithEmptyName_returnsEmailAsUsername() throws Exception {
         user.setName("");
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -189,7 +189,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPostsWithCommentCount - user not found - returns Unknown as username")
-    void getAllPostsWithCommentCount_userNotFound_returnsUnknownAsUsername() {
+    void getAllPostsWithCommentCount_userNotFound_returnsUnknownAsUsername() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
         when(commentRepository.countByPostId(10L)).thenReturn(0);
@@ -202,7 +202,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getAllPostsWithCommentCount - no posts - returns empty list")
-    void getAllPostsWithCommentCount_noPosts_returnsEmptyList() {
+    void getAllPostsWithCommentCount_noPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
         List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
@@ -212,7 +212,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUserAndFriends - user with friends and posts - returns posts with comment counts")
-    void getPostsByUserAndFriends_userWithFriendsAndPosts_returnsPostsWithCommentCounts() {
+    void getPostsByUserAndFriends_userWithFriendsAndPosts_returnsPostsWithCommentCounts() throws Exception {
         List<Long> friendIds = new ArrayList<>(List.of(2L, 3L));
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(anyList())).thenReturn(List.of(post));
@@ -228,7 +228,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUserAndFriends - user with no friends - returns only own posts")
-    void getPostsByUserAndFriends_noFriends_returnsOwnPosts() {
+    void getPostsByUserAndFriends_noFriends_returnsOwnPosts() throws Exception {
         List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of(post));
@@ -242,7 +242,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUserAndFriends - user with null name in post - returns email")
-    void getPostsByUserAndFriends_userWithNullName_returnsEmail() {
+    void getPostsByUserAndFriends_userWithNullName_returnsEmail() throws Exception {
         user.setName(null);
         List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
@@ -257,7 +257,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUserAndFriends - post author not found - returns Unknown")
-    void getPostsByUserAndFriends_postAuthorNotFound_returnsUnknown() {
+    void getPostsByUserAndFriends_postAuthorNotFound_returnsUnknown() throws Exception {
         List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of(post));
@@ -271,7 +271,7 @@ class FeedServiceTest {
 
     @Test
     @DisplayName("getPostsByUserAndFriends - no posts - returns empty list")
-    void getPostsByUserAndFriends_noPosts_returnsEmptyList() {
+    void getPostsByUserAndFriends_noPosts_returnsEmptyList() throws Exception {
         List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of());

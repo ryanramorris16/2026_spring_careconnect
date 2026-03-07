@@ -48,7 +48,7 @@ class PasswordResetServiceTest {
     private User testUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         testUser = new User();
@@ -79,7 +79,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("startReset_emailNotFound_throwsIllegalArgumentException")
-    void startReset_emailNotFound_throwsIllegalArgumentException() {
+    void startReset_emailNotFound_throwsIllegalArgumentException() throws Exception {
         when(users.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -90,7 +90,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("startReset_emailProviderConsole_doesNotSendMail")
-    void startReset_emailProviderConsole_doesNotSendMail() {
+    void startReset_emailProviderConsole_doesNotSendMail() throws Exception {
         ReflectionTestUtils.setField(passwordResetService, "emailProvider", "console");
         when(users.findByEmail("patient@example.com")).thenReturn(Optional.of(testUser));
 
@@ -102,7 +102,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("startReset_mailIsNull_doesNotSendMail")
-    void startReset_mailIsNull_doesNotSendMail() {
+    void startReset_mailIsNull_doesNotSendMail() throws Exception {
         ReflectionTestUtils.setField(passwordResetService, "mail", null);
         when(users.findByEmail("patient@example.com")).thenReturn(Optional.of(testUser));
 
@@ -173,7 +173,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("startReset_consoleProviderWithNonNullMail_skipsMailSend")
-    void startReset_consoleProviderWithNonNullMail_skipsMailSend() {
+    void startReset_consoleProviderWithNonNullMail_skipsMailSend() throws Exception {
         ReflectionTestUtils.setField(passwordResetService, "emailProvider", "console");
         when(users.findByEmail("patient@example.com")).thenReturn(Optional.of(testUser));
 
@@ -186,7 +186,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_validToken_updatesPassword")
-    void finalizeReset_validToken_updatesPassword() {
+    void finalizeReset_validToken_updatesPassword() throws Exception {
         String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
         when(encoder.encode("newPassword123")).thenReturn("encodedNewPassword");
@@ -200,7 +200,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_userNotFound_throwsIllegalArgumentException")
-    void finalizeReset_userNotFound_throwsIllegalArgumentException() {
+    void finalizeReset_userNotFound_throwsIllegalArgumentException() throws Exception {
         String rawToken = Base64.getUrlEncoder().encodeToString("999".getBytes());
         when(users.findById(999L)).thenReturn(Optional.empty());
 
@@ -212,7 +212,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_invalidBase64Token_throwsIllegalArgumentException")
-    void finalizeReset_invalidBase64Token_throwsIllegalArgumentException() {
+    void finalizeReset_invalidBase64Token_throwsIllegalArgumentException() throws Exception {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset("!!!invalid!!!", "newPassword123"));
 
@@ -223,7 +223,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_tokenDecodesToNonNumeric_throwsIllegalArgumentException")
-    void finalizeReset_tokenDecodesToNonNumeric_throwsIllegalArgumentException() {
+    void finalizeReset_tokenDecodesToNonNumeric_throwsIllegalArgumentException() throws Exception {
         String rawToken = Base64.getUrlEncoder().encodeToString("not-a-number".getBytes());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -236,7 +236,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_orElseThrowIllegalArg_rethrowsSameException")
-    void finalizeReset_orElseThrowIllegalArg_rethrowsSameException() {
+    void finalizeReset_orElseThrowIllegalArg_rethrowsSameException() throws Exception {
         String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.empty());
 
@@ -248,7 +248,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_encoderCalledOnce_savesEncodedPassword")
-    void finalizeReset_encoderCalledOnce_savesEncodedPassword() {
+    void finalizeReset_encoderCalledOnce_savesEncodedPassword() throws Exception {
         String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
         when(encoder.encode("P@ssw0rd!")).thenReturn("$2a$10$hashvalue");
@@ -262,7 +262,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("finalizeReset_nullToken_throwsIllegalArgumentException")
-    void finalizeReset_nullToken_throwsIllegalArgumentException() {
+    void finalizeReset_nullToken_throwsIllegalArgumentException() throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset(null, "newPassword"));
     }
@@ -271,7 +271,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("isTokenValid_validEncodedUserId_returnsTrue")
-    void isTokenValid_validEncodedUserId_returnsTrue() {
+    void isTokenValid_validEncodedUserId_returnsTrue() throws Exception {
         String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
 
@@ -280,7 +280,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("isTokenValid_userNotFound_returnsFalse")
-    void isTokenValid_userNotFound_returnsFalse() {
+    void isTokenValid_userNotFound_returnsFalse() throws Exception {
         String encodedUserId = Base64.getUrlEncoder().encodeToString("999".getBytes());
         when(users.findById(999L)).thenReturn(Optional.empty());
 
@@ -289,13 +289,13 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("isTokenValid_invalidBase64_returnsFalse")
-    void isTokenValid_invalidBase64_returnsFalse() {
+    void isTokenValid_invalidBase64_returnsFalse() throws Exception {
         assertFalse(passwordResetService.isTokenValid("!!!not-base64!!!"));
     }
 
     @Test
     @DisplayName("isTokenValid_decodesToNonNumeric_returnsFalse")
-    void isTokenValid_decodesToNonNumeric_returnsFalse() {
+    void isTokenValid_decodesToNonNumeric_returnsFalse() throws Exception {
         String encoded = Base64.getUrlEncoder().encodeToString("abc".getBytes());
 
         assertFalse(passwordResetService.isTokenValid(encoded));
@@ -303,7 +303,7 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("isTokenValid_unexpectedException_returnsFalse")
-    void isTokenValid_unexpectedException_returnsFalse() {
+    void isTokenValid_unexpectedException_returnsFalse() throws Exception {
         String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenThrow(new RuntimeException("DB down"));
 
@@ -312,13 +312,13 @@ class PasswordResetServiceTest {
 
     @Test
     @DisplayName("isTokenValid_nullToken_returnsFalse")
-    void isTokenValid_nullToken_returnsFalse() {
+    void isTokenValid_nullToken_returnsFalse() throws Exception {
         assertFalse(passwordResetService.isTokenValid(null));
     }
 
     @Test
     @DisplayName("isTokenValid_emptyString_returnsFalse")
-    void isTokenValid_emptyString_returnsFalse() {
+    void isTokenValid_emptyString_returnsFalse() throws Exception {
         // Empty string is valid base64 that decodes to empty byte array, then empty string,
         // which will fail Long.parseLong
         assertFalse(passwordResetService.isTokenValid(""));

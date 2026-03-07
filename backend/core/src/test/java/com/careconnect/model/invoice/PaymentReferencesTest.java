@@ -12,7 +12,7 @@ class PaymentReferencesTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         List<String> methods = Arrays.asList("check", "credit_card", "online");
 
         PaymentReferences refs = PaymentReferences.builder()
@@ -29,7 +29,7 @@ class PaymentReferencesTest {
     }
 
     @Test
-    void builder_defaults_nullFields() {
+    void builder_defaults_nullFields() throws Exception {
         PaymentReferences refs = PaymentReferences.builder().build();
 
         assertThat(refs.getPaymentLink()).isNull();
@@ -41,7 +41,7 @@ class PaymentReferencesTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         List<String> methods = List.of("telephone");
 
         PaymentReferences refs = new PaymentReferences(
@@ -60,7 +60,7 @@ class PaymentReferencesTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PaymentReferences refs = PaymentReferences.builder().build();
 
         refs.setPaymentLink("https://updated-pay.example.com");
@@ -77,7 +77,7 @@ class PaymentReferencesTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
         PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
 
@@ -86,7 +86,7 @@ class PaymentReferencesTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay-a.example.com").build();
         PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay-b.example.com").build();
 

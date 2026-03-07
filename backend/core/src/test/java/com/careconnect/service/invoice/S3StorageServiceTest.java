@@ -16,7 +16,7 @@ class S3StorageServiceTest {
     private S3StorageService s3StorageService;
 
     @Test
-    void upload_twoArgs_canBeMocked() {
+    void upload_twoArgs_canBeMocked() throws Exception {
         byte[] data = new byte[]{1, 2, 3};
         doNothing().when(s3StorageService).upload(data, "key");
 
@@ -25,7 +25,7 @@ class S3StorageServiceTest {
     }
 
     @Test
-    void upload_threeArgs_canBeMocked() {
+    void upload_threeArgs_canBeMocked() throws Exception {
         byte[] data = new byte[]{1, 2, 3};
         doNothing().when(s3StorageService).upload(data, "key", "application/pdf");
 

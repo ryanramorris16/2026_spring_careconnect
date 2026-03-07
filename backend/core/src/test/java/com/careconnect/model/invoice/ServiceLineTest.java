@@ -13,7 +13,7 @@ class ServiceLineTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ServiceLine line = new ServiceLine();
 
         assertThat(line).isNotNull();
@@ -30,7 +30,7 @@ class ServiceLineTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Invoice invoice = Invoice.builder().id("INV-300").build();
         OffsetDateTime serviceDate = OffsetDateTime.of(2025, 3, 15, 9, 0, 0, 0, ZoneOffset.UTC);
 
@@ -52,7 +52,7 @@ class ServiceLineTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ServiceLine line = new ServiceLine();
         Invoice invoice = Invoice.builder().id("INV-400").build();
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -79,7 +79,7 @@ class ServiceLineTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         ServiceLine l1 = new ServiceLine(1L, null, "Office Visit", "99213", null,
                 new BigDecimal("200.00"), null, null);
         ServiceLine l2 = new ServiceLine(1L, null, "Office Visit", "99213", null,
@@ -90,7 +90,7 @@ class ServiceLineTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         ServiceLine l1 = new ServiceLine(1L, null, "Office Visit", "99213", null, null, null, null);
         ServiceLine l2 = new ServiceLine(2L, null, "Lab Work", "85025", null, null, null, null);
 
@@ -98,7 +98,7 @@ class ServiceLineTest {
     }
 
     @Test
-    void equals_null_returnsFalse() {
+    void equals_null_returnsFalse() throws Exception {
         ServiceLine line = new ServiceLine();
         assertThat(line).isNotEqualTo(null);
     }

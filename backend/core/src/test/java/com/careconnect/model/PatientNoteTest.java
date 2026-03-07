@@ -12,7 +12,7 @@ class PatientNoteTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         PatientNote note = new PatientNote();
 
         assertThat(note).isNotNull();
@@ -27,7 +27,7 @@ class PatientNoteTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
 
         PatientNote note = PatientNote.builder()
@@ -50,7 +50,7 @@ class PatientNoteTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         PatientNote note = new PatientNote();
         LocalDateTime now = LocalDateTime.now();
 
@@ -97,7 +97,7 @@ class PatientNoteTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         PatientNote n1 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();
         PatientNote n2 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();

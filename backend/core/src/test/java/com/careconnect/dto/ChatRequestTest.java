@@ -16,7 +16,7 @@ class ChatRequestTest {
     // ─── No-arg constructor: Boolean fields are null → convenience methods return false ─
 
     @Test
-    void noArgConstructor_booleanMethods_defaultToFalseWhenNull() {
+    void noArgConstructor_booleanMethods_defaultToFalseWhenNull() throws Exception {
         ChatRequest req = new ChatRequest();
 
         assertThat(req.isIncludeVitals()).isFalse();
@@ -32,14 +32,14 @@ class ChatRequestTest {
     // ─── isIncludeVitals ──────────────────────────────────────────────────────
 
     @Test
-    void setIncludeVitals_true_returnsTrue() {
+    void setIncludeVitals_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeVitals(true);
         assertThat(req.isIncludeVitals()).isTrue();
     }
 
     @Test
-    void setIncludeVitals_false_returnsFalse() {
+    void setIncludeVitals_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeVitals(false);
         assertThat(req.isIncludeVitals()).isFalse();
@@ -48,14 +48,14 @@ class ChatRequestTest {
     // ─── isIncludeMedications ─────────────────────────────────────────────────
 
     @Test
-    void setIncludeMedications_true_returnsTrue() {
+    void setIncludeMedications_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeMedications(true);
         assertThat(req.isIncludeMedications()).isTrue();
     }
 
     @Test
-    void setIncludeMedications_false_returnsFalse() {
+    void setIncludeMedications_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeMedications(false);
         assertThat(req.isIncludeMedications()).isFalse();
@@ -64,14 +64,14 @@ class ChatRequestTest {
     // ─── isIncludeNotes ───────────────────────────────────────────────────────
 
     @Test
-    void setIncludeNotes_true_returnsTrue() {
+    void setIncludeNotes_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeNotes(true);
         assertThat(req.isIncludeNotes()).isTrue();
     }
 
     @Test
-    void setIncludeNotes_false_returnsFalse() {
+    void setIncludeNotes_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeNotes(false);
         assertThat(req.isIncludeNotes()).isFalse();
@@ -80,14 +80,14 @@ class ChatRequestTest {
     // ─── isIncludeMoodPainLogs ────────────────────────────────────────────────
 
     @Test
-    void setIncludeMoodPainLogs_true_returnsTrue() {
+    void setIncludeMoodPainLogs_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeMoodPainLogs(true);
         assertThat(req.isIncludeMoodPainLogs()).isTrue();
     }
 
     @Test
-    void setIncludeMoodPainLogs_false_returnsFalse() {
+    void setIncludeMoodPainLogs_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeMoodPainLogs(false);
         assertThat(req.isIncludeMoodPainLogs()).isFalse();
@@ -96,14 +96,14 @@ class ChatRequestTest {
     // ─── isIncludeAllergies ───────────────────────────────────────────────────
 
     @Test
-    void setIncludeAllergies_true_returnsTrue() {
+    void setIncludeAllergies_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeAllergies(true);
         assertThat(req.isIncludeAllergies()).isTrue();
     }
 
     @Test
-    void setIncludeAllergies_false_returnsFalse() {
+    void setIncludeAllergies_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setIncludeAllergies(false);
         assertThat(req.isIncludeAllergies()).isFalse();
@@ -112,14 +112,14 @@ class ChatRequestTest {
     // ─── isEnableDifferentialPrivacy ──────────────────────────────────────────
 
     @Test
-    void setEnableDifferentialPrivacy_true_returnsTrue() {
+    void setEnableDifferentialPrivacy_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setEnableDifferentialPrivacy(true);
         assertThat(req.isEnableDifferentialPrivacy()).isTrue();
     }
 
     @Test
-    void setEnableDifferentialPrivacy_false_returnsFalse() {
+    void setEnableDifferentialPrivacy_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setEnableDifferentialPrivacy(false);
         assertThat(req.isEnableDifferentialPrivacy()).isFalse();
@@ -128,14 +128,14 @@ class ChatRequestTest {
     // ─── isStatisticalSummaryOnly ─────────────────────────────────────────────
 
     @Test
-    void setStatisticalSummaryOnly_true_returnsTrue() {
+    void setStatisticalSummaryOnly_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setStatisticalSummaryOnly(true);
         assertThat(req.isStatisticalSummaryOnly()).isTrue();
     }
 
     @Test
-    void setStatisticalSummaryOnly_false_returnsFalse() {
+    void setStatisticalSummaryOnly_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setStatisticalSummaryOnly(false);
         assertThat(req.isStatisticalSummaryOnly()).isFalse();
@@ -144,14 +144,14 @@ class ChatRequestTest {
     // ─── isPrivacyConsent ─────────────────────────────────────────────────────
 
     @Test
-    void setPrivacyConsent_true_returnsTrue() {
+    void setPrivacyConsent_true_returnsTrue() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setPrivacyConsent(true);
         assertThat(req.isPrivacyConsent()).isTrue();
     }
 
     @Test
-    void setPrivacyConsent_false_returnsFalse() {
+    void setPrivacyConsent_false_returnsFalse() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setPrivacyConsent(false);
         assertThat(req.isPrivacyConsent()).isFalse();
@@ -160,70 +160,70 @@ class ChatRequestTest {
     // ─── String / numeric getters and setters ─────────────────────────────────
 
     @Test
-    void setAndGetMessage_roundTrips() {
+    void setAndGetMessage_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setMessage("Hello");
         assertThat(req.getMessage()).isEqualTo("Hello");
     }
 
     @Test
-    void setAndGetConversationId_roundTrips() {
+    void setAndGetConversationId_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setConversationId("conv-123");
         assertThat(req.getConversationId()).isEqualTo("conv-123");
     }
 
     @Test
-    void setAndGetPatientId_roundTrips() {
+    void setAndGetPatientId_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setPatientId(5L);
         assertThat(req.getPatientId()).isEqualTo(5L);
     }
 
     @Test
-    void setAndGetUserId_roundTrips() {
+    void setAndGetUserId_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setUserId(10L);
         assertThat(req.getUserId()).isEqualTo(10L);
     }
 
     @Test
-    void setAndGetChatType_roundTrips() {
+    void setAndGetChatType_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setChatType(ChatConversation.ChatType.MEDICAL_CONSULTATION);
         assertThat(req.getChatType()).isEqualTo(ChatConversation.ChatType.MEDICAL_CONSULTATION);
     }
 
     @Test
-    void setAndGetPreferredModel_roundTrips() {
+    void setAndGetPreferredModel_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setPreferredModel("gpt-4");
         assertThat(req.getPreferredModel()).isEqualTo("gpt-4");
     }
 
     @Test
-    void setAndGetTitle_roundTrips() {
+    void setAndGetTitle_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setTitle("My Conversation");
         assertThat(req.getTitle()).isEqualTo("My Conversation");
     }
 
     @Test
-    void setAndGetTemperature_roundTrips() {
+    void setAndGetTemperature_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setTemperature(0.7);
         assertThat(req.getTemperature()).isEqualTo(0.7);
     }
 
     @Test
-    void setAndGetMaxTokens_roundTrips() {
+    void setAndGetMaxTokens_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setMaxTokens(2048);
         assertThat(req.getMaxTokens()).isEqualTo(2048);
     }
 
     @Test
-    void setAndGetAdditionalContext_roundTrips() {
+    void setAndGetAdditionalContext_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         List<String> ctx = List.of("context1", "context2");
         req.setAdditionalContext(ctx);
@@ -231,21 +231,21 @@ class ChatRequestTest {
     }
 
     @Test
-    void setAndGetUploadedFiles_roundTrips() {
+    void setAndGetUploadedFiles_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setUploadedFiles(List.of());
         assertThat(req.getUploadedFiles()).isEmpty();
     }
 
     @Test
-    void setAndGetAnonymizationLevel_roundTrips() {
+    void setAndGetAnonymizationLevel_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setAnonymizationLevel(AnonymizationLevel.AGGRESSIVE);
         assertThat(req.getAnonymizationLevel()).isEqualTo(AnonymizationLevel.AGGRESSIVE);
     }
 
     @Test
-    void setAndGetDataRetentionDays_roundTrips() {
+    void setAndGetDataRetentionDays_roundTrips() throws Exception {
         ChatRequest req = new ChatRequest();
         req.setDataRetentionDays(30);
         assertThat(req.getDataRetentionDays()).isEqualTo(30);
@@ -254,19 +254,19 @@ class ChatRequestTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults_chatTypeIsGeneralSupport() {
+    void builder_defaults_chatTypeIsGeneralSupport() throws Exception {
         ChatRequest req = ChatRequest.builder().userId(1L).build();
         assertThat(req.getChatType()).isEqualTo(ChatConversation.ChatType.GENERAL_SUPPORT);
     }
 
     @Test
-    void builder_defaults_anonymizationLevelIsModerate() {
+    void builder_defaults_anonymizationLevelIsModerate() throws Exception {
         ChatRequest req = ChatRequest.builder().userId(1L).build();
         assertThat(req.getAnonymizationLevel()).isEqualTo(AnonymizationLevel.MODERATE);
     }
 
     @Test
-    void builder_allFields_setsCorrectly() {
+    void builder_allFields_setsCorrectly() throws Exception {
         ChatRequest req = ChatRequest.builder()
                 .message("test message")
                 .conversationId("conv-1")

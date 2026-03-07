@@ -7,7 +7,9 @@ import com.careconnect.model.Medication.MedicationType;
 import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -50,6 +52,8 @@ class PatientControllerTest {
     @MockitoBean private UserRepository userRepository;
     @MockitoBean private MoodPainLogService moodPainLogService;
     @MockitoBean private MedicationService medicationService;
+    @MockitoBean private SecurityUtil securityUtil;
+    @MockitoBean private AuthorizationService authorizationService;
 
     private ObjectMapper objectMapper;
 
@@ -62,7 +66,7 @@ class PatientControllerTest {
     private Patient patient;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
         patientUser = buildUser(1L, "patient@test.com",   Role.PATIENT);
@@ -73,6 +77,10 @@ class PatientControllerTest {
         patient = new Patient();
         patient.setId(10L);
         patient.setUser(patientUser);
+
+        // Stub securityUtil.resolveCurrentUser() so that any controller-level
+        // or filter-level calls do not NPE. Default to patientUser.
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
     }
  
     // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -89,7 +97,7 @@ class PatientControllerTest {
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
     }
 
-    private MoodPainLogResponse sampleLog() {
+    private MoodPainLogResponse sampleLog() throws Exception {
         MoodPainLogResponse temp = new MoodPainLogResponse();
         temp.setId(1L);
         temp.setMoodValue(7);
@@ -99,7 +107,7 @@ class PatientControllerTest {
         return temp;
     }
 
-    private MedicationDTO sampleMedication() {
+    private MedicationDTO sampleMedication() throws Exception {
         MedicationDTO temp = MedicationDTO.builder()
             .id(1L)
             .patientId(10L)
@@ -274,6 +282,13 @@ class PatientControllerTest {
     @DisplayName("PUT /{patientId}")
     class UpdatePatient {
 
+        // Minimal JSON body for a Patient update request.
+        // Using a hand-crafted string avoids serialisation round-trip issues
+        // caused by read-only computed properties on the User model (e.g.
+        // permissions, isAdmin, isFamilyMember) that have no matching setter,
+        // which would trigger HttpMessageNotReadableException.
+        private static final String PATIENT_JSON = "{\"id\":10}";
+
         @Test
         @WithMockUser(username = "patient@test.com")
         @DisplayName("Patient can update their own record")
@@ -285,7 +300,7 @@ class PatientControllerTest {
             mockMvc.perform(put("/v1/api/patients/10")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(patient)))
+                            .content(PATIENT_JSON))
                     .andExpect(status().isOk());
         }
 
@@ -298,7 +313,7 @@ class PatientControllerTest {
             mockMvc.perform(put("/v1/api/patients/10")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(patient)))
+                            .content(PATIENT_JSON))
                     .andExpect(status().isForbidden());
         }
     }
@@ -411,7 +426,7 @@ class PatientControllerTest {
         private FamilyMemberRegistration registration;
 
         @BeforeEach
-        void init() {
+        void init() throws Exception {
             registration = new FamilyMemberRegistration(
                     "Jane", "Doe", "jane@example.com",
                     "555-1234", new AddressDto("123 ABC St.", null,
@@ -521,7 +536,7 @@ class PatientControllerTest {
         private MoodPainLogRequest validRequest;
 
         @BeforeEach
-        void init() {
+        void init() throws Exception {
             validRequest = new MoodPainLogRequest(7, 3, "Feeling okay", LocalDateTime.now().minusHours(1));
         }
 
@@ -894,7 +909,7 @@ class PatientControllerTest {
         void patientUpdatesProfile() throws Exception {
             mockCurrentUser(patientUser);
             when(patientService.getPatientById(10L)).thenReturn(patient);
-            PatientProfileUpdateDTO updateDTO = mock(PatientProfileUpdateDTO.class);
+            // PatientProfileUpdateDTO updateDTO = mock(PatientProfileUpdateDTO.class);
             PatientProfileDTO updatedDTO = mock(PatientProfileDTO.class);
             when(patientService.updatePatientProfile(eq(10L), any())).thenReturn(updatedDTO);
 

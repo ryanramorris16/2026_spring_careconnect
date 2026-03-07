@@ -1,7 +1,9 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.CheckIn;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.CheckInService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,15 +26,19 @@ class CheckInControllerTest {
     private MockMvc mockMvc;
 
     @Mock
-    private CheckInService checkInService; 
+    private CheckInService checkInService;
     // Mockito is used to isolate controller logic from service layer behavior.
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
 
     @InjectMocks
     private CheckInController checkInController;
     // Injects mocked service into controller.
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(checkInController)
                 .build();

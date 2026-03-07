@@ -64,7 +64,7 @@ class SubscriptionEnrichmentServiceTest {
     // ─── Setup ────────────────────────────────────────────────────────────────
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         // Build service with known price IDs instead of Spring @Value defaults
@@ -130,7 +130,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("getEnrichedUserSubscriptions: throws IllegalArgumentException when user does not exist")
-    void testGetEnrichedUserSubscriptions_userNotFound() {
+    void testGetEnrichedUserSubscriptions_userNotFound() throws Exception {
         // A request for a nonexistent user must fail immediately so the caller can
         // return a 4xx response. No further processing should occur.
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
@@ -144,7 +144,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("getEnrichedUserSubscriptions: skips Stripe when user has no Stripe customer ID")
-    void testGetEnrichedUserSubscriptions_noStripeCustomerId_skipsStripe() {
+    void testGetEnrichedUserSubscriptions_noStripeCustomerId_skipsStripe() throws Exception {
         // Without a Stripe customer ID there is nothing to look up in Stripe.
         // The service must enrich using only the local database records.
         User user = buildUser(1L, null);
@@ -259,7 +259,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: throws IllegalArgumentException when user does not exist")
-    void testCreateMissingPlanMappings_userNotFound() {
+    void testCreateMissingPlanMappings_userNotFound() throws Exception {
         // A nonexistent user means there are no subscriptions to map; fail fast.
         when(userRepository.findById(55L)).thenReturn(Optional.empty());
 
@@ -270,7 +270,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: skips subscription that already has a plan linked")
-    void testCreateMissingPlanMappings_skipSubscriptionWithPlan() {
+    void testCreateMissingPlanMappings_skipSubscriptionWithPlan() throws Exception {
         // If the subscription already references a Plan entity, no new mapping is needed.
         User user = buildUser(10L, null);
         Plan existingPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
@@ -289,7 +289,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: skips subscription with null priceId")
-    void testCreateMissingPlanMappings_skipSubscriptionWithNullPriceId() {
+    void testCreateMissingPlanMappings_skipSubscriptionWithNullPriceId() throws Exception {
         // A subscription without a Stripe price ID cannot be mapped to any plan.
         User user = buildUser(11L, null);
         Subscription sub = buildSubscription(11L, user, "sub_y", "ACTIVE", null);
@@ -305,7 +305,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: creates a plan mapping for a known premium price ID")
-    void testCreateMissingPlanMappings_createsMapping_premiumPriceId() {
+    void testCreateMissingPlanMappings_createsMapping_premiumPriceId() throws Exception {
         // A subscription whose price ID is in the premium set and has no existing mapping
         // must result in a new Plan row being saved with code = the price ID.
         User user = buildUser(12L, null);
@@ -331,7 +331,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: creates a plan mapping for a known standard price ID")
-    void testCreateMissingPlanMappings_createsMapping_standardPriceId() {
+    void testCreateMissingPlanMappings_createsMapping_standardPriceId() throws Exception {
         // Same as above but for the standard price ID set.
         User user = buildUser(13L, null);
         Subscription sub = buildSubscription(13L, user, "sub_std", "ACTIVE", STANDARD_PRICE_ID);
@@ -355,7 +355,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: skips save when a mapping for the price ID already exists in the database")
-    void testCreateMissingPlanMappings_skipsIfMappingAlreadyExists() {
+    void testCreateMissingPlanMappings_skipsIfMappingAlreadyExists() throws Exception {
         // If planRepository.findByCode already returns a plan, no duplicate should be saved.
         User user = buildUser(14L, null);
         Subscription sub = buildSubscription(14L, user, "sub_map", "ACTIVE", PREMIUM_PRICE_ID);
@@ -373,7 +373,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("createMissingPlanMappings: defaults to premium plan mapping for an unknown price ID")
-    void testCreateMissingPlanMappings_unknownPriceId_defaultsToPremium() {
+    void testCreateMissingPlanMappings_unknownPriceId_defaultsToPremium() throws Exception {
         // When a price ID doesn't match either the premium or standard set,
         // the service defaults to creating a mapping pointing at the Premium Plan.
         String unknownPriceId = "price_unknown_xyz";
@@ -404,7 +404,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("getEnrichedActiveUserSubscriptions: throws IllegalArgumentException when user does not exist")
-    void testGetEnrichedActiveUserSubscriptions_userNotFound() {
+    void testGetEnrichedActiveUserSubscriptions_userNotFound() throws Exception {
         when(userRepository.findById(77L)).thenReturn(Optional.empty());
 
         assertThrows(
@@ -414,7 +414,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("getEnrichedActiveUserSubscriptions: returns only locally ACTIVE subscriptions when user has no Stripe customer ID")
-    void testGetEnrichedActiveUserSubscriptions_noStripeCustomer_returnsActiveOnly() {
+    void testGetEnrichedActiveUserSubscriptions_noStripeCustomer_returnsActiveOnly() throws Exception {
         // Without a Stripe customer ID the active list comes solely from local status.
         // CANCELLED subscriptions must not appear in the result.
         User user = buildUser(20L, null);
@@ -459,7 +459,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("getEnrichedActiveUserSubscriptions: returns empty list when no active subscriptions exist and Stripe customer is absent")
-    void testGetEnrichedActiveUserSubscriptions_noneActive_returnsEmpty() {
+    void testGetEnrichedActiveUserSubscriptions_noneActive_returnsEmpty() throws Exception {
         // A user with only CANCELLED subscriptions and no Stripe customer ID must
         // receive an empty result — not null, not an exception.
         User user = buildUser(22L, null);
@@ -480,7 +480,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: returns empty list when given an empty input list")
-    void testEnrichSubscriptions_emptyList() {
+    void testEnrichSubscriptions_emptyList() throws Exception {
         // Feeding an empty list must produce an empty (not null) result list.
         List<SubscriptionResponseDTO> result = service.enrichSubscriptions(Collections.emptyList());
 
@@ -490,7 +490,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: builds DTO from the plan already linked to the subscription")
-    void testEnrichSubscriptions_subscriptionHasPlan() {
+    void testEnrichSubscriptions_subscriptionHasPlan() throws Exception {
         // When the subscription entity already holds a Plan reference, that plan's data
         // is used directly without any additional lookup by price ID.
         Plan plan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
@@ -512,7 +512,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: resolves plan from the plans-by-code map when priceId matches a plan code")
-    void testEnrichSubscriptions_resolvesPlanByCode() {
+    void testEnrichSubscriptions_resolvesPlanByCode() throws Exception {
         // When no plan is linked but the subscription's priceId exactly matches a
         // Plan's code, that plan is used to populate the DTO.
         Plan plan = buildPlan(2L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
@@ -534,7 +534,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: uses the DB Premium Plan when priceId is in the premium price ID set but has no direct code match")
-    void testEnrichSubscriptions_premiumPriceId_usesPremiumPlanFromDb() {
+    void testEnrichSubscriptions_premiumPriceId_usesPremiumPlanFromDb() throws Exception {
         // The priceId is in the configured premium set but no plan has that exact code.
         // The "Premium Plan" found by name is used to fill the DTO.
         Plan premiumPlan = buildPlan(5L, "different_code", "Premium Plan", 3000);
@@ -556,7 +556,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: falls back to hardcoded premium defaults when priceId is premium but no DB plan exists")
-    void testEnrichSubscriptions_premiumPriceId_noDbPlan_usesHardcodedDefaults() {
+    void testEnrichSubscriptions_premiumPriceId_noDbPlan_usesHardcodedDefaults() throws Exception {
         // When the priceId is in the premium set but no Premium Plan row exists in the
         // database, the DTO uses hardcoded defaults: name="Premium Plan", price=$30.00.
         Subscription sub = new Subscription();
@@ -576,7 +576,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: uses the DB Standard Plan when priceId is in the standard price ID set")
-    void testEnrichSubscriptions_standardPriceId_usesStandardPlanFromDb() {
+    void testEnrichSubscriptions_standardPriceId_usesStandardPlanFromDb() throws Exception {
         // The priceId is in the standard set and there is a matching "Standard Plan" by name.
         Plan standardPlan = buildPlan(6L, "std_code", "Standard Plan", 2000);
         Subscription sub = new Subscription();
@@ -596,7 +596,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: falls back to hardcoded standard defaults when priceId is standard but no DB plan exists")
-    void testEnrichSubscriptions_standardPriceId_noDbPlan_usesHardcodedDefaults() {
+    void testEnrichSubscriptions_standardPriceId_noDbPlan_usesHardcodedDefaults() throws Exception {
         // Same as the premium fallback but for the standard tier:
         // hardcoded name="Standard Plan", price=$20.00.
         Subscription sub = new Subscription();
@@ -616,7 +616,7 @@ class SubscriptionEnrichmentServiceTest {
 
     @Test
     @DisplayName("enrichSubscriptions: defaults to Premium Plan for a price ID that is neither premium nor standard")
-    void testEnrichSubscriptions_unknownPriceId_defaultsToPremiumPlan() {
+    void testEnrichSubscriptions_unknownPriceId_defaultsToPremiumPlan() throws Exception {
         // An unrecognised price ID falls through to the final default branch, which
         // applies the Premium Plan details when one is present in the database.
         Plan premiumPlan = buildPlan(7L, "premium_code", "Premium Plan", 3000);

@@ -12,7 +12,7 @@ class MoodPainLogTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         MoodPainLog log = new MoodPainLog();
 
         assertThat(log).isNotNull();
@@ -25,7 +25,7 @@ class MoodPainLogTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
         LocalDateTime now = LocalDateTime.now();
 
@@ -53,7 +53,7 @@ class MoodPainLogTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         MoodPainLog log = new MoodPainLog();
         Patient patient = new Patient();
         LocalDateTime now = LocalDateTime.now();

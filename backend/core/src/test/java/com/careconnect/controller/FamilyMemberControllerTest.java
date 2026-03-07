@@ -51,7 +51,7 @@ class FamilyMemberControllerTest {
     private static final Long PATIENT_ID = 2L;
 
     @BeforeEach
-    void setUpSecurityContext() {
+    void setUpSecurityContext() throws Exception {
         /*
          * FamilyMemberController calls authentication.getName() and parses it as a Long.
          * Wire the mock SecurityContext into the static SecurityContextHolder.
@@ -62,11 +62,11 @@ class FamilyMemberControllerTest {
     }
 
     @AfterEach
-    void clearSecurityContext() {
+    void clearSecurityContext() throws Exception {
         SecurityContextHolder.clearContext();
     }
 
-    private User makeFamilyMemberUser() {
+    private User makeFamilyMemberUser() throws Exception {
         User u = new User();
         u.setId(USER_ID);
         u.setRole(Role.FAMILY_MEMBER);
@@ -76,7 +76,7 @@ class FamilyMemberControllerTest {
     // ── getCurrentFamilyMember() — error branches ────────────────────────────
 
     @Test
-    void getAccessiblePatients_throwsUnauthorized_whenUserNotFound() {
+    void getAccessiblePatients_throwsUnauthorized_whenUserNotFound() throws Exception {
         /*
          * Covers: userRepository.findById() returns empty
          * → orElseThrow fires AppException(UNAUTHORIZED)
@@ -90,7 +90,7 @@ class FamilyMemberControllerTest {
     }
 
     @Test
-    void getAccessiblePatients_throwsForbidden_whenUserIsNotFamilyMember() {
+    void getAccessiblePatients_throwsForbidden_whenUserIsNotFamilyMember() throws Exception {
         /*
          * Covers: user found but role != FAMILY_MEMBER
          * → throws AppException(FORBIDDEN)
@@ -109,7 +109,7 @@ class FamilyMemberControllerTest {
     // ── getAccessiblePatients() ───────────────────────────────────────────────
 
     @Test
-    void getAccessiblePatients_returns200_withPatientList() {
+    void getAccessiblePatients_returns200_withPatientList() throws Exception {
         /*
          * Covers: getCurrentFamilyMember() happy path (role == FAMILY_MEMBER)
          * and successful delegation to familyMemberService.
@@ -128,7 +128,7 @@ class FamilyMemberControllerTest {
     // ── getPatientData() ──────────────────────────────────────────────────────
 
     @Test
-    void getPatientData_returns200_withPatientData() {
+    void getPatientData_returns200_withPatientData() throws Exception {
         /*
          * Covers: getCurrentFamilyMember() and getPatientData() delegation.
          */
@@ -146,7 +146,7 @@ class FamilyMemberControllerTest {
     // ── hasAccessToPatient() ─────────────────────────────────────────────────
 
     @Test
-    void hasAccessToPatient_returns200_withBooleanResult() {
+    void hasAccessToPatient_returns200_withBooleanResult() throws Exception {
         /*
          * Covers: successful delegation to familyMemberService.hasAccessToPatient().
          */
@@ -163,7 +163,7 @@ class FamilyMemberControllerTest {
     // ── getPatientDashboard() ────────────────────────────────────────────────
 
     @Test
-    void getPatientDashboard_throwsForbidden_whenAccessDenied() {
+    void getPatientDashboard_throwsForbidden_whenAccessDenied() throws Exception {
         /*
          * Covers: hasAccessToPatient returns false
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
@@ -179,7 +179,7 @@ class FamilyMemberControllerTest {
     }
 
     @Test
-    void getPatientDashboard_returns200_whenAccessGranted() {
+    void getPatientDashboard_returns200_whenAccessGranted() throws Exception {
         /*
          * Covers: hasAccessToPatient returns true
          * → delegates to analyticsService.getDashboard().
@@ -199,7 +199,7 @@ class FamilyMemberControllerTest {
     // ── getPatientVitals() ───────────────────────────────────────────────────
 
     @Test
-    void getPatientVitals_throwsForbidden_whenAccessDenied() {
+    void getPatientVitals_throwsForbidden_whenAccessDenied() throws Exception {
         /*
          * Covers: hasAccessToPatient returns false
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
@@ -215,7 +215,7 @@ class FamilyMemberControllerTest {
     }
 
     @Test
-    void getPatientVitals_returns200_whenAccessGranted() {
+    void getPatientVitals_returns200_whenAccessGranted() throws Exception {
         /*
          * Covers: hasAccessToPatient returns true
          * → delegates to analyticsService.getVitals().

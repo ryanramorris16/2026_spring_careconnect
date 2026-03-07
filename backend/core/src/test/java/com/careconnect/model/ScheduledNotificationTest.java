@@ -11,7 +11,7 @@ class ScheduledNotificationTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ScheduledNotification n = new ScheduledNotification();
 
         assertThat(n).isNotNull();
@@ -28,7 +28,7 @@ class ScheduledNotificationTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults() {
+    void builder_defaults() throws Exception {
         ScheduledNotification n = ScheduledNotification.builder()
                 .receiverId(1L)
                 .title("Test")
@@ -45,7 +45,7 @@ class ScheduledNotificationTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         Task task = new Task();
 
@@ -80,7 +80,7 @@ class ScheduledNotificationTest {
     // ─── setLastUpdate() ──────────────────────────────────────────────────────
 
     @Test
-    void setLastUpdate_refreshesUpdatedAt() {
+    void setLastUpdate_refreshesUpdatedAt() throws Exception {
         ScheduledNotification n = new ScheduledNotification();
         n.setUpdatedAt(LocalDateTime.now().minusDays(1));
         LocalDateTime before = n.getUpdatedAt();
@@ -93,7 +93,7 @@ class ScheduledNotificationTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         ScheduledNotification n1 = ScheduledNotification.builder()
                 .id(1L).title("Test").status("PENDING").createdAt(now).updatedAt(now).build();

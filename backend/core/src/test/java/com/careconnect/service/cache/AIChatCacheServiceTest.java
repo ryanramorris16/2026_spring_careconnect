@@ -40,7 +40,7 @@ class AIChatCacheServiceTest {
     private AIChatCacheService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         service = new AIChatCacheService();
         ReflectionTestUtils.setField(service, "patientRepository", patientRepository);
@@ -94,7 +94,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findPatient_cacheMiss_dbReturnsPatient_cachesAndReturns")
-        void findPatient_cacheMiss_dbReturnsPatient_cachesAndReturns() {
+        void findPatient_cacheMiss_dbReturnsPatient_cachesAndReturns() throws Exception {
             Patient patient = new Patient();
             when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
@@ -111,7 +111,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findPatient_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache")
-        void findPatient_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() {
+        void findPatient_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() throws Exception {
             when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
             Optional<Patient> result = service.findPatient(99L);
@@ -180,7 +180,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findUserAIConfig_cacheMiss_dbReturnsConfig_cachesAndReturns")
-        void findUserAIConfig_cacheMiss_dbReturnsConfig_cachesAndReturns() {
+        void findUserAIConfig_cacheMiss_dbReturnsConfig_cachesAndReturns() throws Exception {
             UserAIConfig config = new UserAIConfig();
             when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L))
                     .thenReturn(Optional.of(config));
@@ -198,7 +198,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findUserAIConfig_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache")
-        void findUserAIConfig_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() {
+        void findUserAIConfig_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() throws Exception {
             when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L))
                     .thenReturn(Optional.empty());
 
@@ -254,7 +254,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("saveUserAIConfig_savesToDbAndUpdatesCache")
-        void saveUserAIConfig_savesToDbAndUpdatesCache() {
+        void saveUserAIConfig_savesToDbAndUpdatesCache() throws Exception {
             UserAIConfig config = new UserAIConfig();
             config.setUserId(10L);
             config.setPatientId(20L);
@@ -287,7 +287,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findConversation_cacheMiss_dbReturnsConversation_cachesAndReturns")
-        void findConversation_cacheMiss_dbReturnsConversation_cachesAndReturns() {
+        void findConversation_cacheMiss_dbReturnsConversation_cachesAndReturns() throws Exception {
             ChatConversation conversation = new ChatConversation();
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-1"))
                     .thenReturn(Optional.of(conversation));
@@ -305,7 +305,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("findConversation_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache")
-        void findConversation_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() {
+        void findConversation_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() throws Exception {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-99"))
                     .thenReturn(Optional.empty());
 
@@ -361,7 +361,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("saveConversation_savesToDbAndUpdatesCache")
-        void saveConversation_savesToDbAndUpdatesCache() {
+        void saveConversation_savesToDbAndUpdatesCache() throws Exception {
             ChatConversation conversation = new ChatConversation();
             ChatConversation saved = new ChatConversation();
             saved.setConversationId("conv-1");
@@ -403,7 +403,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("evictPatient_noEntryInCache_doesNotThrow")
-        void evictPatient_noEntryInCache_doesNotThrow() {
+        void evictPatient_noEntryInCache_doesNotThrow() throws Exception {
             service.evictPatient(999L);
             // Should not throw
         }
@@ -432,7 +432,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("evictUserAIConfig_noEntryInCache_doesNotThrow")
-        void evictUserAIConfig_noEntryInCache_doesNotThrow() {
+        void evictUserAIConfig_noEntryInCache_doesNotThrow() throws Exception {
             service.evictUserAIConfig(999L, 888L);
             // Should not throw
         }
@@ -461,7 +461,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("evictConversation_noEntryInCache_doesNotThrow")
-        void evictConversation_noEntryInCache_doesNotThrow() {
+        void evictConversation_noEntryInCache_doesNotThrow() throws Exception {
             service.evictConversation("nonexistent");
             // Should not throw
         }
@@ -512,7 +512,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("cleanupExpiredEntries_emptyCaches_doesNotThrow")
-        void cleanupExpiredEntries_emptyCaches_doesNotThrow() {
+        void cleanupExpiredEntries_emptyCaches_doesNotThrow() throws Exception {
             service.cleanupExpiredEntries();
             // Should not throw on empty caches
         }
@@ -546,7 +546,7 @@ class AIChatCacheServiceTest {
 
         @Test
         @DisplayName("clearAllCaches_emptyCaches_doesNotThrow")
-        void clearAllCaches_emptyCaches_doesNotThrow() {
+        void clearAllCaches_emptyCaches_doesNotThrow() throws Exception {
             service.clearAllCaches();
             // Should not throw on empty caches
         }

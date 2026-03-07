@@ -25,7 +25,7 @@ class AuditLoggerTest {
     @InjectMocks AuditLogger auditLogger;
 
     @Test
-    void log_savesAuditEventWithCorrectFields() {
+    void log_savesAuditEventWithCorrectFields() throws Exception {
         Map<String, Object> deviceInfo = Map.of("device", "mobile");
         Map<String, Object> details   = Map.of("key", "value");
 
@@ -45,7 +45,7 @@ class AuditLoggerTest {
     }
 
     @Test
-    void log_withNullDetails_savesAuditEvent() {
+    void log_withNullDetails_savesAuditEvent() throws Exception {
         when(evvRecord.getDeviceInfo()).thenReturn(null);
 
         auditLogger.log(evvRecord, 1L, "APPROVED", null);

@@ -27,14 +27,14 @@ class USPSControllerTest {
     @InjectMocks
     private USPSController controller;
 
-    private USPSDigest emptyDigest() {
+    private USPSDigest emptyDigest() throws Exception {
         return new USPSDigest(null, List.of(), List.of());
     }
 
     // ─── getDigest ────────────────────────────────────────────────────────────
 
     @Test
-    void getDigest_jwtPresentDatePresent_callsDigestForDate() {
+    void getDigest_jwtPresentDatePresent_callsDigestForDate() throws Exception {
         Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("user-123");
         LocalDate date = LocalDate.of(2025, 1, 15);
@@ -49,7 +49,7 @@ class USPSControllerTest {
     }
 
     @Test
-    void getDigest_jwtPresentDateNull_callsLatestForUser() {
+    void getDigest_jwtPresentDateNull_callsLatestForUser() throws Exception {
         Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("user-123");
         USPSDigest digest = emptyDigest();
@@ -63,7 +63,7 @@ class USPSControllerTest {
     }
 
     @Test
-    void getDigest_jwtNullDateNull_usesDemoUserFallback() {
+    void getDigest_jwtNullDateNull_usesDemoUserFallback() throws Exception {
         when(service.latestForUser("demo-user")).thenReturn(Optional.empty());
 
         ResponseEntity<USPSDigest> response = controller.getDigest(null, null);
@@ -75,7 +75,7 @@ class USPSControllerTest {
     }
 
     @Test
-    void getDigest_jwtNullDatePresent_callsDigestForDateWithDemoUser() {
+    void getDigest_jwtNullDatePresent_callsDigestForDateWithDemoUser() throws Exception {
         LocalDate date = LocalDate.of(2025, 3, 10);
         when(service.digestForDate("demo-user", date)).thenReturn(Optional.empty());
 

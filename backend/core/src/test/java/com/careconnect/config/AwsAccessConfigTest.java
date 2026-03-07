@@ -28,7 +28,7 @@ class AwsAccessConfigTest {
     private AwsAccessConfig config;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Set the region system property so DefaultAwsRegionProviderChain can resolve it
         // without hitting EC2 metadata or environment variables that may not exist in CI.
         System.setProperty("aws.region", "us-east-1");
@@ -36,13 +36,13 @@ class AwsAccessConfigTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         // Always clean up the system property so it does not affect other test classes.
         System.clearProperty("aws.region");
     }
 
     @Test
-    void defaultAwsRegion_ReturnsRegion() {
+    void defaultAwsRegion_ReturnsRegion() throws Exception {
         // Verifies that the region bean resolves to the value set in the system property.
         Region region = config.defaultAwsRegion();
         assertNotNull(region);
@@ -50,7 +50,7 @@ class AwsAccessConfigTest {
     }
 
     @Test
-    void awsCredentialsProvider_IsCreated() {
+    void awsCredentialsProvider_IsCreated() throws Exception {
         // Verifies that a DefaultCredentialsProvider can be constructed; it does not
         // actually resolve credentials until the first API call is made.
         DefaultCredentialsProvider provider = config.awsCredentialsProvider();
@@ -58,7 +58,7 @@ class AwsAccessConfigTest {
     }
 
     @Test
-    void s3Client_IsCreatedSuccessfully() {
+    void s3Client_IsCreatedSuccessfully() throws Exception {
         // Verifies that the S3Client bean is created without throwing.
         // Client creation is lightweight — it does not open a network connection.
         S3Client s3Client = config.s3Client();
@@ -66,7 +66,7 @@ class AwsAccessConfigTest {
     }
 
     @Test
-    void ssmClient_IsCreatedSuccessfully() {
+    void ssmClient_IsCreatedSuccessfully() throws Exception {
         // Verifies that the SsmClient bean is created using the credentials provider bean.
         // The credentials provider is passed explicitly, matching the Spring wiring.
         DefaultCredentialsProvider provider = config.awsCredentialsProvider();
@@ -75,14 +75,14 @@ class AwsAccessConfigTest {
     }
 
     @Test
-    void textractClient_IsCreatedSuccessfully() {
+    void textractClient_IsCreatedSuccessfully() throws Exception {
         // Verifies that the TextractClient bean is created without throwing.
         TextractClient textractClient = config.textractClient();
         assertNotNull(textractClient);
     }
 
     @Test
-    void allBeansCanBeCreatedTogether() {
+    void allBeansCanBeCreatedTogether() throws Exception {
         // Integration-style check: all five beans are instantiated in the order Spring
         // would wire them to confirm there are no dependency conflicts between them.
         Region region = config.defaultAwsRegion();

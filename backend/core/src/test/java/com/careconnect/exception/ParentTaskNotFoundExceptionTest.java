@@ -10,7 +10,7 @@ class ParentTaskNotFoundExceptionTest {
 
     @Test
     @DisplayName("constructor formats message with parentTaskId")
-    void constructor_formatsMessage() {
+    void constructor_formatsMessage() throws Exception {
         ParentTaskNotFoundException ex = new ParentTaskNotFoundException(42L);
         assertEquals("Parent task not found: id=42", ex.getMessage());
         assertInstanceOf(NotFoundException.class, ex);

@@ -39,7 +39,7 @@ class AllergyServiceTest {
     private AllergyDTO allergyDTO;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         patient = Patient.builder()
@@ -79,7 +79,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("createAllergy - valid DTO with isActive set - returns saved AllergyDTO")
-    void createAllergy_validDtoWithIsActive_returnsSavedAllergyDTO() {
+    void createAllergy_validDtoWithIsActive_returnsSavedAllergyDTO() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyRepository.existsByPatientAndAllergenIgnoreCaseAndIsActiveTrue(patient, "Peanuts"))
                 .thenReturn(false);
@@ -105,7 +105,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("createAllergy - isActive is null - defaults to true")
-    void createAllergy_isActiveNull_defaultsToTrue() {
+    void createAllergy_isActiveNull_defaultsToTrue() throws Exception {
         AllergyDTO dtoWithNullActive = AllergyDTO.builder()
                 .patientId(1L)
                 .allergen("Dust")
@@ -145,7 +145,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("createAllergy - isActive is false - uses provided value")
-    void createAllergy_isActiveFalse_usesProvidedValue() {
+    void createAllergy_isActiveFalse_usesProvidedValue() throws Exception {
         AllergyDTO dtoWithFalseActive = AllergyDTO.builder()
                 .patientId(1L)
                 .allergen("Shellfish")
@@ -181,7 +181,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("createAllergy - patient not found - throws IllegalArgumentException")
-    void createAllergy_patientNotFound_throwsIllegalArgumentException() {
+    void createAllergy_patientNotFound_throwsIllegalArgumentException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
         AllergyDTO dto = AllergyDTO.builder()
@@ -199,7 +199,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("createAllergy - duplicate active allergy - throws IllegalArgumentException")
-    void createAllergy_duplicateActiveAllergy_throwsIllegalArgumentException() {
+    void createAllergy_duplicateActiveAllergy_throwsIllegalArgumentException() throws Exception {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(allergyRepository.existsByPatientAndAllergenIgnoreCaseAndIsActiveTrue(patient, "Peanuts"))
                 .thenReturn(true);
@@ -215,7 +215,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - all fields provided - updates all fields")
-    void updateAllergy_allFieldsProvided_updatesAllFields() {
+    void updateAllergy_allFieldsProvided_updatesAllFields() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -260,7 +260,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - all fields null - does not update any fields")
-    void updateAllergy_allFieldsNull_doesNotUpdateAnyFields() {
+    void updateAllergy_allFieldsNull_doesNotUpdateAnyFields() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -302,7 +302,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only allergen provided - updates only allergen")
-    void updateAllergy_onlyAllergenProvided_updatesOnlyAllergen() {
+    void updateAllergy_onlyAllergenProvided_updatesOnlyAllergen() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -337,7 +337,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only allergyType provided - updates only allergyType")
-    void updateAllergy_onlyAllergyTypeProvided_updatesOnlyAllergyType() {
+    void updateAllergy_onlyAllergyTypeProvided_updatesOnlyAllergyType() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -363,7 +363,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only severity provided - updates only severity")
-    void updateAllergy_onlySeverityProvided_updatesOnlySeverity() {
+    void updateAllergy_onlySeverityProvided_updatesOnlySeverity() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -387,7 +387,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only reaction provided - updates only reaction")
-    void updateAllergy_onlyReactionProvided_updatesOnlyReaction() {
+    void updateAllergy_onlyReactionProvided_updatesOnlyReaction() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -411,7 +411,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only notes provided - updates only notes")
-    void updateAllergy_onlyNotesProvided_updatesOnlyNotes() {
+    void updateAllergy_onlyNotesProvided_updatesOnlyNotes() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -435,7 +435,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only diagnosedDate provided - updates only diagnosedDate")
-    void updateAllergy_onlyDiagnosedDateProvided_updatesOnlyDiagnosedDate() {
+    void updateAllergy_onlyDiagnosedDateProvided_updatesOnlyDiagnosedDate() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -459,7 +459,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - only isActive provided - updates only isActive")
-    void updateAllergy_onlyIsActiveProvided_updatesOnlyIsActive() {
+    void updateAllergy_onlyIsActiveProvided_updatesOnlyIsActive() throws Exception {
         Allergy existingAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -482,7 +482,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("updateAllergy - allergy not found - throws IllegalArgumentException")
-    void updateAllergy_allergyNotFound_throwsIllegalArgumentException() {
+    void updateAllergy_allergyNotFound_throwsIllegalArgumentException() throws Exception {
         when(allergyRepository.findById(999L)).thenReturn(Optional.empty());
 
         AllergyDTO updateDTO = AllergyDTO.builder()
@@ -500,7 +500,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getAllergiesForPatient - patient has allergies - returns list of AllergyDTOs")
-    void getAllergiesForPatient_patientHasAllergies_returnsListOfAllergyDTOs() {
+    void getAllergiesForPatient_patientHasAllergies_returnsListOfAllergyDTOs() throws Exception {
         Allergy allergy2 = Allergy.builder()
                 .id(11L)
                 .patient(patient)
@@ -525,7 +525,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getAllergiesForPatient - patient has no allergies - returns empty list")
-    void getAllergiesForPatient_patientHasNoAllergies_returnsEmptyList() {
+    void getAllergiesForPatient_patientHasNoAllergies_returnsEmptyList() throws Exception {
         when(allergyRepository.findByPatientId(1L)).thenReturn(Collections.emptyList());
 
         List<AllergyDTO> results = allergyService.getAllergiesForPatient(1L);
@@ -539,7 +539,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getActiveAllergiesForPatient - patient has active allergies - returns list of active AllergyDTOs")
-    void getActiveAllergiesForPatient_patientHasActiveAllergies_returnsListOfActiveAllergyDTOs() {
+    void getActiveAllergiesForPatient_patientHasActiveAllergies_returnsListOfActiveAllergyDTOs() throws Exception {
         when(allergyRepository.findActiveAllergiesByPatientId(1L)).thenReturn(List.of(allergy));
 
         List<AllergyDTO> results = allergyService.getActiveAllergiesForPatient(1L);
@@ -553,7 +553,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getActiveAllergiesForPatient - patient has no active allergies - returns empty list")
-    void getActiveAllergiesForPatient_noActiveAllergies_returnsEmptyList() {
+    void getActiveAllergiesForPatient_noActiveAllergies_returnsEmptyList() throws Exception {
         when(allergyRepository.findActiveAllergiesByPatientId(1L)).thenReturn(Collections.emptyList());
 
         List<AllergyDTO> results = allergyService.getActiveAllergiesForPatient(1L);
@@ -567,7 +567,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getAllergy - allergy exists - returns Optional containing AllergyDTO")
-    void getAllergy_allergyExists_returnsOptionalContainingAllergyDTO() {
+    void getAllergy_allergyExists_returnsOptionalContainingAllergyDTO() throws Exception {
         when(allergyRepository.findById(10L)).thenReturn(Optional.of(allergy));
 
         Optional<AllergyDTO> result = allergyService.getAllergy(10L);
@@ -588,7 +588,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("getAllergy - allergy does not exist - returns empty Optional")
-    void getAllergy_allergyDoesNotExist_returnsEmptyOptional() {
+    void getAllergy_allergyDoesNotExist_returnsEmptyOptional() throws Exception {
         when(allergyRepository.findById(999L)).thenReturn(Optional.empty());
 
         Optional<AllergyDTO> result = allergyService.getAllergy(999L);
@@ -601,7 +601,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("deactivateAllergy - allergy exists - sets isActive to false and saves")
-    void deactivateAllergy_allergyExists_setsIsActiveToFalseAndSaves() {
+    void deactivateAllergy_allergyExists_setsIsActiveToFalseAndSaves() throws Exception {
         Allergy activeAllergy = Allergy.builder()
                 .id(10L)
                 .patient(patient)
@@ -622,7 +622,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("deactivateAllergy - allergy not found - throws IllegalArgumentException")
-    void deactivateAllergy_allergyNotFound_throwsIllegalArgumentException() {
+    void deactivateAllergy_allergyNotFound_throwsIllegalArgumentException() throws Exception {
         when(allergyRepository.findById(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -636,7 +636,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("deleteAllergy - allergy exists - deletes allergy by id")
-    void deleteAllergy_allergyExists_deletesAllergyById() {
+    void deleteAllergy_allergyExists_deletesAllergyById() throws Exception {
         when(allergyRepository.existsById(10L)).thenReturn(true);
 
         allergyService.deleteAllergy(10L);
@@ -647,7 +647,7 @@ class AllergyServiceTest {
 
     @Test
     @DisplayName("deleteAllergy - allergy not found - throws IllegalArgumentException")
-    void deleteAllergy_allergyNotFound_throwsIllegalArgumentException() {
+    void deleteAllergy_allergyNotFound_throwsIllegalArgumentException() throws Exception {
         when(allergyRepository.existsById(999L)).thenReturn(false);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,

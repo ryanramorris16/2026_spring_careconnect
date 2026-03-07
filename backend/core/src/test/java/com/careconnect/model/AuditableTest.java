@@ -43,7 +43,7 @@ class AuditableTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ConcreteAuditable entity = new ConcreteAuditable();
         LocalDateTime created = LocalDateTime.of(2025, 1, 1, 10, 0);
         LocalDateTime updated = LocalDateTime.of(2025, 6, 1, 12, 0);
@@ -58,7 +58,7 @@ class AuditableTest {
     // ─── Default state ────────────────────────────────────────────────────────
 
     @Test
-    void defaultConstructor_fieldsAreNull() {
+    void defaultConstructor_fieldsAreNull() throws Exception {
         ConcreteAuditable entity = new ConcreteAuditable();
 
         assertThat(entity.getCreatedAt()).isNull();

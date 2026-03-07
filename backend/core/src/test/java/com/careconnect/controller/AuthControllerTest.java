@@ -6,12 +6,14 @@ import com.careconnect.model.Patient;
 import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
 import com.careconnect.security.TokenHashService;
 import com.careconnect.service.AlexaCodeStoreService;
 import com.careconnect.service.AuthService;
 import com.careconnect.service.PasswordResetService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.Cookie;
@@ -21,10 +23,10 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Base64;
@@ -40,7 +42,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.hamcrest.Matchers;
 
 /**
  * Unit tests for {@link AuthController}, covering the HTTP layer of all
@@ -85,26 +86,32 @@ class AuthControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real infrastructure (DB, JWT signing keys, etc.).
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
-    @MockBean
+    @MockitoBean
     private PasswordResetService reset;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwt;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TokenHashService tokenHashService;
 
-    @MockBean
+    @MockitoBean
     private AlexaCodeStoreService alexaCodeStore;
+
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
 
     // ==========================================
     // REGISTER
@@ -643,13 +650,13 @@ class AuthControllerTest {
     // ==========================================
 
     /** Returns a valid Basic Auth header using the test-configured client credentials. */
-    private String validBasicAuth() {
+    private String validBasicAuth() throws Exception {
         return "Basic " + Base64.getEncoder()
                 .encodeToString("test-client-id:test-client-secret".getBytes());
     }
 
     /** Returns a Basic Auth header with wrong credentials. */
-    private String wrongBasicAuth() {
+    private String wrongBasicAuth() throws Exception {
         return "Basic " + Base64.getEncoder()
                 .encodeToString("wrong-id:wrong-secret".getBytes());
     }

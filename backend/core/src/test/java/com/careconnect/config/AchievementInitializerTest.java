@@ -39,7 +39,7 @@ class AchievementInitializerTest {
     private PrintStream originalErr;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Arrange: Initialize mocks and capture System.err output
         MockitoAnnotations.openMocks(this);
 
@@ -50,13 +50,13 @@ class AchievementInitializerTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         // Restore original System.err
         System.setErr(originalErr);
     }
 
     @Test
-    void initAchievementsCreatesAllDefaultAchievements() {
+    void initAchievementsCreatesAllDefaultAchievements() throws Exception {
         // Arrange: Mock repository to return empty (no existing achievements)
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         when(achievementRepository.save(any(Achievement.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -74,7 +74,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesFirstLoginAchievement() {
+    void initAchievementsCreatesFirstLoginAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -96,7 +96,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesMadeAFriendAchievement() {
+    void initAchievementsCreatesMadeAFriendAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -118,7 +118,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesAddedFamilyMemberAchievement() {
+    void initAchievementsCreatesAddedFamilyMemberAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -140,7 +140,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesFirstPostCreatedAchievement() {
+    void initAchievementsCreatesFirstPostCreatedAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -162,7 +162,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesFiveDayStreakAchievement() {
+    void initAchievementsCreatesFiveDayStreakAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -184,7 +184,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsSkipsExistingAchievements() {
+    void initAchievementsSkipsExistingAchievements() throws Exception {
         // Arrange: Mock some achievements already exist
         Achievement existingAchievement = new Achievement();
         existingAchievement.setTitle("First Login");
@@ -206,7 +206,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsSkipsAllWhenAllExist() {
+    void initAchievementsSkipsAllWhenAllExist() throws Exception {
         // Arrange: Mock all achievements already exist
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.of(new Achievement()));
 
@@ -219,7 +219,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsHandlesFindByTitleException() {
+    void initAchievementsHandlesFindByTitleException() throws Exception {
         // Arrange: Mock repository to throw exception on findByTitle
         when(achievementRepository.findByTitle(anyString()))
                 .thenThrow(new RuntimeException("Database connection error"));
@@ -240,7 +240,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsHandlesSaveException() {
+    void initAchievementsHandlesSaveException() throws Exception {
         // Arrange: Mock findByTitle succeeds but save throws exception
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         when(achievementRepository.save(any(Achievement.class)))
@@ -258,7 +258,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsHandlesPartialFailure() {
+    void initAchievementsHandlesPartialFailure() throws Exception {
         // Arrange: First two achievements fail, rest succeed
         when(achievementRepository.findByTitle("First Login"))
                 .thenThrow(new RuntimeException("Database error"));
@@ -282,7 +282,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsHandlesExceptionInInitMethod() {
+    void initAchievementsHandlesExceptionInInitMethod() throws Exception {
         // Arrange: Mock repository to throw exception that bubbles to initAchievements
         when(achievementRepository.findByTitle(anyString()))
                 .thenThrow(new RuntimeException("Critical database failure"));
@@ -297,7 +297,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsDoesNotThrowExceptionOnCompleteFailure() {
+    void initAchievementsDoesNotThrowExceptionOnCompleteFailure() throws Exception {
         // Arrange: Mock complete repository failure
         when(achievementRepository.findByTitle(anyString()))
                 .thenThrow(new RuntimeException("Complete system failure"));
@@ -308,7 +308,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesAchievementWithCorrectAttributes() {
+    void initAchievementsCreatesAchievementWithCorrectAttributes() throws Exception {
         // Arrange: Capture created achievements
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -329,7 +329,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCreatesFiveUniqueAchievements() {
+    void initAchievementsCreatesFiveUniqueAchievements() throws Exception {
         // Arrange: Mock repository
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
@@ -350,7 +350,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void createAchievementIfNotExistsHandlesNullPointerException() {
+    void createAchievementIfNotExistsHandlesNullPointerException() throws Exception {
         // Arrange: Mock repository to return null (edge case)
         when(achievementRepository.findByTitle(anyString())).thenReturn(null);
 
@@ -359,7 +359,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsVerifiesAllExpectedTitlesAreQueried() {
+    void initAchievementsVerifiesAllExpectedTitlesAreQueried() throws Exception {
         // Arrange: Mock repository
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
         when(achievementRepository.save(any(Achievement.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -376,7 +376,7 @@ class AchievementInitializerTest {
     }
 
     @Test
-    void initAchievementsCompletesEvenWithMultipleExceptions() {
+    void initAchievementsCompletesEvenWithMultipleExceptions() throws Exception {
         // Arrange: Simulate various exceptions for different achievements
         when(achievementRepository.findByTitle("First Login")).thenReturn(Optional.empty());
         when(achievementRepository.save(argThat(a -> a != null && "First Login".equals(a.getTitle()))))

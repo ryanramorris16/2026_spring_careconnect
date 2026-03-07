@@ -12,12 +12,12 @@ class VirginiaMcoClientTest {
     private final VirginiaMcoClient client = new VirginiaMcoClient();
 
     @Test
-    void destination_returnsVirginiaMco() {
+    void destination_returnsVirginiaMco() throws Exception {
         assertThat(client.destination()).isEqualTo("virginia-mco");
     }
 
     @Test
-    void submit_doesNotThrow() {
+    void submit_doesNotThrow() throws Exception {
         EvvRecord record = Mockito.mock(EvvRecord.class);
         Mockito.when(record.getId()).thenReturn(2L);
 

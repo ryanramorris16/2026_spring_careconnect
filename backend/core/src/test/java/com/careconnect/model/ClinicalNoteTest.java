@@ -12,7 +12,7 @@ class ClinicalNoteTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         ClinicalNote note = new ClinicalNote();
 
         assertThat(note).isNotNull();
@@ -28,13 +28,13 @@ class ClinicalNoteTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_isActive_defaultsToTrue() {
+    void builder_isActive_defaultsToTrue() throws Exception {
         ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
         assertThat(note.getIsActive()).isTrue();
     }
 
     @Test
-    void builder_createdAt_defaultsToNow() {
+    void builder_createdAt_defaultsToNow() throws Exception {
         ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
         assertThat(note.getCreatedAt()).isNotNull();
     }
@@ -42,7 +42,7 @@ class ClinicalNoteTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
 
         ClinicalNote note = ClinicalNote.builder()
@@ -71,7 +71,7 @@ class ClinicalNoteTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ClinicalNote note = new ClinicalNote();
         LocalDateTime now = LocalDateTime.now();
 
@@ -110,7 +110,7 @@ class ClinicalNoteTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         LocalDateTime ts = LocalDateTime.now();
         ClinicalNote n1 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();
         ClinicalNote n2 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();

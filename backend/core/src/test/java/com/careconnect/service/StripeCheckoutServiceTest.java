@@ -41,7 +41,7 @@ class StripeCheckoutServiceTest {
     private Plan plan;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         user = new User();
@@ -121,7 +121,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_withMatchingPlan_shouldSavePaymentAndSubscription")
-    void saveCheckoutSession_subscriptionMode_withMatchingPlan_shouldSavePaymentAndSubscription() {
+    void saveCheckoutSession_subscriptionMode_withMatchingPlan_shouldSavePaymentAndSubscription() throws Exception {
         Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_1");
         when(session.getPaymentIntent()).thenReturn("pi_intent_1");
@@ -141,7 +141,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_noMatchingPlan_shouldSaveSubscriptionWithoutPlan")
-    void saveCheckoutSession_subscriptionMode_noMatchingPlan_shouldSaveSubscriptionWithoutPlan() {
+    void saveCheckoutSession_subscriptionMode_noMatchingPlan_shouldSaveSubscriptionWithoutPlan() throws Exception {
         Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_2");
         when(session.getPaymentIntent()).thenReturn("pi_intent_2");
@@ -159,7 +159,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_planLookupThrows_shouldStillSaveSubscription")
-    void saveCheckoutSession_subscriptionMode_planLookupThrows_shouldStillSaveSubscription() {
+    void saveCheckoutSession_subscriptionMode_planLookupThrows_shouldStillSaveSubscription() throws Exception {
         Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_3");
         when(session.getPaymentIntent()).thenReturn("pi_intent_3");
@@ -177,7 +177,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_notSubscriptionMode_shouldOnlySavePayment")
-    void saveCheckoutSession_notSubscriptionMode_shouldOnlySavePayment() {
+    void saveCheckoutSession_notSubscriptionMode_shouldOnlySavePayment() throws Exception {
         Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_4");
         when(session.getPaymentIntent()).thenReturn("pi_intent_4");
@@ -193,7 +193,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_subscriptionModeButNullSubscription_shouldNotSaveSubscription")
-    void saveCheckoutSession_subscriptionModeButNullSubscription_shouldNotSaveSubscription() {
+    void saveCheckoutSession_subscriptionModeButNullSubscription_shouldNotSaveSubscription() throws Exception {
         Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_5");
         when(session.getPaymentIntent()).thenReturn("pi_intent_5");
@@ -210,7 +210,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("saveCheckoutSession_userNotFound_shouldThrow")
-    void saveCheckoutSession_userNotFound_shouldThrow() {
+    void saveCheckoutSession_userNotFound_shouldThrow() throws Exception {
         Session session = mock(Session.class);
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -241,7 +241,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForUser_userNotFound_shouldThrowIllegalArgumentException")
-    void createCheckoutSessionForUser_userNotFound_shouldThrowIllegalArgumentException() {
+    void createCheckoutSessionForUser_userNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -253,7 +253,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForUser_nullStripeCustomerId_shouldThrowIllegalStateException")
-    void createCheckoutSessionForUser_nullStripeCustomerId_shouldThrowIllegalStateException() {
+    void createCheckoutSessionForUser_nullStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId(null);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -264,7 +264,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForUser_emptyStripeCustomerId_shouldThrowIllegalStateException")
-    void createCheckoutSessionForUser_emptyStripeCustomerId_shouldThrowIllegalStateException() {
+    void createCheckoutSessionForUser_emptyStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId("");
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -296,7 +296,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForCaregiver_caregiverNotFound_shouldThrowIllegalArgumentException")
-    void createCheckoutSessionForCaregiver_caregiverNotFound_shouldThrowIllegalArgumentException() {
+    void createCheckoutSessionForCaregiver_caregiverNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
@@ -308,7 +308,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForCaregiver_nullStripeCustomerId_shouldThrowIllegalStateException")
-    void createCheckoutSessionForCaregiver_nullStripeCustomerId_shouldThrowIllegalStateException() {
+    void createCheckoutSessionForCaregiver_nullStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId(null);
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
@@ -321,7 +321,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForCaregiver_emptyStripeCustomerId_shouldThrowIllegalStateException")
-    void createCheckoutSessionForCaregiver_emptyStripeCustomerId_shouldThrowIllegalStateException() {
+    void createCheckoutSessionForCaregiver_emptyStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId("");
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
@@ -336,7 +336,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getCaregiverStripeCustomerId_validCaregiver_shouldReturnCustomerId")
-    void getCaregiverStripeCustomerId_validCaregiver_shouldReturnCustomerId() {
+    void getCaregiverStripeCustomerId_validCaregiver_shouldReturnCustomerId() throws Exception {
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
         String result = stripeCheckoutService.getCaregiverStripeCustomerId(10L);
@@ -346,7 +346,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getCaregiverStripeCustomerId_caregiverNotFound_shouldThrowIllegalArgumentException")
-    void getCaregiverStripeCustomerId_caregiverNotFound_shouldThrowIllegalArgumentException() {
+    void getCaregiverStripeCustomerId_caregiverNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
@@ -355,7 +355,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getCaregiverStripeCustomerId_nullStripeCustomerId_shouldThrowIllegalStateException")
-    void getCaregiverStripeCustomerId_nullStripeCustomerId_shouldThrowIllegalStateException() {
+    void getCaregiverStripeCustomerId_nullStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId(null);
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
@@ -365,7 +365,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getCaregiverStripeCustomerId_emptyStripeCustomerId_shouldThrowIllegalStateException")
-    void getCaregiverStripeCustomerId_emptyStripeCustomerId_shouldThrowIllegalStateException() {
+    void getCaregiverStripeCustomerId_emptyStripeCustomerId_shouldThrowIllegalStateException() throws Exception {
         user.setStripeCustomerId("");
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
@@ -377,7 +377,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getAvailablePlans_shouldReturnActivePlans")
-    void getAvailablePlans_shouldReturnActivePlans() {
+    void getAvailablePlans_shouldReturnActivePlans() throws Exception {
         List<Plan> activePlans = List.of(plan);
         when(planRepository.findByIsActiveTrue()).thenReturn(activePlans);
 
@@ -389,7 +389,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("getAvailablePlans_noActivePlans_shouldReturnEmptyList")
-    void getAvailablePlans_noActivePlans_shouldReturnEmptyList() {
+    void getAvailablePlans_noActivePlans_shouldReturnEmptyList() throws Exception {
         when(planRepository.findByIsActiveTrue()).thenReturn(Collections.emptyList());
 
         List<Plan> result = stripeCheckoutService.getAvailablePlans();
@@ -503,7 +503,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForPlan_planNotFound_shouldThrowIllegalArgumentException")
-    void createCheckoutSessionForPlan_planNotFound_shouldThrowIllegalArgumentException() {
+    void createCheckoutSessionForPlan_planNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(planRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () ->
@@ -513,7 +513,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createCheckoutSessionForPlan_invalidPlanId_shouldThrowNumberFormatException")
-    void createCheckoutSessionForPlan_invalidPlanId_shouldThrowNumberFormatException() {
+    void createCheckoutSessionForPlan_invalidPlanId_shouldThrowNumberFormatException() throws Exception {
         assertThrows(NumberFormatException.class, () ->
                 stripeCheckoutService.createCheckoutSessionForPlan(
                         10L, "not_a_number", "http://success", "http://cancel"));
@@ -523,7 +523,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createPlan_withoutStripe_shouldSavePlanWithProvidedCode")
-    void createPlan_withoutStripe_shouldSavePlanWithProvidedCode() {
+    void createPlan_withoutStripe_shouldSavePlanWithProvidedCode() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
             Plan p = inv.getArgument(0);
             p.setId(200L);
@@ -543,7 +543,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createPlan_withStripeEnabled_stripeApiFailure_shouldFallbackToProvidedCode")
-    void createPlan_withStripeEnabled_stripeApiFailure_shouldFallbackToProvidedCode() {
+    void createPlan_withStripeEnabled_stripeApiFailure_shouldFallbackToProvidedCode() throws Exception {
         // When createInStripe is true, the code calls Stripe API using System.getenv + static calls.
         // Without a real Stripe key, it will fail in the catch block and fall back to the provided code.
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
@@ -562,7 +562,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createPlan_withNullIsActive_shouldDefaultToTrue")
-    void createPlan_withNullIsActive_shouldDefaultToTrue() {
+    void createPlan_withNullIsActive_shouldDefaultToTrue() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
             Plan p = inv.getArgument(0);
             p.setId(202L);
@@ -579,7 +579,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createPlan_5arg_shouldDelegateToCreatePlanWithFalseStripeFlag")
-    void createPlan_5arg_shouldDelegateToCreatePlanWithFalseStripeFlag() {
+    void createPlan_5arg_shouldDelegateToCreatePlanWithFalseStripeFlag() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
             Plan p = inv.getArgument(0);
             p.setId(203L);
@@ -626,7 +626,7 @@ class StripeCheckoutServiceTest {
 
     @Test
     @DisplayName("createPlan_withStripeEnabled_successfulProductAndPriceCreation_shouldUseStripePriceId")
-    void createPlan_withStripeEnabled_successfulProductAndPriceCreation_shouldUseStripePriceId() {
+    void createPlan_withStripeEnabled_successfulProductAndPriceCreation_shouldUseStripePriceId() throws Exception {
         // We mock the static Stripe Product.create and Price.create calls
         com.stripe.model.Product mockProduct = mock(com.stripe.model.Product.class);
         when(mockProduct.getId()).thenReturn("prod_test123");

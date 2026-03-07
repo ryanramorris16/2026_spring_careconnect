@@ -20,13 +20,15 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.controller.v2.TaskControllerV2;
 import com.careconnect.dto.v2.TaskDtoV2;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.v2.TaskServiceV2;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -59,8 +61,14 @@ class TaskControllerV2Test {
     // replaced with a Mockito stub so the controller can be exercised without
     // a real database or business-logic layer.
 
-    @MockBean
+    @MockitoBean
     private TaskServiceV2 taskService;
+
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -72,7 +80,7 @@ class TaskControllerV2Test {
     private TaskDtoV2 sampleTask;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         sampleTask = TaskDtoV2.builder()
                 .id(1L)
                 .name("Check Blood Pressure")

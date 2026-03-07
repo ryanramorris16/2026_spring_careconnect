@@ -71,7 +71,7 @@ class CaregiverServiceTest {
     private User patientUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         caregiverUser = new User();
@@ -114,7 +114,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_withActiveLinks_shouldReturnPatientList")
-        void getPatientsByCaregiver_withActiveLinks_shouldReturnPatientList() {
+        void getPatientsByCaregiver_withActiveLinks_shouldReturnPatientList() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
@@ -138,7 +138,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_filterByEmail_shouldFilterCorrectly")
-        void getPatientsByCaregiver_filterByEmail_shouldFilterCorrectly() {
+        void getPatientsByCaregiver_filterByEmail_shouldFilterCorrectly() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
@@ -163,7 +163,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_filterByName_shouldFilterCorrectly")
-        void getPatientsByCaregiver_filterByName_shouldFilterCorrectly() {
+        void getPatientsByCaregiver_filterByName_shouldFilterCorrectly() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
@@ -188,7 +188,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_userNotFound_shouldFilterOut")
-        void getPatientsByCaregiver_userNotFound_shouldFilterOut() {
+        void getPatientsByCaregiver_userNotFound_shouldFilterOut() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
@@ -208,7 +208,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_patientNotFoundForUser_shouldFilterOut")
-        void getPatientsByCaregiver_patientNotFoundForUser_shouldFilterOut() {
+        void getPatientsByCaregiver_patientNotFoundForUser_shouldFilterOut() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
@@ -229,7 +229,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_patientWithNullEmail_shouldFilterOutWhenEmailFilterProvided")
-        void getPatientsByCaregiver_patientWithNullEmail_shouldFilterOutWhenEmailFilterProvided() {
+        void getPatientsByCaregiver_patientWithNullEmail_shouldFilterOutWhenEmailFilterProvided() throws Exception {
             Patient patientWithNullEmail = Patient.builder()
                     .id(20L)
                     .firstName("John")
@@ -258,7 +258,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_caregiverNotFound_shouldThrowRuntimeException")
-        void getPatientsByCaregiver_caregiverNotFound_shouldThrowRuntimeException() {
+        void getPatientsByCaregiver_caregiverNotFound_shouldThrowRuntimeException() throws Exception {
             when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(RuntimeException.class,
@@ -267,7 +267,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientsByCaregiver_noActiveLinks_shouldReturnEmptyList")
-        void getPatientsByCaregiver_noActiveLinks_shouldReturnEmptyList() {
+        void getPatientsByCaregiver_noActiveLinks_shouldReturnEmptyList() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
                     .thenReturn(List.of());
@@ -287,7 +287,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getCaregiverById_validId_shouldReturnCaregiver")
-        void getCaregiverById_validId_shouldReturnCaregiver() {
+        void getCaregiverById_validId_shouldReturnCaregiver() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
             Caregiver result = caregiverService.getCaregiverById(10L);
@@ -299,7 +299,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getCaregiverById_notFound_shouldThrowRuntimeException")
-        void getCaregiverById_notFound_shouldThrowRuntimeException() {
+        void getCaregiverById_notFound_shouldThrowRuntimeException() throws Exception {
             when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(RuntimeException.class, () -> caregiverService.getCaregiverById(999L));
@@ -314,7 +314,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("updateCaregiver_validData_shouldUpdateAndReturn")
-        void updateCaregiver_validData_shouldUpdateAndReturn() {
+        void updateCaregiver_validData_shouldUpdateAndReturn() throws Exception {
             Caregiver updatedData = Caregiver.builder()
                     .firstName("Updated")
                     .lastName("Name")
@@ -340,7 +340,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("updateCaregiver_notFound_shouldThrowRuntimeException")
-        void updateCaregiver_notFound_shouldThrowRuntimeException() {
+        void updateCaregiver_notFound_shouldThrowRuntimeException() throws Exception {
             when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(RuntimeException.class,
@@ -356,7 +356,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_validData_shouldCreatePatientAndSendEmail")
-        void registerPatient_validData_shouldCreatePatientAndSendEmail() {
+        void registerPatient_validData_shouldCreatePatientAndSendEmail() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -389,7 +389,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_withCaregiverId_shouldCreateLink")
-        void registerPatient_withCaregiverId_shouldCreateLink() {
+        void registerPatient_withCaregiverId_shouldCreateLink() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -422,7 +422,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_emailAlreadyRegistered_shouldThrowRegistrationException")
-        void registerPatient_emailAlreadyRegistered_shouldThrowRegistrationException() {
+        void registerPatient_emailAlreadyRegistered_shouldThrowRegistrationException() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("existing@test.com");
 
@@ -433,7 +433,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_withNullAddress_shouldHandleGracefully")
-        void registerPatient_withNullAddress_shouldHandleGracefully() {
+        void registerPatient_withNullAddress_shouldHandleGracefully() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -462,7 +462,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_caregiverNotFound_shouldThrowAppException")
-        void registerPatient_caregiverNotFound_shouldThrowAppException() {
+        void registerPatient_caregiverNotFound_shouldThrowAppException() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -488,7 +488,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_linkCreationFails_shouldThrowAppException")
-        void registerPatient_linkCreationFails_shouldThrowAppException() {
+        void registerPatient_linkCreationFails_shouldThrowAppException() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -516,7 +516,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerPatient_databaseSaveFailure_shouldThrowAppException")
-        void registerPatient_databaseSaveFailure_shouldThrowAppException() {
+        void registerPatient_databaseSaveFailure_shouldThrowAppException() throws Exception {
             PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
@@ -545,7 +545,7 @@ class CaregiverServiceTest {
     @DisplayName("registerCaregiver tests")
     class RegisterCaregiverTests {
 
-        private CaregiverRegistration createValidCaregiverReg() {
+        private CaregiverRegistration createValidCaregiverReg() throws Exception {
             CaregiverRegistration reg = new CaregiverRegistration();
             reg.setFirstName("New");
             reg.setLastName("Caregiver");
@@ -570,7 +570,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_validData_shouldCreateCaregiverWithStripe")
-        void registerCaregiver_validData_shouldCreateCaregiverWithStripe() {
+        void registerCaregiver_validData_shouldCreateCaregiverWithStripe() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -591,7 +591,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_withPlanId_shouldCreateSubscription")
-        void registerCaregiver_withPlanId_shouldCreateSubscription() {
+        void registerCaregiver_withPlanId_shouldCreateSubscription() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
@@ -620,7 +620,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_emailAlreadyRegistered_shouldThrowRegistrationException")
-        void registerCaregiver_emailAlreadyRegistered_shouldThrowRegistrationException() {
+        void registerCaregiver_emailAlreadyRegistered_shouldThrowRegistrationException() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(true);
@@ -630,7 +630,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_nullCaregiverType_shouldDefaultToProfessional")
-        void registerCaregiver_nullCaregiverType_shouldDefaultToProfessional() {
+        void registerCaregiver_nullCaregiverType_shouldDefaultToProfessional() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setCaregiverType(null);
 
@@ -651,7 +651,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_blankCaregiverType_shouldDefaultToProfessional")
-        void registerCaregiver_blankCaregiverType_shouldDefaultToProfessional() {
+        void registerCaregiver_blankCaregiverType_shouldDefaultToProfessional() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setCaregiverType("  ");
 
@@ -672,7 +672,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_nullStripeService_shouldUseMock")
-        void registerCaregiver_nullStripeService_shouldUseMock() {
+        void registerCaregiver_nullStripeService_shouldUseMock() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             // Set stripeService to null to test mock path
@@ -693,7 +693,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_stripeCreateCustomerFails_shouldThrowAppException")
-        void registerCaregiver_stripeCreateCustomerFails_shouldThrowAppException() {
+        void registerCaregiver_stripeCreateCustomerFails_shouldThrowAppException() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -705,7 +705,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_stripeReturnsNullId_shouldThrowAppException")
-        void registerCaregiver_stripeReturnsNullId_shouldThrowAppException() {
+        void registerCaregiver_stripeReturnsNullId_shouldThrowAppException() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -717,7 +717,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_databaseSaveFails_shouldThrowAppException")
-        void registerCaregiver_databaseSaveFails_shouldThrowAppException() {
+        void registerCaregiver_databaseSaveFails_shouldThrowAppException() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -732,7 +732,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_nullProfessionalInfo_shouldHandleGracefully")
-        void registerCaregiver_nullProfessionalInfo_shouldHandleGracefully() {
+        void registerCaregiver_nullProfessionalInfo_shouldHandleGracefully() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setProfessional(null);
 
@@ -753,7 +753,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_subscriptionCreationFails_shouldStillSucceed")
-        void registerCaregiver_subscriptionCreationFails_shouldStillSucceed() {
+        void registerCaregiver_subscriptionCreationFails_shouldStillSucceed() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
@@ -782,7 +782,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("registerCaregiver_withPlanAndNullStripeService_shouldUseMockSubscription")
-        void registerCaregiver_withPlanAndNullStripeService_shouldUseMockSubscription() {
+        void registerCaregiver_withPlanAndNullStripeService_shouldUseMockSubscription() throws Exception {
             CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
@@ -816,7 +816,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_patientRole_ownData_shouldReturnTrue")
-        void hasAccessToPatient_patientRole_ownData_shouldReturnTrue() {
+        void hasAccessToPatient_patientRole_ownData_shouldReturnTrue() throws Exception {
             when(users.findById(2L)).thenReturn(Optional.of(patientUser));
             when(patientRepository.existsByIdAndUserId(20L, 2L)).thenReturn(true);
 
@@ -825,7 +825,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_patientRole_otherData_shouldReturnFalse")
-        void hasAccessToPatient_patientRole_otherData_shouldReturnFalse() {
+        void hasAccessToPatient_patientRole_otherData_shouldReturnFalse() throws Exception {
             when(users.findById(2L)).thenReturn(Optional.of(patientUser));
             when(patientRepository.existsByIdAndUserId(30L, 2L)).thenReturn(false);
 
@@ -834,7 +834,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_caregiverRole_withAccess_shouldReturnTrue")
-        void hasAccessToPatient_caregiverRole_withAccess_shouldReturnTrue() {
+        void hasAccessToPatient_caregiverRole_withAccess_shouldReturnTrue() throws Exception {
             when(users.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(patientRepository.hasAccessByCaregiverId(20L, 1L)).thenReturn(true);
 
@@ -843,7 +843,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_caregiverRole_withoutAccess_shouldReturnFalse")
-        void hasAccessToPatient_caregiverRole_withoutAccess_shouldReturnFalse() {
+        void hasAccessToPatient_caregiverRole_withoutAccess_shouldReturnFalse() throws Exception {
             when(users.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(patientRepository.hasAccessByCaregiverId(20L, 1L)).thenReturn(false);
 
@@ -852,7 +852,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_familyMemberRole_shouldCheckFamilyMemberLink")
-        void hasAccessToPatient_familyMemberRole_shouldCheckFamilyMemberLink() {
+        void hasAccessToPatient_familyMemberRole_shouldCheckFamilyMemberLink() throws Exception {
             User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setRole(Role.FAMILY_MEMBER);
@@ -865,7 +865,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_adminRole_shouldAlwaysReturnTrue")
-        void hasAccessToPatient_adminRole_shouldAlwaysReturnTrue() {
+        void hasAccessToPatient_adminRole_shouldAlwaysReturnTrue() throws Exception {
             User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setRole(Role.ADMIN);
@@ -877,7 +877,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("hasAccessToPatient_userNotFound_shouldReturnFalse")
-        void hasAccessToPatient_userNotFound_shouldReturnFalse() {
+        void hasAccessToPatient_userNotFound_shouldReturnFalse() throws Exception {
             when(users.findById(999L)).thenReturn(Optional.empty());
 
             assertFalse(caregiverService.hasAccessToPatient(999L, 20L));
@@ -892,7 +892,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("caregiverHasAccessToPatient_validLink_shouldReturnTrue")
-        void caregiverHasAccessToPatient_validLink_shouldReturnTrue() {
+        void caregiverHasAccessToPatient_validLink_shouldReturnTrue() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
             when(caregiverPatientLinkService.hasAccessToPatient(1L, 2L)).thenReturn(true);
@@ -902,7 +902,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("caregiverHasAccessToPatient_noLink_shouldReturnFalse")
-        void caregiverHasAccessToPatient_noLink_shouldReturnFalse() {
+        void caregiverHasAccessToPatient_noLink_shouldReturnFalse() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
             when(caregiverPatientLinkService.hasAccessToPatient(1L, 2L)).thenReturn(false);
@@ -912,7 +912,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("caregiverHasAccessToPatient_caregiverNotFound_shouldReturnFalse")
-        void caregiverHasAccessToPatient_caregiverNotFound_shouldReturnFalse() {
+        void caregiverHasAccessToPatient_caregiverNotFound_shouldReturnFalse() throws Exception {
             when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertFalse(caregiverService.caregiverHasAccessToPatient(999L, 20L));
@@ -920,7 +920,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("caregiverHasAccessToPatient_patientNotFound_shouldReturnFalse")
-        void caregiverHasAccessToPatient_patientNotFound_shouldReturnFalse() {
+        void caregiverHasAccessToPatient_patientNotFound_shouldReturnFalse() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -936,7 +936,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientWithLinkById_validLink_shouldReturnPatientWithLink")
-        void getPatientWithLinkById_validLink_shouldReturnPatientWithLink() {
+        void getPatientWithLinkById_validLink_shouldReturnPatientWithLink() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
 
@@ -958,7 +958,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientWithLinkById_patientNotFound_shouldThrowAppException")
-        void getPatientWithLinkById_patientNotFound_shouldThrowAppException() {
+        void getPatientWithLinkById_patientNotFound_shouldThrowAppException() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -968,7 +968,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientWithLinkById_noActiveLink_shouldThrowAppException")
-        void getPatientWithLinkById_noActiveLink_shouldThrowAppException() {
+        void getPatientWithLinkById_noActiveLink_shouldThrowAppException() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -980,7 +980,7 @@ class CaregiverServiceTest {
 
         @Test
         @DisplayName("getPatientWithLinkById_linkForDifferentPatient_shouldThrowAppException")
-        void getPatientWithLinkById_linkForDifferentPatient_shouldThrowAppException() {
+        void getPatientWithLinkById_linkForDifferentPatient_shouldThrowAppException() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
 

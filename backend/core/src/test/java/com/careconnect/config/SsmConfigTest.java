@@ -65,7 +65,7 @@ class SsmConfigTest {
     }
 
     @Test
-    void init_WithSsmServiceNull_LogsFallbackWarning() {
+    void init_WithSsmServiceNull_LogsFallbackWarning() throws Exception {
         // Verifies that init() completes without error when SSM service is absent,
         // logging a warning that the application will fall back to environment variables.
         // ssmParameterService is null by default (not injected)
@@ -211,7 +211,7 @@ class SsmConfigTest {
     // --- Bean methods without SSM service (fallback to env vars) ---
 
     @Test
-    void stripeSecretKey_WithoutSsmService_ReturnsEnvFallback() {
+    void stripeSecretKey_WithoutSsmService_ReturnsEnvFallback() throws Exception {
         // When SSM service is null (e.g. local dev without AWS), the bean should return
         // the value of the corresponding environment variable instead of throwing.
         // ssmParameterService is null — should return env var value (likely null in test)
@@ -221,7 +221,7 @@ class SsmConfigTest {
     }
 
     @Test
-    void jwtSecret_WithoutSsmService_ReturnsEnvFallback() {
+    void jwtSecret_WithoutSsmService_ReturnsEnvFallback() throws Exception {
         // Verifies the env-variable fallback path for the JWT secret.
         String result = ssmConfig.jwtSecret();
 
@@ -229,7 +229,7 @@ class SsmConfigTest {
     }
 
     @Test
-    void databasePassword_WithoutSsmService_ReturnsEnvFallback() {
+    void databasePassword_WithoutSsmService_ReturnsEnvFallback() throws Exception {
         // Verifies the env-variable fallback path for the database password.
         String result = ssmConfig.databasePassword();
 

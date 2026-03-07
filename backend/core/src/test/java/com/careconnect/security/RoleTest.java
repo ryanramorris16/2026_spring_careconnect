@@ -12,14 +12,14 @@ public class RoleTest {
 
     @Test
     @DisplayName("Should have exactly 4 roles defined")
-    public void testRoleCount() {
+    public void testRoleCount() throws Exception {
         Role[] roles = Role.values();
         assertEquals(4, roles.length, "Should have exactly 4 roles defined");
     }
 
     @Test
     @DisplayName("All required roles should exist")
-    public void testRequiredRolesExist() {
+    public void testRequiredRolesExist() throws Exception {
         assertDoesNotThrow(() -> Role.valueOf("ADMIN"));
         assertDoesNotThrow(() -> Role.valueOf("CAREGIVER"));
         assertDoesNotThrow(() -> Role.valueOf("PATIENT"));
@@ -28,7 +28,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("All roles should have non-null display names")
-    public void testAllRolesHaveDisplayNames() {
+    public void testAllRolesHaveDisplayNames() throws Exception {
         for (Role role : Role.values()) {
             assertNotNull(role.getDisplayName(),
                 "Role " + role.name() + " should have a display name");
@@ -39,7 +39,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("All roles should have non-null descriptions")
-    public void testAllRolesHaveDescriptions() {
+    public void testAllRolesHaveDescriptions() throws Exception {
         for (Role role : Role.values()) {
             assertNotNull(role.getDescription(),
                 "Role " + role.name() + " should have a description");
@@ -50,7 +50,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("Display names should be user-friendly")
-    public void testDisplayNamesAreUserFriendly() {
+    public void testDisplayNamesAreUserFriendly() throws Exception {
         assertEquals("Administrator", Role.ADMIN.getDisplayName());
         assertEquals("Caregiver", Role.CAREGIVER.getDisplayName());
         assertEquals("Patient", Role.PATIENT.getDisplayName());
@@ -59,7 +59,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should handle uppercase input")
-    public void testFromStringUppercase() {
+    public void testFromStringUppercase() throws Exception {
         assertEquals(Role.ADMIN, Role.fromString("ADMIN"));
         assertEquals(Role.CAREGIVER, Role.fromString("CAREGIVER"));
         assertEquals(Role.PATIENT, Role.fromString("PATIENT"));
@@ -68,7 +68,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should handle lowercase input")
-    public void testFromStringLowercase() {
+    public void testFromStringLowercase() throws Exception {
         assertEquals(Role.ADMIN, Role.fromString("admin"));
         assertEquals(Role.CAREGIVER, Role.fromString("caregiver"));
         assertEquals(Role.PATIENT, Role.fromString("patient"));
@@ -77,7 +77,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should handle mixed case input")
-    public void testFromStringMixedCase() {
+    public void testFromStringMixedCase() throws Exception {
         assertEquals(Role.ADMIN, Role.fromString("Admin"));
         assertEquals(Role.CAREGIVER, Role.fromString("CareGiver"));
         assertEquals(Role.PATIENT, Role.fromString("PaTiEnT"));
@@ -85,7 +85,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should handle space variations")
-    public void testFromStringWithSpaces() {
+    public void testFromStringWithSpaces() throws Exception {
         assertEquals(Role.FAMILY_MEMBER, Role.fromString("family member"));
         assertEquals(Role.FAMILY_MEMBER, Role.fromString("FAMILY MEMBER"));
         assertEquals(Role.FAMILY_MEMBER, Role.fromString("Family Member"));
@@ -93,7 +93,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should throw exception for null input")
-    public void testFromStringNull() {
+    public void testFromStringNull() throws Exception {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             Role.fromString(null);
         });
@@ -103,7 +103,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should throw exception for empty input")
-    public void testFromStringEmpty() {
+    public void testFromStringEmpty() throws Exception {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             Role.fromString("");
         });
@@ -113,7 +113,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString should throw exception for invalid role")
-    public void testFromStringInvalid() {
+    public void testFromStringInvalid() throws Exception {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             Role.fromString("INVALID_ROLE");
         });
@@ -125,7 +125,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("toApiString should return lowercase with underscores")
-    public void testToApiString() {
+    public void testToApiString() throws Exception {
         assertEquals("admin", Role.ADMIN.toApiString());
         assertEquals("caregiver", Role.CAREGIVER.toApiString());
         assertEquals("patient", Role.PATIENT.toApiString());
@@ -134,7 +134,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("isAdmin should return true only for Admin role")
-    public void testIsAdmin() {
+    public void testIsAdmin() throws Exception {
         assertTrue(Role.ADMIN.isAdmin());
         assertFalse(Role.CAREGIVER.isAdmin());
         assertFalse(Role.PATIENT.isAdmin());
@@ -143,7 +143,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("isCaregiver should return true only for Caregiver role")
-    public void testIsCaregiver() {
+    public void testIsCaregiver() throws Exception {
         assertFalse(Role.ADMIN.isCaregiver());
         assertTrue(Role.CAREGIVER.isCaregiver());
         assertFalse(Role.PATIENT.isCaregiver());
@@ -152,7 +152,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("isPatient should return true only for Patient role")
-    public void testIsPatient() {
+    public void testIsPatient() throws Exception {
         assertFalse(Role.ADMIN.isPatient());
         assertFalse(Role.CAREGIVER.isPatient());
         assertTrue(Role.PATIENT.isPatient());
@@ -161,7 +161,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("isFamilyMember should return true only for Family Member role")
-    public void testIsFamilyMember() {
+    public void testIsFamilyMember() throws Exception {
         assertFalse(Role.ADMIN.isFamilyMember());
         assertFalse(Role.CAREGIVER.isFamilyMember());
         assertFalse(Role.PATIENT.isFamilyMember());
@@ -170,7 +170,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("canModifyData should return false only for Family Member")
-    public void testCanModifyData() {
+    public void testCanModifyData() throws Exception {
         assertTrue(Role.ADMIN.canModifyData(),
             "Admin should be able to modify data");
         assertTrue(Role.CAREGIVER.canModifyData(),
@@ -183,7 +183,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("getHierarchyLevel should return correct levels")
-    public void testGetHierarchyLevel() {
+    public void testGetHierarchyLevel() throws Exception {
         assertEquals(0, Role.ADMIN.getHierarchyLevel(),
             "Admin should be level 0 (highest)");
         assertEquals(1, Role.CAREGIVER.getHierarchyLevel(),
@@ -196,7 +196,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("Hierarchy levels should be unique")
-    public void testHierarchyLevelsAreUnique() {
+    public void testHierarchyLevelsAreUnique() throws Exception {
         Role[] roles = Role.values();
         for (int i = 0; i < roles.length; i++) {
             for (int j = i + 1; j < roles.length; j++) {
@@ -208,7 +208,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("hasHigherOrEqualAuthorityThan should work correctly")
-    public void testHasHigherOrEqualAuthorityThan() {
+    public void testHasHigherOrEqualAuthorityThan() throws Exception {
         // Admin has higher authority than everyone
         assertTrue(Role.ADMIN.hasHigherOrEqualAuthorityThan(Role.ADMIN));
         assertTrue(Role.ADMIN.hasHigherOrEqualAuthorityThan(Role.CAREGIVER));
@@ -236,7 +236,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("toString should include role name, display name, and description")
-    public void testToString() {
+    public void testToString() throws Exception {
         String adminString = Role.ADMIN.toString();
         assertTrue(adminString.contains("ADMIN"),
             "toString should contain role name");
@@ -248,7 +248,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("Role.values() should return all roles")
-    public void testValuesMethod() {
+    public void testValuesMethod() throws Exception {
         Role[] roles = Role.values();
         assertNotNull(roles, "values() should not return null");
         assertEquals(4, roles.length, "values() should return 4 roles");
@@ -256,14 +256,14 @@ public class RoleTest {
 
     @Test
     @DisplayName("Role.valueOf() should work with valid role names")
-    public void testValueOfMethod() {
+    public void testValueOfMethod() throws Exception {
         Role role = Role.valueOf("ADMIN");
         assertEquals(Role.ADMIN, role, "valueOf should return correct role");
     }
 
     @Test
     @DisplayName("Role.valueOf() should throw exception for invalid names")
-    public void testValueOfInvalidName() {
+    public void testValueOfInvalidName() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> {
             Role.valueOf("INVALID_ROLE");
         }, "valueOf should throw exception for invalid role name");
@@ -271,7 +271,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("Roles should have unique names")
-    public void testRolesHaveUniqueNames() {
+    public void testRolesHaveUniqueNames() throws Exception {
         Role[] roles = Role.values();
         for (int i = 0; i < roles.length; i++) {
             for (int j = i + 1; j < roles.length; j++) {
@@ -283,7 +283,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("Role descriptions should be meaningful")
-    public void testRoleDescriptionsAreMeaningful() {
+    public void testRoleDescriptionsAreMeaningful() throws Exception {
         for (Role role : Role.values()) {
             String description = role.getDescription();
             assertTrue(description.length() >= 10,
@@ -295,7 +295,7 @@ public class RoleTest {
 
     @Test
     @DisplayName("fromString and toApiString should be reversible")
-    public void testFromStringAndToApiStringReversible() {
+    public void testFromStringAndToApiStringReversible() throws Exception {
         for (Role role : Role.values()) {
             String apiString = role.toApiString();
             Role converted = Role.fromString(apiString);

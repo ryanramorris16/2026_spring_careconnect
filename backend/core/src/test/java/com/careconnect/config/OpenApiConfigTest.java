@@ -27,21 +27,21 @@ import static org.junit.jupiter.api.Assertions.*;
 class OpenApiConfigTest {
 
     @Test
-    void classHasConfigurationAnnotation() {
+    void classHasConfigurationAnnotation() throws Exception {
         // Confirms that Spring recognises OpenApiConfig as a configuration class so that
         // the Springdoc library picks it up during component scanning.
         assertTrue(OpenApiConfig.class.isAnnotationPresent(Configuration.class));
     }
 
     @Test
-    void openApiDefinitionAnnotationExists() {
+    void openApiDefinitionAnnotationExists() throws Exception {
         // Confirms the @OpenAPIDefinition annotation is present, which is what tells
         // Springdoc to populate the OpenAPI document with the metadata defined below.
         assertTrue(OpenApiConfig.class.isAnnotationPresent(OpenAPIDefinition.class));
     }
 
     @Test
-    void openApiDefinitionContainsCorrectMetadata() {
+    void openApiDefinitionContainsCorrectMetadata() throws Exception {
         // Verifies the API title, version, description snippet, contact details, and
         // license information shown in the generated Swagger UI / OpenAPI JSON.
         OpenAPIDefinition definition =
@@ -62,7 +62,7 @@ class OpenApiConfigTest {
     }
 
     @Test
-    void openApiDefinitionContainsServers() {
+    void openApiDefinitionContainsServers() throws Exception {
         // Verifies that both the local development server and the production API server
         // are listed so that developers can target either from Swagger UI.
         OpenAPIDefinition definition =
@@ -80,7 +80,7 @@ class OpenApiConfigTest {
     }
 
     @Test
-    void openApiDefinitionContainsSecurityRequirements() {
+    void openApiDefinitionContainsSecurityRequirements() throws Exception {
         // Verifies that the three authentication methods used by the API (JWT bearer token,
         // HTTP Basic, and cookie-based) are declared as global security requirements so
         // every endpoint in the spec is marked as requiring authentication by default.
@@ -102,7 +102,7 @@ class OpenApiConfigTest {
     }
 
     @Test
-    void securitySchemesAreDefined() {
+    void securitySchemesAreDefined() throws Exception {
         // Verifies that the three @SecurityScheme annotations are present, which define
         // how each authentication type works (e.g. Bearer token in Authorization header,
         // Basic credentials, or a session cookie) so Swagger UI can send real auth requests.

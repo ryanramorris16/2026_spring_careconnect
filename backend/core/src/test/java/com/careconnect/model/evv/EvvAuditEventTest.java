@@ -14,7 +14,7 @@ class EvvAuditEventTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         EvvAuditEvent event = new EvvAuditEvent();
 
         assertThat(event).isNotNull();
@@ -30,7 +30,7 @@ class EvvAuditEventTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         EvvRecord record = new EvvRecord();
         OffsetDateTime now = OffsetDateTime.now();
         Map<String, Object> deviceInfo = new HashMap<>();
@@ -60,7 +60,7 @@ class EvvAuditEventTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         EvvAuditEvent event = new EvvAuditEvent();
         OffsetDateTime now = OffsetDateTime.now();
 

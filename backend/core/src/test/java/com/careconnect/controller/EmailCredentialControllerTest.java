@@ -2,6 +2,8 @@ package com.careconnect.controller;
 
 import com.careconnect.model.EmailCredential;
 import com.careconnect.repository.EmailCredentialRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,10 @@ class EmailCredentialControllerTest {
 
     @Mock
     private EmailCredentialRepository credRepo;
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
 
     @InjectMocks
     private EmailCredentialController controller;
@@ -45,7 +51,7 @@ class EmailCredentialControllerTest {
     class GetConnectionStatus {
 
         @Test
-        void returnsTrue_whenCredentialExistsWithValidAccessToken() {
+        void returnsTrue_whenCredentialExistsWithValidAccessToken() throws Exception {
             EmailCredential cred = credentialWithToken("valid-token");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
@@ -57,7 +63,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void returnsFalse_whenNoCredentialFound() {
+        void returnsFalse_whenNoCredentialFound() throws Exception {
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 
@@ -68,7 +74,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void returnsFalse_whenAccessTokenIsNull() {
+        void returnsFalse_whenAccessTokenIsNull() throws Exception {
             EmailCredential cred = credentialWithToken(null);
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
@@ -80,7 +86,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void returnsFalse_whenAccessTokenIsEmpty() {
+        void returnsFalse_whenAccessTokenIsEmpty() throws Exception {
             EmailCredential cred = credentialWithToken("");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
@@ -92,7 +98,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void alwaysQueriesGmailProvider() {
+        void alwaysQueriesGmailProvider() throws Exception {
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 
@@ -105,7 +111,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void passesUserIdToRepository() {
+        void passesUserIdToRepository() throws Exception {
             String specificUserId = "specific-user-456";
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(specificUserId, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
@@ -116,7 +122,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void returnsTrue_whenAccessTokenIsWhitespace() {
+        void returnsTrue_whenAccessTokenIsWhitespace() throws Exception {
             // Whitespace is non-empty, so the filter passes and result is true
             EmailCredential cred = credentialWithToken("   ");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
@@ -129,7 +135,7 @@ class EmailCredentialControllerTest {
         }
 
         @Test
-        void responseBodyIsNeverNull() {
+        void responseBodyIsNeverNull() throws Exception {
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 

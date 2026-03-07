@@ -2,7 +2,9 @@ package com.careconnect.controller;
 
 import com.careconnect.dto.TaskDto;
 import com.careconnect.model.Task;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.TaskService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,11 +44,17 @@ class TaskControllerTest {
     @MockitoBean
     private TaskService taskService;
 
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
+
     private Task sampleTask;
     private TaskDto sampleTaskDto;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         sampleTask = Task.builder()
                 .id(1L)
                 .name("Check Blood Pressure")

@@ -40,7 +40,7 @@ class S3StorageServiceImplTest {
     }
 
     @Test
-    void upload_twoArgs_delegatesToThreeArgVersion() {
+    void upload_twoArgs_delegatesToThreeArgVersion() throws Exception {
         byte[] data = "pdf-data".getBytes();
 
         s3StorageServiceImpl.upload(data, "invoices/test.pdf");
@@ -49,7 +49,7 @@ class S3StorageServiceImplTest {
     }
 
     @Test
-    void upload_threeArgs_withContentType_setsContentType() {
+    void upload_threeArgs_withContentType_setsContentType() throws Exception {
         byte[] data = "pdf-data".getBytes();
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
@@ -62,7 +62,7 @@ class S3StorageServiceImplTest {
     }
 
     @Test
-    void upload_threeArgs_nullContentType_doesNotSetContentType() {
+    void upload_threeArgs_nullContentType_doesNotSetContentType() throws Exception {
         byte[] data = "pdf-data".getBytes();
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
@@ -73,7 +73,7 @@ class S3StorageServiceImplTest {
     }
 
     @Test
-    void upload_threeArgs_blankContentType_doesNotSetContentType() {
+    void upload_threeArgs_blankContentType_doesNotSetContentType() throws Exception {
         byte[] data = "pdf-data".getBytes();
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
@@ -84,7 +84,7 @@ class S3StorageServiceImplTest {
     }
 
     @Test
-    void upload_setsAcl() {
+    void upload_setsAcl() throws Exception {
         byte[] data = "data".getBytes();
         ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 

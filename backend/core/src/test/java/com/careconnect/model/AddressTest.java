@@ -9,7 +9,7 @@ class AddressTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Address address = new Address();
 
         assertThat(address).isNotNull();
@@ -23,7 +23,7 @@ class AddressTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Address address = new Address("123 Main St", "Apt 4B", "Springfield", "IL", "62701");
 
         assertThat(address.getLine1()).isEqualTo("123 Main St");
@@ -36,7 +36,7 @@ class AddressTest {
     // ─── Builder ──────────────────────────────────────────────────────────────
 
     @Test
-    void builder_setsAllFields() {
+    void builder_setsAllFields() throws Exception {
         Address address = Address.builder()
                 .line1("456 Oak Ave")
                 .line2("Suite 200")
@@ -55,7 +55,7 @@ class AddressTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Address address = new Address();
 
         address.setLine1("789 Pine Rd");

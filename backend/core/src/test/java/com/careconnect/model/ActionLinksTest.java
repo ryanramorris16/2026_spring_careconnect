@@ -9,7 +9,7 @@ class ActionLinksTest {
     // ----- No-args constructor -----
 
     @Test
-    void noArgsConstructor_createsInstanceWithNullFields() {
+    void noArgsConstructor_createsInstanceWithNullFields() throws Exception {
         ActionLinks links = new ActionLinks();
 
         assertThat(links.getTrack()).isNull();
@@ -21,7 +21,7 @@ class ActionLinksTest {
     // ----- All-args constructor -----
 
     @Test
-    void allArgsConstructor_setsAllFields() {
+    void allArgsConstructor_setsAllFields() throws Exception {
         ActionLinks links = new ActionLinks(
                 "https://track.example.com",
                 "https://delivery.example.com",
@@ -38,7 +38,7 @@ class ActionLinksTest {
     // ----- Builder -----
 
     @Test
-    void builder_setsAllFields() {
+    void builder_setsAllFields() throws Exception {
         ActionLinks links = ActionLinks.builder()
                 .track("https://t.example.com")
                 .deliveryInstructions("https://d.example.com")
@@ -55,7 +55,7 @@ class ActionLinksTest {
     // ----- defaults() factory -----
 
     @Test
-    void defaults_setsTrackUrlAndFixedUspsLinks() {
+    void defaults_setsTrackUrlAndFixedUspsLinks() throws Exception {
         ActionLinks links = ActionLinks.defaults("https://tools.usps.com/go/TrackConfirmAction?tRef=fullpage&tLc=1&tLabels=12345");
 
         assertThat(links.getTrack()).isEqualTo("https://tools.usps.com/go/TrackConfirmAction?tRef=fullpage&tLc=1&tLabels=12345");
@@ -65,7 +65,7 @@ class ActionLinksTest {
     }
 
     @Test
-    void defaults_nullTrackUrl_setsNullTrack() {
+    void defaults_nullTrackUrl_setsNullTrack() throws Exception {
         ActionLinks links = ActionLinks.defaults(null);
 
         assertThat(links.getTrack()).isNull();
@@ -77,7 +77,7 @@ class ActionLinksTest {
     // ----- Setters (@Data) -----
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         ActionLinks links = new ActionLinks();
         links.setTrack("https://track.new");
         links.setDeliveryInstructions("https://delivery.new");
@@ -93,7 +93,7 @@ class ActionLinksTest {
     // ----- equals / hashCode (@Data) -----
 
     @Test
-    void equals_sameFields_areEqual() {
+    void equals_sameFields_areEqual() throws Exception {
         ActionLinks a = new ActionLinks("t", "d", "r", "dash");
         ActionLinks b = new ActionLinks("t", "d", "r", "dash");
 
@@ -102,7 +102,7 @@ class ActionLinksTest {
     }
 
     @Test
-    void equals_differentFields_areNotEqual() {
+    void equals_differentFields_areNotEqual() throws Exception {
         ActionLinks a = new ActionLinks("t1", "d", "r", "dash");
         ActionLinks b = new ActionLinks("t2", "d", "r", "dash");
 
@@ -112,7 +112,7 @@ class ActionLinksTest {
     // ----- toString (@Data) -----
 
     @Test
-    void toString_containsFieldValues() {
+    void toString_containsFieldValues() throws Exception {
         ActionLinks links = new ActionLinks("https://track.url", "https://delivery.url", "https://redeliver.url", "https://dash.url");
 
         String str = links.toString();

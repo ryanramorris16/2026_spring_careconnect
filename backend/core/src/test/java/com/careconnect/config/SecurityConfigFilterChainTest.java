@@ -1,7 +1,9 @@
 package com.careconnect.config;
 
 import com.careconnect.exception.GlobalExceptionHandler;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,7 +76,7 @@ class SecurityConfigFilterChainTest {
 
         @Bean
         @Primary
-        CorsConfigurationSource corsConfigurationSource() {
+        CorsConfigurationSource corsConfigurationSource() throws Exception {
             CorsConfiguration cfg = new CorsConfiguration();
             cfg.setAllowedOrigins(List.of("*"));
             cfg.setAllowedMethods(List.of("*"));
@@ -85,7 +87,7 @@ class SecurityConfigFilterChainTest {
         }
 
         @Bean
-        PingController pingController() {
+        PingController pingController() throws Exception {
             return new PingController();
         }
     }
@@ -98,12 +100,12 @@ class SecurityConfigFilterChainTest {
     static class PingController {
 
         @GetMapping("/v1/api/auth/ping")
-        String publicPing() {
+        String publicPing() throws Exception {
             return "ok";
         }
 
         @GetMapping("/v1/api/patients/ping")
-        String protectedPing() {
+        String protectedPing() throws Exception {
             return "ok";
         }
     }
@@ -117,8 +119,14 @@ class SecurityConfigFilterChainTest {
     @MockitoBean
     UserDetailsService userDetailsService;
 
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Ensure Basic-auth attempts always fail so the httpBasic entry-point fires.
         when(userDetailsService.loadUserByUsername(anyString()))
                 .thenThrow(new UsernameNotFoundException("User not found"));

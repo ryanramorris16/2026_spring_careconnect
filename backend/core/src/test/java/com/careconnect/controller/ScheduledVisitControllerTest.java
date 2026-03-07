@@ -3,7 +3,9 @@ package com.careconnect.controller;
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.schedule.ScheduledVisitService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,12 +50,18 @@ class ScheduledVisitControllerTest {
     @MockitoBean
     private ScheduledVisitService scheduledVisitService;
 
+    @MockitoBean
+    private SecurityUtil securityUtil;
+
+    @MockitoBean
+    private AuthorizationService authorizationService;
+
     private ScheduledVisitRequest validRequest;
     private ScheduledVisitResponse sampleVisit;
     private ScheduledVisitSummary sampleSummary;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         validRequest = new ScheduledVisitRequest(
                 10L,
                 "Bathing Assistance",

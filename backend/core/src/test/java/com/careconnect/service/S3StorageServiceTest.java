@@ -38,7 +38,7 @@ class S3StorageServiceTest {
     private S3StorageService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         when(props.getBucket()).thenReturn("test-bucket");
         when(props.getRegion()).thenReturn("us-east-1");
@@ -50,7 +50,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("upload_validContent_returnsUrlAndCallsS3")
-    void upload_validContent_returnsUrlAndCallsS3() {
+    void upload_validContent_returnsUrlAndCallsS3() throws Exception {
         PutObjectResponse response = PutObjectResponse.builder().eTag("etag123").build();
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenReturn(response);
 
@@ -69,7 +69,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("upload_s3ThrowsException_throwsRuntimeException")
-    void upload_s3ThrowsException_throwsRuntimeException() {
+    void upload_s3ThrowsException_throwsRuntimeException() throws Exception {
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenThrow(S3Exception.builder().message("S3 error").build());
 
@@ -137,7 +137,7 @@ class S3StorageServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("download_fileExists_returnsByteArray")
-    void download_fileExists_returnsByteArray() {
+    void download_fileExists_returnsByteArray() throws Exception {
         byte[] expected = "file content".getBytes();
         GetObjectResponse getObjectResponse = GetObjectResponse.builder().build();
         ResponseBytes<GetObjectResponse> responseBytes = ResponseBytes.fromByteArray(getObjectResponse, expected);
@@ -153,7 +153,7 @@ class S3StorageServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("download_noSuchKeyException_throwsRuntimeException")
-    void download_noSuchKeyException_throwsRuntimeException() {
+    void download_noSuchKeyException_throwsRuntimeException() throws Exception {
         when(s3.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(NoSuchKeyException.builder().message("not found").build());
 
@@ -166,7 +166,7 @@ class S3StorageServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("download_genericException_throwsRuntimeException")
-    void download_genericException_throwsRuntimeException() {
+    void download_genericException_throwsRuntimeException() throws Exception {
         when(s3.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(new RuntimeException("network error"));
 
@@ -179,7 +179,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("getFileUrl_validPath_returnsBaseUrlPlusPath")
-    void getFileUrl_validPath_returnsBaseUrlPlusPath() {
+    void getFileUrl_validPath_returnsBaseUrlPlusPath() throws Exception {
         String result = service.getFileUrl("user_1/docs/file.pdf");
         assertEquals("https://s3.amazonaws.com/test-bucket/user_1/docs/file.pdf", result);
     }
@@ -188,7 +188,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("deleteFile_validPath_deletesFromS3")
-    void deleteFile_validPath_deletesFromS3() {
+    void deleteFile_validPath_deletesFromS3() throws Exception {
         DeleteObjectResponse response = DeleteObjectResponse.builder().build();
         when(s3.deleteObject(any(DeleteObjectRequest.class))).thenReturn(response);
 
@@ -202,7 +202,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("deleteFile_s3ThrowsException_throwsRuntimeException")
-    void deleteFile_s3ThrowsException_throwsRuntimeException() {
+    void deleteFile_s3ThrowsException_throwsRuntimeException() throws Exception {
         when(s3.deleteObject(any(DeleteObjectRequest.class)))
                 .thenThrow(new RuntimeException("delete error"));
 
@@ -215,7 +215,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_filesExist_returnsKeyList")
-    void listUserFiles_filesExist_returnsKeyList() {
+    void listUserFiles_filesExist_returnsKeyList() throws Exception {
         S3Object obj1 = S3Object.builder().key("patient_1/docs/a.pdf").build();
         S3Object obj2 = S3Object.builder().key("patient_1/docs/b.pdf").build();
         ListObjectsV2Response response = ListObjectsV2Response.builder()
@@ -237,7 +237,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_noFiles_returnsEmptyList")
-    void listUserFiles_noFiles_returnsEmptyList() {
+    void listUserFiles_noFiles_returnsEmptyList() throws Exception {
         ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(Collections.emptyList()).build();
 
@@ -250,7 +250,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFiles_s3ThrowsException_throwsRuntimeException")
-    void listUserFiles_s3ThrowsException_throwsRuntimeException() {
+    void listUserFiles_s3ThrowsException_throwsRuntimeException() throws Exception {
         when(s3.listObjectsV2(any(ListObjectsV2Request.class)))
                 .thenThrow(new RuntimeException("list error"));
 
@@ -263,7 +263,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFilesDto_filesExist_returnsDtoList")
-    void listUserFilesDto_filesExist_returnsDtoList() {
+    void listUserFilesDto_filesExist_returnsDtoList() throws Exception {
         Instant now = Instant.now();
         S3Object obj = S3Object.builder()
                 .key("patient_5/medical/report.pdf")
@@ -290,7 +290,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFilesDto_noFiles_returnsEmptyList")
-    void listUserFilesDto_noFiles_returnsEmptyList() {
+    void listUserFilesDto_noFiles_returnsEmptyList() throws Exception {
         ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(Collections.emptyList()).build();
 
@@ -303,7 +303,7 @@ class S3StorageServiceTest {
 
     @Test
     @DisplayName("listUserFilesDto_s3ThrowsException_throwsRuntimeException")
-    void listUserFilesDto_s3ThrowsException_throwsRuntimeException() {
+    void listUserFilesDto_s3ThrowsException_throwsRuntimeException() throws Exception {
         when(s3.listObjectsV2(any(ListObjectsV2Request.class)))
                 .thenThrow(new RuntimeException("dto list error"));
 

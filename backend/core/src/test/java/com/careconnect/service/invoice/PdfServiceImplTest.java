@@ -37,14 +37,14 @@ class PdfServiceImplTest {
     }
 
     @Test
-    void combineToPdf_null_throwsIllegalArgument() {
+    void combineToPdf_null_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> pdfService.combineToPdf(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("File list cannot be null or empty.");
     }
 
     @Test
-    void combineToPdf_emptyList_throwsIllegalArgument() {
+    void combineToPdf_emptyList_throwsIllegalArgument() throws Exception {
         assertThatThrownBy(() -> pdfService.combineToPdf(List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("File list cannot be null or empty.");

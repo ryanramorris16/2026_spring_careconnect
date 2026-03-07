@@ -38,7 +38,7 @@ class TemplateServiceTest {
     private Template template;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
         template = Template.builder()
                 .id(1L)
@@ -58,7 +58,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("getTemplateById: returns the template entity when the ID exists")
-    void testGetTemplateById_found() {
+    void testGetTemplateById_found() throws Exception {
         // The repository finds the template; the service must return it unchanged.
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
 
@@ -72,7 +72,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("getTemplateById: throws AppException(NOT_FOUND) when the ID does not exist")
-    void testGetTemplateById_notFound() {
+    void testGetTemplateById_notFound() throws Exception {
         // A missing template must surface as a 404 AppException, not a null return.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -89,7 +89,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("getAllTemplates: returns the full list when templates exist")
-    void testGetAllTemplates_returnsList() {
+    void testGetAllTemplates_returnsList() throws Exception {
         // The complete list from the repository must be returned without modification.
         Template t2 = Template.builder().id(2L).name("Evening Routine").icon(2).build();
         when(templateRepository.findAll()).thenReturn(List.of(template, t2));
@@ -104,7 +104,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("getAllTemplates: returns a single-item list when exactly one template exists")
-    void testGetAllTemplates_singleTemplate() {
+    void testGetAllTemplates_singleTemplate() throws Exception {
         // A single entry must not trigger the empty-check exception.
         when(templateRepository.findAll()).thenReturn(List.of(template));
 
@@ -116,7 +116,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("getAllTemplates: throws AppException(NOT_FOUND) when the repository is empty")
-    void testGetAllTemplates_empty_throws() {
+    void testGetAllTemplates_empty_throws() throws Exception {
         // An empty templates table must produce a 404 AppException.
         when(templateRepository.findAll()).thenReturn(List.of());
 
@@ -132,7 +132,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("createTemplate: saves new template and returns persisted entity with all mapped fields")
-    void testCreateTemplate_happyPath() {
+    void testCreateTemplate_happyPath() throws Exception {
         // Every DTO field must be transferred to the saved entity and the
         // persisted template returned.
         List<Boolean> days = List.of(true, false, false, true, false, false, false);
@@ -174,7 +174,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("createTemplate: saves template with null optional fields when DTO omits them")
-    void testCreateTemplate_nullOptionalFields() {
+    void testCreateTemplate_nullOptionalFields() throws Exception {
         // Optional fields not supplied in the DTO must map to null/zero on the entity;
         // the service must not throw for missing optional values.
         TemplateDto dto = TemplateDto.builder()
@@ -204,7 +204,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("updateTemplate: overwrites all fields on the existing entity and saves")
-    void testUpdateTemplate_updatesAllFields() {
+    void testUpdateTemplate_updatesAllFields() throws Exception {
         // Every field in the DTO must replace the stored value on the entity.
         List<Boolean> newDays  = List.of(false, true, false, true, false, false, false);
         List<String>  newNotifs = List.of("07:00");
@@ -240,7 +240,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("updateTemplate: throws AppException(NOT_FOUND) when the template does not exist")
-    void testUpdateTemplate_notFound_throws() {
+    void testUpdateTemplate_notFound_throws() throws Exception {
         // An update targeting an unknown ID must fail with a 404 AppException
         // before any save is attempted.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
@@ -256,7 +256,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("updateTemplate: returns the entity produced by the repository save call")
-    void testUpdateTemplate_returnsSavedEntity() {
+    void testUpdateTemplate_returnsSavedEntity() throws Exception {
         // The repository may return a new instance (e.g., with DB-populated fields);
         // the service must pass that through rather than returning the local object.
         Template savedTemplate = Template.builder()
@@ -278,7 +278,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("deleteTemplate: deletes the template and returns true when it exists")
-    void testDeleteTemplate_exists_returnsTrue() {
+    void testDeleteTemplate_exists_returnsTrue() throws Exception {
         // The happy path: the template is found, deleted, and the method returns true.
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
 
@@ -290,7 +290,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("deleteTemplate: throws AppException(NOT_FOUND) when the template does not exist")
-    void testDeleteTemplate_notFound_throws() {
+    void testDeleteTemplate_notFound_throws() throws Exception {
         // A delete on a non-existent template must produce a 404 AppException
         // and must not call delete on the repository.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
@@ -304,7 +304,7 @@ class TemplateServiceTest {
 
     @Test
     @DisplayName("deleteTemplate: passes the correct entity instance to repository.delete()")
-    void testDeleteTemplate_passesCorrectEntityToRepository() {
+    void testDeleteTemplate_passesCorrectEntityToRepository() throws Exception {
         // The exact Template object retrieved must be forwarded to delete(),
         // not just the ID.
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));

@@ -31,7 +31,7 @@ class SubscriptionResponseDTOTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
 
         assertThat(dto).isNotNull();
@@ -44,7 +44,7 @@ class SubscriptionResponseDTOTest {
     // ─── Subscription constructor: user and plan both present ─────────────────
 
     @Test
-    void subscriptionConstructor_withUserAndPlan_mapsAllFields() {
+    void subscriptionConstructor_withUserAndPlan_mapsAllFields() throws Exception {
         when(mockSubscription.getId()).thenReturn(1L);
         when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_abc");
         when(mockSubscription.getStripeCustomerId()).thenReturn("cus_xyz");
@@ -79,7 +79,7 @@ class SubscriptionResponseDTOTest {
     // ─── Subscription constructor: user null ──────────────────────────────────
 
     @Test
-    void subscriptionConstructor_userNull_userIdIsNull() {
+    void subscriptionConstructor_userNull_userIdIsNull() throws Exception {
         when(mockSubscription.getId()).thenReturn(2L);
         when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_def");
         when(mockSubscription.getStripeCustomerId()).thenReturn(null);
@@ -103,7 +103,7 @@ class SubscriptionResponseDTOTest {
     // ─── Subscription constructor: plan null ──────────────────────────────────
 
     @Test
-    void subscriptionConstructor_planNull_planFieldsAreNull() {
+    void subscriptionConstructor_planNull_planFieldsAreNull() throws Exception {
         when(mockSubscription.getId()).thenReturn(3L);
         when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_ghi");
         when(mockSubscription.getStripeCustomerId()).thenReturn(null);
@@ -127,7 +127,7 @@ class SubscriptionResponseDTOTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateAllFields() {
+    void setters_updateAllFields() throws Exception {
         SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
 
         dto.setId(99L);

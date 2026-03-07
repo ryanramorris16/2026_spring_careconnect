@@ -15,7 +15,7 @@ class UserFileTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         UserFile uf = new UserFile();
 
         assertThat(uf).isNotNull();
@@ -35,7 +35,7 @@ class UserFileTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults() {
+    void builder_defaults() throws Exception {
         UserFile uf = UserFile.builder()
                 .filename("test.pdf")
                 .originalFilename("original.pdf")
@@ -53,7 +53,7 @@ class UserFileTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         LocalDateTime now = LocalDateTime.now();
         byte[] data = {10, 20, 30};
 
@@ -140,21 +140,21 @@ class UserFileTest {
     // ─── Enum values ──────────────────────────────────────────────────────────
 
     @Test
-    void ownerType_allValues() {
+    void ownerType_allValues() throws Exception {
         assertThat(OwnerType.values())
                 .containsExactly(OwnerType.PATIENT, OwnerType.CAREGIVER,
                         OwnerType.FAMILY_MEMBER, OwnerType.ADMIN);
     }
 
     @Test
-    void fileCategory_allValues() {
+    void fileCategory_allValues() throws Exception {
         assertThat(FileCategory.values()).hasSize(9);
         assertThat(FileCategory.valueOf("PROFILE_IMAGE")).isEqualTo(FileCategory.PROFILE_IMAGE);
         assertThat(FileCategory.valueOf("OTHER_DOCUMENT")).isEqualTo(FileCategory.OTHER_DOCUMENT);
     }
 
     @Test
-    void storageType_allValues() {
+    void storageType_allValues() throws Exception {
         assertThat(StorageType.values())
                 .containsExactly(StorageType.DATABASE, StorageType.S3);
     }

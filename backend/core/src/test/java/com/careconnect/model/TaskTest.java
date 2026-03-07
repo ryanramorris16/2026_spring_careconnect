@@ -9,7 +9,7 @@ class TaskTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Task t = new Task();
 
         assertThat(t).isNotNull();
@@ -23,7 +23,7 @@ class TaskTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_defaults_initializesNotificationsList() {
+    void builder_defaults_initializesNotificationsList() throws Exception {
         Task t = Task.builder().name("Test task").build();
 
         assertThat(t.getNotifications()).isNotNull().isEmpty();
@@ -32,7 +32,7 @@ class TaskTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         Patient patient = new Patient();
 
         Task t = Task.builder()
@@ -71,7 +71,7 @@ class TaskTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Task t = new Task();
         Patient patient = new Patient();
 

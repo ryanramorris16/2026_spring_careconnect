@@ -28,7 +28,7 @@ class InvoiceMapperTest {
     // ─── toEntity(InvoiceDto) – null sections ────────────────────────────────
 
     @Test
-    void toEntity_nullProvider_providerFieldsRetainDefaults() {
+    void toEntity_nullProvider_providerFieldsRetainDefaults() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.provider = null;
 
@@ -40,7 +40,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullPatient_patientFieldsRetainDefaults() {
+    void toEntity_nullPatient_patientFieldsRetainDefaults() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.patient = null;
 
@@ -51,7 +51,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullDates_dateFieldsNotSet() {
+    void toEntity_nullDates_dateFieldsNotSet() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.dates = null;
 
@@ -62,7 +62,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullAmounts_amountFieldsNotSet() {
+    void toEntity_nullAmounts_amountFieldsNotSet() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.amounts = null;
 
@@ -73,7 +73,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullPaymentReferences_referenceFieldsNotSet() {
+    void toEntity_nullPaymentReferences_referenceFieldsNotSet() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.paymentReferences = null;
 
@@ -84,7 +84,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullCheckPayableTo_checkFieldsNotSet() {
+    void toEntity_nullCheckPayableTo_checkFieldsNotSet() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.checkPayableTo = null;
 
@@ -96,7 +96,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullServices_resultIsEmptyList() {
+    void toEntity_nullServices_resultIsEmptyList() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.services = null;
 
@@ -106,7 +106,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullHistory_resultIsEmptyList() {
+    void toEntity_nullHistory_resultIsEmptyList() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.history = null;
 
@@ -116,7 +116,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullRecommendedActions_resultIsEmptyList() {
+    void toEntity_nullRecommendedActions_resultIsEmptyList() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.recommendedActions = null;
 
@@ -126,7 +126,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_nullPayments_paymentsListUnchanged() {
+    void toEntity_nullPayments_paymentsListUnchanged() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.payments = null;
 
@@ -136,7 +136,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_emptyPaymentsList_paymentsCleared() {
+    void toEntity_emptyPaymentsList_paymentsCleared() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         dto.payments = List.of();
 
@@ -148,55 +148,55 @@ class InvoiceMapperTest {
     // ─── parseStatus – all 9 branches ────────────────────────────────────────
 
     @Test
-    void parseStatus_pending_returnsPending() {
+    void parseStatus_pending_returnsPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("pending")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.pending);
     }
 
     @Test
-    void parseStatus_overdue_returnsOverdue() {
+    void parseStatus_overdue_returnsOverdue() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("overdue")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.overdue);
     }
 
     @Test
-    void parseStatus_pendingInsurance_returnsPendingInsurance() {
+    void parseStatus_pendingInsurance_returnsPendingInsurance() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("pendingInsurance")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.pendingInsurance);
     }
 
     @Test
-    void parseStatus_sent_returnsSent() {
+    void parseStatus_sent_returnsSent() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("sent")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.sent);
     }
 
     @Test
-    void parseStatus_paid_returnsPaid() {
+    void parseStatus_paid_returnsPaid() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("paid")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.paid);
     }
 
     @Test
-    void parseStatus_partialPayment_returnsPartialPayment() {
+    void parseStatus_partialPayment_returnsPartialPayment() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("partialPayment")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.partialPayment);
     }
 
     @Test
-    void parseStatus_rejectedInsurance_returnsRejectedInsurance() {
+    void parseStatus_rejectedInsurance_returnsRejectedInsurance() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("rejectedInsurance")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.rejectedInsurance);
     }
 
     @Test
-    void parseStatus_null_defaultsToPending() {
+    void parseStatus_null_defaultsToPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto(null)).getPaymentStatus())
                 .isEqualTo(PaymentStatus.pending);
     }
 
     @Test
-    void parseStatus_unknown_defaultsToPending() {
+    void parseStatus_unknown_defaultsToPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("UNKNOWN_STATUS")).getPaymentStatus())
                 .isEqualTo(PaymentStatus.pending);
     }
@@ -204,7 +204,7 @@ class InvoiceMapperTest {
     // ─── joinCsv branches ────────────────────────────────────────────────────
 
     @Test
-    void joinCsv_nullList_returnsNullCsv() {
+    void joinCsv_nullList_returnsNullCsv() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.PaymentReferences refs = new InvoiceDto.PaymentReferences();
         refs.supportedMethods = null;
@@ -216,7 +216,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void joinCsv_emptyList_returnsNullCsv() {
+    void joinCsv_emptyList_returnsNullCsv() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.PaymentReferences refs = new InvoiceDto.PaymentReferences();
         refs.supportedMethods = List.of();
@@ -228,7 +228,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void joinCsv_validElements_joinedWithComma() {
+    void joinCsv_validElements_joinedWithComma() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.PaymentReferences refs = new InvoiceDto.PaymentReferences();
         refs.supportedMethods = List.of("card", "check");
@@ -240,7 +240,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void joinCsv_blankEntriesFiltered_onlyNonBlankJoined() {
+    void joinCsv_blankEntriesFiltered_onlyNonBlankJoined() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.PaymentReferences refs = new InvoiceDto.PaymentReferences();
         refs.supportedMethods = Arrays.asList("card", "  ", "check");
@@ -254,7 +254,7 @@ class InvoiceMapperTest {
     // ─── nz() branches ───────────────────────────────────────────────────────
 
     @Test
-    void nz_nullProviderFields_mappedToEmptyString() {
+    void nz_nullProviderFields_mappedToEmptyString() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.ProviderInfo prov = new InvoiceDto.ProviderInfo();
         prov.name = null;
@@ -272,7 +272,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void nz_nonNullProviderField_passedThrough() {
+    void nz_nonNullProviderField_passedThrough() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.ProviderInfo prov = new InvoiceDto.ProviderInfo();
         prov.name = "Provider A";
@@ -288,7 +288,7 @@ class InvoiceMapperTest {
     // ─── toBD() branches ─────────────────────────────────────────────────────
 
     @Test
-    void toBD_nullDouble_returnsNull() {
+    void toBD_nullDouble_returnsNull() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.Amounts amounts = new InvoiceDto.Amounts();
         amounts.totalCharges = null;
@@ -304,7 +304,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toBD_validDouble_returnsBigDecimal() {
+    void toBD_validDouble_returnsBigDecimal() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.Amounts amounts = new InvoiceDto.Amounts();
         amounts.totalCharges = 100.0;
@@ -322,7 +322,7 @@ class InvoiceMapperTest {
     // ─── History – version null → 1 ─────────────────────────────────────────
 
     @Test
-    void history_nullVersion_defaultsToOne() {
+    void history_nullVersion_defaultsToOne() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.HistoryEntry h = new InvoiceDto.HistoryEntry();
         h.version = null;
@@ -340,7 +340,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void history_nonNullVersion_usedAsIs() {
+    void history_nonNullVersion_usedAsIs() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.HistoryEntry h = new InvoiceDto.HistoryEntry();
         h.version = 3;
@@ -355,7 +355,7 @@ class InvoiceMapperTest {
     // ─── ServiceLine – null serviceDate ──────────────────────────────────────
 
     @Test
-    void serviceLine_nullServiceDate_parsedAsNull() {
+    void serviceLine_nullServiceDate_parsedAsNull() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.ServiceLine sl = new InvoiceDto.ServiceLine();
         sl.serviceDate = null;
@@ -371,7 +371,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void serviceLine_nonNullServiceDate_parsed() {
+    void serviceLine_nonNullServiceDate_parsed() throws Exception {
         InvoiceDto dto = minimalDto("pending");
         InvoiceDto.ServiceLine sl = new InvoiceDto.ServiceLine();
         sl.serviceDate = "2024-01-10";
@@ -388,7 +388,7 @@ class InvoiceMapperTest {
     // ─── toEntity(InvoiceDto) – full happy path ───────────────────────────────
 
     @Test
-    void toEntity_allSectionsPopulated_mapsAllFields() {
+    void toEntity_allSectionsPopulated_mapsAllFields() throws Exception {
         InvoiceDto dto = new InvoiceDto();
         dto.id = "INV-001";
         dto.invoiceNumber = "2024-001";
@@ -494,7 +494,7 @@ class InvoiceMapperTest {
     // ─── toDto(Invoice) ──────────────────────────────────────────────────────
 
     @Test
-    void toDto_fullEntity_mapsAllFields() {
+    void toDto_fullEntity_mapsAllFields() throws Exception {
         Invoice e = fullEntity();
 
         InvoiceDto dto = InvoiceMapper.toDto(e);
@@ -520,7 +520,7 @@ class InvoiceMapperTest {
     // ─── toDto – checkPayableTo branches ─────────────────────────────────────
 
     @Test
-    void toDto_checkPayableTo_allNull_notIncluded() {
+    void toDto_checkPayableTo_allNull_notIncluded() throws Exception {
         Invoice e = fullEntity();
         e.setCheckName(null);
         e.setCheckAddress(null);
@@ -532,7 +532,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_checkPayableTo_nameSet_isIncluded() {
+    void toDto_checkPayableTo_nameSet_isIncluded() throws Exception {
         Invoice e = fullEntity();
         e.setCheckName("Provider A");
         e.setCheckAddress(null);
@@ -545,7 +545,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_checkPayableTo_addressSet_isIncluded() {
+    void toDto_checkPayableTo_addressSet_isIncluded() throws Exception {
         Invoice e = fullEntity();
         e.setCheckName(null);
         e.setCheckAddress("123 Check St");
@@ -558,7 +558,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_checkPayableTo_referenceSet_isIncluded() {
+    void toDto_checkPayableTo_referenceSet_isIncluded() throws Exception {
         Invoice e = fullEntity();
         e.setCheckName(null);
         e.setCheckAddress(null);
@@ -573,7 +573,7 @@ class InvoiceMapperTest {
     // ─── splitCsv branches ───────────────────────────────────────────────────
 
     @Test
-    void splitCsv_null_returnsEmptyList() {
+    void splitCsv_null_returnsEmptyList() throws Exception {
         Invoice e = fullEntity();
         e.setSupportedMethodsCsv(null);
 
@@ -583,7 +583,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void splitCsv_blank_returnsEmptyList() {
+    void splitCsv_blank_returnsEmptyList() throws Exception {
         Invoice e = fullEntity();
         e.setSupportedMethodsCsv("   ");
 
@@ -593,7 +593,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void splitCsv_validCsv_returnsList() {
+    void splitCsv_validCsv_returnsList() throws Exception {
         Invoice e = fullEntity();
         e.setSupportedMethodsCsv("card,check");
 
@@ -605,7 +605,7 @@ class InvoiceMapperTest {
     // ─── toD() branches ──────────────────────────────────────────────────────
 
     @Test
-    void toD_nullBigDecimal_returnsNull() {
+    void toD_nullBigDecimal_returnsNull() throws Exception {
         Invoice e = fullEntity();
         e.setTotalCharges(null);
         e.setTotalAdjustments(null);
@@ -619,7 +619,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toD_nonNullBigDecimal_returnsDouble() {
+    void toD_nonNullBigDecimal_returnsDouble() throws Exception {
         Invoice e = fullEntity();
 
         InvoiceDto dto = InvoiceMapper.toDto(e);
@@ -630,7 +630,7 @@ class InvoiceMapperTest {
     // ─── toDto – empty collections ───────────────────────────────────────────
 
     @Test
-    void toDto_emptyServicesList_emptyInDto() {
+    void toDto_emptyServicesList_emptyInDto() throws Exception {
         Invoice e = fullEntity();
         e.setServices(new ArrayList<>());
 
@@ -640,7 +640,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_emptyHistoryList_emptyInDto() {
+    void toDto_emptyHistoryList_emptyInDto() throws Exception {
         Invoice e = fullEntity();
         e.setHistory(new ArrayList<>());
 
@@ -650,7 +650,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_emptyRecommendedActions_emptyInDto() {
+    void toDto_emptyRecommendedActions_emptyInDto() throws Exception {
         Invoice e = fullEntity();
         e.setRecommendedActions(new ArrayList<>());
 
@@ -660,7 +660,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_emptyPaymentsList_emptyInDto() {
+    void toDto_emptyPaymentsList_emptyInDto() throws Exception {
         Invoice e = fullEntity();
         e.getPayments().clear();
 
@@ -672,7 +672,7 @@ class InvoiceMapperTest {
     // ─── toDto – nullable timestamps ─────────────────────────────────────────
 
     @Test
-    void toDto_nullCreatedAndUpdatedAt_formatsAsNull() {
+    void toDto_nullCreatedAndUpdatedAt_formatsAsNull() throws Exception {
         Invoice e = fullEntity();
         e.setCreatedAt(null);
         e.setUpdatedAt(null);
@@ -684,7 +684,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_serviceLine_nullServiceDate_formatsAsNull() {
+    void toDto_serviceLine_nullServiceDate_formatsAsNull() throws Exception {
         Invoice e = fullEntity();
         e.getServices().get(0).setServiceDate(null);
 
@@ -694,7 +694,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_nullPaidDate_formatsAsNull() {
+    void toDto_nullPaidDate_formatsAsNull() throws Exception {
         Invoice e = fullEntity();
         e.setPaidDate(null);
 
@@ -706,7 +706,7 @@ class InvoiceMapperTest {
     // ─── toDto(InvoicePayment) ────────────────────────────────────────────────
 
     @Test
-    void toDto_invoicePayment_allFields_mapped() {
+    void toDto_invoicePayment_allFields_mapped() throws Exception {
         InvoicePayment p = new InvoicePayment();
         p.setId("PAY-001");
         p.setConfirmationNumber("CONF123");
@@ -730,7 +730,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_invoicePayment_nullPaymentDate_dateIsNull() {
+    void toDto_invoicePayment_nullPaymentDate_dateIsNull() throws Exception {
         InvoicePayment p = new InvoicePayment();
         p.setPaymentDate(null);
 
@@ -740,7 +740,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toDto_invoicePayment_planNotEnabled_planEnabledFalse() {
+    void toDto_invoicePayment_planNotEnabled_planEnabledFalse() throws Exception {
         InvoicePayment p = new InvoicePayment();
         p.setPlanEnabled(false);
         p.setPaymentDate(OffsetDateTime.parse("2024-01-15T00:00:00Z"));
@@ -753,7 +753,7 @@ class InvoiceMapperTest {
     // ─── toEntity(Invoice, PaymentDto) ───────────────────────────────────────
 
     @Test
-    void toEntity_paymentDto_nullId_idIsUuidDefault() {
+    void toEntity_paymentDto_nullId_idIsUuidDefault() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = null;
@@ -768,7 +768,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_blankId_idIsNotOverwritten() {
+    void toEntity_paymentDto_blankId_idIsNotOverwritten() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = "   ";
@@ -782,7 +782,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_validId_idIsSet() {
+    void toEntity_paymentDto_validId_idIsSet() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = "EXPLICIT-ID";
@@ -797,7 +797,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_nullMethodKey_defaultsToOnline() {
+    void toEntity_paymentDto_nullMethodKey_defaultsToOnline() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = null;
@@ -811,7 +811,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_nullPlanEnabled_isFalse() {
+    void toEntity_paymentDto_nullPlanEnabled_isFalse() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = null;
@@ -825,7 +825,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_truePlanEnabled_isTrue() {
+    void toEntity_paymentDto_truePlanEnabled_isTrue() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = null;
@@ -839,7 +839,7 @@ class InvoiceMapperTest {
     }
 
     @Test
-    void toEntity_paymentDto_allFields_mapped() {
+    void toEntity_paymentDto_allFields_mapped() throws Exception {
         Invoice invoice = new Invoice();
         PaymentDto d = new PaymentDto();
         d.id = "PAY-XYZ";
@@ -871,7 +871,7 @@ class InvoiceMapperTest {
         return dto;
     }
 
-    private Invoice fullEntity() {
+    private Invoice fullEntity() throws Exception {
         Invoice e = new Invoice();
         e.setId("INV-001");
         e.setInvoiceNumber("2024-001");

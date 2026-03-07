@@ -12,12 +12,12 @@ class MarylandInfoOnlyClientTest {
     private final MarylandInfoOnlyClient client = new MarylandInfoOnlyClient();
 
     @Test
-    void destination_returnsMarylandOnlyInfo() {
+    void destination_returnsMarylandOnlyInfo() throws Exception {
         assertThat(client.destination()).isEqualTo("maryland-only-info");
     }
 
     @Test
-    void submit_doesNotThrow() {
+    void submit_doesNotThrow() throws Exception {
         EvvRecord record = Mockito.mock(EvvRecord.class);
         Mockito.when(record.getId()).thenReturn(1L);
 

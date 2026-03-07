@@ -29,7 +29,7 @@ class OpenRouterServiceTest {
     private OpenRouterService service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new OpenRouterService();
     }
 
@@ -43,7 +43,7 @@ class OpenRouterServiceTest {
         ReflectionTestUtils.setField(service, "apiUrl", url);
     }
 
-    private OpenRouterService.OpenRouterChatRequest basicRequest() {
+    private OpenRouterService.OpenRouterChatRequest basicRequest() throws Exception {
         return new OpenRouterService.OpenRouterChatRequest(
                 "test-model",
                 List.of(new OpenRouterService.Message("user", "hello")),
@@ -70,7 +70,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws IllegalStateException when apiKey is null")
-    void sendChatRequest_nullApiKey_throwsIllegalState() {
+    void sendChatRequest_nullApiKey_throwsIllegalState() throws Exception {
         // @Value is not processed in unit tests; apiKey stays null
         assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
                 .isInstanceOf(IllegalStateException.class)
@@ -79,7 +79,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws IllegalStateException when apiKey is empty")
-    void sendChatRequest_emptyApiKey_throwsIllegalState() {
+    void sendChatRequest_emptyApiKey_throwsIllegalState() throws Exception {
         setApiKey("");
         assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
                 .isInstanceOf(IllegalStateException.class);
@@ -87,7 +87,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws IllegalStateException when apiKey is blank")
-    void sendChatRequest_blankApiKey_throwsIllegalState() {
+    void sendChatRequest_blankApiKey_throwsIllegalState() throws Exception {
         setApiKey("   ");
         assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
                 .isInstanceOf(IllegalStateException.class);
@@ -100,7 +100,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest uses hardcoded default when apiUrl is null")
-    void sendChatRequest_apiUrlNull_usesHardCodedDefault() {
+    void sendChatRequest_apiUrlNull_usesHardCodedDefault() throws Exception {
         setApiKey("test-key");
         // apiUrl stays null -> code falls back to "https://openrouter.ai/api/v1"
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -112,7 +112,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest uses hardcoded default when apiUrl is blank")
-    void sendChatRequest_apiUrlBlank_usesHardCodedDefault() {
+    void sendChatRequest_apiUrlBlank_usesHardCodedDefault() throws Exception {
         setApiKey("test-key");
         setApiUrl("   "); // trim().isEmpty() -> use default
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -124,7 +124,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest appends slash when apiUrl has no trailing slash")
-    void sendChatRequest_apiUrlNoTrailingSlash_appendsSlash() {
+    void sendChatRequest_apiUrlNoTrailingSlash_appendsSlash() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://custom.api.com/v1"); // no trailing slash
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -136,7 +136,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest keeps apiUrl as-is when it already has trailing slash")
-    void sendChatRequest_apiUrlWithTrailingSlash_usedAsIs() {
+    void sendChatRequest_apiUrlWithTrailingSlash_usedAsIs() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://custom.api.com/v1/"); // already ends with "/"
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -148,7 +148,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest uses empty-string apiUrl and falls back to default")
-    void sendChatRequest_apiUrlEmpty_usesHardCodedDefault() {
+    void sendChatRequest_apiUrlEmpty_usesHardCodedDefault() throws Exception {
         setApiKey("test-key");
         setApiUrl(""); // trim().isEmpty() -> use default
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -164,7 +164,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest returns parsed response for valid 2xx JSON")
-    void sendChatRequest_successWithValidJson_returnsResponse() {
+    void sendChatRequest_successWithValidJson_returnsResponse() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -192,7 +192,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws OpenRouterException when 2xx body is null")
-    void sendChatRequest_successNullBody_throwsOpenRouterException() {
+    void sendChatRequest_successNullBody_throwsOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -208,7 +208,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws OpenRouterException when 2xx body is blank")
-    void sendChatRequest_successBlankBody_throwsOpenRouterException() {
+    void sendChatRequest_successBlankBody_throwsOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -224,7 +224,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest throws OpenRouterException for non-2xx status")
-    void sendChatRequest_nonSuccessStatus_throwsApiErrorOpenRouterException() {
+    void sendChatRequest_nonSuccessStatus_throwsApiErrorOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         ResponseEntity<String> serverError =
@@ -246,7 +246,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest wraps JsonProcessingException in OpenRouterException")
-    void sendChatRequest_invalidJsonInBody_throwsJsonProcessingOpenRouterException() {
+    void sendChatRequest_invalidJsonInBody_throwsJsonProcessingOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -260,7 +260,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest wraps RestClientException in OpenRouterException")
-    void sendChatRequest_restClientException_throwsHttpErrorOpenRouterException() {
+    void sendChatRequest_restClientException_throwsHttpErrorOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -274,7 +274,7 @@ class OpenRouterServiceTest {
 
     @Test
     @DisplayName("sendChatRequest wraps unexpected Exception in OpenRouterException")
-    void sendChatRequest_unexpectedRuntimeException_throwsUnexpectedErrorOpenRouterException() {
+    void sendChatRequest_unexpectedRuntimeException_throwsUnexpectedErrorOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
@@ -296,7 +296,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("No-arg constructor creates instance with defaults")
-        void noArgConstructor_createsInstance() {
+        void noArgConstructor_createsInstance() throws Exception {
             OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
             assertThat(req.getModel()).isNull();
             assertThat(req.getMessages()).isNull();
@@ -307,7 +307,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Parameterized constructor sets all fields")
-        void parameterizedConstructor_setsFields() {
+        void parameterizedConstructor_setsFields() throws Exception {
             List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("user", "hi"));
             OpenRouterService.OpenRouterChatRequest req =
                     new OpenRouterService.OpenRouterChatRequest("model-x", msgs, 0.5, 200);
@@ -320,7 +320,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Setters update all fields")
-        void setters_updateAllFields() {
+        void setters_updateAllFields() throws Exception {
             OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
             List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("system", "you are helpful"));
 
@@ -348,7 +348,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("No-arg constructor creates instance with null fields")
-        void noArgConstructor_createsInstance() {
+        void noArgConstructor_createsInstance() throws Exception {
             OpenRouterService.Message msg = new OpenRouterService.Message();
             assertThat(msg.getRole()).isNull();
             assertThat(msg.getContent()).isNull();
@@ -356,7 +356,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Parameterized constructor sets role and content")
-        void parameterizedConstructor_setsFields() {
+        void parameterizedConstructor_setsFields() throws Exception {
             OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "Hello!");
             assertThat(msg.getRole()).isEqualTo("assistant");
             assertThat(msg.getContent()).isEqualTo("Hello!");
@@ -364,7 +364,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Setters update role and content")
-        void setters_updateFields() {
+        void setters_updateFields() throws Exception {
             OpenRouterService.Message msg = new OpenRouterService.Message();
             msg.setRole("system");
             msg.setContent("You are a helpful assistant");
@@ -383,7 +383,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Getters and setters work for all fields")
-        void gettersAndSetters_workForAllFields() {
+        void gettersAndSetters_workForAllFields() throws Exception {
             OpenRouterService.OpenRouterResponse response = new OpenRouterService.OpenRouterResponse();
 
             response.setId("resp-1");
@@ -425,7 +425,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Getters and setters work for all fields")
-        void gettersAndSetters_workForAllFields() {
+        void gettersAndSetters_workForAllFields() throws Exception {
             OpenRouterService.Choice choice = new OpenRouterService.Choice();
             OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "response");
 
@@ -449,7 +449,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Getters and setters work for all fields")
-        void gettersAndSetters_workForAllFields() {
+        void gettersAndSetters_workForAllFields() throws Exception {
             OpenRouterService.Usage usage = new OpenRouterService.Usage();
 
             usage.setPromptTokens(100);
@@ -476,7 +476,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Constructor sets message and cause")
-        void constructor_setsMessageAndCause() {
+        void constructor_setsMessageAndCause() throws Exception {
             RuntimeException cause = new RuntimeException("root cause");
             OpenRouterService.OpenRouterException ex =
                     new OpenRouterService.OpenRouterException("something failed", cause);
@@ -486,7 +486,7 @@ class OpenRouterServiceTest {
 
         @Test
         @DisplayName("Constructor accepts null cause")
-        void constructor_acceptsNullCause() {
+        void constructor_acceptsNullCause() throws Exception {
             OpenRouterService.OpenRouterException ex =
                     new OpenRouterService.OpenRouterException("no cause", null);
             assertThat(ex.getMessage()).isEqualTo("no cause");

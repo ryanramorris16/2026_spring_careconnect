@@ -4,7 +4,6 @@ import com.careconnect.service.ParameterStoreService;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -29,7 +28,7 @@ class DatabaseConfigTest {
     private DatabaseConfig databaseConfig;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Mock ParameterStoreService to control what "secure parameters" are returned.
         parameterStoreService = mock(ParameterStoreService.class);
         databaseConfig = new DatabaseConfig(parameterStoreService);
@@ -42,7 +41,7 @@ class DatabaseConfigTest {
     }
 
     @Test
-    void dataSourceProperties_ReturnsCorrectProperties() {
+    void dataSourceProperties_ReturnsCorrectProperties() throws Exception {
         // Verifies that dataSourceProperties() calls getSecureParameter for each of the
         // three credential keys and maps the returned values onto a DataSourceProperties
         // object, which Spring Boot later uses to build the DataSource.
@@ -65,7 +64,7 @@ class DatabaseConfigTest {
     }
 
     @Test
-    void dataSource_BuildsHikariDataSource() {
+    void dataSource_BuildsHikariDataSource() throws Exception {
         // Verifies that dataSource() produces a HikariDataSource with the URL and
         // username from the properties object, confirming the pool is properly wired.
         // H2 in-memory is used as the JDBC URL to avoid needing a real database.
@@ -89,10 +88,11 @@ class DatabaseConfigTest {
         HikariDataSource hikari = (HikariDataSource) dataSource;
         assertEquals("jdbc:h2:mem:testdb", hikari.getJdbcUrl());
         assertEquals("sa", hikari.getUsername());
+        hikari.close();
     }
 
     @Test
-    void dataSourceProperties_HandlesNullParameterServiceGracefully() {
+    void dataSourceProperties_HandlesNullParameterServiceGracefully() throws Exception {
         // Documents the expected failure mode when ParameterStoreService is null:
         // a NullPointerException is thrown rather than silently using empty credentials.
         // This is intentional — misconfigured secrets should fail fast at startup.
@@ -107,7 +107,7 @@ class DatabaseConfigTest {
     }
 
     @Test
-    void dataSource_BindsHikariPropertiesFromEnvironment() {
+    void dataSource_BindsHikariPropertiesFromEnvironment() throws Exception {
         // Verifies that Hikari pool settings (e.g. maximum-pool-size) supplied through
         // the Spring Environment are correctly bound to the HikariDataSource, confirming
         // that the binding mechanism in dataSource() works end-to-end.
@@ -128,5 +128,6 @@ class DatabaseConfigTest {
         HikariDataSource hikari = (HikariDataSource) dataSource;
 
         assertEquals(7, hikari.getMaximumPoolSize());
+        hikari.close();
     }
 }

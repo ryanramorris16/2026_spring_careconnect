@@ -10,7 +10,7 @@ class UserAIConfigTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         UserAIConfig config = new UserAIConfig();
 
         assertThat(config).isNotNull();
@@ -28,7 +28,7 @@ class UserAIConfigTest {
     // ─── Builder all fields ───────────────────────────────────────────────────
 
     @Test
-    void builder_allFields() {
+    void builder_allFields() throws Exception {
         UserAIConfig config = UserAIConfig.builder()
                 .id(1L)
                 .patientId(10L)
@@ -69,7 +69,7 @@ class UserAIConfigTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         UserAIConfig config = new UserAIConfig();
 
         config.setPatientId(20L);
@@ -108,40 +108,40 @@ class UserAIConfigTest {
     // ─── AIProvider.resolve() ─────────────────────────────────────────────────
 
     @Test
-    void aiProvider_resolve_nullInput_returnsOpenAI() {
+    void aiProvider_resolve_nullInput_returnsOpenAI() throws Exception {
         assertThat(AIProvider.resolve(null)).isEqualTo(AIProvider.OPENAI);
     }
 
     @Test
-    void aiProvider_resolve_defaultString_returnsOpenAI() {
+    void aiProvider_resolve_defaultString_returnsOpenAI() throws Exception {
         assertThat(AIProvider.resolve("DEFAULT")).isEqualTo(AIProvider.OPENAI);
     }
 
     @Test
-    void aiProvider_resolve_openaiString_returnsOpenAI() {
+    void aiProvider_resolve_openaiString_returnsOpenAI() throws Exception {
         assertThat(AIProvider.resolve("OPENAI")).isEqualTo(AIProvider.OPENAI);
     }
 
     @Test
-    void aiProvider_resolve_deepseekString_returnsDeepSeek() {
+    void aiProvider_resolve_deepseekString_returnsDeepSeek() throws Exception {
         assertThat(AIProvider.resolve("DEEPSEEK")).isEqualTo(AIProvider.DEEPSEEK);
     }
 
     @Test
-    void aiProvider_resolve_caseInsensitive() {
+    void aiProvider_resolve_caseInsensitive() throws Exception {
         assertThat(AIProvider.resolve("openai")).isEqualTo(AIProvider.OPENAI);
         assertThat(AIProvider.resolve("deepseek")).isEqualTo(AIProvider.DEEPSEEK);
     }
 
     @Test
-    void aiProvider_resolve_unknownValue_returnsOpenAI() {
+    void aiProvider_resolve_unknownValue_returnsOpenAI() throws Exception {
         assertThat(AIProvider.resolve("UNKNOWN_PROVIDER")).isEqualTo(AIProvider.OPENAI);
     }
 
     // ─── AIProvider enum values ───────────────────────────────────────────────
 
     @Test
-    void aiProvider_values() {
+    void aiProvider_values() throws Exception {
         assertThat(AIProvider.values())
                 .containsExactly(AIProvider.DEFAULT, AIProvider.OPENAI, AIProvider.DEEPSEEK);
     }

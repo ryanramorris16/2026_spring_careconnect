@@ -9,7 +9,7 @@ class PlanTest {
     // ─── No-arg constructor ───────────────────────────────────────────────────
 
     @Test
-    void noArgConstructor_createsInstance() {
+    void noArgConstructor_createsInstance() throws Exception {
         Plan plan = new Plan();
 
         assertThat(plan).isNotNull();
@@ -23,7 +23,7 @@ class PlanTest {
     // ─── Builder defaults ─────────────────────────────────────────────────────
 
     @Test
-    void builder_isActive_defaultsToTrue() {
+    void builder_isActive_defaultsToTrue() throws Exception {
         Plan plan = Plan.builder().code("BASIC").build();
         assertThat(plan.getIsActive()).isTrue();
     }
@@ -31,7 +31,7 @@ class PlanTest {
     // ─── All-arg constructor ──────────────────────────────────────────────────
 
     @Test
-    void allArgConstructor_setsAllFields() {
+    void allArgConstructor_setsAllFields() throws Exception {
         Plan plan = new Plan(1L, "PRO", "Pro Plan", 999, "MONTHLY", false);
 
         assertThat(plan.getId()).isEqualTo(1L);
@@ -45,7 +45,7 @@ class PlanTest {
     // ─── Setters ──────────────────────────────────────────────────────────────
 
     @Test
-    void setters_updateFields() {
+    void setters_updateFields() throws Exception {
         Plan plan = new Plan();
 
         plan.setId(2L);
@@ -66,7 +66,7 @@ class PlanTest {
     // ─── equals() and hashCode() ──────────────────────────────────────────────
 
     @Test
-    void equals_sameFields_returnsTrue() {
+    void equals_sameFields_returnsTrue() throws Exception {
         Plan p1 = Plan.builder().id(1L).code("BASIC").build();
         Plan p2 = Plan.builder().id(1L).code("BASIC").build();
 
@@ -75,7 +75,7 @@ class PlanTest {
     }
 
     @Test
-    void equals_differentFields_returnsFalse() {
+    void equals_differentFields_returnsFalse() throws Exception {
         Plan p1 = Plan.builder().id(1L).build();
         Plan p2 = Plan.builder().id(2L).build();
 

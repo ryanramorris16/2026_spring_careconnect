@@ -35,7 +35,7 @@ class UserDetailsServiceImplTest {
     private User testUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         testUser = new User();
         testUser.setEmail("test@example.com");
         testUser.setPassword("password");
@@ -43,7 +43,7 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    void loadUserByEmailAndRole_ShouldReturnUserDetails_WhenUserExists() {
+    void loadUserByEmailAndRole_ShouldReturnUserDetails_WhenUserExists() throws Exception {
         // Arrange
         when(userRepository.findByEmailAndRole("test@example.com", Role.PATIENT))
                 .thenReturn(Optional.of(testUser));
@@ -60,7 +60,7 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    void loadUserByEmailAndRole_ShouldThrowException_WhenUserNotFound() {
+    void loadUserByEmailAndRole_ShouldThrowException_WhenUserNotFound() throws Exception {
         // Arrange
         when(userRepository.findByEmailAndRole("test@example.com", Role.PATIENT))
                 .thenReturn(Optional.empty());
@@ -73,7 +73,7 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    void loadUserByUsername_ShouldReturnUserDetails_WhenUserExists() {
+    void loadUserByUsername_ShouldReturnUserDetails_WhenUserExists() throws Exception {
         // Arrange
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
@@ -89,7 +89,7 @@ class UserDetailsServiceImplTest {
     }
 
     @Test
-    void loadUserByUsername_ShouldThrowException_WhenUserNotFound() {
+    void loadUserByUsername_ShouldThrowException_WhenUserNotFound() throws Exception {
         // Arrange
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
 
@@ -100,12 +100,14 @@ class UserDetailsServiceImplTest {
         verify(userRepository).findByEmail("test@example.com");
     }
 
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Test
-    void extractUserProfile_ShouldReturnOAuth2UserProfile_WhenPrincipalIsOAuth2User() {
+    void extractUserProfile_ShouldReturnOAuth2UserProfile_WhenPrincipalIsOAuth2User() throws Exception {
         // Arrange
         OAuth2User oAuth2User = mock(OAuth2User.class);
         when(oAuth2User.getAttribute("email")).thenReturn("oauth@example.com");
         when(oAuth2User.getAttribute("name")).thenReturn("OAuth User");
+        @SuppressWarnings("rawtypes")
         Collection authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         when(oAuth2User.getAuthorities()).thenReturn(authorities);
@@ -121,8 +123,9 @@ class UserDetailsServiceImplTest {
         assertEquals("ROLE_USER", body.get("role"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    void extractUserProfile_ShouldReturnUserDetailsProfile_WhenPrincipalIsUserDetails() {
+    void extractUserProfile_ShouldReturnUserDetailsProfile_WhenPrincipalIsUserDetails() throws Exception {
         // Arrange
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                 "user@example.com", "password", List.of(new SimpleGrantedAuthority("ROLE_PATIENT")));
@@ -132,13 +135,15 @@ class UserDetailsServiceImplTest {
 
         // Assert
         assertEquals(200, response.getStatusCodeValue());
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals("user@example.com", body.get("email"));
         assertEquals("ROLE_PATIENT", body.get("role"));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    void extractUserProfile_ShouldReturnUnauthorized_WhenPrincipalIsInvalid() {
+    void extractUserProfile_ShouldReturnUnauthorized_WhenPrincipalIsInvalid() throws Exception {
         // Act
         ResponseEntity<?> response = userDetailsService.extractUserProfile("invalid");
 

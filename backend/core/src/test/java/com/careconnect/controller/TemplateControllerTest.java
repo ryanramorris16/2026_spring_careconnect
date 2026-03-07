@@ -2,7 +2,9 @@ package com.careconnect.controller;
 
 import com.careconnect.dto.TemplateDto;
 import com.careconnect.model.Template;
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.TemplateService;
+import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +24,11 @@ class TemplateControllerTest {
     @Mock
     private TemplateService templateService;
 
+    @Mock
+    private SecurityUtil securityUtil;
+    @Mock
+    private AuthorizationService authorizationService;
+
     @InjectMocks
     private TemplateController controller;
 
@@ -38,7 +45,7 @@ class TemplateControllerTest {
     // ─── getAllTemplates ───────────────────────────────────────────────────────
 
     @Test
-    void getAllTemplates_returnsOkWithList() {
+    void getAllTemplates_returnsOkWithList() throws Exception {
         List<Template> templates = List.of(template("T1"), template("T2"));
         when(templateService.getAllTemplates()).thenReturn(templates);
 
@@ -52,7 +59,7 @@ class TemplateControllerTest {
     // ─── getAll ───────────────────────────────────────────────────────────────
 
     @Test
-    void getAll_returnsOkWithList() {
+    void getAll_returnsOkWithList() throws Exception {
         List<Template> templates = List.of(template("T1"));
         when(templateService.getAllTemplates()).thenReturn(templates);
 
@@ -65,7 +72,7 @@ class TemplateControllerTest {
     // ─── getTemplateById ──────────────────────────────────────────────────────
 
     @Test
-    void getTemplateById_returnsOkWithTemplate() {
+    void getTemplateById_returnsOkWithTemplate() throws Exception {
         Template t = template("MyTemplate");
         when(templateService.getTemplateById(TEMPLATE_ID)).thenReturn(t);
 
@@ -79,7 +86,7 @@ class TemplateControllerTest {
     // ─── createTemplate ───────────────────────────────────────────────────────
 
     @Test
-    void createTemplate_returnsOkWithCreatedTemplate() {
+    void createTemplate_returnsOkWithCreatedTemplate() throws Exception {
         TemplateDto dto = templateDto("New");
         Template created = template("New");
         when(templateService.createTemplate(dto)).thenReturn(created);
@@ -94,7 +101,7 @@ class TemplateControllerTest {
     // ─── updateTemplate ───────────────────────────────────────────────────────
 
     @Test
-    void updateTemplate_returnsOkWithUpdatedTemplate() {
+    void updateTemplate_returnsOkWithUpdatedTemplate() throws Exception {
         TemplateDto dto = templateDto("Updated");
         Template updated = template("Updated");
         when(templateService.updateTemplate(TEMPLATE_ID, dto)).thenReturn(updated);
@@ -109,7 +116,7 @@ class TemplateControllerTest {
     // ─── deleteTemplate ───────────────────────────────────────────────────────
 
     @Test
-    void deleteTemplate_returnsNoContent() {
+    void deleteTemplate_returnsNoContent() throws Exception {
         when(templateService.deleteTemplate(TEMPLATE_ID)).thenReturn(true);
 
         ResponseEntity<Void> response = controller.deleteTemplate(TEMPLATE_ID);

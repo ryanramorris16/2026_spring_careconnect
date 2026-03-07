@@ -26,13 +26,13 @@ class MoodServiceTest {
     private MoodService moodService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     @DisplayName("saveMood - valid inputs - returns saved mood")
-    void saveMood_validInputs_returnsSavedMood() {
+    void saveMood_validInputs_returnsSavedMood() throws Exception {
         Long userId = 1L;
         int score = 8;
         String label = "Happy";
@@ -51,7 +51,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("saveMood - zero score - returns saved mood with zero score")
-    void saveMood_zeroScore_returnsSavedMoodWithZeroScore() {
+    void saveMood_zeroScore_returnsSavedMoodWithZeroScore() throws Exception {
         Long userId = 2L;
         int score = 0;
         String label = "Neutral";
@@ -69,7 +69,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("saveMood - negative score - returns saved mood with negative score")
-    void saveMood_negativeScore_returnsSavedMoodWithNegativeScore() {
+    void saveMood_negativeScore_returnsSavedMoodWithNegativeScore() throws Exception {
         Long userId = 3L;
         int score = -1;
         String label = "Sad";
@@ -86,7 +86,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("saveMood - verifies mood object is constructed and saved")
-    void saveMood_verifiesMoodConstructionAndSave_savesCorrectly() {
+    void saveMood_verifiesMoodConstructionAndSave_savesCorrectly() throws Exception {
         Long userId = 5L;
         int score = 10;
         String label = "Excellent";
@@ -106,7 +106,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("getMoods - moods exist for user - returns list of moods")
-    void getMoods_moodsExistForUser_returnsListOfMoods() {
+    void getMoods_moodsExistForUser_returnsListOfMoods() throws Exception {
         Long userId = 1L;
         Mood mood1 = new Mood(userId, 7, "Good");
         Mood mood2 = new Mood(userId, 3, "Bad");
@@ -125,7 +125,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("getMoods - no moods for user - returns empty list")
-    void getMoods_noMoodsForUser_returnsEmptyList() {
+    void getMoods_noMoodsForUser_returnsEmptyList() throws Exception {
         Long userId = 99L;
         when(moodRepository.findByUserIdOrderByCreatedAtDesc(userId))
                 .thenReturn(Collections.emptyList());
@@ -139,7 +139,7 @@ class MoodServiceTest {
 
     @Test
     @DisplayName("getMoods - single mood for user - returns single element list")
-    void getMoods_singleMoodForUser_returnsSingleElementList() {
+    void getMoods_singleMoodForUser_returnsSingleElementList() throws Exception {
         Long userId = 42L;
         Mood mood = new Mood(userId, 5, "Okay");
 

@@ -36,13 +36,13 @@ class QuestionInitializerTest {
     private QuestionInitializer questionInitializer;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Initialize @Mock and @InjectMocks fields so Mockito wires them before each test.
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void initQuestions_DoesNothingIfQuestionsExist() {
+    void initQuestions_DoesNothingIfQuestionsExist() throws Exception {
         // Verifies the idempotency guard: when the repository already holds questions
         // (count > 0), no save calls are made and the count is checked exactly once.
         when(questionRepository.count()).thenReturn(5L);
@@ -54,7 +54,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_CreatesAllQuestionsWhenEmpty() {
+    void initQuestions_CreatesAllQuestionsWhenEmpty() throws Exception {
         // Verifies that exactly 15 questions are persisted when the table is empty.
         // The count is expected to be called at least twice (before and after seeding).
         when(questionRepository.count()).thenReturn(0L);
@@ -68,7 +68,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_SavesCorrectFirstQuestion() {
+    void initQuestions_SavesCorrectFirstQuestion() throws Exception {
         // Uses ArgumentCaptor to capture all saved Question objects so the first one
         // can be inspected for correct prompt text, type, required/active flags, and
         // ordinal (display order). This pins the first seed question's exact definition.
@@ -92,7 +92,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_AllOrdinalsAreSequential() {
+    void initQuestions_AllOrdinalsAreSequential() throws Exception {
         // Verifies that all 15 questions are assigned sequential ordinals starting at 1,
         // which controls the display order presented to the user in the health-check form.
         when(questionRepository.count()).thenReturn(0L);
@@ -113,7 +113,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_ContinuesIfSaveThrows() {
+    void initQuestions_ContinuesIfSaveThrows() throws Exception {
         // Verifies that a database error on save does not abort the initializer: all 15
         // save attempts are still made even if each one throws, and no exception escapes
         // to the caller (which would prevent the application from starting).
@@ -128,7 +128,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_HandlesCountExceptionGracefully() {
+    void initQuestions_HandlesCountExceptionGracefully() throws Exception {
         // Verifies that if the count query itself fails (e.g. Flyway has not yet run),
         // the initializer catches the exception, skips seeding entirely, and does not
         // propagate an exception that would crash the application context startup.
@@ -142,7 +142,7 @@ class QuestionInitializerTest {
     }
 
     @Test
-    void initQuestions_CreatesAllExpectedQuestionTypes() {
+    void initQuestions_CreatesAllExpectedQuestionTypes() throws Exception {
         // Verifies that the seed data includes at least one question of each expected
         // QuestionType (YES_NO, TRUE_FALSE, NUMBER, TEXT), confirming the initializer
         // covers all answer formats used by the health-check questionnaire.
