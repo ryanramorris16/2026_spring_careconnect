@@ -8,7 +8,7 @@ INSERT INTO users (
     password,
     password_hash,
     role,
-    email_verified,
+    is_verified,
     verification_token,
     stripe_customer_id,
     created_at,
@@ -48,6 +48,11 @@ INSERT INTO users (
     CURRENT_TIMESTAMP,
     NULL,
     NULL,
+    'ACTIVE',
+    NULL,
+    0,
+    TRUE
+);
     'ACTIVE',
     NULL,
     0,

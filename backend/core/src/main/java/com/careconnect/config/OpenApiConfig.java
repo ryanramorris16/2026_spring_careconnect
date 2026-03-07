@@ -1,4 +1,4 @@
-package com.careconnect.config;
+package com.careconnect.config.ai;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
