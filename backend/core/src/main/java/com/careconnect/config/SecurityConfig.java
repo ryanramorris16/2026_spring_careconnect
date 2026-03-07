@@ -65,13 +65,11 @@ public class SecurityConfig {
                         "/oauth/**"// Permit OAuth paths
                 ).permitAll()
 
-                        /* ---------- public static assets ------------------------ */
-                        .requestMatchers(
-                                "/", "/index.html", "/favicon.ico", "/static/**"
-                        ).permitAll()
+                /* ---------- public static assets ------------------------ */
+                .requestMatchers(
+                        "/", "/index.html", "/favicon.ico", "/static/**"
+                ).permitAll()
 
-                        /* ---------- CORS preflight ------------------------------ */
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         /* ---------- Admin-only endpoints ------------------------------- */
                         .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
