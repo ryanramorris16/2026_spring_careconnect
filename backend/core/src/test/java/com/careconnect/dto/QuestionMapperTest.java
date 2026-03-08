@@ -24,7 +24,7 @@ class QuestionMapperTest {
 
     @Test
     void constructor_isPrivate() throws Exception {
-        Constructor<QuestionMapper> constructor = QuestionMapper.class.getDeclaredConstructor();
+        final Constructor<QuestionMapper> constructor = QuestionMapper.class.getDeclaredConstructor();
         assertThat(Modifier.isPrivate(constructor.getModifiers())).isTrue();
         constructor.setAccessible(true);
         constructor.newInstance(); // covers the private constructor line
@@ -41,7 +41,7 @@ class QuestionMapperTest {
         when(mockQuestion.isActive()).thenReturn(true);
         when(mockQuestion.getOrdinal()).thenReturn(3);
 
-        QuestionDTO dto = QuestionMapper.toDto(mockQuestion);
+        final QuestionDTO dto = QuestionMapper.toDto(mockQuestion);
 
         assertThat(dto.id()).isEqualTo(1L);
         assertThat(dto.prompt()).isEqualTo("How are you feeling?");
@@ -60,7 +60,7 @@ class QuestionMapperTest {
         when(mockQuestion.isActive()).thenReturn(false);
         when(mockQuestion.getOrdinal()).thenReturn(1);
 
-        QuestionDTO dto = QuestionMapper.toDto(mockQuestion);
+        final QuestionDTO dto = QuestionMapper.toDto(mockQuestion);
 
         assertThat(dto.type()).isEqualTo("YES_NO");
         assertThat(dto.required()).isFalse();
@@ -71,7 +71,7 @@ class QuestionMapperTest {
 
     @Test
     void applyUpsert_setsAllFieldsOnTarget() throws Exception {
-        QuestionUpsertDTO src = new QuestionUpsertDTO(
+        final QuestionUpsertDTO src = new QuestionUpsertDTO(
                 "Rate your pain 1-10", QuestionType.NUMBER, true, 5);
 
         QuestionMapper.applyUpsert(mockQuestion, src);
@@ -84,7 +84,7 @@ class QuestionMapperTest {
 
     @Test
     void applyUpsert_optionalFields_appliedCorrectly() throws Exception {
-        QuestionUpsertDTO src = new QuestionUpsertDTO(
+        final QuestionUpsertDTO src = new QuestionUpsertDTO(
                 "True or false?", QuestionType.TRUE_FALSE, false, 0);
 
         QuestionMapper.applyUpsert(mockQuestion, src);
