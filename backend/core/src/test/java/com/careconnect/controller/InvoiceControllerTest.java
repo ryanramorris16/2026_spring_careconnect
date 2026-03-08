@@ -56,35 +56,35 @@ class InvoiceControllerTest {
 
     @Test
     void list_nullSort_returnsPageBody() throws Exception {
-        InvoiceDto dto = new InvoiceDto();
+        final InvoiceDto dto = new InvoiceDto();
         dto.id = "inv-1";
-        Page<InvoiceDto> page = new PageImpl<>(List.of(dto));
+        final Page<InvoiceDto> page = new PageImpl<>(List.of(dto));
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 null, null, null, null, null, null, null, null, null, 0, 25
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = response.getBody();
+        final Map<String, Object> body = response.getBody();
         assertThat(body).isNotNull();
         assertThat(body.get("totalItems")).isEqualTo(1L);
         assertThat(body.get("page")).isEqualTo(0);
         assertThat(body.get("pageSize")).isEqualTo(1);
         assertThat(body.get("totalPages")).isEqualTo(1);
         @SuppressWarnings("unchecked")
-        List<InvoiceDto> items = (List<InvoiceDto>) body.get("items");
+        final List<InvoiceDto> items = (List<InvoiceDto>) body.get("items");
         assertThat(items).hasSize(1);
     }
 
     @Test
     void list_dueDescSort_delegatesCorrectly() throws Exception {
-        Page<InvoiceDto> page = new PageImpl<>(List.of());
+        final Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 "search", "pending", "Provider", "Patient",
                 "2024-01-01T00:00:00Z", "2024-12-31T00:00:00Z",
                 "10.00", "500.00", "due_desc", 1, 10
@@ -95,11 +95,11 @@ class InvoiceControllerTest {
 
     @Test
     void list_dueAscSort_delegatesCorrectly() throws Exception {
-        Page<InvoiceDto> page = new PageImpl<>(List.of());
+        final Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 null, null, null, null, null, null, null, null, "due_asc", 0, 25
         );
 
@@ -108,11 +108,11 @@ class InvoiceControllerTest {
 
     @Test
     void list_amountDescSort_delegatesCorrectly() throws Exception {
-        Page<InvoiceDto> page = new PageImpl<>(List.of());
+        final Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 null, null, null, null, null, null, null, null, "amount_desc", 0, 25
         );
 
@@ -121,11 +121,11 @@ class InvoiceControllerTest {
 
     @Test
     void list_amountAscSort_delegatesCorrectly() throws Exception {
-        Page<InvoiceDto> page = new PageImpl<>(List.of());
+        final Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 null, null, null, null, null, null, null, null, "amount_asc", 0, 25
         );
 
@@ -134,11 +134,11 @@ class InvoiceControllerTest {
 
     @Test
     void list_unknownSort_usesDefaultSort() throws Exception {
-        Page<InvoiceDto> page = new PageImpl<>(List.of());
+        final Page<InvoiceDto> page = new PageImpl<>(List.of());
         when(invoiceService.list(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
-        ResponseEntity<Map<String, Object>> response = controller().list(
+        final ResponseEntity<Map<String, Object>> response = controller().list(
                 null, null, null, null, null, null, null, null, "unknown_sort", 0, 25
         );
 
@@ -149,11 +149,11 @@ class InvoiceControllerTest {
 
     @Test
     void get_found_returnsDto() throws Exception {
-        InvoiceDto dto = new InvoiceDto();
+        final InvoiceDto dto = new InvoiceDto();
         dto.id = "inv-42";
         when(invoiceService.get("inv-42")).thenReturn(Optional.of(dto));
 
-        ResponseEntity<InvoiceDto> response = controller().get("inv-42");
+        final ResponseEntity<InvoiceDto> response = controller().get("inv-42");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(dto);
@@ -163,7 +163,7 @@ class InvoiceControllerTest {
     void get_notFound_returns404() throws Exception {
         when(invoiceService.get("missing")).thenReturn(Optional.empty());
 
-        ResponseEntity<InvoiceDto> response = controller().get("missing");
+        final ResponseEntity<InvoiceDto> response = controller().get("missing");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -172,12 +172,12 @@ class InvoiceControllerTest {
 
     @Test
     void create_returnsCreatedWithDto() throws Exception {
-        InvoiceDto input = new InvoiceDto();
-        InvoiceDto created = new InvoiceDto();
+        final InvoiceDto input = new InvoiceDto();
+        final InvoiceDto created = new InvoiceDto();
         created.id = "new-id";
         when(invoiceService.create(input)).thenReturn(created);
 
-        ResponseEntity<InvoiceDto> response = controller().create(input);
+        final ResponseEntity<InvoiceDto> response = controller().create(input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isSameAs(created);
@@ -187,12 +187,12 @@ class InvoiceControllerTest {
 
     @Test
     void update_returnsOkWithUpdatedDto() throws Exception {
-        InvoiceDto input = new InvoiceDto();
-        InvoiceDto updated = new InvoiceDto();
+        final InvoiceDto input = new InvoiceDto();
+        final InvoiceDto updated = new InvoiceDto();
         updated.id = "inv-1";
         when(invoiceService.update("inv-1", input)).thenReturn(updated);
 
-        ResponseEntity<InvoiceDto> response = controller().update("inv-1", input);
+        final ResponseEntity<InvoiceDto> response = controller().update("inv-1", input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(updated);
@@ -204,7 +204,7 @@ class InvoiceControllerTest {
     void delete_returnsNoContent() throws Exception {
         doNothing().when(invoiceService).delete("inv-1");
 
-        ResponseEntity<Void> response = controller().delete("inv-1");
+        final ResponseEntity<Void> response = controller().delete("inv-1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(invoiceService).delete("inv-1");
@@ -214,12 +214,12 @@ class InvoiceControllerTest {
 
     @Test
     void addPayment_withPrincipal_usesNameAsActor() throws Exception {
-        PaymentDto dto = new PaymentDto();
-        InvoiceDto updated = new InvoiceDto();
-        Principal principal = () -> "user@example.com";
+        final PaymentDto dto = new PaymentDto();
+        final InvoiceDto updated = new InvoiceDto();
+        final Principal principal = () -> "user@example.com";
         when(invoiceService.recordPayment("inv-1", dto, "user@example.com")).thenReturn(updated);
 
-        ResponseEntity<InvoiceDto> response = controller().addPayment("inv-1", dto, principal);
+        final ResponseEntity<InvoiceDto> response = controller().addPayment("inv-1", dto, principal);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(updated);
@@ -228,11 +228,11 @@ class InvoiceControllerTest {
 
     @Test
     void addPayment_nullPrincipal_usesSystemAsActor() throws Exception {
-        PaymentDto dto = new PaymentDto();
-        InvoiceDto updated = new InvoiceDto();
+        final PaymentDto dto = new PaymentDto();
+        final InvoiceDto updated = new InvoiceDto();
         when(invoiceService.recordPayment("inv-1", dto, "system")).thenReturn(updated);
 
-        ResponseEntity<InvoiceDto> response = controller().addPayment("inv-1", dto, null);
+        final ResponseEntity<InvoiceDto> response = controller().addPayment("inv-1", dto, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(invoiceService).recordPayment("inv-1", dto, "system");
@@ -242,10 +242,10 @@ class InvoiceControllerTest {
 
     @Test
     void removePayment_returnsOkWithUpdatedDto() throws Exception {
-        InvoiceDto updated = new InvoiceDto();
+        final InvoiceDto updated = new InvoiceDto();
         when(invoiceService.deletePayment("inv-1", "pay-1")).thenReturn(updated);
 
-        ResponseEntity<InvoiceDto> response = controller().removePayment("inv-1", "pay-1");
+        final ResponseEntity<InvoiceDto> response = controller().removePayment("inv-1", "pay-1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(updated);
@@ -255,7 +255,7 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_nullFiles_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller().extractWithLlm(null);
+        final ResponseEntity<?> response = controller().extractWithLlm(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isEqualTo("Please provide at least one valid file.");
@@ -263,25 +263,25 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_emptyList_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller().extractWithLlm(List.of());
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void extractWithLlm_allEmptyFiles_returnsBadRequest() throws Exception {
-        MockMultipartFile emptyFile = new MockMultipartFile("files", new byte[0]);
+        final MockMultipartFile emptyFile = new MockMultipartFile("files", new byte[0]);
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(emptyFile));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(emptyFile));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void extractWithLlm_textractUnavailable_returns503() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final MockMultipartFile file = new MockMultipartFile("files", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
 
-        ResponseEntity<?> response = controllerNoTextract().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controllerNoTextract().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(response.getBody().toString()).contains("Textract service is not available");
@@ -289,18 +289,18 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_successNoDuplicate_returnsOkPayload() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
-        AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://bucket/key");
+        final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://bucket/key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
-        String json = "{\"invoiceNumber\":\"INV-001\"}";
+        final String json = "{\"invoiceNumber\":\"INV-001\"}";
         when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
+        final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload).isNotNull();
         assertThat(payload.duplicate).isFalse();
         assertThat(payload.message).isNull();
@@ -312,23 +312,23 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_duplicateFound_flagsDuplicateInResponse() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
-        AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://bucket/key");
+        final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://bucket/key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
-        String json = "{\"invoiceNumber\":\"INV-001\",\"provider\":{\"name\":\"Acme\"},\"amounts\":{\"total\":100.0}}";
+        final String json = "{\"invoiceNumber\":\"INV-001\",\"provider\":{\"name\":\"Acme\"},\"amounts\":{\"total\":100.0}}";
         when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
 
-        Invoice existing = new Invoice();
+        final Invoice existing = new Invoice();
         existing.setId("existing-id");
         existing.setInvoiceNumber("INV-001");
         when(invoiceService.findDuplicateByProviderAndTotal("Acme", 100.0, "INV-001"))
                 .thenReturn(Optional.of(existing));
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
+        final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload.duplicate).isTrue();
         assertThat(payload.duplicateId).isEqualTo("existing-id");
         assertThat(payload.duplicateInvoiceNumber).isEqualTo("INV-001");
@@ -338,34 +338,34 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_duplicateNullProviderAndTotal_messageUsesUnknown() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
-        AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
+        final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         // JSON with no provider or amounts — they'll be null in InvoiceDto
-        String json = "{\"invoiceNumber\":\"INV-002\"}";
+        final String json = "{\"invoiceNumber\":\"INV-002\"}";
         when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
 
-        Invoice existing = new Invoice();
+        final Invoice existing = new Invoice();
         existing.setId("dup-id");
         existing.setInvoiceNumber("INV-002");
         when(invoiceService.findDuplicateByProviderAndTotal(null, null, "INV-002"))
                 .thenReturn(Optional.of(existing));
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
+        final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload.duplicate).isTrue();
         assertThat(payload.message).contains("(unknown provider)");
     }
 
     @Test
     void extractWithLlm_exceptionDuringProcessing_returns500() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
         when(textractService.analyzeAndGetResult(anyList())).thenThrow(new RuntimeException("AWS error"));
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Failed to process with LLM");
@@ -374,18 +374,18 @@ class InvoiceControllerTest {
 
     @Test
     void extractWithLlm_fencedJsonResponse_strippedAndParsed() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
-        AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
+        final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
+        final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
-        String fencedJson = "```json\n{\"invoiceNumber\":\"INV-FENCED\"}\n```";
+        final String fencedJson = "```json\n{\"invoiceNumber\":\"INV-FENCED\"}\n```";
         when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(fencedJson);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
+        final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
+        final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload.invoice.invoiceNumber).isEqualTo("INV-FENCED");
     }
 
@@ -408,28 +408,28 @@ class InvoiceControllerTest {
 
     @Test
     void jsonSanitizer_nestedObject_extractsOutermost() throws Exception {
-        String input = "{\"outer\":{\"inner\":true}}";
+        final String input = "{\"outer\":{\"inner\":true}}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }
 
     @Test
     void jsonSanitizer_escapedBackslash_handledCorrectly() throws Exception {
-        String input = "{\"path\":\"C:\\\\Users\\\\test\"}";
+        final String input = "{\"path\":\"C:\\\\Users\\\\test\"}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }
 
     @Test
     void jsonSanitizer_fencedJsonWithNewline_stripsAndExtracts() throws Exception {
-        String input = "```json\n{\"key\":\"value\"}\n```";
+        final String input = "```json\n{\"key\":\"value\"}\n```";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo("{\"key\":\"value\"}");
     }
 
     @Test
     void jsonSanitizer_fencedJsonNoNewline_stripsAndExtracts() throws Exception {
         // ``` immediately followed by { (no newline after fence marker)
-        String input = "```{\"key\":\"value\"}```";
+        final String input = "```{\"key\":\"value\"}```";
         // firstNewline < 0 branch: t stays as the remainder after "```" trim
-        String result = InvoiceController.JsonSanitizer.extractFirstJsonObject(input);
+        final String result = InvoiceController.JsonSanitizer.extractFirstJsonObject(input);
         assertThat(result).isEqualTo("{\"key\":\"value\"}");
     }
 
@@ -440,7 +440,7 @@ class InvoiceControllerTest {
 
     @Test
     void jsonSanitizer_escapedQuoteInsideString_handledCorrectly() throws Exception {
-        String input = "{\"msg\":\"say \\\"hello\\\"\"}";
+        final String input = "{\"msg\":\"say \\\"hello\\\"\"}";
         assertThat(InvoiceController.JsonSanitizer.extractFirstJsonObject(input)).isEqualTo(input);
     }
 }
