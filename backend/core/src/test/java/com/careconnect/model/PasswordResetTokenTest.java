@@ -12,7 +12,7 @@ class PasswordResetTokenTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        PasswordResetToken token = new PasswordResetToken();
+        final PasswordResetToken token = new PasswordResetToken();
 
         assertThat(token).isNotNull();
         assertThat(token.getId()).isNull();
@@ -27,9 +27,9 @@ class PasswordResetTokenTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        PasswordResetToken token = new PasswordResetToken();
-        User user = new User();
-        Instant now = Instant.now();
+        final PasswordResetToken token = new PasswordResetToken();
+        final User user = new User();
+        final Instant now = Instant.now();
 
         token.setUser(user);
         token.setTokenHash("sha256hashvalue");
