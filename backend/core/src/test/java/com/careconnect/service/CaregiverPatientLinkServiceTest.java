@@ -121,7 +121,7 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_validRequest_returnsResponse")
         void createLink_validRequest_returnsResponse() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, "notes");
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, "notes");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -134,7 +134,7 @@ class CaregiverPatientLinkServiceTest {
             // creatorUser has ADMIN role, so getUserName falls through to default branch
             // No additional stub needed for ADMIN role
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
 
             assertNotNull(response);
             assertEquals("PERMANENT", response.linkType());
@@ -145,8 +145,8 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_temporaryWithExpiry_returnsResponseWithExpiry")
         void createLink_temporaryWithExpiry_returnsResponseWithExpiry() throws Exception {
-            LocalDateTime expiry = LocalDateTime.now().plusDays(7);
-            CreateLinkRequest request = new CreateLinkRequest(2L, "temporary", expiry, "temp access");
+            final LocalDateTime expiry = LocalDateTime.now().plusDays(7);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "temporary", expiry, "temp access");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -157,7 +157,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
 
             assertNotNull(response);
             assertEquals("TEMPORARY", response.linkType());
@@ -167,10 +167,10 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_caregiverNotFound_throwsAppException")
         void createLink_caregiverNotFound_throwsAppException() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createLink(1L, request, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -180,11 +180,11 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_patientNotFound_throwsAppException")
         void createLink_patientNotFound_throwsAppException() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createLink(1L, request, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -194,12 +194,12 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_creatorNotFound_throwsAppException")
         void createLink_creatorNotFound_throwsAppException() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(userRepository.findById(3L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createLink(1L, request, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -209,14 +209,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_activeLinkAlreadyExists_throwsConflictException")
         void createLink_activeLinkAlreadyExists_throwsConflictException() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, null);
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
             when(userRepository.findById(3L)).thenReturn(Optional.of(creatorUser));
             when(caregiverPatientLinkRepository.existsByCaregiverUserAndPatientUserAndStatus(
                     caregiverUser, patientUser, CaregiverPatientLink.LinkStatus.ACTIVE)).thenReturn(true);
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createLink(1L, request, 3L));
 
             assertEquals(HttpStatus.CONFLICT, ex.getStatus());
@@ -234,15 +234,15 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_allFieldsProvided_updatesAll")
         void updateLink_allFieldsProvided_updatesAll() throws Exception {
-            LocalDateTime newExpiry = LocalDateTime.now().plusDays(30);
-            UpdateLinkRequest request = new UpdateLinkRequest("SUSPENDED", "TEMPORARY", newExpiry, "updated notes");
+            final LocalDateTime newExpiry = LocalDateTime.now().plusDays(30);
+            final UpdateLinkRequest request = new UpdateLinkRequest("SUSPENDED", "TEMPORARY", newExpiry, "updated notes");
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertNotNull(response);
             assertEquals("SUSPENDED", response.status());
@@ -254,14 +254,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_allFieldsNull_noChanges")
         void updateLink_allFieldsNull_noChanges() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertNotNull(response);
             assertEquals("ACTIVE", response.status());
@@ -271,14 +271,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_onlyStatusProvided_updatesOnlyStatus")
         void updateLink_onlyStatusProvided_updatesOnlyStatus() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest("REVOKED", null, null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest("REVOKED", null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals("REVOKED", response.status());
             assertEquals("PERMANENT", response.linkType());
@@ -287,14 +287,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_onlyLinkTypeProvided_updatesOnlyLinkType")
         void updateLink_onlyLinkTypeProvided_updatesOnlyLinkType() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest(null, "EMERGENCY", null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest(null, "EMERGENCY", null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals("ACTIVE", response.status());
             assertEquals("EMERGENCY", response.linkType());
@@ -303,15 +303,15 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_onlyExpiresAtProvided_updatesOnlyExpiry")
         void updateLink_onlyExpiresAtProvided_updatesOnlyExpiry() throws Exception {
-            LocalDateTime newExpiry = LocalDateTime.now().plusDays(14);
-            UpdateLinkRequest request = new UpdateLinkRequest(null, null, newExpiry, null);
+            final LocalDateTime newExpiry = LocalDateTime.now().plusDays(14);
+            final UpdateLinkRequest request = new UpdateLinkRequest(null, null, newExpiry, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals(newExpiry, response.expiresAt());
         }
@@ -319,14 +319,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_onlyNotesProvided_updatesOnlyNotes")
         void updateLink_onlyNotesProvided_updatesOnlyNotes() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, "new notes");
+            final UpdateLinkRequest request = new UpdateLinkRequest(null, null, null, "new notes");
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals("new notes", response.notes());
         }
@@ -334,10 +334,10 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_linkNotFound_throwsAppException")
         void updateLink_linkNotFound_throwsAppException() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest("ACTIVE", null, null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest("ACTIVE", null, null, null);
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.updateLink(999L, request, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -361,7 +361,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.suspendLink(100L, "3");
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.suspendLink(100L, "3");
 
             assertNotNull(response);
             assertEquals("SUSPENDED", response.status());
@@ -377,7 +377,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.suspendLink(100L, "admin@example.com");
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.suspendLink(100L, "admin@example.com");
 
             assertNotNull(response);
             assertEquals("SUSPENDED", response.status());
@@ -388,7 +388,7 @@ class CaregiverPatientLinkServiceTest {
         void suspendLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.suspendLink(999L, "3"));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -401,7 +401,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.suspendLink(100L, "999"));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -414,7 +414,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.suspendLink(100L, "unknown@example.com"));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -439,7 +439,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.reactivateLink(100L, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.reactivateLink(100L, 3L);
 
             assertNotNull(response);
             assertEquals("ACTIVE", response.status());
@@ -451,7 +451,7 @@ class CaregiverPatientLinkServiceTest {
         void reactivateLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.reactivateLink(999L, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -464,7 +464,7 @@ class CaregiverPatientLinkServiceTest {
             link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.reactivateLink(100L, 3L));
 
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
@@ -477,7 +477,7 @@ class CaregiverPatientLinkServiceTest {
             link.setStatus(CaregiverPatientLink.LinkStatus.REVOKED);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.reactivateLink(100L, 3L));
 
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
@@ -489,7 +489,7 @@ class CaregiverPatientLinkServiceTest {
             link.setStatus(CaregiverPatientLink.LinkStatus.EXPIRED);
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.reactivateLink(100L, 3L));
 
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
@@ -521,7 +521,7 @@ class CaregiverPatientLinkServiceTest {
         void revokeLink_linkNotFound_throwsAppException() throws Exception {
             when(caregiverPatientLinkRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.revokeLink(999L, 3L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -544,7 +544,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getPatientsByCaregiver(1L);
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getPatientsByCaregiver(1L);
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -558,7 +558,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findActivePatientsByCaregiver(eq(caregiverUser), any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getPatientsByCaregiver(1L);
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getPatientsByCaregiver(1L);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -569,7 +569,7 @@ class CaregiverPatientLinkServiceTest {
         void getPatientsByCaregiver_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.getPatientsByCaregiver(999L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -592,7 +592,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getCaregiversByPatient(2L);
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getCaregiversByPatient(2L);
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -606,7 +606,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findActiveCaregiversByPatient(eq(patientUser), any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getCaregiversByPatient(2L);
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getCaregiversByPatient(2L);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -617,7 +617,7 @@ class CaregiverPatientLinkServiceTest {
         void getCaregiversByPatient_patientNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.getCaregiversByPatient(999L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -640,7 +640,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
                     .thenReturn(true);
 
-            boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
 
             assertTrue(result);
         }
@@ -653,7 +653,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.existsActiveNonExpiredLink(eq(caregiverUser), eq(patientUser), any(LocalDateTime.class)))
                     .thenReturn(false);
 
-            boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
 
             assertFalse(result);
         }
@@ -664,7 +664,7 @@ class CaregiverPatientLinkServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
 
-            boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
 
             assertFalse(result);
         }
@@ -675,7 +675,7 @@ class CaregiverPatientLinkServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-            boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
 
             assertFalse(result);
         }
@@ -686,7 +686,7 @@ class CaregiverPatientLinkServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-            boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasAccessToPatient(1L, 2L);
 
             assertFalse(result);
         }
@@ -705,7 +705,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -716,7 +716,7 @@ class CaregiverPatientLinkServiceTest {
         void getAllLinks_noLinks_returnsEmptyList() throws Exception {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(Collections.emptyList());
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -733,11 +733,11 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("cleanupExpiredLinks_expiredLinksExist_setsExpiredStatus")
         void cleanupExpiredLinks_expiredLinksExist_setsExpiredStatus() throws Exception {
-            CaregiverPatientLink expiredLink1 = new CaregiverPatientLink();
+            final CaregiverPatientLink expiredLink1 = new CaregiverPatientLink();
             expiredLink1.setId(200L);
             expiredLink1.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
 
-            CaregiverPatientLink expiredLink2 = new CaregiverPatientLink();
+            final CaregiverPatientLink expiredLink2 = new CaregiverPatientLink();
             expiredLink2.setId(201L);
             expiredLink2.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
 
@@ -801,7 +801,7 @@ class CaregiverPatientLinkServiceTest {
         void createPermanentLink_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createPermanentLink(1L, 2L, "notes"));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -814,7 +814,7 @@ class CaregiverPatientLinkServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.createPermanentLink(1L, 2L, "notes"));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -837,7 +837,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.existsByCaregiverUserAndPatientUserAndStatus(
                     caregiverUser, patientUser, CaregiverPatientLink.LinkStatus.ACTIVE)).thenReturn(true);
 
-            boolean result = caregiverPatientLinkService.hasActiveLink(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasActiveLink(1L, 2L);
 
             assertTrue(result);
         }
@@ -850,7 +850,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.existsByCaregiverUserAndPatientUserAndStatus(
                     caregiverUser, patientUser, CaregiverPatientLink.LinkStatus.ACTIVE)).thenReturn(false);
 
-            boolean result = caregiverPatientLinkService.hasActiveLink(1L, 2L);
+            final boolean result = caregiverPatientLinkService.hasActiveLink(1L, 2L);
 
             assertFalse(result);
         }
@@ -860,7 +860,7 @@ class CaregiverPatientLinkServiceTest {
         void hasActiveLink_caregiverNotFound_throwsAppException() throws Exception {
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.hasActiveLink(1L, 2L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -873,7 +873,7 @@ class CaregiverPatientLinkServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-            AppException ex = assertThrows(AppException.class,
+            final AppException ex = assertThrows(AppException.class,
                     () -> caregiverPatientLinkService.hasActiveLink(1L, 2L));
 
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -896,7 +896,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals(1, result.size());
             assertEquals("System", result.get(0).createdBy());
@@ -905,13 +905,13 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByPatientRole_usesPatientName")
         void toCaregiverPatientLinkResponse_createdByPatientRole_usesPatientName() throws Exception {
-            User patientCreator = new User();
+            final User patientCreator = new User();
             patientCreator.setId(10L);
             patientCreator.setEmail("patientcreator@example.com");
             patientCreator.setRole(Role.PATIENT);
             patientCreator.setPassword("password");
 
-            Patient patientProfile = Patient.builder()
+            final Patient patientProfile = Patient.builder()
                     .id(10L)
                     .firstName("Pat")
                     .lastName("Creator")
@@ -924,7 +924,7 @@ class CaregiverPatientLinkServiceTest {
             stubNameLookups();
             when(patientRepository.findByUser(patientCreator)).thenReturn(Optional.of(patientProfile));
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("Pat Creator", result.get(0).createdBy());
         }
@@ -932,13 +932,13 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByCaregiverRole_usesCaregiverName")
         void toCaregiverPatientLinkResponse_createdByCaregiverRole_usesCaregiverName() throws Exception {
-            User caregiverCreator = new User();
+            final User caregiverCreator = new User();
             caregiverCreator.setId(11L);
             caregiverCreator.setEmail("caregivercreator@example.com");
             caregiverCreator.setRole(Role.CAREGIVER);
             caregiverCreator.setPassword("password");
 
-            Caregiver caregiverProfile = Caregiver.builder()
+            final Caregiver caregiverProfile = Caregiver.builder()
                     .id(11L)
                     .firstName("Care")
                     .lastName("Giver")
@@ -951,7 +951,7 @@ class CaregiverPatientLinkServiceTest {
             stubNameLookups();
             when(caregiverRepository.findByUser(caregiverCreator)).thenReturn(Optional.of(caregiverProfile));
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("Care Giver", result.get(0).createdBy());
         }
@@ -964,7 +964,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("admin@example.com", result.get(0).createdBy());
         }
@@ -972,7 +972,7 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_createdByFamilyMemberRole_usesEmail")
         void toCaregiverPatientLinkResponse_createdByFamilyMemberRole_usesEmail() throws Exception {
-            User familyUser = new User();
+            final User familyUser = new User();
             familyUser.setId(20L);
             familyUser.setEmail("family@example.com");
             familyUser.setRole(Role.FAMILY_MEMBER);
@@ -983,7 +983,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("family@example.com", result.get(0).createdBy());
         }
@@ -995,7 +995,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverRepository.findByUser(caregiverUser)).thenReturn(Optional.empty());
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("caregiver@example.com", result.get(0).caregiverName());
         }
@@ -1007,7 +1007,7 @@ class CaregiverPatientLinkServiceTest {
             when(caregiverRepository.findByUser(caregiverUser)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
             assertEquals("patient@example.com", result.get(0).patientName());
         }
@@ -1015,17 +1015,17 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("toCaregiverPatientLinkResponse_mapsAllFields_correctly")
         void toCaregiverPatientLinkResponse_mapsAllFields_correctly() throws Exception {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime expiry = now.plusDays(30);
+            final LocalDateTime now = LocalDateTime.now();
+            final LocalDateTime expiry = now.plusDays(30);
             link.setCreatedAt(now);
             link.setExpiresAt(expiry);
 
             when(caregiverPatientLinkRepository.findAll()).thenReturn(List.of(link));
             stubNameLookups();
 
-            List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
+            final List<CaregiverPatientLinkResponse> result = caregiverPatientLinkService.getAllLinks();
 
-            CaregiverPatientLinkResponse response = result.get(0);
+            final CaregiverPatientLinkResponse response = result.get(0);
             assertEquals(100L, response.id());
             assertEquals(1L, response.caregiverUserId());
             assertEquals("Jane Doe", response.caregiverName());
@@ -1052,20 +1052,20 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_creatorIsPatient_responseShowsPatientName")
         void createLink_creatorIsPatient_responseShowsPatientName() throws Exception {
-            User patientCreator = new User();
+            final User patientCreator = new User();
             patientCreator.setId(50L);
             patientCreator.setEmail("patcreator@example.com");
             patientCreator.setRole(Role.PATIENT);
             patientCreator.setPassword("password");
 
-            Patient patientProfile = Patient.builder()
+            final Patient patientProfile = Patient.builder()
                     .id(50L)
                     .firstName("Creator")
                     .lastName("Patient")
                     .user(patientCreator)
                     .build();
 
-            CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, "notes");
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "PERMANENT", null, "notes");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -1077,7 +1077,7 @@ class CaregiverPatientLinkServiceTest {
             stubNameLookups();
             when(patientRepository.findByUser(patientCreator)).thenReturn(Optional.of(patientProfile));
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 50L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 50L);
 
             assertEquals("Creator Patient", response.createdBy());
         }
@@ -1085,20 +1085,20 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_creatorIsCaregiver_responseShowsCaregiverName")
         void createLink_creatorIsCaregiver_responseShowsCaregiverName() throws Exception {
-            User caregiverCreator = new User();
+            final User caregiverCreator = new User();
             caregiverCreator.setId(60L);
             caregiverCreator.setEmail("carecreator@example.com");
             caregiverCreator.setRole(Role.CAREGIVER);
             caregiverCreator.setPassword("password");
 
-            Caregiver caregiverProfile = Caregiver.builder()
+            final Caregiver caregiverProfile = Caregiver.builder()
                     .id(60L)
                     .firstName("Creator")
                     .lastName("Caregiver")
                     .user(caregiverCreator)
                     .build();
 
-            CreateLinkRequest request = new CreateLinkRequest(2L, "EMERGENCY", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "EMERGENCY", null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -1110,7 +1110,7 @@ class CaregiverPatientLinkServiceTest {
             stubNameLookups();
             when(caregiverRepository.findByUser(caregiverCreator)).thenReturn(Optional.of(caregiverProfile));
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 60L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 60L);
 
             assertEquals("Creator Caregiver", response.createdBy());
         }
@@ -1126,7 +1126,7 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("createLink_lowercaseLinkType_convertsToUpperCase")
         void createLink_lowercaseLinkType_convertsToUpperCase() throws Exception {
-            CreateLinkRequest request = new CreateLinkRequest(2L, "emergency", null, null);
+            final CreateLinkRequest request = new CreateLinkRequest(2L, "emergency", null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(caregiverUser));
             when(userRepository.findById(2L)).thenReturn(Optional.of(patientUser));
@@ -1137,7 +1137,7 @@ class CaregiverPatientLinkServiceTest {
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.createLink(1L, request, 3L);
 
             assertEquals("EMERGENCY", response.linkType());
         }
@@ -1145,14 +1145,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_lowercaseStatus_convertsToUpperCase")
         void updateLink_lowercaseStatus_convertsToUpperCase() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest("suspended", null, null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest("suspended", null, null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals("SUSPENDED", response.status());
         }
@@ -1160,14 +1160,14 @@ class CaregiverPatientLinkServiceTest {
         @Test
         @DisplayName("updateLink_lowercaseLinkType_convertsToUpperCase")
         void updateLink_lowercaseLinkType_convertsToUpperCase() throws Exception {
-            UpdateLinkRequest request = new UpdateLinkRequest(null, "temporary", null, null);
+            final UpdateLinkRequest request = new UpdateLinkRequest(null, "temporary", null, null);
 
             when(caregiverPatientLinkRepository.findById(100L)).thenReturn(Optional.of(link));
             when(caregiverPatientLinkRepository.save(any(CaregiverPatientLink.class)))
                     .thenAnswer(inv -> inv.getArgument(0));
             stubNameLookups();
 
-            CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
+            final CaregiverPatientLinkResponse response = caregiverPatientLinkService.updateLink(100L, request, 3L);
 
             assertEquals("TEMPORARY", response.linkType());
         }
