@@ -10,7 +10,7 @@ class RecommendedActionTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        RecommendedAction action = new RecommendedAction();
+        final RecommendedAction action = new RecommendedAction();
 
         assertThat(action).isNotNull();
         assertThat(action.getId()).isNull();
@@ -22,9 +22,9 @@ class RecommendedActionTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        Invoice invoice = Invoice.builder().id("INV-001").build();
+        final Invoice invoice = Invoice.builder().id("INV-001").build();
 
-        RecommendedAction action = new RecommendedAction(1L, invoice, "Review billing codes");
+        final RecommendedAction action = new RecommendedAction(1L, invoice, "Review billing codes");
 
         assertThat(action.getId()).isEqualTo(1L);
         assertThat(action.getInvoice()).isSameAs(invoice);
@@ -35,8 +35,8 @@ class RecommendedActionTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        RecommendedAction action = new RecommendedAction();
-        Invoice invoice = Invoice.builder().id("INV-002").build();
+        final RecommendedAction action = new RecommendedAction();
+        final Invoice invoice = Invoice.builder().id("INV-002").build();
 
         action.setId(5L);
         action.setInvoice(invoice);
@@ -51,8 +51,8 @@ class RecommendedActionTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
-        RecommendedAction a2 = new RecommendedAction(1L, null, "Action A");
+        final RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
+        final RecommendedAction a2 = new RecommendedAction(1L, null, "Action A");
 
         assertThat(a1).isEqualTo(a2);
         assertThat(a1.hashCode()).isEqualTo(a2.hashCode());
@@ -60,21 +60,21 @@ class RecommendedActionTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
-        RecommendedAction a2 = new RecommendedAction(2L, null, "Action B");
+        final RecommendedAction a1 = new RecommendedAction(1L, null, "Action A");
+        final RecommendedAction a2 = new RecommendedAction(2L, null, "Action B");
 
         assertThat(a1).isNotEqualTo(a2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        RecommendedAction action = new RecommendedAction();
+        final RecommendedAction action = new RecommendedAction();
         assertThat(action).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        RecommendedAction action = new RecommendedAction();
+        final RecommendedAction action = new RecommendedAction();
         assertThat(action).isNotEqualTo("a string");
     }
 }

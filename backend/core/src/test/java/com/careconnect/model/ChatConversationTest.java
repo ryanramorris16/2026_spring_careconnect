@@ -13,7 +13,7 @@ class ChatConversationTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ChatConversation conv = new ChatConversation();
+        final ChatConversation conv = new ChatConversation();
 
         assertThat(conv).isNotNull();
         assertThat(conv.getId()).isNull();
@@ -26,7 +26,7 @@ class ChatConversationTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        ChatConversation conv = ChatConversation.builder()
+        final ChatConversation conv = ChatConversation.builder()
                 .id(1L)
                 .conversationId("conv-uuid-001")
                 .patientId(10L)
@@ -53,13 +53,13 @@ class ChatConversationTest {
 
     @Test
     void builder_totalTokensUsed_defaultsToZero() throws Exception {
-        ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
+        final ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
         assertThat(conv.getTotalTokensUsed()).isEqualTo(0);
     }
 
     @Test
     void builder_isActive_defaultsToTrue() throws Exception {
-        ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
+        final ChatConversation conv = ChatConversation.builder().patientId(1L).userId(1L).build();
         assertThat(conv.getIsActive()).isTrue();
     }
 
@@ -67,8 +67,8 @@ class ChatConversationTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ChatConversation conv = new ChatConversation();
-        LocalDateTime now = LocalDateTime.now();
+        final ChatConversation conv = new ChatConversation();
+        final LocalDateTime now = LocalDateTime.now();
 
         conv.setConversationId("conv-abc");
         conv.setPatientId(5L);
@@ -99,9 +99,9 @@ class ChatConversationTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        ChatConversation conv = new ChatConversation();
+        final ChatConversation conv = new ChatConversation();
 
-        Method m = ChatConversation.class.getDeclaredMethod("onCreate");
+        final Method m = ChatConversation.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(conv);
 
@@ -113,9 +113,9 @@ class ChatConversationTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        ChatConversation conv = new ChatConversation();
+        final ChatConversation conv = new ChatConversation();
 
-        Method m = ChatConversation.class.getDeclaredMethod("onUpdate");
+        final Method m = ChatConversation.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(conv);
 

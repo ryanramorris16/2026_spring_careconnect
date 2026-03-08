@@ -69,7 +69,7 @@ class AchievementInitializerTest {
         verify(achievementRepository, times(5)).findByTitle(anyString());
 
         // Verify no error messages
-        String errorOutput = errContent.toString();
+        final String errorOutput = errContent.toString();
         assertTrue(errorOutput.isEmpty(), "No errors should be logged for successful initialization");
     }
 
@@ -77,14 +77,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesFirstLoginAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify First Login achievement was created with correct details
-        Achievement firstLogin = achievementCaptor.getAllValues().stream()
+        final Achievement firstLogin = achievementCaptor.getAllValues().stream()
                 .filter(a -> "First Login".equals(a.getTitle()))
                 .findFirst()
                 .orElse(null);
@@ -99,14 +99,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesMadeAFriendAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify Made a Friend achievement was created
-        Achievement madeAFriend = achievementCaptor.getAllValues().stream()
+        final Achievement madeAFriend = achievementCaptor.getAllValues().stream()
                 .filter(a -> "Made a Friend".equals(a.getTitle()))
                 .findFirst()
                 .orElse(null);
@@ -121,14 +121,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesAddedFamilyMemberAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify Added Family Member achievement was created
-        Achievement addedFamily = achievementCaptor.getAllValues().stream()
+        final Achievement addedFamily = achievementCaptor.getAllValues().stream()
                 .filter(a -> "Added Family Member".equals(a.getTitle()))
                 .findFirst()
                 .orElse(null);
@@ -143,14 +143,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesFirstPostCreatedAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify First Post Created achievement was created
-        Achievement firstPost = achievementCaptor.getAllValues().stream()
+        final Achievement firstPost = achievementCaptor.getAllValues().stream()
                 .filter(a -> "First Post Created".equals(a.getTitle()))
                 .findFirst()
                 .orElse(null);
@@ -165,14 +165,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesFiveDayStreakAchievement() throws Exception {
         // Arrange: Mock repository to return empty
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify 5-Day Streak achievement was created
-        Achievement fiveDayStreak = achievementCaptor.getAllValues().stream()
+        final Achievement fiveDayStreak = achievementCaptor.getAllValues().stream()
                 .filter(a -> "5-Day Streak".equals(a.getTitle()))
                 .findFirst()
                 .orElse(null);
@@ -186,7 +186,7 @@ class AchievementInitializerTest {
     @Test
     void initAchievementsSkipsExistingAchievements() throws Exception {
         // Arrange: Mock some achievements already exist
-        Achievement existingAchievement = new Achievement();
+        final Achievement existingAchievement = new Achievement();
         existingAchievement.setTitle("First Login");
         existingAchievement.setDescription("Awarded for logging in for the first time.");
         existingAchievement.setIcon("login-icon.png");
@@ -228,7 +228,7 @@ class AchievementInitializerTest {
         assertDoesNotThrow(() -> achievementInitializer.initAchievements());
 
         // Assert: Error messages should be logged for each achievement
-        String errorOutput = errContent.toString();
+        final String errorOutput = errContent.toString();
         assertTrue(errorOutput.contains("Failed to create achievement 'First Login'"));
         assertTrue(errorOutput.contains("Failed to create achievement 'Made a Friend'"));
         assertTrue(errorOutput.contains("Failed to create achievement 'Added Family Member'"));
@@ -250,7 +250,7 @@ class AchievementInitializerTest {
         assertDoesNotThrow(() -> achievementInitializer.initAchievements());
 
         // Assert: Error messages should be logged
-        String errorOutput = errContent.toString();
+        final String errorOutput = errContent.toString();
         assertTrue(errorOutput.contains("Failed to create achievement"));
 
         // All save attempts should be made
@@ -276,7 +276,7 @@ class AchievementInitializerTest {
         verify(achievementRepository, times(3)).save(any(Achievement.class));
 
         // Error messages for the two failed achievements
-        String errorOutput = errContent.toString();
+        final String errorOutput = errContent.toString();
         assertTrue(errorOutput.contains("Failed to create achievement 'First Login'"));
         assertTrue(errorOutput.contains("Failed to create achievement 'Made a Friend'"));
     }
@@ -292,7 +292,7 @@ class AchievementInitializerTest {
 
         // Assert: Top-level error message should NOT be logged
         // (individual achievement errors are logged instead)
-        String errorOutput = errContent.toString();
+        final String errorOutput = errContent.toString();
         assertTrue(errorOutput.contains("Failed to create achievement"));
     }
 
@@ -311,14 +311,14 @@ class AchievementInitializerTest {
     void initAchievementsCreatesAchievementWithCorrectAttributes() throws Exception {
         // Arrange: Capture created achievements
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
         achievementInitializer.initAchievements();
 
         // Assert: Verify all captured achievements have non-null attributes
-        for (Achievement achievement : achievementCaptor.getAllValues()) {
+        for (final Achievement achievement : achievementCaptor.getAllValues()) {
             assertNotNull(achievement.getTitle(), "Achievement title should not be null");
             assertNotNull(achievement.getDescription(), "Achievement description should not be null");
             assertNotNull(achievement.getIcon(), "Achievement icon should not be null");
@@ -332,7 +332,7 @@ class AchievementInitializerTest {
     void initAchievementsCreatesFiveUniqueAchievements() throws Exception {
         // Arrange: Mock repository
         when(achievementRepository.findByTitle(anyString())).thenReturn(Optional.empty());
-        ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
+        final ArgumentCaptor<Achievement> achievementCaptor = ArgumentCaptor.forClass(Achievement.class);
         when(achievementRepository.save(achievementCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act: Initialize achievements
@@ -341,7 +341,7 @@ class AchievementInitializerTest {
         // Assert: Verify 5 unique achievements were created
         assertEquals(5, achievementCaptor.getAllValues().size());
 
-        long uniqueTitles = achievementCaptor.getAllValues().stream()
+        final long uniqueTitles = achievementCaptor.getAllValues().stream()
                 .map(Achievement::getTitle)
                 .distinct()
                 .count();

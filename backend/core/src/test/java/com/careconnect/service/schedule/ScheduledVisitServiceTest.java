@@ -40,7 +40,7 @@ class ScheduledVisitServiceTest {
     private ScheduledVisitService scheduledVisitService;
 
     private ScheduledVisit buildVisit(Long id, Long caregiverId, Long patientId) {
-        ScheduledVisit visit = new ScheduledVisit();
+        final ScheduledVisit visit = new ScheduledVisit();
         visit.setId(id);
         visit.setCaregiverId(caregiverId);
         visit.setPatientId(patientId);
@@ -55,7 +55,7 @@ class ScheduledVisitServiceTest {
     }
 
     private ScheduledVisitRequest buildRequest() throws Exception {
-        ScheduledVisitRequest req = new ScheduledVisitRequest();
+        final ScheduledVisitRequest req = new ScheduledVisitRequest();
         req.setPatientId(10L);
         req.setServiceType("HOME_HEALTH");
         req.setScheduledDate(LocalDate.of(2025, 6, 15));
@@ -67,7 +67,7 @@ class ScheduledVisitServiceTest {
     }
 
     private Patient buildPatient(String firstName, String lastName) {
-        Patient patient = mock(Patient.class);
+        final Patient patient = mock(Patient.class);
         when(patient.getFirstName()).thenReturn(firstName);
         when(patient.getLastName()).thenReturn(lastName);
         return patient;
@@ -77,13 +77,13 @@ class ScheduledVisitServiceTest {
 
     @Test
     void createScheduledVisit_savesAndReturnsResponse() throws Exception {
-        ScheduledVisitRequest request = buildRequest();
-        ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
-        Patient johnDoe = buildPatient("John", "Doe");
+        final ScheduledVisitRequest request = buildRequest();
+        final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
+        final Patient johnDoe = buildPatient("John", "Doe");
         when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
         when(patientRepository.findById(10L)).thenReturn(Optional.of(johnDoe));
 
-        ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
+        final ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
 
         assertThat(response).isNotNull();
         assertThat(response.getCaregiverId()).isEqualTo(5L);
@@ -93,12 +93,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void createScheduledVisit_patientNotFound_returnsUnknownPatient() throws Exception {
-        ScheduledVisitRequest request = buildRequest();
-        ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
+        final ScheduledVisitRequest request = buildRequest();
+        final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
         when(patientRepository.findById(10L)).thenReturn(Optional.empty());
 
-        ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
+        final ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
 
         assertThat(response.getPatientName()).isEqualTo("Unknown Patient");
     }
@@ -107,12 +107,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void getScheduledVisits_returnsList() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        Patient janeSmith = buildPatient("Jane", "Smith");
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final Patient janeSmith = buildPatient("Jane", "Smith");
         when(scheduledVisitRepository.findByCaregiverId(5L)).thenReturn(List.of(visit));
         when(patientRepository.findById(10L)).thenReturn(Optional.of(janeSmith));
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getPatientName()).isEqualTo("Jane Smith");
@@ -122,7 +122,7 @@ class ScheduledVisitServiceTest {
     void getScheduledVisits_emptyList() throws Exception {
         when(scheduledVisitRepository.findByCaregiverId(5L)).thenReturn(List.of());
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
 
         assertThat(result).isEmpty();
     }
@@ -131,12 +131,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void getScheduledVisitsByDate_returnsList() throws Exception {
-        LocalDate date = LocalDate.of(2025, 6, 15);
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final LocalDate date = LocalDate.of(2025, 6, 15);
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findByCaregiverIdAndScheduledDate(5L, date)).thenReturn(List.of(visit));
         when(patientRepository.findById(10L)).thenReturn(Optional.empty());
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisitsByDate(5L, date);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisitsByDate(5L, date);
 
         assertThat(result).hasSize(1);
     }
@@ -145,12 +145,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void getScheduledVisitsBetweenDates_returnsList() throws Exception {
-        LocalDate start = LocalDate.of(2025, 6, 1);
-        LocalDate end = LocalDate.of(2025, 6, 30);
+        final LocalDate start = LocalDate.of(2025, 6, 1);
+        final LocalDate end = LocalDate.of(2025, 6, 30);
         when(scheduledVisitRepository.findByCaregiverIdAndScheduledDateBetween(5L, start, end))
                 .thenReturn(List.of());
 
-        List<ScheduledVisitResponse> result =
+        final List<ScheduledVisitResponse> result =
                 scheduledVisitService.getScheduledVisitsBetweenDates(5L, start, end);
 
         assertThat(result).isEmpty();
@@ -169,7 +169,7 @@ class ScheduledVisitServiceTest {
         when(scheduledVisitRepository.countTodayVisits(eq(5L), any(LocalDate.class)))
                 .thenReturn(6L);
 
-        ScheduledVisitSummary summary = scheduledVisitService.getVisitSummary(5L);
+        final ScheduledVisitSummary summary = scheduledVisitService.getVisitSummary(5L);
 
         assertThat(summary.getOverdue()).isEqualTo(2L);
         assertThat(summary.getReady()).isEqualTo(1L);
@@ -181,12 +181,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void getOverdueVisits_returnsList() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findOverdueVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
                 .thenReturn(List.of(visit));
         when(patientRepository.findById(10L)).thenReturn(Optional.empty());
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getOverdueVisits(5L);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getOverdueVisits(5L);
 
         assertThat(result).hasSize(1);
     }
@@ -198,7 +198,7 @@ class ScheduledVisitServiceTest {
         when(scheduledVisitRepository.findReadyVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
                 .thenReturn(List.of());
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getReadyVisits(5L);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getReadyVisits(5L);
 
         assertThat(result).isEmpty();
     }
@@ -210,7 +210,7 @@ class ScheduledVisitServiceTest {
         when(scheduledVisitRepository.findUpcomingVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
                 .thenReturn(List.of());
 
-        List<ScheduledVisitResponse> result = scheduledVisitService.getUpcomingVisits(5L);
+        final List<ScheduledVisitResponse> result = scheduledVisitService.getUpcomingVisits(5L);
 
         assertThat(result).isEmpty();
     }
@@ -219,12 +219,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void getScheduledVisit_found_returnsResponse() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        Patient maryJones = buildPatient("Mary", "Jones");
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final Patient maryJones = buildPatient("Mary", "Jones");
         when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(patientRepository.findById(10L)).thenReturn(Optional.of(maryJones));
 
-        ScheduledVisitResponse response = scheduledVisitService.getScheduledVisit(1L);
+        final ScheduledVisitResponse response = scheduledVisitService.getScheduledVisit(1L);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getPatientName()).isEqualTo("Mary Jones");
@@ -243,12 +243,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void updateScheduledVisit_found_updatesAndReturns() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(scheduledVisitRepository.save(visit)).thenReturn(visit);
         when(patientRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        ScheduledVisitResponse response = scheduledVisitService.updateScheduledVisit(1L, buildRequest());
+        final ScheduledVisitResponse response = scheduledVisitService.updateScheduledVisit(1L, buildRequest());
 
         assertThat(response).isNotNull();
         verify(scheduledVisitRepository).save(visit);
@@ -267,7 +267,7 @@ class ScheduledVisitServiceTest {
 
     @Test
     void cancelScheduledVisit_found_marksCancelled() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(scheduledVisitRepository.save(visit)).thenReturn(visit);
 
@@ -289,12 +289,12 @@ class ScheduledVisitServiceTest {
 
     @Test
     void updateVisitStatus_found_setsStatusAndReturns() throws Exception {
-        ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(scheduledVisitRepository.save(visit)).thenReturn(visit);
         when(patientRepository.findById(10L)).thenReturn(Optional.empty());
 
-        ScheduledVisitResponse response = scheduledVisitService.updateVisitStatus(1L, "In Progress");
+        final ScheduledVisitResponse response = scheduledVisitService.updateVisitStatus(1L, "In Progress");
 
         assertThat(visit.getStatus()).isEqualTo("In Progress");
         assertThat(response).isNotNull();

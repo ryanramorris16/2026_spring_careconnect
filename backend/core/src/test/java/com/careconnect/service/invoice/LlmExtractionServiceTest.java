@@ -25,13 +25,13 @@ class LlmExtractionServiceTest {
 
     @Test
     void extractInvoiceData_validResponse_returnsTrimedText() throws Exception {
-        ChatResponse chatResponse = mock(ChatResponse.class);
-        AiMessage aiMessage = mock(AiMessage.class);
+        final ChatResponse chatResponse = mock(ChatResponse.class);
+        final AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
         when(aiMessage.text()).thenReturn("  {\"invoiceNumber\": \"INV-001\"}  ");
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEqualTo("{\"invoiceNumber\": \"INV-001\"}");
     }
@@ -40,57 +40,57 @@ class LlmExtractionServiceTest {
     void extractInvoiceData_nullResponse_returnsEmpty() throws Exception {
         when(chatModel.chat(anyList())).thenReturn(null);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void extractInvoiceData_nullAiMessage_returnsEmpty() throws Exception {
-        ChatResponse chatResponse = mock(ChatResponse.class);
+        final ChatResponse chatResponse = mock(ChatResponse.class);
         when(chatResponse.aiMessage()).thenReturn(null);
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void extractInvoiceData_nullText_returnsEmpty() throws Exception {
-        ChatResponse chatResponse = mock(ChatResponse.class);
-        AiMessage aiMessage = mock(AiMessage.class);
+        final ChatResponse chatResponse = mock(ChatResponse.class);
+        final AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
         when(aiMessage.text()).thenReturn(null);
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void extractInvoiceData_emptyText_returnsEmpty() throws Exception {
-        ChatResponse chatResponse = mock(ChatResponse.class);
-        AiMessage aiMessage = mock(AiMessage.class);
+        final ChatResponse chatResponse = mock(ChatResponse.class);
+        final AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
         when(aiMessage.text()).thenReturn("");
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void extractInvoiceData_whitespaceOnlyText_returnsEmpty() throws Exception {
-        ChatResponse chatResponse = mock(ChatResponse.class);
-        AiMessage aiMessage = mock(AiMessage.class);
+        final ChatResponse chatResponse = mock(ChatResponse.class);
+        final AiMessage aiMessage = mock(AiMessage.class);
         when(chatResponse.aiMessage()).thenReturn(aiMessage);
         when(aiMessage.text()).thenReturn("   ");
         when(chatModel.chat(anyList())).thenReturn(chatResponse);
 
-        String result = llmExtractionService.extractInvoiceData("Raw invoice text");
+        final String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
         assertThat(result).isEmpty();
     }

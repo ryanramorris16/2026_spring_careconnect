@@ -62,7 +62,7 @@ class TemplateServiceTest {
         // The repository finds the template; the service must return it unchanged.
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
 
-        Template result = templateService.getTemplateById(1L);
+        final Template result = templateService.getTemplateById(1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -76,7 +76,7 @@ class TemplateServiceTest {
         // A missing template must surface as a 404 AppException, not a null return.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> templateService.getTemplateById(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -91,10 +91,10 @@ class TemplateServiceTest {
     @DisplayName("getAllTemplates: returns the full list when templates exist")
     void testGetAllTemplates_returnsList() throws Exception {
         // The complete list from the repository must be returned without modification.
-        Template t2 = Template.builder().id(2L).name("Evening Routine").icon(2).build();
+        final Template t2 = Template.builder().id(2L).name("Evening Routine").icon(2).build();
         when(templateRepository.findAll()).thenReturn(List.of(template, t2));
 
-        List<Template> result = templateService.getAllTemplates();
+        final List<Template> result = templateService.getAllTemplates();
 
         assertEquals(2, result.size());
         assertEquals("Morning Routine", result.get(0).getName());
@@ -108,7 +108,7 @@ class TemplateServiceTest {
         // A single entry must not trigger the empty-check exception.
         when(templateRepository.findAll()).thenReturn(List.of(template));
 
-        List<Template> result = templateService.getAllTemplates();
+        final List<Template> result = templateService.getAllTemplates();
 
         assertEquals(1, result.size());
         assertEquals("Morning Routine", result.get(0).getName());
@@ -120,7 +120,7 @@ class TemplateServiceTest {
         // An empty templates table must produce a 404 AppException.
         when(templateRepository.findAll()).thenReturn(List.of());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> templateService.getAllTemplates());
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -135,10 +135,10 @@ class TemplateServiceTest {
     void testCreateTemplate_happyPath() throws Exception {
         // Every DTO field must be transferred to the saved entity and the
         // persisted template returned.
-        List<Boolean> days = List.of(true, false, false, true, false, false, false);
-        List<String>  notifs = List.of("08:00", "20:00");
+        final List<Boolean> days = List.of(true, false, false, true, false, false, false);
+        final List<String>  notifs = List.of("08:00", "20:00");
 
-        TemplateDto dto = TemplateDto.builder()
+        final TemplateDto dto = TemplateDto.builder()
                 .name("Weekly Check")
                 .description("Weekly health check-in")
                 .frequency("weekly")
@@ -151,12 +151,12 @@ class TemplateServiceTest {
                 .build();
 
         when(templateRepository.save(any(Template.class))).thenAnswer(inv -> {
-            Template t = inv.getArgument(0);
+            final Template t = inv.getArgument(0);
             t.setId(10L);
             return t;
         });
 
-        Template result = templateService.createTemplate(dto);
+        final Template result = templateService.createTemplate(dto);
 
         assertNotNull(result);
         assertEquals(10L,              result.getId());
@@ -177,18 +177,18 @@ class TemplateServiceTest {
     void testCreateTemplate_nullOptionalFields() throws Exception {
         // Optional fields not supplied in the DTO must map to null/zero on the entity;
         // the service must not throw for missing optional values.
-        TemplateDto dto = TemplateDto.builder()
+        final TemplateDto dto = TemplateDto.builder()
                 .name("Simple Template")
                 .icon(0)
                 .build();
 
         when(templateRepository.save(any(Template.class))).thenAnswer(inv -> {
-            Template t = inv.getArgument(0);
+            final Template t = inv.getArgument(0);
             t.setId(20L);
             return t;
         });
 
-        Template result = templateService.createTemplate(dto);
+        final Template result = templateService.createTemplate(dto);
 
         assertNotNull(result);
         assertEquals("Simple Template", result.getName());
@@ -206,13 +206,13 @@ class TemplateServiceTest {
     @DisplayName("updateTemplate: overwrites all fields on the existing entity and saves")
     void testUpdateTemplate_updatesAllFields() throws Exception {
         // Every field in the DTO must replace the stored value on the entity.
-        List<Boolean> newDays  = List.of(false, true, false, true, false, false, false);
-        List<String>  newNotifs = List.of("07:00");
+        final List<Boolean> newDays  = List.of(false, true, false, true, false, false, false);
+        final List<String>  newNotifs = List.of("07:00");
 
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
         when(templateRepository.save(any(Template.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TemplateDto dto = TemplateDto.builder()
+        final TemplateDto dto = TemplateDto.builder()
                 .name("Updated Name")
                 .description("Updated description")
                 .frequency("monthly")
@@ -224,7 +224,7 @@ class TemplateServiceTest {
                 .notifications(newNotifs)
                 .build();
 
-        Template result = templateService.updateTemplate(1L, dto);
+        final Template result = templateService.updateTemplate(1L, dto);
 
         assertEquals("Updated Name",          result.getName());
         assertEquals("Updated description",   result.getDescription());
@@ -245,9 +245,9 @@ class TemplateServiceTest {
         // before any save is attempted.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
 
-        TemplateDto dto = TemplateDto.builder().name("Any").icon(0).build();
+        final TemplateDto dto = TemplateDto.builder().name("Any").icon(0).build();
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> templateService.updateTemplate(99L, dto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -259,15 +259,15 @@ class TemplateServiceTest {
     void testUpdateTemplate_returnsSavedEntity() throws Exception {
         // The repository may return a new instance (e.g., with DB-populated fields);
         // the service must pass that through rather than returning the local object.
-        Template savedTemplate = Template.builder()
+        final Template savedTemplate = Template.builder()
                 .id(1L).name("Saved").icon(0).build();
 
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
         when(templateRepository.save(any(Template.class))).thenReturn(savedTemplate);
 
-        TemplateDto dto = TemplateDto.builder().name("Saved").icon(0).build();
+        final TemplateDto dto = TemplateDto.builder().name("Saved").icon(0).build();
 
-        Template result = templateService.updateTemplate(1L, dto);
+        final Template result = templateService.updateTemplate(1L, dto);
 
         assertSame(savedTemplate, result);
     }
@@ -282,7 +282,7 @@ class TemplateServiceTest {
         // The happy path: the template is found, deleted, and the method returns true.
         when(templateRepository.findById(1L)).thenReturn(Optional.of(template));
 
-        boolean result = templateService.deleteTemplate(1L);
+        final boolean result = templateService.deleteTemplate(1L);
 
         assertTrue(result);
         verify(templateRepository).delete(template);
@@ -295,7 +295,7 @@ class TemplateServiceTest {
         // and must not call delete on the repository.
         when(templateRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> templateService.deleteTemplate(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());

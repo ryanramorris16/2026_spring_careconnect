@@ -44,7 +44,7 @@ class AwsAccessConfigTest {
     @Test
     void defaultAwsRegion_ReturnsRegion() throws Exception {
         // Verifies that the region bean resolves to the value set in the system property.
-        Region region = config.defaultAwsRegion();
+        final Region region = config.defaultAwsRegion();
         assertNotNull(region);
         assertEquals("us-east-1", region.id());
     }
@@ -53,7 +53,7 @@ class AwsAccessConfigTest {
     void awsCredentialsProvider_IsCreated() throws Exception {
         // Verifies that a DefaultCredentialsProvider can be constructed; it does not
         // actually resolve credentials until the first API call is made.
-        DefaultCredentialsProvider provider = config.awsCredentialsProvider();
+        final DefaultCredentialsProvider provider = config.awsCredentialsProvider();
         assertNotNull(provider);
     }
 
@@ -61,7 +61,7 @@ class AwsAccessConfigTest {
     void s3Client_IsCreatedSuccessfully() throws Exception {
         // Verifies that the S3Client bean is created without throwing.
         // Client creation is lightweight — it does not open a network connection.
-        S3Client s3Client = config.s3Client();
+        final S3Client s3Client = config.s3Client();
         assertNotNull(s3Client);
     }
 
@@ -69,15 +69,15 @@ class AwsAccessConfigTest {
     void ssmClient_IsCreatedSuccessfully() throws Exception {
         // Verifies that the SsmClient bean is created using the credentials provider bean.
         // The credentials provider is passed explicitly, matching the Spring wiring.
-        DefaultCredentialsProvider provider = config.awsCredentialsProvider();
-        SsmClient ssmClient = config.ssmClient(provider);
+        final DefaultCredentialsProvider provider = config.awsCredentialsProvider();
+        final SsmClient ssmClient = config.ssmClient(provider);
         assertNotNull(ssmClient);
     }
 
     @Test
     void textractClient_IsCreatedSuccessfully() throws Exception {
         // Verifies that the TextractClient bean is created without throwing.
-        TextractClient textractClient = config.textractClient();
+        final TextractClient textractClient = config.textractClient();
         assertNotNull(textractClient);
     }
 
@@ -85,11 +85,11 @@ class AwsAccessConfigTest {
     void allBeansCanBeCreatedTogether() throws Exception {
         // Integration-style check: all five beans are instantiated in the order Spring
         // would wire them to confirm there are no dependency conflicts between them.
-        Region region = config.defaultAwsRegion();
-        DefaultCredentialsProvider provider = config.awsCredentialsProvider();
-        S3Client s3 = config.s3Client();
-        SsmClient ssm = config.ssmClient(provider);
-        TextractClient textract = config.textractClient();
+        final Region region = config.defaultAwsRegion();
+        final DefaultCredentialsProvider provider = config.awsCredentialsProvider();
+        final S3Client s3 = config.s3Client();
+        final SsmClient ssm = config.ssmClient(provider);
+        final TextractClient textract = config.textractClient();
 
         assertNotNull(region);
         assertNotNull(provider);

@@ -17,7 +17,7 @@ class S3StorageServiceTest {
 
     @Test
     void upload_twoArgs_canBeMocked() throws Exception {
-        byte[] data = new byte[]{1, 2, 3};
+        final byte[] data = new byte[]{1, 2, 3};
         doNothing().when(s3StorageService).upload(data, "key");
 
         assertThatCode(() -> s3StorageService.upload(data, "key")).doesNotThrowAnyException();
@@ -26,7 +26,7 @@ class S3StorageServiceTest {
 
     @Test
     void upload_threeArgs_canBeMocked() throws Exception {
-        byte[] data = new byte[]{1, 2, 3};
+        final byte[] data = new byte[]{1, 2, 3};
         doNothing().when(s3StorageService).upload(data, "key", "application/pdf");
 
         assertThatCode(() -> s3StorageService.upload(data, "key", "application/pdf"))

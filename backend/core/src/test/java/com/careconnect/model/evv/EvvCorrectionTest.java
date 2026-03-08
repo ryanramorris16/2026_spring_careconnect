@@ -15,7 +15,7 @@ class EvvCorrectionTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvCorrection ec = new EvvCorrection();
+        final EvvCorrection ec = new EvvCorrection();
 
         assertThat(ec).isNotNull();
         assertThat(ec.getId()).isNull();
@@ -33,15 +33,15 @@ class EvvCorrectionTest {
 
     @Test
     void builder_allFields() throws Exception {
-        EvvRecord original = new EvvRecord();
-        EvvRecord corrected = new EvvRecord();
-        OffsetDateTime now = OffsetDateTime.now();
-        Map<String, Object> origValues = new HashMap<>();
+        final EvvRecord original = new EvvRecord();
+        final EvvRecord corrected = new EvvRecord();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final Map<String, Object> origValues = new HashMap<>();
         origValues.put("timeIn", "09:00");
-        Map<String, Object> corrValues = new HashMap<>();
+        final Map<String, Object> corrValues = new HashMap<>();
         corrValues.put("timeIn", "09:30");
 
-        EvvCorrection ec = EvvCorrection.builder()
+        final EvvCorrection ec = EvvCorrection.builder()
                 .id(1L)
                 .originalRecord(original)
                 .correctedRecord(corrected)
@@ -73,10 +73,10 @@ class EvvCorrectionTest {
 
     @Test
     void onCreate_setsCorrectedAtWhenNull() throws Exception {
-        EvvCorrection ec = new EvvCorrection();
+        final EvvCorrection ec = new EvvCorrection();
         assertThat(ec.getCorrectedAt()).isNull();
 
-        Method m = EvvCorrection.class.getDeclaredMethod("onCreate");
+        final Method m = EvvCorrection.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(ec);
 
@@ -85,11 +85,11 @@ class EvvCorrectionTest {
 
     @Test
     void onCreate_doesNotOverwriteExistingCorrectedAt() throws Exception {
-        EvvCorrection ec = new EvvCorrection();
-        OffsetDateTime original = OffsetDateTime.now().minusDays(1);
+        final EvvCorrection ec = new EvvCorrection();
+        final OffsetDateTime original = OffsetDateTime.now().minusDays(1);
         ec.setCorrectedAt(original);
 
-        Method m = EvvCorrection.class.getDeclaredMethod("onCreate");
+        final Method m = EvvCorrection.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(ec);
 
@@ -100,7 +100,7 @@ class EvvCorrectionTest {
 
     @Test
     void approve_setsApprovalFields() throws Exception {
-        EvvCorrection ec = new EvvCorrection();
+        final EvvCorrection ec = new EvvCorrection();
 
         ec.approve(10L, "Looks correct");
 
@@ -113,7 +113,7 @@ class EvvCorrectionTest {
 
     @Test
     void reject_setsRejectionFields() throws Exception {
-        EvvCorrection ec = new EvvCorrection();
+        final EvvCorrection ec = new EvvCorrection();
         ec.setApprovalRequired(true);
 
         ec.reject(20L, "Incorrect times");

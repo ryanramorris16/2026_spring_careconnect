@@ -63,7 +63,7 @@ class TaskServiceTest {
         // The repository finds the task; the service must return it unchanged.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        Task result = taskService.getTaskById(1L);
+        final Task result = taskService.getTaskById(1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -77,7 +77,7 @@ class TaskServiceTest {
         // A missing task must surface as a 404 AppException, not a null return.
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> taskService.getTaskById(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -92,10 +92,10 @@ class TaskServiceTest {
     @DisplayName("getTasksByPatient: returns the full list when tasks exist for the patient")
     void testGetTasksByPatient_returnsList() throws Exception {
         // Both entities must be present in the returned list in order.
-        Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
+        final Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
         when(taskRepository.findByPatientId(1L)).thenReturn(Optional.of(List.of(task, t2)));
 
-        List<Task> result = taskService.getTasksByPatient(1L);
+        final List<Task> result = taskService.getTasksByPatient(1L);
 
         assertEquals(2, result.size());
         assertEquals("Check Vitals",    result.get(0).getName());
@@ -109,7 +109,7 @@ class TaskServiceTest {
         // Optional.empty() from the repository must produce an empty list, not throw.
         when(taskRepository.findByPatientId(99L)).thenReturn(Optional.empty());
 
-        List<Task> result = taskService.getTasksByPatient(99L);
+        final List<Task> result = taskService.getTasksByPatient(99L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -121,7 +121,7 @@ class TaskServiceTest {
         // An Optional containing an empty list must also produce an empty result.
         when(taskRepository.findByPatientId(2L)).thenReturn(Optional.of(new ArrayList<>()));
 
-        List<Task> result = taskService.getTasksByPatient(2L);
+        final List<Task> result = taskService.getTasksByPatient(2L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -136,7 +136,7 @@ class TaskServiceTest {
     void testCreateTask_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, every field must
         // be transferred to the saved entity and the persisted task returned.
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Daily Walk")
                 .description("30-minute walk around the park")
                 .date("2025-07-01")
@@ -151,12 +151,12 @@ class TaskServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
-            Task t = inv.getArgument(0);
+            final Task t = inv.getArgument(0);
             t.setId(10L);
             return t;
         });
 
-        Task result = taskService.createTask(1L, dto);
+        final Task result = taskService.createTask(1L, dto);
 
         assertNotNull(result);
         assertEquals(10L,              result.getId());
@@ -180,10 +180,10 @@ class TaskServiceTest {
         // No task may be created without a valid owning patient.
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Checkup").date("2025-01-01").isCompleted(false).build();
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> taskService.createTask(99L, dto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -195,13 +195,13 @@ class TaskServiceTest {
     void testCreateTask_correctPatientLinked() throws Exception {
         // The task's patient relationship must reference the exact entity
         // returned by the patient repository lookup.
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Lab Test").date("2025-08-01").isCompleted(false).build();
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Task result = taskService.createTask(1L, dto);
+        final Task result = taskService.createTask(1L, dto);
 
         assertSame(patient, result.getPatient());
     }
@@ -218,7 +218,7 @@ class TaskServiceTest {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Updated Name")
                 .description("Updated description")
                 .date("2025-09-01")
@@ -231,7 +231,7 @@ class TaskServiceTest {
                 .taskType("Appointment")
                 .build();
 
-        Task result = taskService.updateTask(1L, dto);
+        final Task result = taskService.updateTask(1L, dto);
 
         assertEquals("Updated Name",        result.getName());
         assertEquals("Updated description", result.getDescription());
@@ -253,10 +253,10 @@ class TaskServiceTest {
         // as a 404 AppException before any save is attempted.
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Any Name").date("2025-01-01").isCompleted(false).build();
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> taskService.updateTask(99L, dto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -268,15 +268,15 @@ class TaskServiceTest {
     void testUpdateTask_returnsSavedEntity() throws Exception {
         // The save call may return a different instance (e.g., with DB-generated
         // fields); the service must return what the repository gives back.
-        Task savedTask = Task.builder().id(1L).name("Saved Name").patient(patient).build();
+        final Task savedTask = Task.builder().id(1L).name("Saved Name").patient(patient).build();
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenReturn(savedTask);
 
-        TaskDto dto = TaskDto.builder()
+        final TaskDto dto = TaskDto.builder()
                 .name("Saved Name").date("2025-01-01").isCompleted(false).build();
 
-        Task result = taskService.updateTask(1L, dto);
+        final Task result = taskService.updateTask(1L, dto);
 
         assertSame(savedTask, result);
     }
@@ -291,7 +291,7 @@ class TaskServiceTest {
         // The happy path: the task is found, deleted, and the method returns true.
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        boolean result = taskService.deleteTask(1L);
+        final boolean result = taskService.deleteTask(1L);
 
         assertTrue(result);
         verify(taskRepository).delete(task);
@@ -303,7 +303,7 @@ class TaskServiceTest {
         // A delete on a non-existent task must fail before calling delete().
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> taskService.deleteTask(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -351,10 +351,10 @@ class TaskServiceTest {
     @DisplayName("getAllTasks: returns all persisted task entities when tasks exist")
     void testGetAllTasks_returnsList() throws Exception {
         // The full list from the repository must be returned without modification.
-        Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
+        final Task t2 = Task.builder().id(2L).name("Take Medication").patient(patient).build();
         when(taskRepository.findAll()).thenReturn(List.of(task, t2));
 
-        List<Task> result = taskService.getAllTasks();
+        final List<Task> result = taskService.getAllTasks();
 
         assertEquals(2, result.size());
         assertEquals("Check Vitals",    result.get(0).getName());
@@ -368,7 +368,7 @@ class TaskServiceTest {
         // An empty task table is treated as a not-found error condition.
         when(taskRepository.findAll()).thenReturn(List.of());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> taskService.getAllTasks());
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -380,7 +380,7 @@ class TaskServiceTest {
         // Edge case: exactly one task must not trigger the empty-check exception.
         when(taskRepository.findAll()).thenReturn(List.of(task));
 
-        List<Task> result = taskService.getAllTasks();
+        final List<Task> result = taskService.getAllTasks();
 
         assertEquals(1, result.size());
         assertEquals("Check Vitals", result.get(0).getName());

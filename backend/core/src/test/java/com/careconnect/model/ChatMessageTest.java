@@ -13,7 +13,7 @@ class ChatMessageTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ChatMessage msg = new ChatMessage();
+        final ChatMessage msg = new ChatMessage();
 
         assertThat(msg).isNotNull();
         assertThat(msg.getId()).isNull();
@@ -26,9 +26,9 @@ class ChatMessageTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        ChatMessage msg = new ChatMessage();
-        ChatConversation conv = ChatConversation.builder().id(1L).build();
-        LocalDateTime now = LocalDateTime.now();
+        final ChatMessage msg = new ChatMessage();
+        final ChatConversation conv = ChatConversation.builder().id(1L).build();
+        final LocalDateTime now = LocalDateTime.now();
 
         msg.setId(10L);
         msg.setConversation(conv);
@@ -57,9 +57,9 @@ class ChatMessageTest {
 
     @Test
     void onCreate_setsCreatedAt() throws Exception {
-        ChatMessage msg = new ChatMessage();
+        final ChatMessage msg = new ChatMessage();
 
-        Method m = ChatMessage.class.getDeclaredMethod("onCreate");
+        final Method m = ChatMessage.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(msg);
 

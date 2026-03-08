@@ -68,7 +68,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> awsWebSocketService.registerConnection(
                         "conn789", "user@example.com", "authenticated", null));
         assertTrue(ex.getMessage().contains("Failed to register WebSocket connection"));
@@ -113,7 +113,7 @@ class AwsWebSocketServiceTest {
     void sendMessageToConnection_connectionNotFound_returnsFalse() throws Exception {
         when(connectionRepository.findByConnectionId("conn123")).thenReturn(Optional.empty());
 
-        boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
+        final boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
 
         assertFalse(result);
     }
@@ -121,7 +121,7 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("sendMessageToConnection_connectionInactive_returnsFalse")
     void sendMessageToConnection_connectionInactive_returnsFalse() throws Exception {
-        WebSocketConnection conn = WebSocketConnection.builder()
+        final WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(false)
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -131,7 +131,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.findByConnectionId("conn123")).thenReturn(Optional.of(conn));
         when(connectionRepository.deactivateByConnectionId("conn123")).thenReturn(1);
 
-        boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
+        final boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
 
         assertFalse(result);
     }
@@ -139,7 +139,7 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("sendMessageToConnection_connectionExpired_returnsFalse")
     void sendMessageToConnection_connectionExpired_returnsFalse() throws Exception {
-        WebSocketConnection conn = WebSocketConnection.builder()
+        final WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(true)
                 .expiresAt(LocalDateTime.now().minusHours(1))
@@ -149,7 +149,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.findByConnectionId("conn123")).thenReturn(Optional.of(conn));
         when(connectionRepository.deactivateByConnectionId("conn123")).thenReturn(1);
 
-        boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
+        final boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
 
         assertFalse(result);
     }
@@ -157,7 +157,7 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("sendMessageToConnection_activeConnection_callsPostToConnection")
     void sendMessageToConnection_activeConnection_callsPostToConnection() throws Exception {
-        WebSocketConnection conn = WebSocketConnection.builder()
+        final WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .isActive(true)
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -168,7 +168,7 @@ class AwsWebSocketServiceTest {
 
         // postToConnection will fail because we can't mock the AWS SDK client easily,
         // but this exercises the active-connection branch
-        boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
+        final boolean result = awsWebSocketService.sendMessageToConnection("conn123", Map.of("type", "test"));
 
         // Will return false due to AWS client exception (no real endpoint)
         assertFalse(result);
@@ -184,7 +184,7 @@ class AwsWebSocketServiceTest {
                         "user@example.com", "email-verification"))
                 .thenReturn(Optional.empty());
 
-        boolean result = awsWebSocketService.sendEmailVerificationNotification("USER@EXAMPLE.COM");
+        final boolean result = awsWebSocketService.sendEmailVerificationNotification("USER@EXAMPLE.COM");
 
         assertFalse(result);
     }
@@ -192,7 +192,7 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("sendEmailVerificationNotification_connectionFound_attemptsSend")
     void sendEmailVerificationNotification_connectionFound_attemptsSend() throws Exception {
-        WebSocketConnection conn = WebSocketConnection.builder()
+        final WebSocketConnection conn = WebSocketConnection.builder()
                 .connectionId("conn123")
                 .userEmail("user@example.com")
                 .subscriptionType("email-verification")
@@ -207,7 +207,7 @@ class AwsWebSocketServiceTest {
                 .thenReturn(Optional.of(conn));
         when(connectionRepository.findByConnectionId("conn123")).thenReturn(Optional.of(conn));
 
-        boolean result = awsWebSocketService.sendEmailVerificationNotification("USER@EXAMPLE.COM");
+        final boolean result = awsWebSocketService.sendEmailVerificationNotification("USER@EXAMPLE.COM");
 
         // Will return false because postToConnection will fail (no real AWS endpoint)
         assertFalse(result);
@@ -221,7 +221,7 @@ class AwsWebSocketServiceTest {
                         anyString(), anyString()))
                 .thenThrow(new RuntimeException("DB error"));
 
-        boolean result = awsWebSocketService.sendEmailVerificationNotification("user@example.com");
+        final boolean result = awsWebSocketService.sendEmailVerificationNotification("user@example.com");
 
         assertFalse(result);
     }
@@ -231,14 +231,14 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("sendMessageToUser_multipleConnections_sendsToAll")
     void sendMessageToUser_multipleConnections_sendsToAll() throws Exception {
-        WebSocketConnection conn1 = WebSocketConnection.builder()
+        final WebSocketConnection conn1 = WebSocketConnection.builder()
                 .connectionId("conn1")
                 .isActive(true)
                 .expiresAt(LocalDateTime.now().plusHours(1))
                 .apiGatewayEndpoint("https://api.example.com/ws")
                 .build();
 
-        WebSocketConnection conn2 = WebSocketConnection.builder()
+        final WebSocketConnection conn2 = WebSocketConnection.builder()
                 .connectionId("conn2")
                 .isActive(true)
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -250,7 +250,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.findByConnectionId("conn1")).thenReturn(Optional.of(conn1));
         when(connectionRepository.findByConnectionId("conn2")).thenReturn(Optional.of(conn2));
 
-        int count = awsWebSocketService.sendMessageToUser("USER@EXAMPLE.COM", Map.of("type", "test"));
+        final int count = awsWebSocketService.sendMessageToUser("USER@EXAMPLE.COM", Map.of("type", "test"));
 
         // Count may be 0 since postToConnection fails without real AWS endpoint
         assertTrue(count >= 0);
@@ -262,7 +262,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.findByUserEmailAndIsActiveTrue("user@example.com"))
                 .thenReturn(List.of());
 
-        int count = awsWebSocketService.sendMessageToUser("USER@EXAMPLE.COM", Map.of("type", "test"));
+        final int count = awsWebSocketService.sendMessageToUser("USER@EXAMPLE.COM", Map.of("type", "test"));
 
         assertEquals(0, count);
     }
@@ -273,7 +273,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.findByUserEmailAndIsActiveTrue(anyString()))
                 .thenThrow(new RuntimeException("DB error"));
 
-        int count = awsWebSocketService.sendMessageToUser("user@example.com", Map.of("type", "test"));
+        final int count = awsWebSocketService.sendMessageToUser("user@example.com", Map.of("type", "test"));
 
         assertEquals(0, count);
     }
@@ -296,7 +296,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class))).thenReturn(5);
         when(connectionRepository.deleteInactiveConnectionsOlderThan(any(LocalDateTime.class))).thenReturn(3);
 
-        int result = awsWebSocketService.cleanupExpiredConnections();
+        final int result = awsWebSocketService.cleanupExpiredConnections();
 
         assertEquals(5, result);
         verify(connectionRepository).deactivateExpiredConnections(any(LocalDateTime.class));
@@ -309,7 +309,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class))).thenReturn(0);
         when(connectionRepository.deleteInactiveConnectionsOlderThan(any(LocalDateTime.class))).thenReturn(0);
 
-        int result = awsWebSocketService.cleanupExpiredConnections();
+        final int result = awsWebSocketService.cleanupExpiredConnections();
 
         assertEquals(0, result);
     }
@@ -320,7 +320,7 @@ class AwsWebSocketServiceTest {
         when(connectionRepository.deactivateExpiredConnections(any(LocalDateTime.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
-        int result = awsWebSocketService.cleanupExpiredConnections();
+        final int result = awsWebSocketService.cleanupExpiredConnections();
 
         assertEquals(0, result);
     }
@@ -332,7 +332,7 @@ class AwsWebSocketServiceTest {
     void getActiveConnectionCount_returnsCount() throws Exception {
         when(connectionRepository.countByConnectionTypeAndIsActiveTrue("aws")).thenReturn(10L);
 
-        long count = awsWebSocketService.getActiveConnectionCount();
+        final long count = awsWebSocketService.getActiveConnectionCount();
 
         assertEquals(10L, count);
     }
@@ -342,7 +342,7 @@ class AwsWebSocketServiceTest {
     void getActiveConnectionCount_noConnections_returnsZero() throws Exception {
         when(connectionRepository.countByConnectionTypeAndIsActiveTrue("aws")).thenReturn(0L);
 
-        long count = awsWebSocketService.getActiveConnectionCount();
+        final long count = awsWebSocketService.getActiveConnectionCount();
 
         assertEquals(0L, count);
     }
@@ -352,7 +352,7 @@ class AwsWebSocketServiceTest {
     @Test
     @DisplayName("registerConnection_withMetadata_serializesMetadata")
     void registerConnection_withMetadata_serializesMetadata() throws Exception {
-        Map<String, Object> metadata = Map.of("deviceType", "mobile", "appVersion", "2.0");
+        final Map<String, Object> metadata = Map.of("deviceType", "mobile", "appVersion", "2.0");
 
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -367,7 +367,7 @@ class AwsWebSocketServiceTest {
     void registerConnection_uppercaseEmail_convertsToLowercase() throws Exception {
         when(connectionRepository.save(any(WebSocketConnection.class)))
                 .thenAnswer(inv -> {
-                    WebSocketConnection saved = inv.getArgument(0);
+                    final WebSocketConnection saved = inv.getArgument(0);
                     assertEquals("user@example.com", saved.getUserEmail());
                     return saved;
                 });

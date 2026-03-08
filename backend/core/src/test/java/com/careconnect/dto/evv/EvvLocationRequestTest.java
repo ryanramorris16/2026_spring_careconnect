@@ -18,7 +18,7 @@ class EvvLocationRequestTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvLocationRequest request = new EvvLocationRequest();
+        final EvvLocationRequest request = new EvvLocationRequest();
 
         assertThat(request).isNotNull();
         assertThat(request.getEvvRecordId()).isNull();
@@ -31,10 +31,10 @@ class EvvLocationRequestTest {
 
     @Test
     void allArgsConstructor_setsAllFields() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.8951"), new BigDecimal("-77.0364"), new BigDecimal("5.0"));
 
-        EvvLocationRequest request = new EvvLocationRequest(
+        final EvvLocationRequest request = new EvvLocationRequest(
                 1L, EvvLocationRole.CHECK_IN, EvvLocationType.GPS, coords);
 
         assertThat(request.getEvvRecordId()).isEqualTo(1L);
@@ -47,13 +47,13 @@ class EvvLocationRequestTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
+        final EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
                 .lat(new BigDecimal("39.0"))
                 .lng(new BigDecimal("-76.0"))
                 .accuracyM(new BigDecimal("3.5"))
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(2L)
                 .role(EvvLocationRole.CHECK_OUT)
                 .type(EvvLocationType.GPS)
@@ -70,8 +70,8 @@ class EvvLocationRequestTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        EvvLocationRequest request = new EvvLocationRequest();
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
+        final EvvLocationRequest request = new EvvLocationRequest();
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
         request.setEvvRecordId(5L);
         request.setRole(EvvLocationRole.CHECK_IN);
@@ -88,7 +88,7 @@ class EvvLocationRequestTest {
 
     @Test
     void coordinatesDto_noArgConstructor_createsInstance() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
         assertThat(coords).isNotNull();
         assertThat(coords.getLat()).isNull();
@@ -98,11 +98,11 @@ class EvvLocationRequestTest {
 
     @Test
     void coordinatesDto_allArgsConstructor_setsFields() throws Exception {
-        BigDecimal lat = new BigDecimal("40.7128");
-        BigDecimal lng = new BigDecimal("-74.0060");
-        BigDecimal accuracy = new BigDecimal("2.5");
+        final BigDecimal lat = new BigDecimal("40.7128");
+        final BigDecimal lng = new BigDecimal("-74.0060");
+        final BigDecimal accuracy = new BigDecimal("2.5");
 
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(lat, lng, accuracy);
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(lat, lng, accuracy);
 
         assertThat(coords.getLat()).isEqualTo(lat);
         assertThat(coords.getLng()).isEqualTo(lng);
@@ -111,7 +111,7 @@ class EvvLocationRequestTest {
 
     @Test
     void coordinatesDto_setters_updateFields() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto();
 
         coords.setLat(new BigDecimal("51.5074"));
         coords.setLng(new BigDecimal("-0.1278"));
@@ -126,10 +126,10 @@ class EvvLocationRequestTest {
 
     @Test
     void validate_gpsWithValidCoords_doesNotThrow() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.0"), new BigDecimal("-77.0"), null);
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -144,7 +144,7 @@ class EvvLocationRequestTest {
 
     @Test
     void validate_gpsWithNullCoords_throwsIllegalArgumentException() throws Exception {
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -160,10 +160,10 @@ class EvvLocationRequestTest {
 
     @Test
     void validate_gpsWithNullLat_throwsIllegalArgumentException() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 null, new BigDecimal("-77.0"), null);
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -179,10 +179,10 @@ class EvvLocationRequestTest {
 
     @Test
     void validate_gpsWithNullLng_throwsIllegalArgumentException() throws Exception {
-        EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
+        final EvvLocationRequest.CoordinatesDto coords = new EvvLocationRequest.CoordinatesDto(
                 new BigDecimal("38.0"), null, null);
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -198,7 +198,7 @@ class EvvLocationRequestTest {
 
     @Test
     void validate_patientAddress_doesNotThrow() throws Exception {
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_OUT)
                 .type(EvvLocationType.PATIENT_ADDRESS)

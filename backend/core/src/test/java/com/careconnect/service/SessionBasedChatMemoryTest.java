@@ -66,7 +66,7 @@ class SessionBasedChatMemoryTest {
 
         chatMemory.add(UserMessage.from("Hello"));
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -85,7 +85,7 @@ class SessionBasedChatMemoryTest {
 
         chatMemory.add(AiMessage.from("I can help you"));
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -102,7 +102,7 @@ class SessionBasedChatMemoryTest {
 
         chatMemory.add(SystemMessage.from("You are a medical assistant"));
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -114,7 +114,7 @@ class SessionBasedChatMemoryTest {
     @DisplayName("add_unknownMessageType_fallsBackToUser")
     void add_unknownMessageType_fallsBackToUser() throws Exception {
         // Create a mock of a ChatMessage that is none of the known types
-        ChatMessage unknownMessage = mock(ChatMessage.class);
+        final ChatMessage unknownMessage = mock(ChatMessage.class);
         when(unknownMessage.toString()).thenReturn("unknown content");
 
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -123,7 +123,7 @@ class SessionBasedChatMemoryTest {
 
         chatMemory.add(unknownMessage);
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -134,7 +134,7 @@ class SessionBasedChatMemoryTest {
     @DisplayName("add_exceedsMaxMessages_cleansUpOldMessages")
     void add_exceedsMaxMessages_cleansUpOldMessages() throws Exception {
         // Create a memory with max 2 messages
-        SessionBasedChatMemory smallMemory = new SessionBasedChatMemory(
+        final SessionBasedChatMemory smallMemory = new SessionBasedChatMemory(
                 chatMessageRepository, conversation, 2, 15);
 
         // Simulate 3 messages in the database (exceeding max of 2)
@@ -145,7 +145,7 @@ class SessionBasedChatMemoryTest {
         com.careconnect.model.ChatMessage msg3 = com.careconnect.model.ChatMessage.builder()
                 .id(3L).conversation(conversation).messageType(MessageType.USER).content("msg3").build();
 
-        List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>(List.of(msg1, msg2, msg3));
+        final List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>(List.of(msg1, msg2, msg3));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(allMessages);
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(3);
@@ -216,7 +216,7 @@ class SessionBasedChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(List.of(userMsg, aiMsg, sysMsg));
 
-        List<ChatMessage> messages = chatMemory.messages();
+        final List<ChatMessage> messages = chatMemory.messages();
         assertEquals(3, messages.size());
         assertInstanceOf(UserMessage.class, messages.get(0));
         assertInstanceOf(AiMessage.class, messages.get(1));
@@ -236,7 +236,7 @@ class SessionBasedChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(Collections.emptyList());
 
-        List<ChatMessage> messages = chatMemory.messages();
+        final List<ChatMessage> messages = chatMemory.messages();
         assertNotNull(messages);
         verify(chatMessageRepository, never()).deleteAll(anyList());
     }
@@ -247,7 +247,7 @@ class SessionBasedChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(Collections.emptyList());
 
-        List<ChatMessage> messages = chatMemory.messages();
+        final List<ChatMessage> messages = chatMemory.messages();
         assertTrue(messages.isEmpty());
     }
 
@@ -263,7 +263,7 @@ class SessionBasedChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(List.of(userMsg));
 
-        List<ChatMessage> messages = chatMemory.messages();
+        final List<ChatMessage> messages = chatMemory.messages();
         assertEquals(1, messages.size());
     }
 
@@ -303,7 +303,7 @@ class SessionBasedChatMemoryTest {
     void getSessionStats_sessionActive_returnsValidStats() throws Exception {
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(5);
 
-        SessionBasedChatMemory.SessionStats stats = chatMemory.getSessionStats();
+        final SessionBasedChatMemory.SessionStats stats = chatMemory.getSessionStats();
 
         assertEquals("conv-123", stats.getSessionId());
         assertEquals(5, stats.getMessageCount());
@@ -318,7 +318,7 @@ class SessionBasedChatMemoryTest {
                 Instant.now().minus(20, ChronoUnit.MINUTES));
         when(chatMessageRepository.countByConversation(conversation)).thenReturn(0);
 
-        SessionBasedChatMemory.SessionStats stats = chatMemory.getSessionStats();
+        final SessionBasedChatMemory.SessionStats stats = chatMemory.getSessionStats();
 
         assertTrue(stats.isExpired());
     }
@@ -328,12 +328,12 @@ class SessionBasedChatMemoryTest {
     @Test
     @DisplayName("constructor_initializesFields_allFieldsCorrect")
     void constructor_initializesFields_allFieldsCorrect() throws Exception {
-        SessionBasedChatMemory memory = new SessionBasedChatMemory(
+        final SessionBasedChatMemory memory = new SessionBasedChatMemory(
                 chatMessageRepository, conversation, 20, 30);
 
         assertEquals("conv-123", memory.id());
         // lastActivity should be set to approximately now
-        Instant lastActivity = (Instant) ReflectionTestUtils.getField(memory, "lastActivity");
+        final Instant lastActivity = (Instant) ReflectionTestUtils.getField(memory, "lastActivity");
         assertNotNull(lastActivity);
         assertTrue(ChronoUnit.SECONDS.between(lastActivity, Instant.now()) < 5);
     }
@@ -366,7 +366,7 @@ class SessionBasedChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, 10))
                 .thenReturn(Collections.emptyList());
 
-        List<ChatMessage> messages = chatMemory.messages();
+        final List<ChatMessage> messages = chatMemory.messages();
         // Should not be expired at exactly the timeout boundary
         // (> check, not >=)
         assertNotNull(messages);

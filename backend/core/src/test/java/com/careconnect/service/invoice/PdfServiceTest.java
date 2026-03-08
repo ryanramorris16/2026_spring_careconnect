@@ -22,7 +22,7 @@ class PdfServiceTest {
     void pdfService_canBeMocked() throws IOException {
         when(pdfService.combineToPdf(anyList())).thenReturn(new byte[]{1, 2, 3});
 
-        byte[] result = pdfService.combineToPdf(List.of());
+        final byte[] result = pdfService.combineToPdf(List.of());
 
         assertThat(result).containsExactly(1, 2, 3);
     }

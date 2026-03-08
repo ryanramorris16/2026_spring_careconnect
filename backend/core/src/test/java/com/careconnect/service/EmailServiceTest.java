@@ -195,7 +195,7 @@ class EmailServiceTest {
   @DisplayName("sendPasswordSetupEmailWithCredentials temp password")
   void sendPasswordSetupEmailWithCredentials_tempPassword_sendsEmail() throws Exception {
     // A 12-char password matching the temp pattern
-    String tempPassword = "Ab1!xxxxxxxx";
+    final String tempPassword = "Ab1!xxxxxxxx";
     emailService.sendPasswordSetupEmailWithCredentials(
         "user@test.com", "tokenABC", "Jane",
         "janeuser", tempPassword);
@@ -267,7 +267,7 @@ class EmailServiceTest {
         "re_123456");
 
     @SuppressWarnings("rawtypes")
-    ResponseEntity<Map> responseEntity =
+    final ResponseEntity<Map> responseEntity =
         new ResponseEntity<>(Map.of("id", "email-id"), HttpStatus.OK);
     when(restTemplate.exchange(
         anyString(), eq(HttpMethod.POST), any(HttpEntity.class),
@@ -291,7 +291,7 @@ class EmailServiceTest {
         "re_123456");
 
     @SuppressWarnings("rawtypes")
-    ResponseEntity<Map> responseEntity =
+    final ResponseEntity<Map> responseEntity =
         new ResponseEntity<>(Map.of(), HttpStatus.BAD_REQUEST);
     when(restTemplate.exchange(
         anyString(), eq(HttpMethod.POST), any(HttpEntity.class),
@@ -379,7 +379,7 @@ class EmailServiceTest {
         "mg.example.com");
 
     @SuppressWarnings("rawtypes")
-    ResponseEntity<Map> responseEntity =
+    final ResponseEntity<Map> responseEntity =
         new ResponseEntity<>(Map.of("id", "msg-id"), HttpStatus.OK);
     when(restTemplate.exchange(
         anyString(), eq(HttpMethod.POST), any(HttpEntity.class),
@@ -406,7 +406,7 @@ class EmailServiceTest {
         "mg.example.com");
 
     @SuppressWarnings("rawtypes")
-    ResponseEntity<Map> responseEntity =
+    final ResponseEntity<Map> responseEntity =
         new ResponseEntity<>(Map.of(),
             HttpStatus.INTERNAL_SERVER_ERROR);
     when(restTemplate.exchange(
@@ -467,7 +467,7 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
         "SG.testkey1234567890");
 
-    Response sgResponse = new Response();
+    final Response sgResponse = new Response();
     sgResponse.setStatusCode(202);
     sgResponse.setBody("accepted");
 
@@ -490,12 +490,12 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
         "SG.testkey1234567890");
 
-    Response sgResponse = new Response();
+    final Response sgResponse = new Response();
     sgResponse.setStatusCode(200);
     sgResponse.setBody("ok");
 
     // Build HTML content > 200 chars to trigger truncation branch
-    String longHtml = "<html><body>" + "x".repeat(250) + "</body></html>";
+    final String longHtml = "<html><body>" + "x".repeat(250) + "</body></html>";
 
     try (MockedConstruction<SendGrid> mocked =
              mockConstruction(SendGrid.class,
@@ -515,12 +515,12 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
         "SG.testkey1234567890");
 
-    Response sgResponse = new Response();
+    final Response sgResponse = new Response();
     sgResponse.setStatusCode(200);
     sgResponse.setBody("ok");
 
     // Short HTML content <= 200 chars
-    String shortHtml = "<p>Short</p>";
+    final String shortHtml = "<p>Short</p>";
 
     try (MockedConstruction<SendGrid> mocked =
              mockConstruction(SendGrid.class,
@@ -540,7 +540,7 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
         "SG.testkey1234567890");
 
-    Response sgResponse = new Response();
+    final Response sgResponse = new Response();
     sgResponse.setStatusCode(400);
     sgResponse.setBody("Bad Request");
 
@@ -669,7 +669,7 @@ class EmailServiceTest {
         "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey",
         "re_testkey");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("resend");
     assertThat(config.get("providerInfo")).isEqualTo("Resend API");
     assertThat(config.get("resendConfigured")).isEqualTo(true);
@@ -681,7 +681,7 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "resend");
     ReflectionTestUtils.setField(emailService, "resendApiKey", "");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("resendConfigured")).isEqualTo(false);
   }
 
@@ -694,7 +694,7 @@ class EmailServiceTest {
         "key-abc");
     ReflectionTestUtils.setField(emailService, "mailgunDomain",
         "mg.example.com");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("mailgun");
     assertThat(config.get("providerInfo")).isEqualTo("Mailgun API");
     assertThat(config.get("mailgunConfigured")).isEqualTo(true);
@@ -707,7 +707,7 @@ class EmailServiceTest {
         "mailgun");
     ReflectionTestUtils.setField(emailService, "mailgunApiKey", "");
     ReflectionTestUtils.setField(emailService, "mailgunDomain", "");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("mailgunConfigured")).isEqualTo(false);
   }
 
@@ -718,7 +718,7 @@ class EmailServiceTest {
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey",
         "SG.testkey123");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("sendgrid");
     assertThat(config.get("providerInfo"))
         .isEqualTo("SendGrid (Production)");
@@ -731,7 +731,7 @@ class EmailServiceTest {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "sendgrid");
     ReflectionTestUtils.setField(emailService, "sendgridApiKey", "");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("sendgridConfigured")).isEqualTo(false);
   }
 
@@ -739,7 +739,7 @@ class EmailServiceTest {
   @DisplayName("getEmailConfiguration SMTP returns smtp config")
   void getEmailConfiguration_smtpProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "smtp");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("smtp");
     assertThat(config.get("providerInfo")).isEqualTo("SMTP Server");
     assertThat(config.get("smtpConfigured")).isEqualTo(true);
@@ -750,7 +750,7 @@ class EmailServiceTest {
   void getEmailConfiguration_smtpProviderNullMailSender() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "smtp");
     ReflectionTestUtils.setField(emailService, "mailSender", null);
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("smtpConfigured")).isEqualTo(false);
   }
 
@@ -759,7 +759,7 @@ class EmailServiceTest {
   void getEmailConfiguration_mailtrapProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "mailtrap");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo"))
         .isEqualTo("Mailtrap (Development)");
     assertThat(config.get("smtpConfigured")).isEqualTo(true);
@@ -769,7 +769,7 @@ class EmailServiceTest {
   @DisplayName("getEmailConfiguration gmail returns smtp config")
   void getEmailConfiguration_gmailProvider_returnsSmtpConfig() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "gmail");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo"))
         .isEqualTo("Gmail (Production)");
     assertThat(config.get("smtpConfigured")).isEqualTo(true);
@@ -780,7 +780,7 @@ class EmailServiceTest {
   void getEmailConfiguration_consoleProvider_returnsAlwaysAvailable() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "console");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("provider")).isEqualTo("console");
     assertThat(config.get("providerInfo"))
         .isEqualTo("Console/Development Mode");
@@ -791,7 +791,7 @@ class EmailServiceTest {
   @DisplayName("getEmailConfiguration dev returns always available")
   void getEmailConfiguration_devProvider_returnsAlwaysAvailable() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider", "dev");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo"))
         .isEqualTo("Console/Development Mode");
     assertThat(config.get("alwaysAvailable")).isEqualTo(true);
@@ -802,7 +802,7 @@ class EmailServiceTest {
   void getEmailConfiguration_unknownProvider_returnsDefaultBranch() throws Exception {
     ReflectionTestUtils.setField(emailService, "emailProvider",
         "customProvider");
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("providerInfo")).isEqualTo("customProvider");
     assertThat(config.get("alwaysAvailable")).isEqualTo(true);
   }
@@ -810,7 +810,7 @@ class EmailServiceTest {
   @Test
   @DisplayName("getEmailConfiguration includes base fields")
   void getEmailConfiguration_always_includesBaseFieldsInConfig() throws Exception {
-    Map<String, Object> config = emailService.getEmailConfiguration();
+    final Map<String, Object> config = emailService.getEmailConfiguration();
     assertThat(config.get("fromEmail"))
         .isEqualTo("noreply@careconnect.com");
     assertThat(config.get("frontendBaseUrl"))

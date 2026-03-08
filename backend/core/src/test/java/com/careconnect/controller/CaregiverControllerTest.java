@@ -63,7 +63,7 @@ class CaregiverControllerTest {
     // ── shared helpers ────────────────────────────────────────────────────────
 
     private User makeUser(Long id, Role role) {
-        User u = new User();
+        final User u = new User();
         u.setId(id);
         u.setRole(role);
         u.setEmail("user" + id + "@example.com");
@@ -71,7 +71,7 @@ class CaregiverControllerTest {
     }
 
     private Caregiver makeCaregiver(Long id, User user) {
-        Caregiver c = new Caregiver();
+        final Caregiver c = new Caregiver();
         c.setId(id);
         c.setUser(user);
         return c;
@@ -89,11 +89,11 @@ class CaregiverControllerTest {
 
         @Test
         void returnsListOfPatientsWithNoFilters() throws Exception {
-            PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
+            final PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
             when(caregiverService.getPatientsByCaregiver(CAREGIVER_ID, null, null))
                     .thenReturn(List.of(dto));
 
-            ResponseEntity<List<PatientWithLinkDto>> response =
+            final ResponseEntity<List<PatientWithLinkDto>> response =
                     controller.getPatientsByCaregiver(CAREGIVER_ID, null, null);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -118,10 +118,10 @@ class CaregiverControllerTest {
 
         @Test
         void returnsCaregiver() throws Exception {
-            Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
+            final Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
             when(caregiverService.getCaregiverById(CAREGIVER_ID)).thenReturn(caregiver);
 
-            ResponseEntity<Caregiver> response =
+            final ResponseEntity<Caregiver> response =
                     controller.getCaregiver(CAREGIVER_ID, mock(HttpServletRequest.class));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -136,11 +136,11 @@ class CaregiverControllerTest {
 
         @Test
         void returnsCreatedStatusWithCaregiver() throws Exception {
-            CaregiverRegistration reg = new CaregiverRegistration();
-            Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
+            final CaregiverRegistration reg = new CaregiverRegistration();
+            final Caregiver caregiver = makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER));
             when(auth.registerCaregiver(reg)).thenReturn(caregiver);
 
-            ResponseEntity<Caregiver> response = controller.registerCaregiver(reg);
+            final ResponseEntity<Caregiver> response = controller.registerCaregiver(reg);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(response.getBody()).isSameAs(caregiver);
@@ -154,11 +154,11 @@ class CaregiverControllerTest {
 
         @Test
         void returnsUpdatedCaregiver() throws Exception {
-            Caregiver incoming = new Caregiver();
-            Caregiver saved    = new Caregiver();
+            final Caregiver incoming = new Caregiver();
+            final Caregiver saved    = new Caregiver();
             when(caregiverService.updateCaregiver(CAREGIVER_ID, incoming)).thenReturn(saved);
 
-            ResponseEntity<Caregiver> response = controller.updateCaregiver(CAREGIVER_ID, incoming);
+            final ResponseEntity<Caregiver> response = controller.updateCaregiver(CAREGIVER_ID, incoming);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isSameAs(saved);
@@ -172,11 +172,11 @@ class CaregiverControllerTest {
 
         @Test
         void setsCaregiverIdOnRegistrationAndReturnsPatient() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
-            Patient patient = mock(Patient.class);
+            final PatientRegistration reg = new PatientRegistration();
+            final Patient patient = mock(Patient.class);
             when(auth.registerPatient(reg)).thenReturn(patient);
 
-            ResponseEntity<Patient> response = controller.registerPatient(CAREGIVER_ID, reg);
+            final ResponseEntity<Patient> response = controller.registerPatient(CAREGIVER_ID, reg);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isSameAs(patient);
@@ -221,7 +221,7 @@ class CaregiverControllerTest {
             when(userRepository.findByEmailAndRole(PATIENT_EMAIL, Role.PATIENT))
                     .thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = controller.addPatient(CAREGIVER_ID, emailBody(PATIENT_EMAIL));
+            final ResponseEntity<?> response = controller.addPatient(CAREGIVER_ID, emailBody(PATIENT_EMAIL));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
             assertThat(bodyMap(response).get("action")).isEqualTo("invitation_sent");
@@ -229,7 +229,7 @@ class CaregiverControllerTest {
 
         @Test
         void throwsNotFoundWhenPatientRecordMissingForExistingUser() throws Exception {
-            User patientUser = makeUser(PT_USER_ID, Role.PATIENT);
+            final User patientUser = makeUser(PT_USER_ID, Role.PATIENT);
             when(caregiverRepository.findById(CAREGIVER_ID))
                     .thenReturn(Optional.of(makeCaregiver(CAREGIVER_ID, makeUser(CG_USER_ID, Role.CAREGIVER))));
             when(userRepository.findByEmailAndRole(PATIENT_EMAIL, Role.PATIENT))
@@ -243,9 +243,9 @@ class CaregiverControllerTest {
 
         @Test
         void throwsBadRequestWhenLinkAlreadyExists() throws Exception {
-            User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
-            User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
-            Patient patient    = mock(Patient.class);
+            final User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
+            final User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
+            final Patient patient    = mock(Patient.class);
             when(caregiverRepository.findById(CAREGIVER_ID))
                     .thenReturn(Optional.of(makeCaregiver(CAREGIVER_ID, caregiverUser)));
             when(userRepository.findByEmailAndRole(PATIENT_EMAIL, Role.PATIENT))
@@ -260,9 +260,9 @@ class CaregiverControllerTest {
 
         @Test
         void returnsOkAndCreatesLinkWhenSuccessful() throws Exception {
-            User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
-            User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
-            Patient patient    = mock(Patient.class);
+            final User caregiverUser = makeUser(CG_USER_ID, Role.CAREGIVER);
+            final User patientUser   = makeUser(PT_USER_ID, Role.PATIENT);
+            final Patient patient    = mock(Patient.class);
             when(patient.getId()).thenReturn(PATIENT_ID);
             when(patient.getFirstName()).thenReturn("Jane");
             when(patient.getLastName()).thenReturn("Smith");
@@ -274,7 +274,7 @@ class CaregiverControllerTest {
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
             when(caregiverPatientLinkService.hasActiveLink(CG_USER_ID, PT_USER_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.addPatient(CAREGIVER_ID, emailBody(PATIENT_EMAIL));
+            final ResponseEntity<?> response = controller.addPatient(CAREGIVER_ID, emailBody(PATIENT_EMAIL));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(bodyMap(response).get("message"))
@@ -296,7 +296,7 @@ class CaregiverControllerTest {
             when(caregiverService.caregiverHasAccessToPatient(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(false);
 
-            ResponseEntity<?> response =
+            final ResponseEntity<?> response =
                     controller.getPatientForCaregiver(CAREGIVER_ID, PATIENT_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
@@ -309,7 +309,7 @@ class CaregiverControllerTest {
             when(caregiverService.getPatientWithLinkById(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(null);
 
-            ResponseEntity<?> response =
+            final ResponseEntity<?> response =
                     controller.getPatientForCaregiver(CAREGIVER_ID, PATIENT_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -317,13 +317,13 @@ class CaregiverControllerTest {
 
         @Test
         void returnsOkWithPatientDto() throws Exception {
-            PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
+            final PatientWithLinkDto dto = mock(PatientWithLinkDto.class);
             when(caregiverService.caregiverHasAccessToPatient(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(true);
             when(caregiverService.getPatientWithLinkById(CAREGIVER_ID, PATIENT_ID))
                     .thenReturn(dto);
 
-            ResponseEntity<?> response =
+            final ResponseEntity<?> response =
                     controller.getPatientForCaregiver(CAREGIVER_ID, PATIENT_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

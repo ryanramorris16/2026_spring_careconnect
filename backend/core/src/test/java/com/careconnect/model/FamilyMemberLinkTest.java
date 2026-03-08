@@ -13,7 +13,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void defaultConstructor_setsDefaults() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
 
         assertThat(link).isNotNull();
         assertThat(link.getStatus()).isEqualTo(FamilyMemberLink.LinkStatus.ACTIVE);
@@ -24,11 +24,11 @@ class FamilyMemberLinkTest {
 
     @Test
     void fourArgConstructor_setsFields() throws Exception {
-        User familyUser = new User();
-        User patientUser = new User();
-        User grantedBy = new User();
+        final User familyUser = new User();
+        final User patientUser = new User();
+        final User grantedBy = new User();
 
-        FamilyMemberLink link = new FamilyMemberLink(familyUser, patientUser, grantedBy, "Son");
+        final FamilyMemberLink link = new FamilyMemberLink(familyUser, patientUser, grantedBy, "Son");
 
         assertThat(link.getFamilyUser()).isSameAs(familyUser);
         assertThat(link.getPatientUser()).isSameAs(patientUser);
@@ -40,11 +40,11 @@ class FamilyMemberLinkTest {
 
     @Test
     void fiveArgConstructor_setsFields() throws Exception {
-        User familyUser = new User();
-        User patientUser = new User();
-        User grantedBy = new User();
+        final User familyUser = new User();
+        final User patientUser = new User();
+        final User grantedBy = new User();
 
-        FamilyMemberLink link = new FamilyMemberLink(
+        final FamilyMemberLink link = new FamilyMemberLink(
                 familyUser, patientUser, grantedBy, "Daughter", FamilyMemberLink.LinkType.TEMPORARY);
 
         assertThat(link.getRelationship()).isEqualTo("Daughter");
@@ -55,7 +55,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void isActive_statusActive_noExpiry_returnsTrue() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setStatus(FamilyMemberLink.LinkStatus.ACTIVE);
         link.setExpiresAt(null);
 
@@ -64,7 +64,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void isActive_statusSuspended_returnsFalse() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setStatus(FamilyMemberLink.LinkStatus.SUSPENDED);
 
         assertThat(link.isActive()).isFalse();
@@ -72,7 +72,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void isActive_statusActive_pastExpiry_returnsFalse() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setStatus(FamilyMemberLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().minusDays(1));
 
@@ -81,7 +81,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void isActive_statusActive_futureExpiry_returnsTrue() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setStatus(FamilyMemberLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().plusDays(5));
 
@@ -92,20 +92,20 @@ class FamilyMemberLinkTest {
 
     @Test
     void isExpired_nullExpiry_returnsFalse() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         assertThat(link.isExpired()).isFalse();
     }
 
     @Test
     void isExpired_pastExpiry_returnsTrue() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setExpiresAt(LocalDateTime.now().minusDays(2));
         assertThat(link.isExpired()).isTrue();
     }
 
     @Test
     void isExpired_futureExpiry_returnsFalse() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setExpiresAt(LocalDateTime.now().plusDays(3));
         assertThat(link.isExpired()).isFalse();
     }
@@ -114,7 +114,7 @@ class FamilyMemberLinkTest {
 
     @Test
     void setStatus_updatesUpdatedAt() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
         link.setStatus(FamilyMemberLink.LinkStatus.REVOKED);
 
         assertThat(link.getStatus()).isEqualTo(FamilyMemberLink.LinkStatus.REVOKED);
@@ -125,8 +125,8 @@ class FamilyMemberLinkTest {
 
     @Test
     void setPatientUser_updatesUser() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
-        User patient = new User();
+        final FamilyMemberLink link = new FamilyMemberLink();
+        final User patient = new User();
         link.setPatientUser(patient);
         assertThat(link.getPatientUser()).isSameAs(patient);
     }
@@ -135,9 +135,9 @@ class FamilyMemberLinkTest {
 
     @Test
     void onCreate_setsCreatedAt() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
+        final FamilyMemberLink link = new FamilyMemberLink();
 
-        Method m = FamilyMemberLink.class.getDeclaredMethod("onCreate");
+        final Method m = FamilyMemberLink.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(link);
 
@@ -171,10 +171,10 @@ class FamilyMemberLinkTest {
 
     @Test
     void remainingSetters_updateFields() throws Exception {
-        FamilyMemberLink link = new FamilyMemberLink();
-        User familyUser = new User();
-        User grantedBy = new User();
-        LocalDateTime now = LocalDateTime.now();
+        final FamilyMemberLink link = new FamilyMemberLink();
+        final User familyUser = new User();
+        final User grantedBy = new User();
+        final LocalDateTime now = LocalDateTime.now();
 
         link.setId(1L);
         link.setFamilyUser(familyUser);

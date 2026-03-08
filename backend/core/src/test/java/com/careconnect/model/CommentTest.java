@@ -12,7 +12,7 @@ class CommentTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        Comment comment = new Comment();
+        final Comment comment = new Comment();
 
         assertThat(comment).isNotNull();
         assertThat(comment.getId()).isNull();
@@ -27,8 +27,8 @@ class CommentTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        Comment comment = new Comment();
-        LocalDateTime now = LocalDateTime.now();
+        final Comment comment = new Comment();
+        final LocalDateTime now = LocalDateTime.now();
 
         comment.setPostId(10L);
         comment.setUserId(20L);

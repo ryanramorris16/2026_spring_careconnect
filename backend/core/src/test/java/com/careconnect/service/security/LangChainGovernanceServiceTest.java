@@ -25,7 +25,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateRequest_nullMessage_isAllowed() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateRequest(1L, "conv-1", null);
         assertThat(result.isAllowed()).isTrue();
         assertThat(result.getAction()).isEqualTo("ALLOW");
@@ -33,7 +33,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateRequest_shortMessage_isAllowed() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateRequest(2L, "conv-2", "Hello!");
         assertThat(result.isAllowed()).isTrue();
         assertThat(result.getReason()).isEqualTo("Request approved");
@@ -41,8 +41,8 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateRequest_tooLongMessage_rejected() throws Exception {
-        String longMsg = "x".repeat(4001);
-        LangChainGovernanceService.GovernanceResult result =
+        final String longMsg = "x".repeat(4001);
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateRequest(3L, "conv-3", longMsg);
         assertThat(result.isAllowed()).isFalse();
         assertThat(result.getAction()).isEqualTo("REJECT_MESSAGE_LENGTH");
@@ -52,23 +52,23 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateRequest_exactlyAtLimit_isAllowed() throws Exception {
-        String maxMsg = "x".repeat(4000);
-        LangChainGovernanceService.GovernanceResult result =
+        final String maxMsg = "x".repeat(4000);
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateRequest(4L, "conv-4", maxMsg);
         assertThat(result.isAllowed()).isTrue();
     }
 
     @Test
     void validateRequest_rateLimitExceeded_perMinute_rejected() throws Exception {
-        Long userId = 5L;
+        final Long userId = 5L;
         // Make 10 allowed requests (rate limit per minute = 10)
         for (int i = 0; i < 10; i++) {
-            LangChainGovernanceService.GovernanceResult r =
+            final LangChainGovernanceService.GovernanceResult r =
                     langChainGovernanceService.validateRequest(userId, "conv-5", "msg");
             assertThat(r.isAllowed()).isTrue();
         }
         // 11th should be rate-limited
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateRequest(userId, "conv-5", "msg");
         assertThat(result.isAllowed()).isFalse();
         assertThat(result.getAction()).isEqualTo("RATE_LIMIT");
@@ -76,7 +76,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateModelUsage_nonGpt4_isAllowed() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateModelUsage(1L, "conv-1", "claude-3-opus");
         assertThat(result.isAllowed()).isTrue();
         assertThat(result.getAction()).isEqualTo("ALLOW_MODEL");
@@ -84,7 +84,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void validateModelUsage_nullModelName_isAllowed() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateModelUsage(1L, "conv-1", null);
         assertThat(result.isAllowed()).isTrue();
     }
@@ -92,7 +92,7 @@ class LangChainGovernanceServiceTest {
     @Test
     void validateModelUsage_gpt4_noTracker_isAllowed() throws Exception {
         // No prior requests for this user, so no tracker exists
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateModelUsage(10L, "conv-10", "gpt-4-turbo");
         assertThat(result.isAllowed()).isTrue();
     }
@@ -100,22 +100,22 @@ class LangChainGovernanceServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     void validateModelUsage_gpt4_exceedsHourlyLimit_rejected() throws Exception {
-        Long userId = 20L;
+        final Long userId = 20L;
         // Create a tracker by making one request
         langChainGovernanceService.validateRequest(userId, "conv-20", "msg");
 
         // Use reflection to set requestsThisHour to 21 on the tracker
-        Field trackersField = LangChainGovernanceService.class.getDeclaredField("userRequestTrackers");
+        final Field trackersField = LangChainGovernanceService.class.getDeclaredField("userRequestTrackers");
         trackersField.setAccessible(true);
-        ConcurrentHashMap<Long, Object> trackers =
+        final ConcurrentHashMap<Long, Object> trackers =
                 (ConcurrentHashMap<Long, Object>) trackersField.get(langChainGovernanceService);
-        Object tracker = trackers.get(userId);
+        final Object tracker = trackers.get(userId);
 
-        Field hourField = tracker.getClass().getDeclaredField("requestsThisHour");
+        final Field hourField = tracker.getClass().getDeclaredField("requestsThisHour");
         hourField.setAccessible(true);
         ((AtomicInteger) hourField.get(tracker)).set(21);
 
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 langChainGovernanceService.validateModelUsage(userId, "conv-20", "gpt-4");
         assertThat(result.isAllowed()).isFalse();
         assertThat(result.getAction()).isEqualTo("LIMIT_ADVANCED_MODEL");
@@ -139,7 +139,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void governanceResult_getters_allowed() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 new LangChainGovernanceService.GovernanceResult(true, "Request approved", "ALLOW");
         assertThat(result.isAllowed()).isTrue();
         assertThat(result.getReason()).isEqualTo("Request approved");
@@ -148,7 +148,7 @@ class LangChainGovernanceServiceTest {
 
     @Test
     void governanceResult_getters_rejected() throws Exception {
-        LangChainGovernanceService.GovernanceResult result =
+        final LangChainGovernanceService.GovernanceResult result =
                 new LangChainGovernanceService.GovernanceResult(false, "Rate limit exceeded", "RATE_LIMIT");
         assertThat(result.isAllowed()).isFalse();
         assertThat(result.getReason()).isEqualTo("Rate limit exceeded");

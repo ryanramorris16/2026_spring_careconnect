@@ -14,7 +14,7 @@ class UserAIConfigDTOTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        UserAIConfigDTO dto = new UserAIConfigDTO();
+        final UserAIConfigDTO dto = new UserAIConfigDTO();
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isNull();
@@ -27,7 +27,7 @@ class UserAIConfigDTOTest {
 
     @Test
     void builder_defaults_areApplied() throws Exception {
-        UserAIConfigDTO dto = UserAIConfigDTO.builder()
+        final UserAIConfigDTO dto = UserAIConfigDTO.builder()
                 .userId(1L)
                 .aiProvider(AIProvider.OPENAI)
                 .build();
@@ -49,7 +49,7 @@ class UserAIConfigDTOTest {
 
     @Test
     void builder_allFieldsOverridden_setsCorrectly() throws Exception {
-        UserAIConfigDTO dto = UserAIConfigDTO.builder()
+        final UserAIConfigDTO dto = UserAIConfigDTO.builder()
                 .id(10L)
                 .patientId(20L)
                 .userId(30L)
@@ -90,7 +90,7 @@ class UserAIConfigDTOTest {
 
     @Test
     void builder_staticMethod_returnsBuilderInstance() throws Exception {
-        UserAIConfigDTO.UserAIConfigDTOBuilder builder = UserAIConfigDTO.builder();
+        final UserAIConfigDTO.UserAIConfigDTOBuilder builder = UserAIConfigDTO.builder();
         assertThat(builder).isNotNull();
     }
 
@@ -98,7 +98,7 @@ class UserAIConfigDTOTest {
 
     @Test
     void setters_updateAllFields() throws Exception {
-        UserAIConfigDTO dto = new UserAIConfigDTO();
+        final UserAIConfigDTO dto = new UserAIConfigDTO();
 
         dto.setId(1L);
         dto.setPatientId(2L);

@@ -12,7 +12,7 @@ class FriendRequestTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        FriendRequest req = new FriendRequest();
+        final FriendRequest req = new FriendRequest();
 
         assertThat(req).isNotNull();
         assertThat(req.getId()).isNull();
@@ -26,8 +26,8 @@ class FriendRequestTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        FriendRequest req = new FriendRequest();
-        Date now = new Date();
+        final FriendRequest req = new FriendRequest();
+        final Date now = new Date();
 
         req.setId(1L);
         req.setFromUserId(100L);

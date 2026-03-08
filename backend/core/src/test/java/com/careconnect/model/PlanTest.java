@@ -10,7 +10,7 @@ class PlanTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Plan plan = new Plan();
+        final Plan plan = new Plan();
 
         assertThat(plan).isNotNull();
         assertThat(plan.getId()).isNull();
@@ -24,7 +24,7 @@ class PlanTest {
 
     @Test
     void builder_isActive_defaultsToTrue() throws Exception {
-        Plan plan = Plan.builder().code("BASIC").build();
+        final Plan plan = Plan.builder().code("BASIC").build();
         assertThat(plan.getIsActive()).isTrue();
     }
 
@@ -32,7 +32,7 @@ class PlanTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        Plan plan = new Plan(1L, "PRO", "Pro Plan", 999, "MONTHLY", false);
+        final Plan plan = new Plan(1L, "PRO", "Pro Plan", 999, "MONTHLY", false);
 
         assertThat(plan.getId()).isEqualTo(1L);
         assertThat(plan.getCode()).isEqualTo("PRO");
@@ -46,7 +46,7 @@ class PlanTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Plan plan = new Plan();
+        final Plan plan = new Plan();
 
         plan.setId(2L);
         plan.setCode("ENTERPRISE");
@@ -67,8 +67,8 @@ class PlanTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Plan p1 = Plan.builder().id(1L).code("BASIC").build();
-        Plan p2 = Plan.builder().id(1L).code("BASIC").build();
+        final Plan p1 = Plan.builder().id(1L).code("BASIC").build();
+        final Plan p2 = Plan.builder().id(1L).code("BASIC").build();
 
         assertThat(p1).isEqualTo(p2);
         assertThat(p1.hashCode()).isEqualTo(p2.hashCode());
@@ -76,8 +76,8 @@ class PlanTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        Plan p1 = Plan.builder().id(1L).build();
-        Plan p2 = Plan.builder().id(2L).build();
+        final Plan p1 = Plan.builder().id(1L).build();
+        final Plan p2 = Plan.builder().id(2L).build();
 
         assertThat(p1).isNotEqualTo(p2);
     }

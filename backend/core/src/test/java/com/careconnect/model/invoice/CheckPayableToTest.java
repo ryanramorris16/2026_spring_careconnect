@@ -10,7 +10,7 @@ class CheckPayableToTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        CheckPayableTo checkPayableTo = CheckPayableTo.builder()
+        final CheckPayableTo checkPayableTo = CheckPayableTo.builder()
                 .name("Care Connect Medical")
                 .address("123 Main St, Springfield, IL")
                 .reference("INV-2025-001")
@@ -23,7 +23,7 @@ class CheckPayableToTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
+        final CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
 
         assertThat(checkPayableTo.getName()).isNull();
         assertThat(checkPayableTo.getAddress()).isNull();
@@ -34,7 +34,7 @@ class CheckPayableToTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
+        final CheckPayableTo checkPayableTo = CheckPayableTo.builder().build();
 
         checkPayableTo.setName("Updated Name");
         checkPayableTo.setAddress("456 Oak Ave");
@@ -49,8 +49,8 @@ class CheckPayableToTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
-        CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
+        final CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
+        final CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic A").reference("REF-1").build();
 
         assertThat(c1).isEqualTo(c2);
         assertThat(c1.hashCode()).isEqualTo(c2.hashCode());
@@ -58,15 +58,15 @@ class CheckPayableToTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").build();
-        CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic B").build();
+        final CheckPayableTo c1 = CheckPayableTo.builder().name("Clinic A").build();
+        final CheckPayableTo c2 = CheckPayableTo.builder().name("Clinic B").build();
 
         assertThat(c1).isNotEqualTo(c2);
     }
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        CheckPayableTo c = CheckPayableTo.builder().name("Care Connect").reference("INV-001").build();
+        final CheckPayableTo c = CheckPayableTo.builder().name("Care Connect").reference("INV-001").build();
 
         assertThat(c.toString()).contains("Care Connect");
         assertThat(c.toString()).contains("INV-001");

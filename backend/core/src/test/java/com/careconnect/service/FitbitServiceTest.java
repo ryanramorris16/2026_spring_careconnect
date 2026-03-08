@@ -34,7 +34,7 @@ class FitbitServiceTest {
     @DisplayName("class_springServiceAnnotation_isInstantiableAsBean")
     void class_springServiceAnnotation_isInstantiableAsBean() throws Exception {
         // Verify a second independent instance can be created (bean-style)
-        FitbitService anotherInstance = new FitbitService();
+        final FitbitService anotherInstance = new FitbitService();
         assertThat(anotherInstance).isNotNull();
         assertThat(anotherInstance).isNotSameAs(fitbitService);
     }

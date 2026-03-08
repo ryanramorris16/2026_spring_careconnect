@@ -13,9 +13,9 @@ class PaymentReferencesTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        List<String> methods = Arrays.asList("check", "credit_card", "online");
+        final List<String> methods = Arrays.asList("check", "credit_card", "online");
 
-        PaymentReferences refs = PaymentReferences.builder()
+        final PaymentReferences refs = PaymentReferences.builder()
                 .paymentLink("https://pay.example.com/inv-001")
                 .qrCodeUrl("https://qr.example.com/inv-001")
                 .notes("Please pay within 30 days")
@@ -30,7 +30,7 @@ class PaymentReferencesTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        PaymentReferences refs = PaymentReferences.builder().build();
+        final PaymentReferences refs = PaymentReferences.builder().build();
 
         assertThat(refs.getPaymentLink()).isNull();
         assertThat(refs.getQrCodeUrl()).isNull();
@@ -42,9 +42,9 @@ class PaymentReferencesTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        List<String> methods = List.of("telephone");
+        final List<String> methods = List.of("telephone");
 
-        PaymentReferences refs = new PaymentReferences(
+        final PaymentReferences refs = new PaymentReferences(
                 "https://pay.example.com",
                 "https://qr.example.com",
                 "Call to pay",
@@ -61,7 +61,7 @@ class PaymentReferencesTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PaymentReferences refs = PaymentReferences.builder().build();
+        final PaymentReferences refs = PaymentReferences.builder().build();
 
         refs.setPaymentLink("https://updated-pay.example.com");
         refs.setQrCodeUrl("https://updated-qr.example.com");
@@ -78,8 +78,8 @@ class PaymentReferencesTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
-        PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
+        final PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
+        final PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay.example.com").build();
 
         assertThat(r1).isEqualTo(r2);
         assertThat(r1.hashCode()).isEqualTo(r2.hashCode());
@@ -87,8 +87,8 @@ class PaymentReferencesTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay-a.example.com").build();
-        PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay-b.example.com").build();
+        final PaymentReferences r1 = PaymentReferences.builder().paymentLink("https://pay-a.example.com").build();
+        final PaymentReferences r2 = PaymentReferences.builder().paymentLink("https://pay-b.example.com").build();
 
         assertThat(r1).isNotEqualTo(r2);
     }

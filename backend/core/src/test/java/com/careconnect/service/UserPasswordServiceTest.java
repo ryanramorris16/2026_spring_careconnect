@@ -74,7 +74,7 @@ class UserPasswordServiceTest {
         user.setIsVerified(true);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 userPasswordService.resetPasswordWithToken("test@example.com", "verify-token-abc", "newPassword123"));
 
         assertEquals("Password already set up for this account", ex.getMessage());
@@ -85,7 +85,7 @@ class UserPasswordServiceTest {
     void resetPasswordWithToken_userNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 userPasswordService.resetPasswordWithToken("unknown@example.com", "token", "newPass"));
 
         assertEquals("User not found", ex.getMessage());
@@ -96,7 +96,7 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_base64EncodedUserId_matchingUser_shouldResetPassword")
     void resetPasswordWithToken_base64EncodedUserId_matchingUser_shouldResetPassword() throws Exception {
-        String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
+        final String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
         user.setVerificationToken(null); // Not a verification token
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.encode("newPassword123")).thenReturn("encodedNewPassword");
@@ -112,14 +112,14 @@ class UserPasswordServiceTest {
     @DisplayName("resetPasswordWithToken_base64EncodedUserId_nonMatchingUser_shouldFallToLegacyFlow")
     void resetPasswordWithToken_base64EncodedUserId_nonMatchingUser_shouldFallToLegacyFlow() throws Exception {
         // Encode a different user ID
-        String base64Token = Base64.getUrlEncoder().encodeToString("999".getBytes());
+        final String base64Token = Base64.getUrlEncoder().encodeToString("999".getBytes());
         user.setVerificationToken(null);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        String tokenHash = DigestUtils.sha256Hex(base64Token);
+        final String tokenHash = DigestUtils.sha256Hex(base64Token);
 
         // Set up the legacy flow to succeed
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -141,13 +141,13 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_validToken_sameUser_shouldResetPassword")
     void resetPasswordWithToken_legacyFlow_validToken_sameUser_shouldResetPassword() throws Exception {
-        String rawToken = "legacy-reset-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "legacy-reset-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -169,8 +169,8 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_invalidOrExpiredToken_shouldThrowIllegalArgumentException")
     void resetPasswordWithToken_legacyFlow_invalidOrExpiredToken_shouldThrowIllegalArgumentException() throws Exception {
-        String rawToken = "expired-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "expired-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -178,7 +178,7 @@ class UserPasswordServiceTest {
         when(passwordResetTokenRepo.findValid(eq(tokenHash), any(Instant.class))).thenReturn(Optional.empty());
         when(passwordResetTokenRepo.findAll()).thenReturn(Collections.emptyList());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 userPasswordService.resetPasswordWithToken("test@example.com", rawToken, "newPassword123"));
 
         assertEquals("Invalid or expired reset token", ex.getMessage());
@@ -187,16 +187,16 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenBelongsToDifferentUser_shouldThrowIllegalArgumentException")
     void resetPasswordWithToken_legacyFlow_tokenBelongsToDifferentUser_shouldThrowIllegalArgumentException() throws Exception {
-        String rawToken = "other-user-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "other-user-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
-        User otherUser = new User();
+        final User otherUser = new User();
         otherUser.setId(999L);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(otherUser);
         resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -205,7 +205,7 @@ class UserPasswordServiceTest {
         when(passwordResetTokenRepo.findByTokenHash(tokenHash)).thenReturn(Optional.of(resetToken));
         when(passwordResetTokenRepo.findValid(eq(tokenHash), any(Instant.class))).thenReturn(Optional.of(resetToken));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 userPasswordService.resetPasswordWithToken("test@example.com", rawToken, "newPassword123"));
 
         assertEquals("Reset token does not belong to this user", ex.getMessage());
@@ -214,13 +214,13 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenFoundButExpired_logsExpired_shouldThrow")
     void resetPasswordWithToken_legacyFlow_tokenFoundButExpired_logsExpired_shouldThrow() throws Exception {
-        String rawToken = "expired-token-debug";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "expired-token-debug";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken expiredToken = new PasswordResetToken();
+        final PasswordResetToken expiredToken = new PasswordResetToken();
         expiredToken.setUser(user);
         expiredToken.setTokenHash(tokenHash);
         expiredToken.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS)); // expired
@@ -236,13 +236,13 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenFoundButUsed_logsUsed_shouldThrow")
     void resetPasswordWithToken_legacyFlow_tokenFoundButUsed_logsUsed_shouldThrow() throws Exception {
-        String rawToken = "used-token-debug";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "used-token-debug";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken usedToken = new PasswordResetToken();
+        final PasswordResetToken usedToken = new PasswordResetToken();
         usedToken.setUser(user);
         usedToken.setTokenHash(tokenHash);
         usedToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -258,8 +258,8 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_runsForEachOnEmpty_shouldThrow")
     void resetPasswordWithToken_legacyFlow_tokenNotInDb_runsForEachOnEmpty_shouldThrow() throws Exception {
-        String rawToken = "non-existent-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "non-existent-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
@@ -274,14 +274,14 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForOtherUser_shouldThrow")
     void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForOtherUser_shouldThrow() throws Exception {
-        String rawToken = "missing-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "missing-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
-        User otherUser = new User();
+        final User otherUser = new User();
         otherUser.setId(999L);
 
-        PasswordResetToken otherToken = new PasswordResetToken();
+        final PasswordResetToken otherToken = new PasswordResetToken();
         otherToken.setUser(otherUser);
         otherToken.setTokenHash("otherhash");
         otherToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -299,11 +299,11 @@ class UserPasswordServiceTest {
     @Test
     @DisplayName("resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForSameUser_shouldThrow")
     void resetPasswordWithToken_legacyFlow_tokenNotInDb_findAllReturnsTokensForSameUser_shouldThrow() throws Exception {
-        String rawToken = "missing-token-same-user";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "missing-token-same-user";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
-        PasswordResetToken sameUserToken = new PasswordResetToken();
+        final PasswordResetToken sameUserToken = new PasswordResetToken();
         sameUserToken.setUser(user);
         sameUserToken.setTokenHash("differenthash");
         sameUserToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -324,7 +324,7 @@ class UserPasswordServiceTest {
     @DisplayName("resetPasswordWithToken_verificationTokenDoesNotMatch_shouldFallToBase64Flow")
     void resetPasswordWithToken_verificationTokenDoesNotMatch_shouldFallToBase64Flow() throws Exception {
         user.setVerificationToken("different-verify-token");
-        String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
+        final String base64Token = Base64.getUrlEncoder().encodeToString("1".getBytes());
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.encode("newPassword123")).thenReturn("encodedNewPassword");
 
@@ -358,7 +358,7 @@ class UserPasswordServiceTest {
     void setupPasswordWithVerificationToken_userNotFound_shouldThrowRuntimeException() throws Exception {
         when(userRepository.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        final RuntimeException ex = assertThrows(RuntimeException.class, () ->
                 userPasswordService.setupPasswordWithVerificationToken("unknown@example.com", "token", "newPass"));
 
         assertEquals("User not found", ex.getMessage());
@@ -370,7 +370,7 @@ class UserPasswordServiceTest {
         user.setVerificationToken(null);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        final RuntimeException ex = assertThrows(RuntimeException.class, () ->
                 userPasswordService.setupPasswordWithVerificationToken("test@example.com", "any-token", "newPass"));
 
         assertEquals("Invalid verification token", ex.getMessage());
@@ -382,7 +382,7 @@ class UserPasswordServiceTest {
         user.setVerificationToken("correct-token");
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        final RuntimeException ex = assertThrows(RuntimeException.class, () ->
                 userPasswordService.setupPasswordWithVerificationToken("test@example.com", "wrong-token", "newPass"));
 
         assertEquals("Invalid verification token", ex.getMessage());
@@ -395,7 +395,7 @@ class UserPasswordServiceTest {
         user.setIsVerified(true);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        final RuntimeException ex = assertThrows(RuntimeException.class, () ->
                 userPasswordService.setupPasswordWithVerificationToken("test@example.com", "setup-token-xyz", "newPass"));
 
         assertEquals("Password already set up for this account", ex.getMessage());
@@ -408,13 +408,13 @@ class UserPasswordServiceTest {
     void resetPasswordWithToken_invalidBase64Token_shouldFallToLegacyFlow() throws Exception {
         // A token that is not valid base64 will throw an exception in the try block,
         // causing it to fall through to the legacy flow.
-        String rawToken = "not!!!base64===token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "not!!!base64===token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -437,13 +437,13 @@ class UserPasswordServiceTest {
     void resetPasswordWithToken_base64DecodesToNonNumeric_shouldFallToLegacyFlow() throws Exception {
         // A token that decodes to a non-numeric string will cause NumberFormatException,
         // which is caught and falls through to legacy flow.
-        String base64Token = Base64.getUrlEncoder().encodeToString("not_a_number".getBytes());
-        String tokenHash = DigestUtils.sha256Hex(base64Token);
+        final String base64Token = Base64.getUrlEncoder().encodeToString("not_a_number".getBytes());
+        final String tokenHash = DigestUtils.sha256Hex(base64Token);
         user.setVerificationToken(null);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setTokenHash(tokenHash);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
@@ -463,12 +463,12 @@ class UserPasswordServiceTest {
     @DisplayName("resetPasswordWithToken_nullVerificationToken_notBase64_shouldUseTokenHashFlow")
     void resetPasswordWithToken_nullVerificationToken_notBase64_shouldUseTokenHashFlow() throws Exception {
         user.setVerificationToken(null);
-        String rawToken = "simple-raw-token";
-        String tokenHash = DigestUtils.sha256Hex(rawToken);
+        final String rawToken = "simple-raw-token";
+        final String tokenHash = DigestUtils.sha256Hex(rawToken);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
-        PasswordResetToken resetToken = new PasswordResetToken();
+        final PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
         resetToken.setUsed(false);

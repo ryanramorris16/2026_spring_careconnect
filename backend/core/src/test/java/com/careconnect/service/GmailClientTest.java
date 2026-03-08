@@ -62,7 +62,7 @@ class GmailClientTest {
      * internalDate is set so resolveReceivedAt uses the epoch path.
      */
     private JsonNode htmlMessage(long internalDate, String htmlContent) throws Exception {
-        String data = b64(htmlContent);
+        final String data = b64(htmlContent);
         return json("{\"internalDate\":" + internalDate + ","
                 + "\"payload\":{\"mimeType\":\"text/html\",\"headers\":[],"
                 + "\"body\":{\"data\":\"" + data + "\"},\"parts\":[]}}");
@@ -70,7 +70,7 @@ class GmailClientTest {
 
     /** Build a search-result JSON listing the given message IDs */
     private JsonNode searchResult(String... ids) throws Exception {
-        StringBuilder sb = new StringBuilder("{\"messages\":[");
+        final StringBuilder sb = new StringBuilder("{\"messages\":[");
         for (int i = 0; i < ids.length; i++) {
             if (i > 0) sb.append(',');
             sb.append("{\"id\":\"").append(ids[i]).append("\"}");
@@ -128,7 +128,7 @@ class GmailClientTest {
     @Test
     void fetchDigestForDate_internalDateZero_skipped() throws Exception {
         // internalDate absent → asLong(0) = 0 → continue
-        JsonNode message = json("{\"payload\":{\"mimeType\":\"text/plain\","
+        final JsonNode message = json("{\"payload\":{\"mimeType\":\"text/plain\","
                 + "\"headers\":[],\"body\":{},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
@@ -139,10 +139,10 @@ class GmailClientTest {
 
     @Test
     void fetchDigestForDate_messageDateDifferentFromTarget_noMatch() throws Exception {
-        LocalDate target = LocalDate.of(2025, 10, 27);
+        final LocalDate target = LocalDate.of(2025, 10, 27);
         // Use Oct 26 – different date from target
-        long oct26Ms = target.minusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        JsonNode message = json("{\"internalDate\":" + oct26Ms + ","
+        final long oct26Ms = target.minusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        final JsonNode message = json("{\"internalDate\":" + oct26Ms + ","
                 + "\"payload\":{\"mimeType\":\"text/plain\",\"headers\":[],\"body\":{},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
@@ -153,10 +153,10 @@ class GmailClientTest {
 
     @Test
     void fetchDigestForDate_buildPayloadReturnsNull_skipped() throws Exception {
-        LocalDate target = LocalDate.of(2025, 10, 27);
-        long midnightMs = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        final LocalDate target = LocalDate.of(2025, 10, 27);
+        final long midnightMs = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
         // Matching date, but no HTML in payload → buildPayload returns null
-        JsonNode message = json("{\"internalDate\":" + midnightMs + ","
+        final JsonNode message = json("{\"internalDate\":" + midnightMs + ","
                 + "\"payload\":{\"mimeType\":\"text/plain\",\"headers\":[],\"body\":{},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
@@ -167,33 +167,33 @@ class GmailClientTest {
 
     @Test
     void fetchDigestForDate_happyPath_returnsPayload() throws Exception {
-        LocalDate target = LocalDate.of(2025, 10, 27);
-        long midnightMs = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        JsonNode message = htmlMessage(midnightMs, "<html><body>Digest</body></html>");
+        final LocalDate target = LocalDate.of(2025, 10, 27);
+        final long midnightMs = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        final JsonNode message = htmlMessage(midnightMs, "<html><body>Digest</body></html>");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchDigestForDate(TOKEN, target);
+        final Optional<GmailDigestPayload> result = client.fetchDigestForDate(TOKEN, target);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).contains("<html>");
     }
 
     @Test
     void fetchDigestForDate_twoMatchingMessages_closerToMidnightWins() throws Exception {
-        LocalDate target = LocalDate.of(2025, 10, 27);
-        long midnight = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        long earlyMs = midnight + 1_000L;           // 1 second after midnight – dateDiff = 1000
-        long laterMs = midnight + 3_600_000L;       // 1 hour after midnight  – dateDiff = 3,600,000
+        final LocalDate target = LocalDate.of(2025, 10, 27);
+        final long midnight = target.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
+        final long earlyMs = midnight + 1_000L;           // 1 second after midnight – dateDiff = 1000
+        final long laterMs = midnight + 3_600_000L;       // 1 hour after midnight  – dateDiff = 3,600,000
 
-        JsonNode msg1 = htmlMessage(earlyMs, "<html><body>Early</body></html>");
-        JsonNode msg2 = htmlMessage(laterMs, "<html><body>Late</body></html>");
+        final JsonNode msg1 = htmlMessage(earlyMs, "<html><body>Early</body></html>");
+        final JsonNode msg2 = htmlMessage(laterMs, "<html><body>Late</body></html>");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1", "msg2")))
                 .thenReturn(ResponseEntity.ok(msg1))
                 .thenReturn(ResponseEntity.ok(msg2));
 
-        Optional<GmailDigestPayload> result = client.fetchDigestForDate(TOKEN, target);
+        final Optional<GmailDigestPayload> result = client.fetchDigestForDate(TOKEN, target);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).contains("Early");
     }
@@ -246,7 +246,7 @@ class GmailClientTest {
     @Test
     void fetchLatestDigest_buildPayloadNull_skipped() throws Exception {
         // No HTML → buildPayload returns null → skip
-        JsonNode message = json("{\"internalDate\":1000,"
+        final JsonNode message = json("{\"internalDate\":1000,"
                 + "\"payload\":{\"mimeType\":\"text/plain\",\"headers\":[],\"body\":{},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
@@ -257,26 +257,26 @@ class GmailClientTest {
 
     @Test
     void fetchLatestDigest_happyPath_returnsPayload() throws Exception {
-        JsonNode message = htmlMessage(RECENT_DATE_MS, "<html><body>Latest</body></html>");
+        final JsonNode message = htmlMessage(RECENT_DATE_MS, "<html><body>Latest</body></html>");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).contains("Latest");
     }
 
     @Test
     void fetchLatestDigest_twoMessages_newestWins() throws Exception {
-        JsonNode msg1 = htmlMessage(1_000_000_000L, "<html><body>Older</body></html>");
-        JsonNode msg2 = htmlMessage(2_000_000_000L, "<html><body>Newer</body></html>");
+        final JsonNode msg1 = htmlMessage(1_000_000_000L, "<html><body>Older</body></html>");
+        final JsonNode msg2 = htmlMessage(2_000_000_000L, "<html><body>Newer</body></html>");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1", "msg2")))
                 .thenReturn(ResponseEntity.ok(msg1))
                 .thenReturn(ResponseEntity.ok(msg2));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).contains("Newer");
     }
@@ -289,14 +289,14 @@ class GmailClientTest {
     void resolveReceivedAt_missingInternalDate_fallsBackToNow() throws Exception {
         // Message has no internalDate → asLong(0) = 0 → resolveReceivedAt returns now()
         // In fetchLatestDigest, 0 > -1 (newestDate initial) is still true, so result is present
-        JsonNode message = json("{\"payload\":{\"mimeType\":\"text/html\",\"headers\":[],"
+        final JsonNode message = json("{\"payload\":{\"mimeType\":\"text/html\",\"headers\":[],"
                 + "\"body\":{\"data\":\"" + b64("<html><body>x</body></html>") + "\"},"
                 + "\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().receivedAt()).isNotNull();
     }
@@ -308,7 +308,7 @@ class GmailClientTest {
     @Test
     void extractHtml_missingPayload_buildPayloadReturnsNull() throws Exception {
         // Message has no "payload" key → part.isMissingNode() = true → extractHtml returns null
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + "}");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + "}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
@@ -319,8 +319,8 @@ class GmailClientTest {
     @Test
     void extractHtml_htmlIsBlank_buildPayloadReturnsNull() throws Exception {
         // body.data decodes to whitespace → html.isBlank() → buildPayload returns null
-        String blankData = b64("   ");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String blankData = b64("   ");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"text/html\",\"headers\":[],"
                 + "\"body\":{\"data\":\"" + blankData + "\"},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
@@ -333,15 +333,15 @@ class GmailClientTest {
     @Test
     void extractHtml_multipartBodyContainsHtml_usedDirectly() throws Exception {
         // mimeType starts with "multipart/", body.data decodes to HTML
-        String data = b64("<html><body>Multipart inline</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String data = b64("<html><body>Multipart inline</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/mixed\",\"headers\":[],"
                 + "\"body\":{\"data\":\"" + data + "\"},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).containsIgnoringCase("<html");
     }
@@ -350,8 +350,8 @@ class GmailClientTest {
     void extractHtml_multipartBodyNoHtmlTag_notUsed() throws Exception {
         // mimeType starts with "multipart/", body.data decodes to plain text (no <html tag)
         // Falls through to empty parts list → returns null → buildPayload null
-        String data = b64("plain text only, no html");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String data = b64("plain text only, no html");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/mixed\",\"headers\":[],"
                 + "\"body\":{\"data\":\"" + data + "\"},\"parts\":[]}}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
@@ -364,8 +364,8 @@ class GmailClientTest {
     @Test
     void extractHtml_htmlFoundInChildPart() throws Exception {
         // Parent: multipart/alternative, no body data; child: text/html with data
-        String childData = b64("<html><body>Child HTML</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String childData = b64("<html><body>Child HTML</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/alternative\",\"headers\":[],"
                 + "\"body\":{},\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -375,7 +375,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().htmlBody()).contains("Child HTML");
     }
@@ -387,8 +387,8 @@ class GmailClientTest {
     @Test
     void collectInlinePart_noRecognisedCidHeader_skipped() throws Exception {
         // Part has headers but none are Content-ID / X-Attachment-Id / Content-Location
-        String data = b64("<html><body>test</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String data = b64("<html><body>test</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"text/html\","
                 + "\"headers\":[{\"name\":\"Content-Type\",\"value\":\"text/html\"}],"
                 + "\"body\":{\"data\":\"" + data + "\"},\"parts\":[]}}");
@@ -396,17 +396,17 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).isEmpty();
     }
 
     @Test
     void collectInlinePart_contentIdHeader_addsDataUrlToMap() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
+        final String htmlData = b64("<html><body>test</body></html>");
         // Tiny 3-byte payload for the inline image
-        String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{(byte) 0xFF, (byte) 0xD8, 0x00});
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{(byte) 0xFF, (byte) 0xD8, 0x00});
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -419,7 +419,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).containsKey("img001");
         assertThat(result.get().inlineCidData().get("img001")).startsWith("data:image/jpeg;base64,");
@@ -427,9 +427,9 @@ class GmailClientTest {
 
     @Test
     void collectInlinePart_xAttachmentIdHeader_usedWhenNoContentId() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
-        String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{1, 2, 3});
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{1, 2, 3});
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -442,16 +442,16 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).containsKey("att-001");
     }
 
     @Test
     void collectInlinePart_contentLocationHeader_usedWhenNoOtherCidHeader() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
-        String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{4, 5, 6});
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final String imgData = Base64.getUrlEncoder().encodeToString(new byte[]{4, 5, 6});
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -464,7 +464,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).containsKey("loc-001");
     }
@@ -472,10 +472,10 @@ class GmailClientTest {
     @Test
     void collectInlinePart_duplicateCid_secondPartSkipped() throws Exception {
         // Two parts with the same Content-ID → second returns early (cidMap.containsKey)
-        String htmlData = b64("<html><body>test</body></html>");
-        String imgData1 = Base64.getUrlEncoder().encodeToString(new byte[]{1, 2, 3});
-        String imgData2 = Base64.getUrlEncoder().encodeToString(new byte[]{4, 5, 6});
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final String imgData1 = Base64.getUrlEncoder().encodeToString(new byte[]{1, 2, 3});
+        final String imgData2 = Base64.getUrlEncoder().encodeToString(new byte[]{4, 5, 6});
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -491,7 +491,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         // First part wins; value starts with image/jpeg (not image/png)
         assertThat(result.get().inlineCidData().get("dup")).startsWith("data:image/jpeg;base64,");
@@ -501,8 +501,8 @@ class GmailClientTest {
     void collectInlinePart_blankInlineDataNoAttachmentId_nothingAddedToMap() throws Exception {
         // Part has Content-ID but body has neither "data" nor "attachmentId"
         // → data == null, body.has("attachmentId") = false → nothing added
-        String htmlData = b64("<html><body>test</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -515,7 +515,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).doesNotContainKey("empty-cid");
     }
@@ -526,11 +526,11 @@ class GmailClientTest {
 
     @Test
     void fetchAttachment_successWithData_cidPopulated() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
-        byte[] raw = {10, 20, 30};
-        String attachmentBase64 = Base64.getUrlEncoder().encodeToString(raw);
+        final String htmlData = b64("<html><body>test</body></html>");
+        final byte[] raw = {10, 20, 30};
+        final String attachmentBase64 = Base64.getUrlEncoder().encodeToString(raw);
         // Part has Content-ID, no inline data, but an attachmentId
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -539,21 +539,21 @@ class GmailClientTest {
                 + "\"headers\":[{\"name\":\"Content-ID\",\"value\":\"<att-img>\"}],"
                 + "\"body\":{\"attachmentId\":\"ATT001\"},\"parts\":[]}"
                 + "]}}");
-        JsonNode attachmentResp = json("{\"data\":\"" + attachmentBase64 + "\"}");
+        final JsonNode attachmentResp = json("{\"data\":\"" + attachmentBase64 + "\"}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message))
                 .thenReturn(ResponseEntity.ok(attachmentResp));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).containsKey("att-img");
     }
 
     @Test
     void fetchAttachment_responseBodyNull_nothingAddedToMap() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -567,15 +567,15 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(message))
                 .thenReturn(ResponseEntity.ok((JsonNode) null)); // attachment fetch returns null body
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).doesNotContainKey("att-null");
     }
 
     @Test
     void fetchAttachment_responseHasNoDataField_nothingAddedToMap() throws Exception {
-        String htmlData = b64("<html><body>test</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -585,13 +585,13 @@ class GmailClientTest {
                 + "\"body\":{\"attachmentId\":\"ATT003\"},\"parts\":[]}"
                 + "]}}");
         // Attachment response exists but has no "data" field
-        JsonNode attachmentResp = json("{\"size\":100}");
+        final JsonNode attachmentResp = json("{\"size\":100}");
         when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
                 .thenReturn(ResponseEntity.ok(searchResult("msg1")))
                 .thenReturn(ResponseEntity.ok(message))
                 .thenReturn(ResponseEntity.ok(attachmentResp));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).doesNotContainKey("att-nodata");
     }
@@ -599,8 +599,8 @@ class GmailClientTest {
     @Test
     void fetchAttachment_exchangeThrows_nothingAddedToMap() throws Exception {
         // fetchAttachment catches its own exception → data stays null → nothing added to cidMap
-        String htmlData = b64("<html><body>test</body></html>");
-        JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
+        final String htmlData = b64("<html><body>test</body></html>");
+        final JsonNode message = json("{\"internalDate\":" + RECENT_DATE_MS + ","
                 + "\"payload\":{\"mimeType\":\"multipart/related\",\"headers\":[],\"body\":{},"
                 + "\"parts\":["
                 + "{\"mimeType\":\"text/html\",\"headers\":[],"
@@ -614,7 +614,7 @@ class GmailClientTest {
                 .thenReturn(ResponseEntity.ok(message))
                 .thenThrow(new RuntimeException("attachment fetch failed"));
 
-        Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
+        final Optional<GmailDigestPayload> result = client.fetchLatestDigest(TOKEN);
         assertThat(result).isPresent();
         assertThat(result.get().inlineCidData()).doesNotContainKey("att-throws");
     }

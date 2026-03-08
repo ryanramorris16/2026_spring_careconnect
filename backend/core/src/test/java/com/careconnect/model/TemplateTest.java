@@ -12,7 +12,7 @@ class TemplateTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Template t = new Template();
+        final Template t = new Template();
 
         assertThat(t).isNotNull();
         assertThat(t.getId()).isNull();
@@ -31,9 +31,9 @@ class TemplateTest {
 
     @Test
     void builder_allFields() throws Exception {
-        List<Boolean> days = List.of(true, false, true, false, true, false, false);
+        final List<Boolean> days = List.of(true, false, true, false, true, false, false);
 
-        Template t = Template.builder()
+        final Template t = Template.builder()
                 .id(1L)
                 .name("Daily Medication")
                 .description("Take medication every day")
@@ -62,7 +62,7 @@ class TemplateTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Template t = new Template();
+        final Template t = new Template();
 
         t.setId(2L);
         t.setName("Weekly Exercise");
@@ -87,8 +87,8 @@ class TemplateTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Template t1 = Template.builder().id(1L).name("Test").icon(1).build();
-        Template t2 = Template.builder().id(1L).name("Test").icon(1).build();
+        final Template t1 = Template.builder().id(1L).name("Test").icon(1).build();
+        final Template t2 = Template.builder().id(1L).name("Test").icon(1).build();
 
         assertThat(t1).isEqualTo(t2);
         assertThat(t1.hashCode()).isEqualTo(t2.hashCode());

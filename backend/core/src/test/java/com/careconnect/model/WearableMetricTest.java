@@ -13,7 +13,7 @@ class WearableMetricTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        WearableMetric wm = new WearableMetric();
+        final WearableMetric wm = new WearableMetric();
 
         assertThat(wm).isNotNull();
         assertThat(wm.getId()).isNull();
@@ -27,10 +27,10 @@ class WearableMetricTest {
 
     @Test
     void builder_allFields() throws Exception {
-        User patient = new User();
-        Instant now = Instant.now();
+        final User patient = new User();
+        final Instant now = Instant.now();
 
-        WearableMetric wm = WearableMetric.builder()
+        final WearableMetric wm = WearableMetric.builder()
                 .id(1L)
                 .patient(patient)
                 .metric(MetricType.HEART_RATE)
@@ -49,8 +49,8 @@ class WearableMetricTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        WearableMetric wm = new WearableMetric();
-        Instant now = Instant.now();
+        final WearableMetric wm = new WearableMetric();
+        final Instant now = Instant.now();
 
         wm.setId(2L);
         wm.setMetric(MetricType.SPO2);
@@ -76,10 +76,10 @@ class WearableMetricTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Instant now = Instant.now();
-        WearableMetric w1 = WearableMetric.builder()
+        final Instant now = Instant.now();
+        final WearableMetric w1 = WearableMetric.builder()
                 .id(1L).metric(MetricType.HEART_RATE).metricValue(72.0).recordedAt(now).build();
-        WearableMetric w2 = WearableMetric.builder()
+        final WearableMetric w2 = WearableMetric.builder()
                 .id(1L).metric(MetricType.HEART_RATE).metricValue(72.0).recordedAt(now).build();
 
         assertThat(w1).isEqualTo(w2);

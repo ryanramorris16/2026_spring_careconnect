@@ -55,10 +55,10 @@ class EvvQueryControllerTest {
 
         @Test
         void returnsResultFromFindAll() throws Exception {
-            EvvRecord record = new EvvRecord();
+            final EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findAll()).thenReturn(List.of(record));
 
-            List<EvvRecord> result = controller.list(null, null);
+            final List<EvvRecord> result = controller.list(null, null);
 
             assertThat(result).containsExactly(record);
         }
@@ -96,10 +96,10 @@ class EvvQueryControllerTest {
 
         @Test
         void returnsResultFromFindByStatus() throws Exception {
-            EvvRecord record = new EvvRecord();
+            final EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findByStatus(STATUS)).thenReturn(List.of(record));
 
-            List<EvvRecord> result = controller.list(STATUS, null);
+            final List<EvvRecord> result = controller.list(STATUS, null);
 
             assertThat(result).containsExactly(record);
         }
@@ -124,7 +124,7 @@ class EvvQueryControllerTest {
 
         @Test
         void passesStatusValueCorrectlyToRepository() throws Exception {
-            String specificStatus = "APPROVED";
+            final String specificStatus = "APPROVED";
             when(evvRecordRepository.findByStatus(specificStatus)).thenReturn(List.of());
 
             controller.list(specificStatus, null);
@@ -147,11 +147,11 @@ class EvvQueryControllerTest {
 
         @Test
         void returnsResultFromFindByCaregiverIdAndStatus() throws Exception {
-            EvvRecord record = new EvvRecord();
+            final EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findByCaregiverIdAndStatus(CAREGIVER_ID, STATUS))
                     .thenReturn(List.of(record));
 
-            List<EvvRecord> result = controller.list(STATUS, CAREGIVER_ID);
+            final List<EvvRecord> result = controller.list(STATUS, CAREGIVER_ID);
 
             assertThat(result).containsExactly(record);
         }
@@ -176,8 +176,8 @@ class EvvQueryControllerTest {
 
         @Test
         void passesBothArgumentsCorrectlyToRepository() throws Exception {
-            Long specificCaregiverId = 99L;
-            String specificStatus = "SUBMITTED";
+            final Long specificCaregiverId = 99L;
+            final String specificStatus = "SUBMITTED";
             when(evvRecordRepository.findByCaregiverIdAndStatus(specificCaregiverId, specificStatus))
                     .thenReturn(List.of());
 
@@ -206,10 +206,10 @@ class EvvQueryControllerTest {
 
         @Test
         void returnsResultFromFindAll_whenOnlyCaregiverIdProvided() throws Exception {
-            EvvRecord record = new EvvRecord();
+            final EvvRecord record = new EvvRecord();
             when(evvRecordRepository.findAll()).thenReturn(List.of(record));
 
-            List<EvvRecord> result = controller.list(null, CAREGIVER_ID);
+            final List<EvvRecord> result = controller.list(null, CAREGIVER_ID);
 
             assertThat(result).containsExactly(record);
         }

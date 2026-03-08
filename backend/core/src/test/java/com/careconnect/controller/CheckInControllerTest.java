@@ -69,7 +69,7 @@ class CheckInControllerTest {
 
     @Test
     void getCheckIn_shouldReturnCheckInById() throws Exception {
-        Long id = 1L;
+        final Long id = 1L;
         when(checkInService.getCheckInByID(id))
                 .thenReturn(new CheckIn());
 
@@ -82,7 +82,7 @@ class CheckInControllerTest {
 
     @Test
     void updateCheckIn_shouldReturnOk() throws Exception {
-        Long id = 1L;
+        final Long id = 1L;
 
         mockMvc.perform(put("/v1/checkins/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON))

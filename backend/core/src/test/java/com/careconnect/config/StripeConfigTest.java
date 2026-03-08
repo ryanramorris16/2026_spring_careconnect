@@ -41,10 +41,10 @@ class StripeConfigTest {
         // Verifies that when secretKey is an empty string (e.g. the property is present
         // but unset in the environment), init() leaves Stripe.apiKey as null instead of
         // registering an empty key that would cause all Stripe API calls to fail silently.
-        StripeConfig config = new StripeConfig();
+        final StripeConfig config = new StripeConfig();
 
         // Inject blank secretKey using reflection since @Value is not processed here
-        Field field = StripeConfig.class.getDeclaredField("secretKey");
+        final Field field = StripeConfig.class.getDeclaredField("secretKey");
         field.setAccessible(true);
         field.set(config, "");
 
@@ -61,9 +61,9 @@ class StripeConfigTest {
     void shouldSetStripeApiKeyWhenSecretKeyPresent() throws Exception {
         // Verifies that when a non-blank secret key is provided, init() assigns it to
         // Stripe.apiKey so subsequent SDK calls are authenticated with that key.
-        StripeConfig config = new StripeConfig();
+        final StripeConfig config = new StripeConfig();
 
-        Field field = StripeConfig.class.getDeclaredField("secretKey");
+        final Field field = StripeConfig.class.getDeclaredField("secretKey");
         field.setAccessible(true);
         field.set(config, "sk_test_123");
 

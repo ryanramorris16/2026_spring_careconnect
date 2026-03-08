@@ -50,13 +50,13 @@ class TextractServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        Field bucketField = TextractService.class.getDeclaredField("s3BucketName");
+        final Field bucketField = TextractService.class.getDeclaredField("s3BucketName");
         bucketField.setAccessible(true);
         bucketField.set(textractService, "test-bucket");
     }
 
     private MultipartFile nonEmptyFile(String name) {
-        MultipartFile f = mock(MultipartFile.class);
+        final MultipartFile f = mock(MultipartFile.class);
         when(f.isEmpty()).thenReturn(false);
         when(f.getOriginalFilename()).thenReturn(name);
         return f;
@@ -80,7 +80,7 @@ class TextractServiceTest {
 
     @Test
     void analyzeAndGetResult_allEmptyFiles_throwsIllegalArgument() throws Exception {
-        MultipartFile emptyFile = mock(MultipartFile.class);
+        final MultipartFile emptyFile = mock(MultipartFile.class);
         when(emptyFile.isEmpty()).thenReturn(true);
         assertThatThrownBy(() -> textractService.analyzeAndGetResult(List.of(emptyFile)))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -89,7 +89,7 @@ class TextractServiceTest {
 
     @Test
     void analyzeAndGetResult_nullFileName_throwsIllegalArgument() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
+        final MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getOriginalFilename()).thenReturn(null);
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
@@ -101,7 +101,7 @@ class TextractServiceTest {
 
     @Test
     void analyzeAndGetResult_blankFileName_throwsIllegalArgument() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
+        final MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getOriginalFilename()).thenReturn("   ");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
@@ -122,14 +122,14 @@ class TextractServiceTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.SECONDS)
     void analyzeAndGetResult_success_returnsRawText() throws IOException, InterruptedException {
-        MultipartFile file = nonEmptyFile("invoice.pdf");
+        final MultipartFile file = nonEmptyFile("invoice.pdf");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
 
         when(textractClient.startDocumentTextDetection(any(StartDocumentTextDetectionRequest.class)))
                 .thenReturn(StartDocumentTextDetectionResponse.builder().jobId("job-123").build());
 
-        Block line = Block.builder().blockType(BlockType.LINE).text("Invoice Total: $100.00").build();
-        Block page = Block.builder().blockType(BlockType.PAGE).build();
+        final Block line = Block.builder().blockType(BlockType.LINE).text("Invoice Total: $100.00").build();
+        final Block page = Block.builder().blockType(BlockType.PAGE).build();
         when(textractClient.getDocumentTextDetection(any(GetDocumentTextDetectionRequest.class)))
                 .thenReturn(GetDocumentTextDetectionResponse.builder()
                         .jobStatus(JobStatus.SUCCEEDED)
@@ -137,7 +137,7 @@ class TextractServiceTest {
                         .nextToken(null)
                         .build());
 
-        AiRequest.AnalysisResult result = textractService.analyzeAndGetResult(List.of(file));
+        final AiRequest.AnalysisResult result = textractService.analyzeAndGetResult(List.of(file));
 
         assertThat(result.rawText).isEqualTo("Invoice Total: $100.00");
         assertThat(result.s3Key).startsWith("invoices/");
@@ -146,7 +146,7 @@ class TextractServiceTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.SECONDS)
     void analyzeAndGetResult_noBlocks_throwsRuntime() throws IOException, InterruptedException {
-        MultipartFile file = nonEmptyFile("invoice.pdf");
+        final MultipartFile file = nonEmptyFile("invoice.pdf");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
 
         when(textractClient.startDocumentTextDetection(any(StartDocumentTextDetectionRequest.class)))
@@ -166,7 +166,7 @@ class TextractServiceTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.SECONDS)
     void analyzeAndGetResult_jobFailed_throwsRuntime() throws IOException, InterruptedException {
-        MultipartFile file = nonEmptyFile("invoice.pdf");
+        final MultipartFile file = nonEmptyFile("invoice.pdf");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
 
         when(textractClient.startDocumentTextDetection(any(StartDocumentTextDetectionRequest.class)))
@@ -187,14 +187,14 @@ class TextractServiceTest {
     @Timeout(value = 15, unit = TimeUnit.SECONDS)
     void analyzeAndGetResult_withPagination_collectsAllBlocks()
             throws IOException, InterruptedException {
-        MultipartFile file = nonEmptyFile("invoice.pdf");
+        final MultipartFile file = nonEmptyFile("invoice.pdf");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
 
         when(textractClient.startDocumentTextDetection(any(StartDocumentTextDetectionRequest.class)))
                 .thenReturn(StartDocumentTextDetectionResponse.builder().jobId("job-paged").build());
 
-        Block line1 = Block.builder().blockType(BlockType.LINE).text("Page 1 text").build();
-        Block line2 = Block.builder().blockType(BlockType.LINE).text("Page 2 text").build();
+        final Block line1 = Block.builder().blockType(BlockType.LINE).text("Page 1 text").build();
+        final Block line2 = Block.builder().blockType(BlockType.LINE).text("Page 2 text").build();
 
         when(textractClient.getDocumentTextDetection(any(GetDocumentTextDetectionRequest.class)))
                 .thenReturn(GetDocumentTextDetectionResponse.builder()
@@ -208,7 +208,7 @@ class TextractServiceTest {
                         .nextToken(null)
                         .build());
 
-        AiRequest.AnalysisResult result = textractService.analyzeAndGetResult(List.of(file));
+        final AiRequest.AnalysisResult result = textractService.analyzeAndGetResult(List.of(file));
 
         assertThat(result.rawText).contains("Page 1 text").contains("Page 2 text");
     }
@@ -216,13 +216,13 @@ class TextractServiceTest {
     @Test
     @Timeout(value = 15, unit = TimeUnit.SECONDS)
     void getBlocksFromFiles_success_returnsRawText() throws IOException, InterruptedException {
-        MultipartFile file = nonEmptyFile("doc.pdf");
+        final MultipartFile file = nonEmptyFile("doc.pdf");
         when(pdfService.combineToPdf(any())).thenReturn(new byte[]{1, 2, 3});
 
         when(textractClient.startDocumentTextDetection(any(StartDocumentTextDetectionRequest.class)))
                 .thenReturn(StartDocumentTextDetectionResponse.builder().jobId("job-txt").build());
 
-        Block line = Block.builder().blockType(BlockType.LINE).text("extracted text").build();
+        final Block line = Block.builder().blockType(BlockType.LINE).text("extracted text").build();
         when(textractClient.getDocumentTextDetection(any(GetDocumentTextDetectionRequest.class)))
                 .thenReturn(GetDocumentTextDetectionResponse.builder()
                         .jobStatus(JobStatus.SUCCEEDED)
@@ -230,7 +230,7 @@ class TextractServiceTest {
                         .nextToken(null)
                         .build());
 
-        String rawText = textractService.getBlocksFromFiles(List.of(file));
+        final String rawText = textractService.getBlocksFromFiles(List.of(file));
 
         assertThat(rawText).isEqualTo("extracted text");
     }

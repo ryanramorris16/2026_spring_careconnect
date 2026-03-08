@@ -46,10 +46,10 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_validEmergencyIdWithFullProfile_returnsPdfBytes")
     void generateVialOfLifePdf_validEmergencyIdWithFullProfile_returnsPdfBytes() throws Exception {
-        Long patientId = 123L;
-        String emergencyId = "VIAL123";
+        final Long patientId = 123L;
+        final String emergencyId = "VIAL123";
 
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(patientId)
                 .firstName("John")
                 .lastName("Doe")
@@ -70,21 +70,21 @@ class VialOfLifePdfServiceTest {
                 ))
                 .build();
 
-        MedicationDTO activeMed = MedicationDTO.builder()
+        final MedicationDTO activeMed = MedicationDTO.builder()
                 .medicationName("Metformin")
                 .dosage("500mg")
                 .frequency("twice daily")
                 .isActive(true)
                 .build();
 
-        MedicationDTO inactiveMed = MedicationDTO.builder()
+        final MedicationDTO inactiveMed = MedicationDTO.builder()
                 .medicationName("Ibuprofen")
                 .dosage("200mg")
                 .frequency(null)
                 .isActive(false)
                 .build();
 
-        FamilyMemberLinkResponse contact = new FamilyMemberLinkResponse(
+        final FamilyMemberLinkResponse contact = new FamilyMemberLinkResponse(
                 1L, 10L, "Jane Doe", "jane@example.com", 5L, "John Doe",
                 "Spouse", "ACTIVE", LocalDateTime.now(), "self");
 
@@ -92,7 +92,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(patientId)).thenReturn(List.of(activeMed, inactiveMed));
         when(familyMemberService.getFamilyMembersByPatientId(patientId)).thenReturn(List.of(contact));
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf(emergencyId);
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf(emergencyId);
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -112,7 +112,7 @@ class VialOfLifePdfServiceTest {
     void generateVialOfLifePdf_patientNotFound_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientProfile(999L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> vialOfLifePdfService.generateVialOfLifePdf("VIAL999"));
         assertTrue(ex.getMessage().contains("Patient not found"));
     }
@@ -120,7 +120,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_invalidEmergencyIdFormat_throwsIllegalArgumentException")
     void generateVialOfLifePdf_invalidEmergencyIdFormat_throwsIllegalArgumentException() throws Exception {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> vialOfLifePdfService.generateVialOfLifePdf("INVALID123"));
         assertTrue(ex.getMessage().contains("Invalid emergency ID format"));
     }
@@ -128,7 +128,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_emergencyIdWithNonNumericSuffix_throwsIllegalArgumentException")
     void generateVialOfLifePdf_emergencyIdWithNonNumericSuffix_throwsIllegalArgumentException() throws Exception {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> vialOfLifePdfService.generateVialOfLifePdf("VIALABC"));
         assertTrue(ex.getMessage().contains("Invalid emergency ID format"));
     }
@@ -138,7 +138,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_profileWithNullDob_returnsPdfBytes")
     void generateVialOfLifePdf_profileWithNullDob_returnsPdfBytes() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(1L)
                 .firstName("Alice")
                 .lastName("Smith")
@@ -152,7 +152,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(1L)).thenReturn(Collections.emptyList());
         when(familyMemberService.getFamilyMembersByPatientId(1L)).thenReturn(Collections.emptyList());
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL1");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL1");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -161,7 +161,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_profileWithInvalidDobFormat_stillReturnsPdf")
     void generateVialOfLifePdf_profileWithInvalidDobFormat_stillReturnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(2L)
                 .firstName("Bob")
                 .lastName("Jones")
@@ -175,7 +175,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(2L)).thenReturn(null);
         when(familyMemberService.getFamilyMembersByPatientId(2L)).thenReturn(null);
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL2");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL2");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -184,7 +184,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_emptyMedicationsAndContacts_returnsPdf")
     void generateVialOfLifePdf_emptyMedicationsAndContacts_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(3L)
                 .firstName("Charlie")
                 .lastName("Brown")
@@ -198,7 +198,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(3L)).thenReturn(List.of());
         when(familyMemberService.getFamilyMembersByPatientId(3L)).thenReturn(List.of());
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL3");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL3");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -207,7 +207,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_activeMedicationsWithNullDosageAndFrequency_returnsPdf")
     void generateVialOfLifePdf_activeMedicationsWithNullDosageAndFrequency_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(4L)
                 .firstName("Dana")
                 .lastName("White")
@@ -217,7 +217,7 @@ class VialOfLifePdfServiceTest {
                 .allergies(null)
                 .build();
 
-        MedicationDTO medNoDosage = MedicationDTO.builder()
+        final MedicationDTO medNoDosage = MedicationDTO.builder()
                 .medicationName("Aspirin")
                 .dosage(null)
                 .frequency(null)
@@ -228,7 +228,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(4L)).thenReturn(List.of(medNoDosage));
         when(familyMemberService.getFamilyMembersByPatientId(4L)).thenReturn(null);
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL4");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL4");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -237,7 +237,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_contactWithNullRelationshipAndEmail_returnsPdf")
     void generateVialOfLifePdf_contactWithNullRelationshipAndEmail_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(5L)
                 .firstName("Eve")
                 .lastName("Green")
@@ -247,7 +247,7 @@ class VialOfLifePdfServiceTest {
                 .allergies(null)
                 .build();
 
-        FamilyMemberLinkResponse contact = new FamilyMemberLinkResponse(
+        final FamilyMemberLinkResponse contact = new FamilyMemberLinkResponse(
                 1L, 20L, "Frank Green", null, 5L, "Eve Green",
                 null, "ACTIVE", LocalDateTime.now(), "self");
 
@@ -255,7 +255,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(5L)).thenReturn(Collections.emptyList());
         when(familyMemberService.getFamilyMembersByPatientId(5L)).thenReturn(List.of(contact));
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL5");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL5");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -264,7 +264,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_allActiveMedsFiltered_returnsPdf")
     void generateVialOfLifePdf_allActiveMedsFiltered_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(6L)
                 .firstName("Grace")
                 .lastName("Hopper")
@@ -275,7 +275,7 @@ class VialOfLifePdfServiceTest {
                 .build();
 
         // All inactive meds - activeMeds list will be empty
-        MedicationDTO inactive1 = MedicationDTO.builder()
+        final MedicationDTO inactive1 = MedicationDTO.builder()
                 .medicationName("OldDrug")
                 .dosage("10mg")
                 .frequency("daily")
@@ -286,7 +286,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(6L)).thenReturn(List.of(inactive1));
         when(familyMemberService.getFamilyMembersByPatientId(6L)).thenReturn(Collections.emptyList());
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL6");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL6");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -295,7 +295,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_allergyWithSeverityOnly_returnsPdf")
     void generateVialOfLifePdf_allergyWithSeverityOnly_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(7L)
                 .firstName("Henry")
                 .lastName("Ford")
@@ -315,7 +315,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(7L)).thenReturn(Collections.emptyList());
         when(familyMemberService.getFamilyMembersByPatientId(7L)).thenReturn(Collections.emptyList());
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL7");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL7");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);
@@ -324,7 +324,7 @@ class VialOfLifePdfServiceTest {
     @Test
     @DisplayName("generateVialOfLifePdf_medicationWithDosageButNoFrequency_returnsPdf")
     void generateVialOfLifePdf_medicationWithDosageButNoFrequency_returnsPdf() throws Exception {
-        PatientProfileDTO profile = PatientProfileDTO.builder()
+        final PatientProfileDTO profile = PatientProfileDTO.builder()
                 .id(8L)
                 .firstName("Ivy")
                 .lastName("Lee")
@@ -334,7 +334,7 @@ class VialOfLifePdfServiceTest {
                 .allergies(null)
                 .build();
 
-        MedicationDTO med = MedicationDTO.builder()
+        final MedicationDTO med = MedicationDTO.builder()
                 .medicationName("Lipitor")
                 .dosage("20mg")
                 .frequency(null)
@@ -345,7 +345,7 @@ class VialOfLifePdfServiceTest {
         when(medicationService.getAllMedicationsForPatient(8L)).thenReturn(List.of(med));
         when(familyMemberService.getFamilyMembersByPatientId(8L)).thenReturn(Collections.emptyList());
 
-        byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL8");
+        final byte[] pdf = vialOfLifePdfService.generateVialOfLifePdf("VIAL8");
 
         assertNotNull(pdf);
         assertTrue(pdf.length > 0);

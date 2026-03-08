@@ -56,7 +56,7 @@ class AiSymptomControllerTest {
     void analyze_familyMember_throwsUnauthorized() {
         when(securityUtil.resolveCurrentUser()).thenReturn(familyUser);
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(2L);
         request.setText("I have a headache");
 
@@ -72,18 +72,18 @@ class AiSymptomControllerTest {
         when(allergyRepository.findActiveAllergiesByPatientId(2L)).thenReturn(List.of());
         when(symptomEntryRepository.findByPatientIdOrderByTakenAtDesc(2L)).thenReturn(List.of());
 
-        AiSymptomDTO.Result result = new AiSymptomDTO.Result();
+        final AiSymptomDTO.Result result = new AiSymptomDTO.Result();
         result.setSymptomKey("headache");
         result.setSymptomValue("throbbing");
         result.setSeverity("MODERATE");
         result.setNotes("test");
         when(aiSymptomService.analyze(any(), any(), any())).thenReturn(result);
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(2L);
         request.setText("I have a headache");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         verify(authorizationService).requirePatientAccess(adminUser, 2L);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -94,18 +94,18 @@ class AiSymptomControllerTest {
     void analyze_withoutPatientId_skipsAccessCheck() throws Exception {
         when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
-        AiSymptomDTO.Result result = new AiSymptomDTO.Result();
+        final AiSymptomDTO.Result result = new AiSymptomDTO.Result();
         result.setSymptomKey("anxiety");
         result.setSymptomValue("racing heart");
         result.setSeverity("MILD");
         result.setNotes("test");
         when(aiSymptomService.analyze(any(), eq(List.of()), eq(List.of()))).thenReturn(result);
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(null);
         request.setText("I feel anxious");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         verify(authorizationService, never()).requirePatientAccess(any(), any());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -119,22 +119,22 @@ class AiSymptomControllerTest {
         when(allergyRepository.findActiveAllergiesByPatientId(10L)).thenReturn(List.of());
         when(symptomEntryRepository.findByPatientIdOrderByTakenAtDesc(10L)).thenReturn(List.of());
 
-        AiSymptomDTO.Result result = new AiSymptomDTO.Result();
+        final AiSymptomDTO.Result result = new AiSymptomDTO.Result();
         result.setSymptomKey("headache");
         result.setSymptomValue("throbbing pain");
         result.setSeverity("SEVERE");
         result.setNotes("migraine");
         when(aiSymptomService.analyze(any(), any(), any())).thenReturn(result);
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(10L);
         request.setText("severe headache");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> data = (Map<String, Object>) body.get("data");
         assertThat(data.get("symptomKey")).isEqualTo("headache");
         assertThat(data.get("symptomValue")).isEqualTo("throbbing pain");
         assertThat(data.get("severity")).isEqualTo("SEVERE");
@@ -148,21 +148,21 @@ class AiSymptomControllerTest {
         when(allergyRepository.findActiveAllergiesByPatientId(5L)).thenReturn(List.of());
 
         // Return 7 entries to verify limit(5) is applied
-        List<SymptomEntry> sevenEntries = List.of(
+        final List<SymptomEntry> sevenEntries = List.of(
                 mock(SymptomEntry.class), mock(SymptomEntry.class), mock(SymptomEntry.class),
                 mock(SymptomEntry.class), mock(SymptomEntry.class), mock(SymptomEntry.class),
                 mock(SymptomEntry.class)
         );
         when(symptomEntryRepository.findByPatientIdOrderByTakenAtDesc(5L)).thenReturn(sevenEntries);
 
-        AiSymptomDTO.Result result = new AiSymptomDTO.Result();
+        final AiSymptomDTO.Result result = new AiSymptomDTO.Result();
         result.setSymptomKey("test");
         result.setSymptomValue("test");
         result.setSeverity("MILD");
         result.setNotes("test");
         when(aiSymptomService.analyze(any(), any(), any())).thenReturn(result);
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(5L);
         request.setText("test");
 
@@ -180,14 +180,14 @@ class AiSymptomControllerTest {
         when(aiSymptomService.analyze(any(), eq(List.of()), eq(List.of())))
                 .thenThrow(new RuntimeException("AI failed"));
 
-        AiSymptomDTO.Request request = new AiSymptomDTO.Request();
+        final AiSymptomDTO.Request request = new AiSymptomDTO.Request();
         request.setPatientId(null);
         request.setText("test");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("AI_ANALYZE_FAILED");
         assertThat(body.get("message")).isEqualTo("AI failed");
     }

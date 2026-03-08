@@ -12,7 +12,7 @@ class VitalTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Vital v = new Vital();
+        final Vital v = new Vital();
 
         assertThat(v).isNotNull();
         assertThat(v.getId()).isNull();
@@ -31,7 +31,7 @@ class VitalTest {
 
     @Test
     void builder_defaults() throws Exception {
-        Vital v = Vital.builder()
+        final Vital v = Vital.builder()
                 .patientId(1L)
                 .vitalType("HEART_RATE")
                 .value("72")
@@ -46,9 +46,9 @@ class VitalTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
-        Vital v = Vital.builder()
+        final Vital v = Vital.builder()
                 .id(1L)
                 .patientId(5L)
                 .vitalType("BLOOD_PRESSURE")
@@ -77,7 +77,7 @@ class VitalTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Vital v = new Vital();
+        final Vital v = new Vital();
 
         v.setPatientId(7L);
         v.setVitalType("TEMPERATURE");
@@ -98,11 +98,11 @@ class VitalTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        Vital v1 = Vital.builder()
+        final LocalDateTime now = LocalDateTime.now();
+        final Vital v1 = Vital.builder()
                 .id(1L).patientId(5L).vitalType("HR").value("72")
                 .recordedAt(now).isAbnormal(false).createdAt(now).build();
-        Vital v2 = Vital.builder()
+        final Vital v2 = Vital.builder()
                 .id(1L).patientId(5L).vitalType("HR").value("72")
                 .recordedAt(now).isAbnormal(false).createdAt(now).build();
 

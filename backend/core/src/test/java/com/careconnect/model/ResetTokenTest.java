@@ -8,7 +8,7 @@ class ResetTokenTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        ResetToken token = new ResetToken();
+        final ResetToken token = new ResetToken();
         assertThat(token).isNotNull();
     }
 }

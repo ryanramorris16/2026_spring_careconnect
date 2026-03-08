@@ -37,14 +37,14 @@ class PatientNotetakerControllerTest {
     private static final Long NOTE_ID    = 10L;
 
     private PatientNotetakerConfigDTO configDTO() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
         dto.setPatientId(PATIENT_ID);
         dto.setIsEnabled(true);
         return dto;
     }
 
     private PatientNoteDTO noteDTO() throws Exception {
-        PatientNoteDTO dto = new PatientNoteDTO();
+        final PatientNoteDTO dto = new PatientNoteDTO();
         dto.setPatientId(PATIENT_ID);
         dto.setNote("Test note content");
         return dto;
@@ -54,10 +54,10 @@ class PatientNotetakerControllerTest {
 
     @Test
     void getPatientNoteTakerConfig_success_returnsOkWithConfig() throws Exception {
-        PatientNotetakerConfigDTO config = configDTO();
+        final PatientNotetakerConfigDTO config = configDTO();
         when(patientNotetakerService.getNotetakerConfigByPatientId(PATIENT_ID)).thenReturn(config);
 
-        ResponseEntity<PatientNotetakerConfigDTO> response = controller.getPatientNoteTakerConfig(PATIENT_ID);
+        final ResponseEntity<PatientNotetakerConfigDTO> response = controller.getPatientNoteTakerConfig(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(config);
@@ -69,7 +69,7 @@ class PatientNotetakerControllerTest {
         when(patientNotetakerService.getNotetakerConfigByPatientId(PATIENT_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<PatientNotetakerConfigDTO> response = controller.getPatientNoteTakerConfig(PATIENT_ID);
+        final ResponseEntity<PatientNotetakerConfigDTO> response = controller.getPatientNoteTakerConfig(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -79,11 +79,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void updatePatientNoteTakerConfig_success_returnsOkWithUpdatedConfig() throws Exception {
-        PatientNotetakerConfigDTO input   = configDTO();
-        PatientNotetakerConfigDTO updated = configDTO();
+        final PatientNotetakerConfigDTO input   = configDTO();
+        final PatientNotetakerConfigDTO updated = configDTO();
         when(patientNotetakerService.createOrUpdatePatientNotetakerConfig(PATIENT_ID, input)).thenReturn(updated);
 
-        ResponseEntity<PatientNotetakerConfigDTO> response = controller.updatePatientNoteTakerConfig(PATIENT_ID, input);
+        final ResponseEntity<PatientNotetakerConfigDTO> response = controller.updatePatientNoteTakerConfig(PATIENT_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(updated);
@@ -92,11 +92,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void updatePatientNoteTakerConfig_appException_returnsInternalServerError() throws Exception {
-        PatientNotetakerConfigDTO input = configDTO();
+        final PatientNotetakerConfigDTO input = configDTO();
         when(patientNotetakerService.createOrUpdatePatientNotetakerConfig(PATIENT_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<PatientNotetakerConfigDTO> response = controller.updatePatientNoteTakerConfig(PATIENT_ID, input);
+        final ResponseEntity<PatientNotetakerConfigDTO> response = controller.updatePatientNoteTakerConfig(PATIENT_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -106,11 +106,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void createPatientNote_success_returnsCreatedWithNote() throws Exception {
-        PatientNoteDTO input   = noteDTO();
-        PatientNoteDTO created = noteDTO();
+        final PatientNoteDTO input   = noteDTO();
+        final PatientNoteDTO created = noteDTO();
         when(patientNotetakerService.createNoteForPatient(PATIENT_ID, input)).thenReturn(created);
 
-        ResponseEntity<PatientNoteDTO> response = controller.createPatientNote(PATIENT_ID, input);
+        final ResponseEntity<PatientNoteDTO> response = controller.createPatientNote(PATIENT_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isEqualTo(created);
@@ -119,11 +119,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void createPatientNote_appException_returnsInternalServerError() throws Exception {
-        PatientNoteDTO input = noteDTO();
+        final PatientNoteDTO input = noteDTO();
         when(patientNotetakerService.createNoteForPatient(PATIENT_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<PatientNoteDTO> response = controller.createPatientNote(PATIENT_ID, input);
+        final ResponseEntity<PatientNoteDTO> response = controller.createPatientNote(PATIENT_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -133,11 +133,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void updatePatientNote_success_returnsOkWithUpdatedNote() throws Exception {
-        PatientNoteDTO input   = noteDTO();
-        PatientNoteDTO updated = noteDTO();
+        final PatientNoteDTO input   = noteDTO();
+        final PatientNoteDTO updated = noteDTO();
         when(patientNotetakerService.updateNoteForPatient(PATIENT_ID, NOTE_ID, input)).thenReturn(updated);
 
-        ResponseEntity<PatientNoteDTO> response = controller.updatePatientNote(PATIENT_ID, NOTE_ID, input);
+        final ResponseEntity<PatientNoteDTO> response = controller.updatePatientNote(PATIENT_ID, NOTE_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(updated);
@@ -146,11 +146,11 @@ class PatientNotetakerControllerTest {
 
     @Test
     void updatePatientNote_appException_returnsInternalServerError() throws Exception {
-        PatientNoteDTO input = noteDTO();
+        final PatientNoteDTO input = noteDTO();
         when(patientNotetakerService.updateNoteForPatient(PATIENT_ID, NOTE_ID, input))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<PatientNoteDTO> response = controller.updatePatientNote(PATIENT_ID, NOTE_ID, input);
+        final ResponseEntity<PatientNoteDTO> response = controller.updatePatientNote(PATIENT_ID, NOTE_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -160,10 +160,10 @@ class PatientNotetakerControllerTest {
 
     @Test
     void getPatientNote_success_returnsOkWithNote() throws Exception {
-        PatientNoteDTO note = noteDTO();
+        final PatientNoteDTO note = noteDTO();
         when(patientNotetakerService.getNoteById(PATIENT_ID, NOTE_ID)).thenReturn(note);
 
-        ResponseEntity<PatientNoteDTO> response = controller.getPatientNote(PATIENT_ID, NOTE_ID);
+        final ResponseEntity<PatientNoteDTO> response = controller.getPatientNote(PATIENT_ID, NOTE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(note);
@@ -175,7 +175,7 @@ class PatientNotetakerControllerTest {
         when(patientNotetakerService.getNoteById(PATIENT_ID, NOTE_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<PatientNoteDTO> response = controller.getPatientNote(PATIENT_ID, NOTE_ID);
+        final ResponseEntity<PatientNoteDTO> response = controller.getPatientNote(PATIENT_ID, NOTE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -185,10 +185,10 @@ class PatientNotetakerControllerTest {
 
     @Test
     void getAllNotesForPatient_success_returnsOkWithNoteList() throws Exception {
-        List<PatientNoteDTO> notes = List.of(noteDTO(), noteDTO());
+        final List<PatientNoteDTO> notes = List.of(noteDTO(), noteDTO());
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID)).thenReturn(notes);
 
-        ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
+        final ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(notes);
@@ -199,7 +199,7 @@ class PatientNotetakerControllerTest {
     void getAllNotesForPatient_emptyList_returnsOkWithEmptyBody() throws Exception {
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
+        final ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
@@ -210,7 +210,7 @@ class PatientNotetakerControllerTest {
         when(patientNotetakerService.getAllNotesForPatient(PATIENT_ID))
                 .thenThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"));
 
-        ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
+        final ResponseEntity<List<PatientNoteDTO>> response = controller.getAllNotesForPatient(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody()).isNull();
@@ -222,7 +222,7 @@ class PatientNotetakerControllerTest {
     void deletePatientNote_success_returnsNoContent() throws Exception {
         doNothing().when(patientNotetakerService).deleteNoteById(NOTE_ID);
 
-        ResponseEntity<Void> response = controller.deletePatientNote(PATIENT_ID, NOTE_ID);
+        final ResponseEntity<Void> response = controller.deletePatientNote(PATIENT_ID, NOTE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(patientNotetakerService).deleteNoteById(NOTE_ID);
@@ -233,7 +233,7 @@ class PatientNotetakerControllerTest {
         doThrow(new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "error"))
                 .when(patientNotetakerService).deleteNoteById(NOTE_ID);
 
-        ResponseEntity<Void> response = controller.deletePatientNote(PATIENT_ID, NOTE_ID);
+        final ResponseEntity<Void> response = controller.deletePatientNote(PATIENT_ID, NOTE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }

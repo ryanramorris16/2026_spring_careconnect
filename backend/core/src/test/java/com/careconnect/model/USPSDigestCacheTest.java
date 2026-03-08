@@ -12,7 +12,7 @@ class USPSDigestCacheTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        USPSDigestCache cache = new USPSDigestCache();
+        final USPSDigestCache cache = new USPSDigestCache();
         assertThat(cache).isNotNull();
     }
 
@@ -20,9 +20,9 @@ class USPSDigestCacheTest {
 
     @Test
     void settersAndGetters_updateAndReturnFields() throws Exception {
-        USPSDigestCache cache = new USPSDigestCache();
-        Instant digestDate = Instant.parse("2025-01-15T08:00:00Z");
-        Instant expiresAt = Instant.parse("2025-01-15T20:00:00Z");
+        final USPSDigestCache cache = new USPSDigestCache();
+        final Instant digestDate = Instant.parse("2025-01-15T08:00:00Z");
+        final Instant expiresAt = Instant.parse("2025-01-15T20:00:00Z");
 
         cache.setUserId("user-123");
         cache.setPayloadJson("{\"data\":\"test\"}");
@@ -37,7 +37,7 @@ class USPSDigestCacheTest {
 
     @Test
     void getId_returnsNull_beforePersist() throws Exception {
-        USPSDigestCache cache = new USPSDigestCache();
+        final USPSDigestCache cache = new USPSDigestCache();
         assertThat(cache.getId()).isNull();
     }
 }

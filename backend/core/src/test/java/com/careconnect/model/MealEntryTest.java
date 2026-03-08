@@ -12,7 +12,7 @@ class MealEntryTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        MealEntry entry = new MealEntry();
+        final MealEntry entry = new MealEntry();
 
         assertThat(entry).isNotNull();
         assertThat(entry.getId()).isNull();
@@ -26,11 +26,11 @@ class MealEntryTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        Caregiver caregiver = new Caregiver();
-        Instant now = Instant.now();
+        final Patient patient = new Patient();
+        final Caregiver caregiver = new Caregiver();
+        final Instant now = Instant.now();
 
-        MealEntry entry = MealEntry.builder()
+        final MealEntry entry = MealEntry.builder()
                 .id(1L)
                 .patient(patient)
                 .caregiver(caregiver)
@@ -49,10 +49,10 @@ class MealEntryTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        MealEntry entry = new MealEntry();
-        Patient patient = new Patient();
-        Caregiver caregiver = new Caregiver();
-        Instant now = Instant.now();
+        final MealEntry entry = new MealEntry();
+        final Patient patient = new Patient();
+        final Caregiver caregiver = new Caregiver();
+        final Instant now = Instant.now();
 
         entry.setId(2L);
         entry.setPatient(patient);
@@ -71,8 +71,8 @@ class MealEntryTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        MealEntry e1 = MealEntry.builder().id(1L).calories(400).build();
-        MealEntry e2 = MealEntry.builder().id(1L).calories(400).build();
+        final MealEntry e1 = MealEntry.builder().id(1L).calories(400).build();
+        final MealEntry e2 = MealEntry.builder().id(1L).calories(400).build();
 
         assertThat(e1).isEqualTo(e2);
         assertThat(e1.hashCode()).isEqualTo(e2.hashCode());

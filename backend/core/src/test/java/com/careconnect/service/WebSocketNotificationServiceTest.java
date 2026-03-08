@@ -111,7 +111,7 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendVitalSignsAlert_multipleRecipients_sendsToAll")
     void sendVitalSignsAlert_multipleRecipients_sendsToAll() throws Exception {
-        String[] recipientIds = {"doc1", "doc2", "doc3"};
+        final String[] recipientIds = {"doc1", "doc2", "doc3"};
 
         webSocketNotificationService.sendVitalSignsAlert(
                 "patient1", "John Doe", "heart-rate", "High heart rate", "HIGH", recipientIds);
@@ -126,7 +126,7 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendVitalSignsAlert_singleRecipient_sendsToOne")
     void sendVitalSignsAlert_singleRecipient_sendsToOne() throws Exception {
-        String[] recipientIds = {"doc1"};
+        final String[] recipientIds = {"doc1"};
 
         webSocketNotificationService.sendVitalSignsAlert(
                 "patient1", "John Doe", "bp", "Low BP", "CRITICAL", recipientIds);
@@ -152,7 +152,7 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendEmergencyAlert_multipleContacts_sendsToAll")
     void sendEmergencyAlert_multipleContacts_sendsToAll() throws Exception {
-        String[] contactIds = {"contact1", "contact2"};
+        final String[] contactIds = {"contact1", "contact2"};
 
         webSocketNotificationService.sendEmergencyAlert(
                 "patient1", "John Doe", "Fall detected!", contactIds);
@@ -164,7 +164,7 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendEmergencyAlert_emptyContacts_sendsToNone")
     void sendEmergencyAlert_emptyContacts_sendsToNone() throws Exception {
-        String[] contactIds = {};
+        final String[] contactIds = {};
 
         webSocketNotificationService.sendEmergencyAlert(
                 "patient1", "John Doe", "Fall detected!", contactIds);
@@ -229,10 +229,10 @@ class WebSocketNotificationServiceTest {
     @Test
     @DisplayName("getOnlineUsers_someUsersOnline_returnsMap")
     void getOnlineUsers_someUsersOnline_returnsMap() throws Exception {
-        Map<String, String> users = Map.of("1", "john@example.com", "2", "jane@example.com");
+        final Map<String, String> users = Map.of("1", "john@example.com", "2", "jane@example.com");
         when(callNotificationHandler.getOnlineUsers()).thenReturn(users);
 
-        Map<String, String> result = webSocketNotificationService.getOnlineUsers();
+        final Map<String, String> result = webSocketNotificationService.getOnlineUsers();
 
         assertEquals(2, result.size());
         assertEquals("john@example.com", result.get("1"));
@@ -244,12 +244,12 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendSOSCallToAllCaregivers_caregiversExist_sendsToAll")
     void sendSOSCallToAllCaregivers_caregiversExist_sendsToAll() throws Exception {
-        CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
+        final CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
                 "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
 
-        CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
+        final CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
                 2L, 200L, "Nurse Bob", "bob@example.com",
                 1L, "John Doe", "john@example.com",
                 "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
@@ -257,7 +257,7 @@ class WebSocketNotificationServiceTest {
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of(link1, link2));
 
-        int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
+        final int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
                 "1", "John Doe", "call123", "fall", "Home", "Fell in bathroom", true);
 
         assertEquals(2, count);
@@ -271,7 +271,7 @@ class WebSocketNotificationServiceTest {
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of());
 
-        int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
+        final int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
                 "1", "John Doe", "call123", "fall", "Home", "Fell", true);
 
         assertEquals(0, count);
@@ -281,7 +281,7 @@ class WebSocketNotificationServiceTest {
     @Test
     @DisplayName("sendSOSCallToAllCaregivers_nullLocationAndInfo_usesDefaults")
     void sendSOSCallToAllCaregivers_nullLocationAndInfo_usesDefaults() throws Exception {
-        CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
+        final CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
                 "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
@@ -289,7 +289,7 @@ class WebSocketNotificationServiceTest {
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of(link));
 
-        int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
+        final int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
                 "1", "John Doe", "call123", "medical", null, null, false);
 
         assertEquals(1, count);
@@ -299,12 +299,12 @@ class WebSocketNotificationServiceTest {
 @Test
     @DisplayName("sendSOSCallToAllCaregivers_sendCallInvitationThrows_continuesAndCountsSuccesses")
     void sendSOSCallToAllCaregivers_sendCallInvitationThrows_continuesAndCountsSuccesses() throws Exception {
-        CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
+        final CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
                 "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
 
-        CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
+        final CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
                 2L, 200L, "Nurse Bob", "bob@example.com",
                 1L, "John Doe", "john@example.com",
                 "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
@@ -315,7 +315,7 @@ class WebSocketNotificationServiceTest {
         doThrow(new RuntimeException("Connection failed"))
                 .when(callNotificationHandler).sendCallInvitation(eq("100"), any(Map.class));
 
-        int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
+        final int count = webSocketNotificationService.sendSOSCallToAllCaregivers(
                 "1", "John Doe", "call123", "fall", "Home", "Info", true);
 
         assertEquals(1, count);
@@ -327,7 +327,7 @@ class WebSocketNotificationServiceTest {
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenThrow(new RuntimeException("DB error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> webSocketNotificationService.sendSOSCallToAllCaregivers(
                         "1", "John Doe", "call123", "fall", "Home", "Info", true));
 

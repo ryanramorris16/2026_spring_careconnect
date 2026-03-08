@@ -10,7 +10,7 @@ class QuestionTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Question q = new Question();
+        final Question q = new Question();
 
         assertThat(q).isNotNull();
         assertThat(q.getId()).isNull();
@@ -26,7 +26,7 @@ class QuestionTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Question q = Question.builder()
+        final Question q = Question.builder()
                 .id(1L)
                 .prompt("How are you feeling?")
                 .type(QuestionType.TEXT)
@@ -47,7 +47,7 @@ class QuestionTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Question q = new Question();
+        final Question q = new Question();
 
         q.setId(2L);
         q.setPrompt("Do you have pain?");
@@ -68,8 +68,8 @@ class QuestionTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Question q1 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
-        Question q2 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
+        final Question q1 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
+        final Question q2 = Question.builder().id(1L).prompt("Test?").type(QuestionType.TEXT).build();
 
         assertThat(q1).isEqualTo(q2);
         assertThat(q1.hashCode()).isEqualTo(q2.hashCode());

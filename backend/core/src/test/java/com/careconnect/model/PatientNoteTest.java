@@ -13,7 +13,7 @@ class PatientNoteTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        PatientNote note = new PatientNote();
+        final PatientNote note = new PatientNote();
 
         assertThat(note).isNotNull();
         assertThat(note.getId()).isNull();
@@ -28,9 +28,9 @@ class PatientNoteTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
-        PatientNote note = PatientNote.builder()
+        final PatientNote note = PatientNote.builder()
                 .id(1L)
                 .patientId(10L)
                 .note("Patient reports feeling better.")
@@ -51,8 +51,8 @@ class PatientNoteTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PatientNote note = new PatientNote();
-        LocalDateTime now = LocalDateTime.now();
+        final PatientNote note = new PatientNote();
+        final LocalDateTime now = LocalDateTime.now();
 
         note.setId(2L);
         note.setPatientId(20L);
@@ -71,9 +71,9 @@ class PatientNoteTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        PatientNote note = new PatientNote();
+        final PatientNote note = new PatientNote();
 
-        Method m = PatientNote.class.getDeclaredMethod("onCreate");
+        final Method m = PatientNote.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(note);
 
@@ -85,9 +85,9 @@ class PatientNoteTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        PatientNote note = new PatientNote();
+        final PatientNote note = new PatientNote();
 
-        Method m = PatientNote.class.getDeclaredMethod("onUpdate");
+        final Method m = PatientNote.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(note);
 
@@ -98,9 +98,9 @@ class PatientNoteTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        PatientNote n1 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();
-        PatientNote n2 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();
+        final LocalDateTime now = LocalDateTime.now();
+        final PatientNote n1 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();
+        final PatientNote n2 = PatientNote.builder().id(1L).patientId(10L).note("hello").createdAt(now).updatedAt(now).build();
 
         assertThat(n1).isEqualTo(n2);
         assertThat(n1.hashCode()).isEqualTo(n2.hashCode());

@@ -69,7 +69,7 @@ class FileControllerTest {
     // ─── helpers ──────────────────────────────────────────────────────────────
 
     private User makeUser(Role role) {
-        User u = new User();
+        final User u = new User();
         u.setId(USER_ID);
         u.setEmail(USER_EMAIL);
         u.setRole(role);
@@ -94,126 +94,126 @@ class FileControllerTest {
 
     @Test
     void uploadFile_success_noPatientId() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).filename("f.pdf").build();
+        final FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).filename("f.pdf").build();
         when(fileManagementService.uploadFile(any(), eq(USER_ID), eq("PATIENT"),
                 eq("OTHER_DOCUMENT"), isNull(), isNull())).thenReturn(resp);
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).containsKey("data");
         assertThat(body.get("message")).isEqualTo("File uploaded successfully");
     }
 
     @Test
     void uploadFile_adminAccessToPatient_success() throws Exception {
-        User user = makeUser(Role.ADMIN);
+        final User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
+        final FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
         when(fileManagementService.uploadFile(any(), eq(USER_ID), eq("ADMIN"),
                 eq("OTHER_DOCUMENT"), isNull(), eq(PATIENT_ID))).thenReturn(resp);
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void uploadFile_patientAccessingOwnId_success() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         user.setId(PATIENT_ID); // same id as patientId
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
+        final FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
         when(fileManagementService.uploadFile(any(), eq(PATIENT_ID), eq("PATIENT"),
                 eq("OTHER_DOCUMENT"), isNull(), eq(PATIENT_ID))).thenReturn(resp);
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void uploadFile_patientAccessingOtherPatient_forbidden() throws Exception {
-        User user = makeUser(Role.PATIENT); // USER_ID=1, patientId=2
+        final User user = makeUser(Role.PATIENT); // USER_ID=1, patientId=2
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void uploadFile_caregiverHasAccess_success() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
-        FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
+        final FileUploadResponse resp = FileUploadResponse.builder().fileId(FILE_ID).build();
         when(fileManagementService.uploadFile(any(), eq(USER_ID), eq("CAREGIVER"),
                 eq("OTHER_DOCUMENT"), isNull(), eq(PATIENT_ID))).thenReturn(resp);
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void uploadFile_caregiverNoAccess_forbidden() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void uploadFile_caregiverPatientNotFound_forbidden() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void uploadFile_familyMemberRole_forbidden() throws Exception {
-        User user = makeUser(Role.FAMILY_MEMBER);
+        final User user = makeUser(Role.FAMILY_MEMBER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void uploadFile_illegalArgumentException_returns400() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.uploadFile(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new IllegalArgumentException("bad input"));
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void uploadFile_genericException_returns500() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.uploadFile(any(), any(), any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("unexpected"));
 
-        ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
+        final ResponseEntity<?> response = controller.uploadFile(makeFile(), "OTHER_DOCUMENT", null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -222,89 +222,89 @@ class FileControllerTest {
 
     @Test
     void downloadFile_notFound() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void downloadFile_forbidden_differentOwner_noPatientId() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        UserFileDTO dto = makeFileDto(999L, null);
+        final UserFileDTO dto = makeFileDto(999L, null);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void downloadFile_success_ownerAccess() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        UserFileDTO dto = makeFileDto(USER_ID, null);
+        final UserFileDTO dto = makeFileDto(USER_ID, null);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
         when(fileManagementService.downloadFile(FILE_ID)).thenReturn("data".getBytes());
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void downloadFile_success_adminAccess() throws Exception {
-        User admin = makeUser(Role.ADMIN);
+        final User admin = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
-        UserFileDTO dto = makeFileDto(999L, null);
+        final UserFileDTO dto = makeFileDto(999L, null);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
         when(fileManagementService.downloadFile(FILE_ID)).thenReturn("bytes".getBytes());
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void downloadFile_viaPatientAccess_caregiver() throws Exception {
-        User caregiver = makeUser(Role.CAREGIVER);
+        final User caregiver = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
-        UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
+        final UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(fileManagementService.downloadFile(FILE_ID)).thenReturn("bytes".getBytes());
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void downloadFile_caregiverNoAccessToPatient_forbidden() throws Exception {
-        User caregiver = makeUser(Role.CAREGIVER);
+        final User caregiver = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
-        UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
+        final UserFileDTO dto = makeFileDto(999L, PATIENT_ID);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void downloadFile_exception_returns500() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenThrow(new RuntimeException("oops"));
 
-        ResponseEntity<?> response = controller.downloadFile(FILE_ID);
+        final ResponseEntity<?> response = controller.downloadFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -313,37 +313,37 @@ class FileControllerTest {
 
     @Test
     void listMyFiles_noCategory_returns200() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(USER_ID, "PATIENT", null)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listMyFiles(null);
+        final ResponseEntity<?> response = controller.listMyFiles(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Files retrieved successfully");
     }
 
     @Test
     void listMyFiles_withCategory_returns200() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(USER_ID, "CAREGIVER", "documents")).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listMyFiles("documents");
+        final ResponseEntity<?> response = controller.listMyFiles("documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void listMyFiles_exception_returns500() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listUserFiles(any(), any(), any()))
                 .thenThrow(new RuntimeException("db error"));
 
-        ResponseEntity<?> response = controller.listMyFiles(null);
+        final ResponseEntity<?> response = controller.listMyFiles(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -352,82 +352,82 @@ class FileControllerTest {
 
     @Test
     void listPatientFiles_forbidden_caregiverNoAccess() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void listPatientFiles_caregiverNoPatientRecord_forbidden() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void listPatientFiles_patientRole_ownData_success() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         user.setId(PATIENT_ID); // same id → access granted
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listFilesForPatient(PATIENT_ID, null)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void listPatientFiles_caregiverRole_withCategory_success() throws Exception {
-        User user = makeUser(Role.CAREGIVER);
+        final User user = makeUser(Role.CAREGIVER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(new Patient()));
         when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(fileManagementService.listFilesForCaregiverPatient(PATIENT_ID, "documents"))
                 .thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, "documents");
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void listPatientFiles_adminRole_success() throws Exception {
-        User user = makeUser(Role.ADMIN);
+        final User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listFilesForCaregiverPatient(PATIENT_ID, null)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void listPatientFiles_familyMemberRole_forbidden() throws Exception {
-        User user = makeUser(Role.FAMILY_MEMBER);
+        final User user = makeUser(Role.FAMILY_MEMBER);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void listPatientFiles_exception_returns500() throws Exception {
-        User user = makeUser(Role.ADMIN);
+        final User user = makeUser(Role.ADMIN);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.listFilesForCaregiverPatient(any(), any()))
                 .thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
+        final ResponseEntity<?> response = controller.listPatientFiles(PATIENT_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -436,47 +436,47 @@ class FileControllerTest {
 
     @Test
     void deleteFile_new_notFound() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.deleteFile(FILE_ID);
+        final ResponseEntity<?> response = controller.deleteFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void deleteFile_new_forbidden_notOwner() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        UserFileDTO dto = makeFileDto(999L, null);
+        final UserFileDTO dto = makeFileDto(999L, null);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
 
-        ResponseEntity<?> response = controller.deleteFile(FILE_ID);
+        final ResponseEntity<?> response = controller.deleteFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
     void deleteFile_new_success() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        UserFileDTO dto = makeFileDto(USER_ID, null);
+        final UserFileDTO dto = makeFileDto(USER_ID, null);
         when(fileManagementService.getFile(FILE_ID)).thenReturn(Optional.of(dto));
         doNothing().when(fileManagementService).deleteFile(FILE_ID, USER_ID);
 
-        ResponseEntity<?> response = controller.deleteFile(FILE_ID);
+        final ResponseEntity<?> response = controller.deleteFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void deleteFile_new_exception_returns500() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getFile(FILE_ID)).thenThrow(new RuntimeException("err"));
 
-        ResponseEntity<?> response = controller.deleteFile(FILE_ID);
+        final ResponseEntity<?> response = controller.deleteFile(FILE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -485,38 +485,38 @@ class FileControllerTest {
 
     @Test
     void getProfileImage_notFound() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getUserProfileImage(USER_ID, "PATIENT")).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.getProfileImage();
+        final ResponseEntity<?> response = controller.getProfileImage();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void getProfileImage_found() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
-        UserFileDTO dto = makeFileDto(USER_ID, null);
+        final UserFileDTO dto = makeFileDto(USER_ID, null);
         when(fileManagementService.getUserProfileImage(USER_ID, "PATIENT")).thenReturn(Optional.of(dto));
 
-        ResponseEntity<?> response = controller.getProfileImage();
+        final ResponseEntity<?> response = controller.getProfileImage();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("data")).isSameAs(dto);
     }
 
     @Test
     void getProfileImage_exception_returns500() throws Exception {
-        User user = makeUser(Role.PATIENT);
+        final User user = makeUser(Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(fileManagementService.getUserProfileImage(any(), any()))
                 .thenThrow(new RuntimeException("err"));
 
-        ResponseEntity<?> response = controller.getProfileImage();
+        final ResponseEntity<?> response = controller.getProfileImage();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -525,47 +525,47 @@ class FileControllerTest {
 
     @Test
     void uploadFileLegacy_success() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        MockMultipartFile file = new MockMultipartFile("file", "doc.pdf", "application/pdf", new byte[100]);
+        final MockMultipartFile file = new MockMultipartFile("file", "doc.pdf", "application/pdf", new byte[100]);
         when(s3StorageService.uploadFile(any(MultipartFile.class), eq(USER_ID), eq("PATIENT"), eq("documents")))
                 .thenReturn("patient_1/documents/doc.pdf");
         when(s3StorageService.getFileUrl("patient_1/documents/doc.pdf"))
                 .thenReturn("https://s3.example.com/patient_1/documents/doc.pdf");
 
-        ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, file, "documents");
+        final ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, file, "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("File uploaded successfully");
     }
 
     @Test
     void uploadFileLegacy_emptyFile_returns400() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        MockMultipartFile emptyFile = new MockMultipartFile("file", "empty.pdf", "application/pdf", new byte[0]);
+        final MockMultipartFile emptyFile = new MockMultipartFile("file", "empty.pdf", "application/pdf", new byte[0]);
 
-        ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, emptyFile, "documents");
+        final ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, emptyFile, "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void uploadFileLegacy_fileTooLarge_returns400() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        MockMultipartFile bigFile = new MockMultipartFile("file", "big.pdf", "application/pdf",
+        final MockMultipartFile bigFile = new MockMultipartFile("file", "big.pdf", "application/pdf",
                 new byte[11 * 1024 * 1024]);
 
-        ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, bigFile, "documents");
+        final ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, bigFile, "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -574,21 +574,21 @@ class FileControllerTest {
     void uploadFileLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, makeFile(), "documents");
+        final ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, makeFile(), "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     void uploadFileLegacy_s3Throws_returns500() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(s3StorageService.uploadFile(any(), any(), any(), any()))
                 .thenThrow(new RuntimeException("S3 down"));
 
-        ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, makeFile(), "documents");
+        final ResponseEntity<?> response = controller.uploadFileLegacy(USER_ID, makeFile(), "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -597,25 +597,25 @@ class FileControllerTest {
 
     @Test
     void downloadFileLegacy_success() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(s3StorageService.download("patient_1/documents/file.pdf")).thenReturn("data".getBytes());
 
-        ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void downloadFileLegacy_forbidden_wrongPrefix() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/other_99/docs/file.pdf");
+        final ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/other_99/docs/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -624,20 +624,20 @@ class FileControllerTest {
     void downloadFileLegacy_userNotFound_returns404() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void downloadFileLegacy_s3Throws_returns404() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(s3StorageService.download(any())).thenThrow(new RuntimeException("S3 err"));
 
-        ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<byte[]> response = controller.downloadFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -646,25 +646,25 @@ class FileControllerTest {
 
     @Test
     void deleteFileLegacy_success() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         doNothing().when(s3StorageService).deleteFile("patient_1/documents/file.pdf");
 
-        ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void deleteFileLegacy_forbidden_wrongPrefix() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.deleteFile(USER_ID, "/other_99/docs/file.pdf");
+        final ResponseEntity<?> response = controller.deleteFile(USER_ID, "/other_99/docs/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -673,20 +673,20 @@ class FileControllerTest {
     void deleteFileLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
     void deleteFileLegacy_s3Throws_returns500() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         doThrow(new RuntimeException("S3 err")).when(s3StorageService).deleteFile(any());
 
-        ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
+        final ResponseEntity<?> response = controller.deleteFile(USER_ID, "/patient_1/documents/file.pdf");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -695,55 +695,55 @@ class FileControllerTest {
 
     @Test
     void listUserFilesLegacy_noCategory() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(s3StorageService.listUserFilesDto(USER_ID, "PATIENT")).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.listUserFiles(USER_ID, null);
+        final ResponseEntity<?> response = controller.listUserFiles(USER_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("category")).isEqualTo("all");
     }
 
     @Test
     void listUserFilesLegacy_withCategory_matchingFile() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        UserFileDTO dto = UserFileDTO.builder().s3FullKey("patient_1/documents/doc.pdf").build();
+        final UserFileDTO dto = UserFileDTO.builder().s3FullKey("patient_1/documents/doc.pdf").build();
         when(s3StorageService.listUserFilesDto(USER_ID, "PATIENT")).thenReturn(List.of(dto));
 
-        ResponseEntity<?> response = controller.listUserFiles(USER_ID, "documents");
+        final ResponseEntity<?> response = controller.listUserFiles(USER_ID, "documents");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<UserFileDTO> files = (List<UserFileDTO>) body.get("files");
+        final List<UserFileDTO> files = (List<UserFileDTO>) body.get("files");
         assertThat(files).hasSize(1);
     }
 
     @Test
     void listUserFilesLegacy_withCategory_noMatch() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        UserFileDTO dto = UserFileDTO.builder().s3FullKey("patient_1/documents/doc.pdf").build();
+        final UserFileDTO dto = UserFileDTO.builder().s3FullKey("patient_1/documents/doc.pdf").build();
         when(s3StorageService.listUserFilesDto(USER_ID, "PATIENT")).thenReturn(List.of(dto));
 
-        ResponseEntity<?> response = controller.listUserFiles(USER_ID, "prescriptions");
+        final ResponseEntity<?> response = controller.listUserFiles(USER_ID, "prescriptions");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<UserFileDTO> files = (List<UserFileDTO>) body.get("files");
+        final List<UserFileDTO> files = (List<UserFileDTO>) body.get("files");
         assertThat(files).isEmpty();
     }
 
@@ -751,7 +751,7 @@ class FileControllerTest {
     void listUserFilesLegacy_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.listUserFiles(USER_ID, null);
+        final ResponseEntity<?> response = controller.listUserFiles(USER_ID, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -760,69 +760,69 @@ class FileControllerTest {
 
     @Test
     void getValidCategories_patient() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.getValidCategories(USER_ID);
+        final ResponseEntity<?> response = controller.getValidCategories(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<String> categories = (List<String>) body.get("categories");
+        final List<String> categories = (List<String>) body.get("categories");
         assertThat(categories).contains("profile", "documents", "medical-records");
     }
 
     @Test
     void getValidCategories_caregiver() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.CAREGIVER);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.getValidCategories(USER_ID);
+        final ResponseEntity<?> response = controller.getValidCategories(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<String> categories = (List<String>) body.get("categories");
+        final List<String> categories = (List<String>) body.get("categories");
         assertThat(categories).contains("certifications");
     }
 
     @Test
     void getValidCategories_familyMember() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.FAMILY_MEMBER);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.getValidCategories(USER_ID);
+        final ResponseEntity<?> response = controller.getValidCategories(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<String> categories = (List<String>) body.get("categories");
+        final List<String> categories = (List<String>) body.get("categories");
         assertThat(categories).contains("authorization");
     }
 
     @Test
     void getValidCategories_admin_defaultList() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setId(USER_ID);
         user.setRole(Role.ADMIN);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.getValidCategories(USER_ID);
+        final ResponseEntity<?> response = controller.getValidCategories(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         @SuppressWarnings("unchecked")
-        List<String> categories = (List<String>) body.get("categories");
+        final List<String> categories = (List<String>) body.get("categories");
         assertThat(categories).containsExactly("documents");
     }
 
@@ -830,7 +830,7 @@ class FileControllerTest {
     void getValidCategories_userNotFound_returns500() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.getValidCategories(USER_ID);
+        final ResponseEntity<?> response = controller.getValidCategories(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }

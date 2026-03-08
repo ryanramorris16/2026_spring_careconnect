@@ -60,10 +60,10 @@ class SymptomEntryControllerTest {
     void createSymptom_success_returnsCreated() {
         when(symptomEntryService.createSymptom(any())).thenReturn(sampleDto);
 
-        ResponseEntity<?> response = controller.createSymptom(sampleDto);
+        final ResponseEntity<?> response = controller.createSymptom(sampleDto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Symptom created successfully");
         assertThat(body.get("data")).isEqualTo(sampleDto);
     }
@@ -75,10 +75,10 @@ class SymptomEntryControllerTest {
         when(symptomEntryService.createSymptom(any()))
                 .thenThrow(new IllegalArgumentException("Patient not found with id: 99"));
 
-        ResponseEntity<?> response = controller.createSymptom(sampleDto);
+        final ResponseEntity<?> response = controller.createSymptom(sampleDto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("Patient not found with id: 99");
     }
 
@@ -89,10 +89,10 @@ class SymptomEntryControllerTest {
         when(symptomEntryService.createSymptom(any()))
                 .thenThrow(new RuntimeException("DB error"));
 
-        ResponseEntity<?> response = controller.createSymptom(sampleDto);
+        final ResponseEntity<?> response = controller.createSymptom(sampleDto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("Failed to create symptom");
     }
 
@@ -105,11 +105,11 @@ class SymptomEntryControllerTest {
         when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
         when(symptomEntryService.getSymptomsForPatient(10L)).thenReturn(List.of(sampleDto));
 
-        ResponseEntity<?> response = controller.getSymptoms(10L);
+        final ResponseEntity<?> response = controller.getSymptoms(10L);
 
         verify(authorizationService).requirePatientAccess(adminUser, 10L);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Symptoms retrieved successfully");
         assertThat((List<?>) body.get("data")).hasSize(1);
     }
@@ -134,10 +134,10 @@ class SymptomEntryControllerTest {
         when(symptomEntryService.getSymptomsForPatient(10L))
                 .thenThrow(new RuntimeException("DB error"));
 
-        ResponseEntity<?> response = controller.getSymptoms(10L);
+        final ResponseEntity<?> response = controller.getSymptoms(10L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("Failed to fetch symptoms");
     }
 
@@ -149,10 +149,10 @@ class SymptomEntryControllerTest {
     void deleteSymptom_success_returnsOk() {
         doNothing().when(symptomEntryService).deleteSymptom(1L);
 
-        ResponseEntity<?> response = controller.deleteSymptom(1L);
+        final ResponseEntity<?> response = controller.deleteSymptom(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Symptom deleted successfully");
     }
 
@@ -163,10 +163,10 @@ class SymptomEntryControllerTest {
         doThrow(new IllegalArgumentException("Symptom not found with id: 99"))
                 .when(symptomEntryService).deleteSymptom(99L);
 
-        ResponseEntity<?> response = controller.deleteSymptom(99L);
+        final ResponseEntity<?> response = controller.deleteSymptom(99L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("Symptom not found with id: 99");
     }
 
@@ -177,10 +177,10 @@ class SymptomEntryControllerTest {
         doThrow(new RuntimeException("DB error"))
                 .when(symptomEntryService).deleteSymptom(1L);
 
-        ResponseEntity<?> response = controller.deleteSymptom(1L);
+        final ResponseEntity<?> response = controller.deleteSymptom(1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("Failed to delete symptom");
     }
 }

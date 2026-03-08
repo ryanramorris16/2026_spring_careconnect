@@ -10,7 +10,7 @@ class CheckInQuestionTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        CheckInQuestion cq = new CheckInQuestion();
+        final CheckInQuestion cq = new CheckInQuestion();
         assertThat(cq).isNotNull();
         assertThat(cq.getId()).isNull();
         assertThat(cq.getCheckIn()).isNull();
@@ -21,10 +21,10 @@ class CheckInQuestionTest {
 
     @Test
     void parameterizedConstructor_setsFields() throws Exception {
-        CheckIn checkIn = CheckIn.builder().id(1L).build();
-        Question question = Question.builder().id(2L).prompt("How are you?").type(QuestionType.TEXT).build();
+        final CheckIn checkIn = CheckIn.builder().id(1L).build();
+        final Question question = Question.builder().id(2L).prompt("How are you?").type(QuestionType.TEXT).build();
 
-        CheckInQuestion cq = new CheckInQuestion(checkIn, question, true, 1);
+        final CheckInQuestion cq = new CheckInQuestion(checkIn, question, true, 1);
 
         assertThat(cq.getCheckIn()).isSameAs(checkIn);
         assertThat(cq.getQuestion()).isSameAs(question);
@@ -39,10 +39,10 @@ class CheckInQuestionTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        CheckInQuestion cq = new CheckInQuestion();
-        CheckInQuestionId embeddedId = new CheckInQuestionId(5L, 10L);
-        CheckIn checkIn = new CheckIn();
-        Question question = new Question();
+        final CheckInQuestion cq = new CheckInQuestion();
+        final CheckInQuestionId embeddedId = new CheckInQuestionId(5L, 10L);
+        final CheckIn checkIn = new CheckIn();
+        final Question question = new Question();
 
         cq.setId(embeddedId);
         cq.setCheckIn(checkIn);

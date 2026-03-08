@@ -13,7 +13,7 @@ class MedicationTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
 
         assertThat(med).isNotNull();
         assertThat(med.getId()).isNull();
@@ -25,7 +25,7 @@ class MedicationTest {
 
     @Test
     void builder_isActive_defaultsToTrue() throws Exception {
-        Medication med = Medication.builder()
+        final Medication med = Medication.builder()
                 .patient(new Patient())
                 .medicationName("Aspirin")
                 .build();
@@ -35,7 +35,7 @@ class MedicationTest {
 
     @Test
     void builder_approvalStatus_defaultsToPending() throws Exception {
-        Medication med = Medication.builder()
+        final Medication med = Medication.builder()
                 .patient(new Patient())
                 .medicationName("Aspirin")
                 .build();
@@ -47,10 +47,10 @@ class MedicationTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        Instant now = Instant.now();
+        final Patient patient = new Patient();
+        final Instant now = Instant.now();
 
-        Medication med = Medication.builder()
+        final Medication med = Medication.builder()
                 .id(1L)
                 .patient(patient)
                 .medicationName("Metformin")
@@ -87,9 +87,9 @@ class MedicationTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
 
-        Method m = Medication.class.getDeclaredMethod("onCreate");
+        final Method m = Medication.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(med);
 
@@ -99,11 +99,11 @@ class MedicationTest {
 
     @Test
     void onCreate_isActiveNull_setsToTrue() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
         med.setIsActive(null);   // reset the @Builder.Default true so we can test the null→true branch
         assertThat(med.getIsActive()).isNull();
 
-        Method m = Medication.class.getDeclaredMethod("onCreate");
+        final Method m = Medication.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(med);
 
@@ -112,10 +112,10 @@ class MedicationTest {
 
     @Test
     void onCreate_isActiveNotNull_doesNotOverride() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
         med.setIsActive(false);
 
-        Method m = Medication.class.getDeclaredMethod("onCreate");
+        final Method m = Medication.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(med);
 
@@ -124,9 +124,9 @@ class MedicationTest {
 
     @Test
     void onCreate_approvalStatusNull_setsToPending() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
 
-        Method m = Medication.class.getDeclaredMethod("onCreate");
+        final Method m = Medication.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(med);
 
@@ -135,10 +135,10 @@ class MedicationTest {
 
     @Test
     void onCreate_approvalStatusNotNull_doesNotOverride() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
         med.setApprovalStatus("APPROVED");
 
-        Method m = Medication.class.getDeclaredMethod("onCreate");
+        final Method m = Medication.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(med);
 
@@ -149,9 +149,9 @@ class MedicationTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        Medication med = new Medication();
+        final Medication med = new Medication();
 
-        Method m = Medication.class.getDeclaredMethod("onUpdate");
+        final Method m = Medication.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(med);
 

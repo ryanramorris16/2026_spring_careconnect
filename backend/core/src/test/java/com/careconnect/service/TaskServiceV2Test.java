@@ -79,10 +79,10 @@ class TaskServiceV2Test {
     @DisplayName("getTaskById: returns the task entity when the ID exists")
     void testGetTaskById_found() throws Exception {
         // Verify that a task stored in the repository is returned unchanged
-        Task task = Task.builder().id(1L).name("Test Task").build();
+        final Task task = Task.builder().id(1L).name("Test Task").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        Task result = taskService.getTaskById(1L);
+        final Task result = taskService.getTaskById(1L);
 
         assertNotNull(result);
         assertEquals("Test Task", result.getName());
@@ -107,10 +107,10 @@ class TaskServiceV2Test {
     @DisplayName("getTaskDtoById: maps the found entity to a DTO with correct id and name")
     void testGetTaskDtoById_found() throws Exception {
         // Confirms that the entity-to-DTO mapping preserves core identifying fields
-        Task task = Task.builder().id(7L).name("Morning Walk").date("2025-06-01").build();
+        final Task task = Task.builder().id(7L).name("Morning Walk").date("2025-06-01").build();
         when(taskRepository.findById(7L)).thenReturn(Optional.of(task));
 
-        TaskDtoV2 result = taskService.getTaskDtoById(7L);
+        final TaskDtoV2 result = taskService.getTaskDtoById(7L);
 
         assertNotNull(result);
         assertEquals(7L, result.getId());
@@ -134,11 +134,11 @@ class TaskServiceV2Test {
     @DisplayName("getTasksByPatient: maps each task entity to a DTO and returns the full list")
     void testGetTasksByPatient() throws Exception {
         // Both entities must appear in the result list in order
-        Task t1 = Task.builder().id(1L).name("Check Vitals").build();
-        Task t2 = Task.builder().id(2L).name("Take Medication").build();
+        final Task t1 = Task.builder().id(1L).name("Check Vitals").build();
+        final Task t2 = Task.builder().id(2L).name("Take Medication").build();
         when(taskRepository.findByPatientId(5L)).thenReturn(Optional.of(List.of(t1, t2)));
 
-        List<TaskDtoV2> dtos = taskService.getTasksByPatient(5L);
+        final List<TaskDtoV2> dtos = taskService.getTasksByPatient(5L);
 
         assertEquals(2, dtos.size());
         assertEquals("Check Vitals", dtos.get(0).getName());
@@ -151,7 +151,7 @@ class TaskServiceV2Test {
         // Optional.empty() from the repository should produce an empty list, not throw
         when(taskRepository.findByPatientId(99L)).thenReturn(Optional.empty());
 
-        List<TaskDtoV2> result = taskService.getTasksByPatient(99L);
+        final List<TaskDtoV2> result = taskService.getTasksByPatient(99L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -165,10 +165,10 @@ class TaskServiceV2Test {
     @DisplayName("createTask: persists a new one-time task and returns its DTO with the generated ID")
     void testCreateTask_savesNewTask() throws Exception {
         // The happy path: a valid patient and a non-recurring task DTO
-        Patient patient = Patient.builder().id(5L).build();
+        final Patient patient = Patient.builder().id(5L).build();
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("Daily Check")
                 .description("Measure blood pressure")
                 .date(LocalDate.now().toString())
@@ -182,12 +182,12 @@ class TaskServiceV2Test {
 
         // Simulate the DB assigning a primary key after insert
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
-            Task saved = inv.getArgument(0);
+            final Task saved = inv.getArgument(0);
             saved.setId(10L);
             return saved;
         });
 
-        TaskDtoV2 result = taskService.createTask(5L, dto);
+        final TaskDtoV2 result = taskService.createTask(5L, dto);
 
         assertNotNull(result);
         assertEquals("Daily Check", result.getName());
@@ -202,7 +202,7 @@ class TaskServiceV2Test {
         // A task must not be created without a valid owning patient
         when(patientRepository.findById(999L)).thenReturn(Optional.empty());
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("Task")
                 .date("2025-01-01")
                 .isCompleted(false)
@@ -216,10 +216,10 @@ class TaskServiceV2Test {
     void testCreateTask_withRecurrence_savesOccurrences() throws Exception {
         // When frequency is set and count > 1, the service must expand the recurring
         // series by saving additional occurrence tasks via saveAll
-        Patient patient = Patient.builder().id(5L).build();
+        final Patient patient = Patient.builder().id(5L).build();
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("Daily Walk")
                 .date("2025-01-01")
                 .frequency("daily")
@@ -229,7 +229,7 @@ class TaskServiceV2Test {
                 .build();
 
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
-            Task saved = inv.getArgument(0);
+            final Task saved = inv.getArgument(0);
             saved.setId(10L);
             return saved;
         });
@@ -248,13 +248,13 @@ class TaskServiceV2Test {
     void testCreateTask_withNotifications_attached() throws Exception {
         // Notifications provided in the DTO must be mapped to entities and linked
         // to the saved task without throwing during construction
-        Patient patient = Patient.builder().id(5L).build();
+        final Patient patient = Patient.builder().id(5L).build();
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
 
-        ScheduledNotificationDTO notif = new ScheduledNotificationDTO(
+        final ScheduledNotificationDTO notif = new ScheduledNotificationDTO(
                 1L, "Reminder", "Take your medicine", "PUSH", "2025-01-01T08:00:00");
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("Take Medication")
                 .date("2025-01-01")
                 .isCompleted(false)
@@ -262,12 +262,12 @@ class TaskServiceV2Test {
                 .build();
 
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> {
-            Task saved = inv.getArgument(0);
+            final Task saved = inv.getArgument(0);
             saved.setId(20L);
             return saved;
         });
 
-        TaskDtoV2 result = taskService.createTask(5L, dto);
+        final TaskDtoV2 result = taskService.createTask(5L, dto);
 
         assertNotNull(result);
         verify(taskRepository).save(any(Task.class));
@@ -281,11 +281,11 @@ class TaskServiceV2Test {
     @DisplayName("updateCompletionStatus: sets isCompleted to true and persists the change")
     void testUpdateCompletionStatus_markComplete() throws Exception {
         // Completing a task must flip the flag and trigger a save
-        Task task = Task.builder().id(1L).isCompleted(false).name("Do something").build();
+        final Task task = Task.builder().id(1L).isCompleted(false).name("Do something").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TaskDtoV2 result = taskService.updateCompletionStatus(1L, true);
+        final TaskDtoV2 result = taskService.updateCompletionStatus(1L, true);
 
         assertTrue(result.isCompleted());
         verify(taskRepository).save(any(Task.class));
@@ -295,11 +295,11 @@ class TaskServiceV2Test {
     @DisplayName("updateCompletionStatus: sets isCompleted to false (un-completing a task)")
     void testUpdateCompletionStatus_markIncomplete() throws Exception {
         // The method must work symmetrically for clearing the completion flag
-        Task task = Task.builder().id(2L).isCompleted(true).name("Done Task").build();
+        final Task task = Task.builder().id(2L).isCompleted(true).name("Done Task").build();
         when(taskRepository.findById(2L)).thenReturn(Optional.of(task));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TaskDtoV2 result = taskService.updateCompletionStatus(2L, false);
+        final TaskDtoV2 result = taskService.updateCompletionStatus(2L, false);
 
         assertFalse(result.isCompleted());
         verify(taskRepository).save(any(Task.class));
@@ -324,20 +324,20 @@ class TaskServiceV2Test {
     void testUpdateTask_singleUpdate_updatesFieldAndSaves() throws Exception {
         // updateSeries=false means the update must be scoped to one task;
         // findByParentTaskId must never be called in this path
-        Task existing = Task.builder()
+        final Task existing = Task.builder()
                 .id(1L).name("Old Name").date("2025-01-01")
                 .frequency("daily").taskInterval(1).doCount(1)
                 .build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(taskRepository.save(any(Task.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("New Name")
                 .updateSeries(false)
                 .isCompleted(false)
                 .build();
 
-        TaskDtoV2 result = taskService.updateTask(1L, dto);
+        final TaskDtoV2 result = taskService.updateTask(1L, dto);
 
         assertEquals("New Name", result.getName());
         verify(taskRepository).save(any(Task.class));
@@ -354,14 +354,14 @@ class TaskServiceV2Test {
     void testUpdateTask_seriesUpdate_nameChangeUpdatesChildren() throws Exception {
         // When only a non-recurrence field (name) changes, the service must update
         // all children via saveAll without deleting/regenerating occurrences
-        Task parent = Task.builder()
+        final Task parent = Task.builder()
                 .id(1L).name("Old Name").date("2025-01-01")
                 .frequency("daily").taskInterval(1).doCount(3)
                 .parentTaskId(null)
                 .build();
-        Task child1 = Task.builder().id(2L).name("Old Name")
+        final Task child1 = Task.builder().id(2L).name("Old Name")
                 .date("2025-01-02").parentTaskId(1L).build();
-        Task child2 = Task.builder().id(3L).name("Old Name")
+        final Task child2 = Task.builder().id(3L).name("Old Name")
                 .date("2025-01-03").parentTaskId(1L).build();
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(parent));
@@ -372,13 +372,13 @@ class TaskServiceV2Test {
                 .thenReturn(new ArrayList<>(List.of(child1, child2)));
         when(taskRepository.saveAll(any())).thenReturn(new ArrayList<>());
 
-        TaskDtoV2 dto = TaskDtoV2.builder()
+        final TaskDtoV2 dto = TaskDtoV2.builder()
                 .name("New Series Name")
                 .updateSeries(true)
                 .isCompleted(false)
                 .build();
 
-        TaskDtoV2 result = taskService.updateTask(1L, dto);
+        final TaskDtoV2 result = taskService.updateTask(1L, dto);
 
         // The returned DTO reflects the updated parent name
         assertEquals("New Series Name", result.getName());
@@ -397,7 +397,7 @@ class TaskServiceV2Test {
     @DisplayName("deleteTask single: deletes only the specified task when it has no children")
     void testDeleteTask_single_noChildren_deletesTask() throws Exception {
         // A lone task (no series) must be directly deleted; no promotion logic runs
-        Task task = Task.builder().id(1L).parentTaskId(null).name("Solo Task").build();
+        final Task task = Task.builder().id(1L).parentTaskId(null).name("Solo Task").build();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(taskRepository.findByParentTaskId(1L)).thenReturn(new ArrayList<>());
 
@@ -413,9 +413,9 @@ class TaskServiceV2Test {
     void testDeleteTask_single_parentWithChildren_promotesFirstChild() throws Exception {
         // Deleting the series parent without deleting the series must re-root the
         // series so the first child becomes the new parent
-        Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
-        Task child1 = Task.builder().id(2L).parentTaskId(1L).name("Child 1").build();
-        Task child2 = Task.builder().id(3L).parentTaskId(1L).name("Child 2").build();
+        final Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
+        final Task child1 = Task.builder().id(2L).parentTaskId(1L).name("Child 1").build();
+        final Task child2 = Task.builder().id(3L).parentTaskId(1L).name("Child 2").build();
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(parent));
         when(taskRepository.findByParentTaskId(1L))
@@ -438,8 +438,8 @@ class TaskServiceV2Test {
     @DisplayName("deleteTask series: removes the entire recurring series (parent + all children)")
     void testDeleteTask_series_deletesAll() throws Exception {
         // deleteSeries=true must collect all tasks in the series and call deleteAll
-        Task child = Task.builder().id(2L).parentTaskId(1L).name("Child Task").build();
-        Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
+        final Task child = Task.builder().id(2L).parentTaskId(1L).name("Child Task").build();
+        final Task parent = Task.builder().id(1L).parentTaskId(null).name("Parent Task").build();
 
         when(taskRepository.findById(2L)).thenReturn(Optional.of(child));
         // findByParentTaskId must return a mutable list so the service can append the parent
@@ -488,11 +488,11 @@ class TaskServiceV2Test {
     @Test
     @DisplayName("getAllTasks: maps all persisted task entities to DTOs")
     void testGetAllTasks() throws Exception {
-        Task t1 = Task.builder().id(1L).name("Task1").build();
-        Task t2 = Task.builder().id(2L).name("Task2").build();
+        final Task t1 = Task.builder().id(1L).name("Task1").build();
+        final Task t2 = Task.builder().id(2L).name("Task2").build();
         when(taskRepository.findAll()).thenReturn(List.of(t1, t2));
 
-        List<TaskDtoV2> result = taskService.getAllTasks();
+        final List<TaskDtoV2> result = taskService.getAllTasks();
 
         assertEquals(2, result.size());
         assertEquals("Task1", result.get(0).getName());
@@ -522,7 +522,7 @@ class TaskServiceV2Test {
     private int invokeCalculateCount(
             LocalDate start, LocalDate end,
             String freq, int interval, List<Boolean> days) throws Exception {
-        Method method = TaskServiceV2.class.getDeclaredMethod(
+        final Method method = TaskServiceV2.class.getDeclaredMethod(
                 "calculateCount",
                 LocalDate.class, LocalDate.class, String.class, int.class, List.class);
         method.setAccessible(true);
@@ -533,7 +533,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount daily interval=1: one occurrence per day inclusive of start and end")
     void testCalculateCount_daily() throws Exception {
         // 5 days inclusive (Jan 1 → Jan 5), interval=1 → 5 occurrences
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 1, 5),
                 "daily", 1, null);
@@ -545,7 +545,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount daily interval=2: every-other-day spans produce half the occurrences")
     void testCalculateCount_daily_interval2() throws Exception {
         // 10-day span / interval 2 → (10/2)+1 = 6 occurrences (days 0,2,4,6,8,10)
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 1, 11),
                 "daily", 2, null);
@@ -557,9 +557,9 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount weekly with days mask: counts only occurrences on the selected weekdays")
     void testCalculateCount_weeklyDays() throws Exception {
         // Sun=true (index 0) and Wed=true (index 3); all other days are false
-        List<Boolean> days = List.of(true, false, false, true, false, false, false);
+        final List<Boolean> days = List.of(true, false, false, true, false, false, false);
 
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 1, 15),
                 "weekly", 1, days);
@@ -572,7 +572,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount weekly no days mask: counts whole-week intervals")
     void testCalculateCount_weekly_noDays() throws Exception {
         // No days mask → simple week-interval counting: (14 days / 7 / interval 1) + 1 = 3
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 1, 15),
                 "weekly", 1, null);
@@ -584,7 +584,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount monthly interval=1: one occurrence per calendar month")
     void testCalculateCount_monthly() throws Exception {
         // Jan → Mar = 2 months apart → (2 / 1) + 1 = 3 occurrences (Jan, Feb, Mar)
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 3, 1),
                 "monthly", 1, null);
@@ -596,7 +596,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount yearly interval=1: one occurrence per calendar year")
     void testCalculateCount_yearly() throws Exception {
         // 2025 → 2027 = 2 years apart → (2 / 1) + 1 = 3 occurrences (2025, 2026, 2027)
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2027, 1, 1),
                 "yearly", 1, null);
@@ -608,7 +608,7 @@ class TaskServiceV2Test {
     @DisplayName("calculateCount unknown frequency: returns 1 as a safe fallback")
     void testCalculateCount_unknownFrequency() throws Exception {
         // An unrecognised frequency string must not throw; the default branch returns 1
-        int result = invokeCalculateCount(
+        final int result = invokeCalculateCount(
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 12, 31),
                 "hourly", 1, null);

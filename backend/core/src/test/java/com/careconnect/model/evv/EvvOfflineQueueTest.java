@@ -15,7 +15,7 @@ class EvvOfflineQueueTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
+        final EvvOfflineQueue q = new EvvOfflineQueue();
 
         assertThat(q).isNotNull();
         assertThat(q.getId()).isNull();
@@ -34,11 +34,11 @@ class EvvOfflineQueueTest {
 
     @Test
     void builder_allFields() throws Exception {
-        OffsetDateTime now = OffsetDateTime.now();
-        Map<String, Object> recordData = new HashMap<>();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final Map<String, Object> recordData = new HashMap<>();
         recordData.put("serviceType", "PERSONAL_CARE");
 
-        EvvOfflineQueue q = EvvOfflineQueue.builder()
+        final EvvOfflineQueue q = EvvOfflineQueue.builder()
                 .id(1L)
                 .recordId(10L)
                 .operationType("CREATE")
@@ -69,10 +69,10 @@ class EvvOfflineQueueTest {
 
     @Test
     void onCreate_setsQueuedAtWhenNull() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
+        final EvvOfflineQueue q = new EvvOfflineQueue();
         q.setQueuedAt(null);
 
-        Method m = EvvOfflineQueue.class.getDeclaredMethod("onCreate");
+        final Method m = EvvOfflineQueue.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(q);
 
@@ -81,11 +81,11 @@ class EvvOfflineQueueTest {
 
     @Test
     void onCreate_doesNotOverwriteExistingQueuedAt() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
-        OffsetDateTime original = OffsetDateTime.now().minusDays(1);
+        final EvvOfflineQueue q = new EvvOfflineQueue();
+        final OffsetDateTime original = OffsetDateTime.now().minusDays(1);
         q.setQueuedAt(original);
 
-        Method m = EvvOfflineQueue.class.getDeclaredMethod("onCreate");
+        final Method m = EvvOfflineQueue.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(q);
 
@@ -96,7 +96,7 @@ class EvvOfflineQueueTest {
 
     @Test
     void markSyncing_incrementsAttemptsAndSetsStatus() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
+        final EvvOfflineQueue q = new EvvOfflineQueue();
         q.setSyncAttempts(0);
 
         q.markSyncing();
@@ -110,7 +110,7 @@ class EvvOfflineQueueTest {
 
     @Test
     void markSynced_setsSyncedStatus() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
+        final EvvOfflineQueue q = new EvvOfflineQueue();
 
         q.markSynced();
 
@@ -121,7 +121,7 @@ class EvvOfflineQueueTest {
 
     @Test
     void markFailed_setsFailedStatusAndError() throws Exception {
-        EvvOfflineQueue q = new EvvOfflineQueue();
+        final EvvOfflineQueue q = new EvvOfflineQueue();
 
         q.markFailed("Network timeout");
 
