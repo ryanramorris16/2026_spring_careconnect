@@ -12,7 +12,7 @@ class MessageTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        Message msg = new Message();
+        final Message msg = new Message();
 
         assertThat(msg).isNotNull();
         assertThat(msg.getId()).isNull();
@@ -27,7 +27,7 @@ class MessageTest {
 
     @Test
     void threeArgConstructor_setsFields() throws Exception {
-        Message msg = new Message(1L, 2L, "Hello there!");
+        final Message msg = new Message(1L, 2L, "Hello there!");
 
         assertThat(msg.getSenderId()).isEqualTo(1L);
         assertThat(msg.getReceiverId()).isEqualTo(2L);
@@ -40,8 +40,8 @@ class MessageTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        Message msg = new Message();
-        LocalDateTime now = LocalDateTime.now();
+        final Message msg = new Message();
+        final LocalDateTime now = LocalDateTime.now();
 
         msg.setSenderId(10L);
         msg.setReceiverId(20L);
