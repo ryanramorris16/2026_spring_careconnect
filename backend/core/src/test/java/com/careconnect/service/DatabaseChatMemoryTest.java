@@ -53,7 +53,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("id_returnsConversationId_fromConversationObject")
     void id_returnsConversationId_fromConversationObject() throws Exception {
-        Object result = chatMemory.id();
+        final Object result = chatMemory.id();
 
         assertEquals("conv-uuid-123", result);
     }
@@ -65,7 +65,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_systemMessage_savesWithSystemTypeAndCorrectContent")
     void add_systemMessage_savesWithSystemTypeAndCorrectContent() throws Exception {
-        SystemMessage message = SystemMessage.from("You are a helpful assistant");
+        final SystemMessage message = SystemMessage.from("You are a helpful assistant");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -73,7 +73,7 @@ class DatabaseChatMemoryTest {
 
         chatMemory.add(message);
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -86,7 +86,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_userMessage_savesWithUserTypeAndCorrectContent")
     void add_userMessage_savesWithUserTypeAndCorrectContent() throws Exception {
-        UserMessage message = UserMessage.from("Hello doctor");
+        final UserMessage message = UserMessage.from("Hello doctor");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -94,7 +94,7 @@ class DatabaseChatMemoryTest {
 
         chatMemory.add(message);
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -106,7 +106,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_aiMessage_savesWithAssistantTypeAndCorrectContent")
     void add_aiMessage_savesWithAssistantTypeAndCorrectContent() throws Exception {
-        AiMessage message = AiMessage.from("I can help you with that");
+        final AiMessage message = AiMessage.from("I can help you with that");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -114,7 +114,7 @@ class DatabaseChatMemoryTest {
 
         chatMemory.add(message);
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -127,7 +127,7 @@ class DatabaseChatMemoryTest {
     @DisplayName("add_unknownMessageType_fallsBackToUserTypeWithToStringContent")
     void add_unknownMessageType_fallsBackToUserTypeWithToStringContent() throws Exception {
         // ToolExecutionResultMessage exercises the else branch (not System/User/Ai)
-        ToolExecutionResultMessage message = ToolExecutionResultMessage.from("tool-1", "tool-name", "result-text");
+        final ToolExecutionResultMessage message = ToolExecutionResultMessage.from("tool-1", "tool-name", "result-text");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -135,7 +135,7 @@ class DatabaseChatMemoryTest {
 
         chatMemory.add(message);
 
-        ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
+        final ArgumentCaptor<com.careconnect.model.ChatMessage> captor =
                 ArgumentCaptor.forClass(com.careconnect.model.ChatMessage.class);
         verify(chatMessageRepository).save(captor.capture());
 
@@ -148,12 +148,12 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_exceedsMaxMessages_cleansUpOldMessages")
     void add_exceedsMaxMessages_cleansUpOldMessages() throws Exception {
-        UserMessage message = UserMessage.from("New message");
+        final UserMessage message = UserMessage.from("New message");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         // Create more messages than maxMessages
-        List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
+        final List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
         for (int i = 0; i < MAX_MESSAGES + 3; i++) {
             com.careconnect.model.ChatMessage msg = com.careconnect.model.ChatMessage.builder()
                     .id((long) i)
@@ -170,7 +170,7 @@ class DatabaseChatMemoryTest {
 
         // Verify deleteAll was called with the oldest 3 messages
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<com.careconnect.model.ChatMessage>> deleteCaptor =
+        final ArgumentCaptor<List<com.careconnect.model.ChatMessage>> deleteCaptor =
                 ArgumentCaptor.forClass(List.class);
         verify(chatMessageRepository).deleteAll(deleteCaptor.capture());
         assertEquals(3, deleteCaptor.getValue().size());
@@ -179,12 +179,12 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_withinLimit_noCleanup")
     void add_withinLimit_noCleanup() throws Exception {
-        UserMessage message = UserMessage.from("Hello");
+        final UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         // Fewer messages than max
-        List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
+        final List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
         for (int i = 0; i < MAX_MESSAGES - 2; i++) {
             com.careconnect.model.ChatMessage msg = com.careconnect.model.ChatMessage.builder()
                     .id((long) i)
@@ -205,11 +205,11 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_repositorySaveThrowsException_wrapsInRuntimeException")
     void add_repositorySaveThrowsException_wrapsInRuntimeException() throws Exception {
-        UserMessage message = UserMessage.from("Hello");
+        final UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenThrow(new RuntimeException("DB connection error"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> chatMemory.add(message));
+        final RuntimeException thrown = assertThrows(RuntimeException.class, () -> chatMemory.add(message));
         assertTrue(thrown.getMessage().contains("Failed to persist chat message"));
         assertNotNull(thrown.getCause());
     }
@@ -217,7 +217,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("add_cleanupThrowsException_swallowedSilentlyAddStillSucceeds")
     void add_cleanupThrowsException_swallowedSilentlyAddStillSucceeds() throws Exception {
-        UserMessage message = UserMessage.from("Hello");
+        final UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
@@ -252,7 +252,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(List.of(sysMsg, userMsg, assistantMsg));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertEquals(3, result.size());
         assertInstanceOf(SystemMessage.class, result.get(0));
@@ -269,7 +269,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(Collections.emptyList());
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertTrue(result.isEmpty());
     }
@@ -288,7 +288,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(List.of(validMsg));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertEquals(1, result.size());
         assertInstanceOf(UserMessage.class, result.get(0));
@@ -300,7 +300,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenThrow(new RuntimeException("DB is down"));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertTrue(result.isEmpty());
     }
@@ -312,7 +312,7 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("clear_deletesAllMessages_forTheConversation")
     void clear_deletesAllMessages_forTheConversation() throws Exception {
-        List<com.careconnect.model.ChatMessage> messages = List.of(
+        final List<com.careconnect.model.ChatMessage> messages = List.of(
                 com.careconnect.model.ChatMessage.builder()
                         .id(1L)
                         .conversation(conversation)
@@ -351,7 +351,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenThrow(new RuntimeException("DB error"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class, () -> chatMemory.clear());
+        final RuntimeException thrown = assertThrows(RuntimeException.class, () -> chatMemory.clear());
         assertTrue(thrown.getMessage().contains("Failed to clear chat history"));
     }
 
@@ -369,7 +369,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(List.of(dbMsg));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertEquals(1, result.size());
         assertInstanceOf(SystemMessage.class, result.get(0));
@@ -386,7 +386,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(List.of(dbMsg));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertEquals(1, result.size());
         assertInstanceOf(UserMessage.class, result.get(0));
@@ -403,7 +403,7 @@ class DatabaseChatMemoryTest {
         when(chatMessageRepository.findTopNByConversationOrderByCreatedAtAsc(conversation, MAX_MESSAGES))
                 .thenReturn(List.of(dbMsg));
 
-        List<ChatMessage> result = chatMemory.messages();
+        final List<ChatMessage> result = chatMemory.messages();
 
         assertEquals(1, result.size());
         assertInstanceOf(AiMessage.class, result.get(0));
@@ -417,11 +417,11 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("cleanupOldMessages_exactlyAtLimit_noDeletion")
     void cleanupOldMessages_exactlyAtLimit_noDeletion() throws Exception {
-        UserMessage message = UserMessage.from("Hello");
+        final UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
+        final List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
         for (int i = 0; i < MAX_MESSAGES; i++) {
             allMessages.add(com.careconnect.model.ChatMessage.builder()
                     .id((long) i)
@@ -441,11 +441,11 @@ class DatabaseChatMemoryTest {
     @Test
     @DisplayName("cleanupOldMessages_oneOverLimit_deletesExactlyOneOldest")
     void cleanupOldMessages_oneOverLimit_deletesExactlyOneOldest() throws Exception {
-        UserMessage message = UserMessage.from("Hello");
+        final UserMessage message = UserMessage.from("Hello");
         when(chatMessageRepository.save(any(com.careconnect.model.ChatMessage.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
+        final List<com.careconnect.model.ChatMessage> allMessages = new ArrayList<>();
         for (int i = 0; i < MAX_MESSAGES + 1; i++) {
             allMessages.add(com.careconnect.model.ChatMessage.builder()
                     .id((long) i)
@@ -460,7 +460,7 @@ class DatabaseChatMemoryTest {
         chatMemory.add(message);
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<com.careconnect.model.ChatMessage>> deleteCaptor =
+        final ArgumentCaptor<List<com.careconnect.model.ChatMessage>> deleteCaptor =
                 ArgumentCaptor.forClass(List.class);
         verify(chatMessageRepository).deleteAll(deleteCaptor.capture());
         assertEquals(1, deleteCaptor.getValue().size());
