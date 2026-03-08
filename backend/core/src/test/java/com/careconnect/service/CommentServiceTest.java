@@ -34,17 +34,17 @@ class CommentServiceTest {
     @Test
     @DisplayName("getCommentsForPost returns a list of comments for the given post")
     void getCommentsForPost_returnsList() throws Exception {
-        Long postId = 10L;
-        Comment comment1 = new Comment();
+        final Long postId = 10L;
+        final Comment comment1 = new Comment();
         comment1.setPostId(postId);
         comment1.setContent("First comment");
-        Comment comment2 = new Comment();
+        final Comment comment2 = new Comment();
         comment2.setPostId(postId);
         comment2.setContent("Second comment");
-        List<Comment> expected = List.of(comment1, comment2);
+        final List<Comment> expected = List.of(comment1, comment2);
         when(commentRepository.findByPostIdOrderByCreatedAtAsc(eq(postId))).thenReturn(expected);
 
-        List<Comment> result = commentService.getCommentsForPost(postId);
+        final List<Comment> result = commentService.getCommentsForPost(postId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -55,11 +55,11 @@ class CommentServiceTest {
     @Test
     @DisplayName("getCommentsForPost returns an empty list when no comments exist")
     void getCommentsForPost_returnsEmptyList() throws Exception {
-        Long postId = 99L;
+        final Long postId = 99L;
         when(commentRepository.findByPostIdOrderByCreatedAtAsc(eq(postId)))
                 .thenReturn(Collections.emptyList());
 
-        List<Comment> result = commentService.getCommentsForPost(postId);
+        final List<Comment> result = commentService.getCommentsForPost(postId);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -69,16 +69,16 @@ class CommentServiceTest {
     @Test
     @DisplayName("addComment creates a Comment with correct fields and saves it")
     void addComment_savesAndReturnsComment() throws Exception {
-        Long postId = 5L;
-        Long userId = 42L;
-        String username = "testuser";
-        String content = "This is a test comment";
+        final Long postId = 5L;
+        final Long userId = 42L;
+        final String username = "testuser";
+        final String content = "This is a test comment";
 
         when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        LocalDateTime beforeCall = LocalDateTime.now();
-        Comment result = commentService.addComment(postId, userId, username, content);
-        LocalDateTime afterCall = LocalDateTime.now();
+        final LocalDateTime beforeCall = LocalDateTime.now();
+        final Comment result = commentService.addComment(postId, userId, username, content);
+        final LocalDateTime afterCall = LocalDateTime.now();
 
         assertNotNull(result);
         assertEquals(postId, result.getPostId());
@@ -94,12 +94,12 @@ class CommentServiceTest {
     @Test
     @DisplayName("addComment returns the same object that repository.save returns")
     void addComment_returnsSavedComment() throws Exception {
-        Comment savedComment = new Comment();
+        final Comment savedComment = new Comment();
         savedComment.setPostId(7L);
         savedComment.setContent("saved");
         when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
 
-        Comment result = commentService.addComment(7L, 3L, "user", "original");
+        final Comment result = commentService.addComment(7L, 3L, "user", "original");
 
         assertSame(savedComment, result);
     }
