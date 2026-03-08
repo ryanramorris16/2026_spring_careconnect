@@ -44,7 +44,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("createCustomer_success_shouldReturnCustomerMap")
     void createCustomer_success_shouldReturnCustomerMap() throws Exception {
-        String responseBody = "{\"id\":\"cus_123\",\"email\":\"test@example.com\"}";
+        final String responseBody = "{\"id\":\"cus_123\",\"email\":\"test@example.com\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -54,7 +54,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.createCustomer("Test User", "test@example.com");
+            final Map<String, Object> result = stripeService.createCustomer("Test User", "test@example.com");
 
             assertNotNull(result);
             assertEquals("cus_123", result.get("id"));
@@ -73,7 +73,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>("not valid json{{{", HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.createCustomer("Test", "test@example.com"));
             assertTrue(ex.getMessage().contains("Failed to parse Stripe customer response"));
         }
@@ -84,7 +84,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_withValidPriceId_shouldReturnSubscriptionMap")
     void createSubscription_withValidPriceId_shouldReturnSubscriptionMap() throws Exception {
-        String responseBody = "{\"id\":\"sub_123\",\"status\":\"active\"}";
+        final String responseBody = "{\"id\":\"sub_123\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -94,7 +94,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.createSubscription("cus_123", "price_abc");
+            final Map<String, Object> result = stripeService.createSubscription("cus_123", "price_abc");
 
             assertNotNull(result);
             assertEquals("sub_123", result.get("id"));
@@ -104,8 +104,8 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_withPlanId_defaultPriceFound_shouldResolveAndCreate")
     void createSubscription_withPlanId_defaultPriceFound_shouldResolveAndCreate() throws Exception {
-        String planResponse = "{\"id\":\"plan_xyz\",\"default_price\":\"price_resolved\"}";
-        String subscriptionResponse = "{\"id\":\"sub_456\",\"status\":\"active\"}";
+        final String planResponse = "{\"id\":\"plan_xyz\",\"default_price\":\"price_resolved\"}";
+        final String subscriptionResponse = "{\"id\":\"sub_456\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             // GET plan details
@@ -124,7 +124,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(subscriptionResponse, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.createSubscription("cus_123", "plan_xyz");
+            final Map<String, Object> result = stripeService.createSubscription("cus_123", "plan_xyz");
 
             assertNotNull(result);
             assertEquals("sub_456", result.get("id"));
@@ -134,9 +134,9 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_withPlanId_noDefaultPrice_shouldLookupPrices")
     void createSubscription_withPlanId_noDefaultPrice_shouldLookupPrices() throws Exception {
-        String planResponse = "{\"id\":\"plan_abc\"}";
-        String pricesResponse = "{\"data\":[{\"id\":\"price_from_list\"}]}";
-        String subscriptionResponse = "{\"id\":\"sub_789\",\"status\":\"active\"}";
+        final String planResponse = "{\"id\":\"plan_abc\"}";
+        final String pricesResponse = "{\"data\":[{\"id\":\"price_from_list\"}]}";
+        final String subscriptionResponse = "{\"id\":\"sub_789\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -160,7 +160,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(subscriptionResponse, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.createSubscription("cus_123", "plan_abc");
+            final Map<String, Object> result = stripeService.createSubscription("cus_123", "plan_abc");
 
             assertNotNull(result);
             assertEquals("sub_789", result.get("id"));
@@ -170,8 +170,8 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_withPlanId_noDefaultPriceAndEmptyPrices_shouldThrowAppException")
     void createSubscription_withPlanId_noDefaultPriceAndEmptyPrices_shouldThrowAppException() throws Exception {
-        String planResponse = "{\"id\":\"plan_empty\"}";
-        String pricesResponse = "{\"data\":[]}";
+        final String planResponse = "{\"id\":\"plan_empty\"}";
+        final String pricesResponse = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -188,7 +188,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(pricesResponse, HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_123", "plan_empty"));
             assertTrue(ex.getMessage().contains("Failed to find price for plan"));
         }
@@ -197,8 +197,8 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_withPlanId_noDefaultPriceAndNullPrices_shouldThrowAppException")
     void createSubscription_withPlanId_noDefaultPriceAndNullPrices_shouldThrowAppException() throws Exception {
-        String planResponse = "{\"id\":\"plan_null\"}";
-        String pricesResponse = "{\"data\":null}";
+        final String planResponse = "{\"id\":\"plan_null\"}";
+        final String pricesResponse = "{\"data\":null}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -215,7 +215,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(pricesResponse, HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_123", "plan_null"));
             assertTrue(ex.getMessage().contains("Failed to find price for plan"));
         }
@@ -232,7 +232,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenThrow(new RuntimeException("Network error"));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_123", "plan_fail"));
             assertTrue(ex.getMessage().contains("Failed to find price for plan"));
         }
@@ -244,10 +244,10 @@ class StripeServiceTest {
         // When the inner try parses the error and throws AppException,
         // that AppException is caught by the inner catch (Exception ex) block which swallows it.
         // So the outer "throw new AppException(... Failed to create Stripe subscription ...)" is always reached.
-        String errorBody = "{\"error\":{\"message\":\"No such customer\",\"code\":\"resource_missing\",\"param\":\"customer\"}}";
+        final String errorBody = "{\"error\":{\"message\":\"No such customer\",\"code\":\"resource_missing\",\"param\":\"customer\"}}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
-            HttpClientErrorException ex = HttpClientErrorException.create(
+            final HttpClientErrorException ex = HttpClientErrorException.create(
                     HttpStatus.BAD_REQUEST,
                     "Bad Request",
                     HttpHeaders.EMPTY,
@@ -261,7 +261,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenThrow(ex);
         })) {
-            AppException thrown = assertThrows(AppException.class, () ->
+            final AppException thrown = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_invalid", "price_abc"));
             assertTrue(thrown.getMessage().contains("Failed to create Stripe subscription"));
         }
@@ -270,10 +270,10 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_httpClientError_withUnparsableError_shouldThrowGenericAppException")
     void createSubscription_httpClientError_withUnparsableError_shouldThrowGenericAppException() throws Exception {
-        String errorBody = "not valid json";
+        final String errorBody = "not valid json";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
-            HttpClientErrorException ex = HttpClientErrorException.create(
+            final HttpClientErrorException ex = HttpClientErrorException.create(
                     HttpStatus.BAD_REQUEST,
                     "Bad Request",
                     HttpHeaders.EMPTY,
@@ -287,7 +287,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenThrow(ex);
         })) {
-            AppException thrown = assertThrows(AppException.class, () ->
+            final AppException thrown = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_invalid", "price_abc"));
             assertTrue(thrown.getMessage().contains("Failed to create Stripe subscription"));
         }
@@ -296,10 +296,10 @@ class StripeServiceTest {
     @Test
     @DisplayName("createSubscription_httpClientError_withNoErrorKey_shouldThrowGenericAppException")
     void createSubscription_httpClientError_withNoErrorKey_shouldThrowGenericAppException() throws Exception {
-        String errorBody = "{\"something\":\"else\"}";
+        final String errorBody = "{\"something\":\"else\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
-            HttpClientErrorException ex = HttpClientErrorException.create(
+            final HttpClientErrorException ex = HttpClientErrorException.create(
                     HttpStatus.BAD_REQUEST,
                     "Bad Request",
                     HttpHeaders.EMPTY,
@@ -313,7 +313,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenThrow(ex);
         })) {
-            AppException thrown = assertThrows(AppException.class, () ->
+            final AppException thrown = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_invalid", "price_abc"));
             assertTrue(thrown.getMessage().contains("Failed to create Stripe subscription"));
         }
@@ -330,7 +330,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenThrow(new RuntimeException("Unexpected error"));
         })) {
-            AppException thrown = assertThrows(AppException.class, () ->
+            final AppException thrown = assertThrows(AppException.class, () ->
                     stripeService.createSubscription("cus_123", "price_abc"));
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, thrown.getStatus());
             assertTrue(thrown.getMessage().contains("Failed to create Stripe subscription"));
@@ -342,8 +342,8 @@ class StripeServiceTest {
     @Test
     @DisplayName("updateSubscription_success_shouldReturnUpdatedSubscriptionMap")
     void updateSubscription_success_shouldReturnUpdatedSubscriptionMap() throws Exception {
-        String getResponse = "{\"items\":{\"data\":[{\"id\":\"si_item1\"}]}}";
-        String updateResponse = "{\"id\":\"sub_123\",\"status\":\"active\"}";
+        final String getResponse = "{\"items\":{\"data\":[{\"id\":\"si_item1\"}]}}";
+        final String updateResponse = "{\"id\":\"sub_123\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -360,7 +360,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(updateResponse, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.updateSubscription("sub_123", "price_new");
+            final Map<String, Object> result = stripeService.updateSubscription("sub_123", "price_new");
 
             assertNotNull(result);
             assertEquals("sub_123", result.get("id"));
@@ -370,7 +370,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("updateSubscription_failToGetItemId_shouldThrowAppException")
     void updateSubscription_failToGetItemId_shouldThrowAppException() throws Exception {
-        String getResponse = "invalid json";
+        final String getResponse = "invalid json";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -380,7 +380,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(getResponse, HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.updateSubscription("sub_123", "price_new"));
             assertTrue(ex.getMessage().contains("Failed to get subscription item ID"));
         }
@@ -389,8 +389,8 @@ class StripeServiceTest {
     @Test
     @DisplayName("updateSubscription_failToParseUpdateResponse_shouldThrowAppException")
     void updateSubscription_failToParseUpdateResponse_shouldThrowAppException() throws Exception {
-        String getResponse = "{\"items\":{\"data\":[{\"id\":\"si_item1\"}]}}";
-        String updateResponse = "not valid json{{{";
+        final String getResponse = "{\"items\":{\"data\":[{\"id\":\"si_item1\"}]}}";
+        final String updateResponse = "not valid json{{{";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -407,7 +407,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(updateResponse, HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.updateSubscription("sub_123", "price_new"));
             assertTrue(ex.getMessage().contains("Failed to parse Stripe subscription update response"));
         }
@@ -418,7 +418,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("cancelSubscription_success_shouldReturnCancelledSubscriptionMap")
     void cancelSubscription_success_shouldReturnCancelledSubscriptionMap() throws Exception {
-        String responseBody = "{\"id\":\"sub_123\",\"status\":\"canceled\"}";
+        final String responseBody = "{\"id\":\"sub_123\",\"status\":\"canceled\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -428,7 +428,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.cancelSubscription("sub_123");
+            final Map<String, Object> result = stripeService.cancelSubscription("sub_123");
 
             assertNotNull(result);
             assertEquals("canceled", result.get("status"));
@@ -446,7 +446,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>("bad json", HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.cancelSubscription("sub_123"));
             assertTrue(ex.getMessage().contains("Failed to parse Stripe subscription cancel response"));
         }
@@ -457,7 +457,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("getCustomer_success_shouldReturnCustomerMap")
     void getCustomer_success_shouldReturnCustomerMap() throws Exception {
-        String responseBody = "{\"id\":\"cus_456\",\"name\":\"Test Customer\"}";
+        final String responseBody = "{\"id\":\"cus_456\",\"name\":\"Test Customer\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -467,7 +467,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.getCustomer("cus_456");
+            final Map<String, Object> result = stripeService.getCustomer("cus_456");
 
             assertNotNull(result);
             assertEquals("cus_456", result.get("id"));
@@ -486,7 +486,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>("bad json", HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.getCustomer("cus_456"));
             assertTrue(ex.getMessage().contains("Failed to parse Stripe customer response"));
         }
@@ -497,7 +497,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listPlans_success_shouldReturnPlanDTOList")
     void listPlans_success_shouldReturnPlanDTOList() throws Exception {
-        String responseBody = "{\"data\":[{\"id\":\"plan_1\",\"active\":true,\"amount\":999,\"currency\":\"usd\",\"interval\":\"month\",\"interval_count\":1,\"product\":\"prod_1\",\"nickname\":\"Basic\"}]}";
+        final String responseBody = "{\"data\":[{\"id\":\"plan_1\",\"active\":true,\"amount\":999,\"currency\":\"usd\",\"interval\":\"month\",\"interval_count\":1,\"product\":\"prod_1\",\"nickname\":\"Basic\"}]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -507,7 +507,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            List<PlanDTO> result = stripeService.listPlans();
+            final List<PlanDTO> result = stripeService.listPlans();
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -525,7 +525,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listPlans_withNullNickname_shouldReturnNullNickname")
     void listPlans_withNullNickname_shouldReturnNullNickname() throws Exception {
-        String responseBody = "{\"data\":[{\"id\":\"plan_2\",\"active\":false,\"amount\":0,\"currency\":\"eur\",\"interval\":\"year\",\"interval_count\":1,\"product\":\"prod_2\",\"nickname\":null}]}";
+        final String responseBody = "{\"data\":[{\"id\":\"plan_2\",\"active\":false,\"amount\":0,\"currency\":\"eur\",\"interval\":\"year\",\"interval_count\":1,\"product\":\"prod_2\",\"nickname\":null}]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -535,7 +535,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            List<PlanDTO> result = stripeService.listPlans();
+            final List<PlanDTO> result = stripeService.listPlans();
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -546,7 +546,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listPlans_emptyDataArray_shouldReturnEmptyList")
     void listPlans_emptyDataArray_shouldReturnEmptyList() throws Exception {
-        String responseBody = "{\"data\":[]}";
+        final String responseBody = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -556,7 +556,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            List<PlanDTO> result = stripeService.listPlans();
+            final List<PlanDTO> result = stripeService.listPlans();
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -566,7 +566,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listPlans_nullDataNode_shouldReturnEmptyList")
     void listPlans_nullDataNode_shouldReturnEmptyList() throws Exception {
-        String responseBody = "{\"other\":\"field\"}";
+        final String responseBody = "{\"other\":\"field\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -576,7 +576,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            List<PlanDTO> result = stripeService.listPlans();
+            final List<PlanDTO> result = stripeService.listPlans();
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -594,7 +594,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>("bad json", HttpStatus.OK));
         })) {
-            RuntimeException ex = assertThrows(RuntimeException.class, () ->
+            final RuntimeException ex = assertThrows(RuntimeException.class, () ->
                     stripeService.listPlans());
             assertTrue(ex.getMessage().contains("Failed to parse plans"));
         }
@@ -605,7 +605,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listProducts_success_shouldReturnResponseBody")
     void listProducts_success_shouldReturnResponseBody() throws Exception {
-        String responseBody = "{\"data\":[{\"id\":\"prod_1\"}]}";
+        final String responseBody = "{\"data\":[{\"id\":\"prod_1\"}]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -615,7 +615,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.listProducts();
+            final String result = stripeService.listProducts();
 
             assertEquals(responseBody, result);
         }
@@ -626,7 +626,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listSubscriptions_withCustomerId_shouldAppendCustomerParam")
     void listSubscriptions_withCustomerId_shouldAppendCustomerParam() throws Exception {
-        String responseBody = "{\"data\":[]}";
+        final String responseBody = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -636,7 +636,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.listSubscriptions("cus_123");
+            final String result = stripeService.listSubscriptions("cus_123");
 
             assertEquals(responseBody, result);
         }
@@ -645,7 +645,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listSubscriptions_withNullCustomerId_shouldNotAppendParam")
     void listSubscriptions_withNullCustomerId_shouldNotAppendParam() throws Exception {
-        String responseBody = "{\"data\":[]}";
+        final String responseBody = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -655,7 +655,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.listSubscriptions(null);
+            final String result = stripeService.listSubscriptions(null);
 
             assertEquals(responseBody, result);
         }
@@ -664,7 +664,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listSubscriptions_withEmptyCustomerId_shouldNotAppendParam")
     void listSubscriptions_withEmptyCustomerId_shouldNotAppendParam() throws Exception {
-        String responseBody = "{\"data\":[]}";
+        final String responseBody = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -674,7 +674,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.listSubscriptions("");
+            final String result = stripeService.listSubscriptions("");
 
             assertEquals(responseBody, result);
         }
@@ -685,7 +685,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("getSubscription_success_shouldReturnResponseBody")
     void getSubscription_success_shouldReturnResponseBody() throws Exception {
-        String responseBody = "{\"id\":\"sub_123\",\"status\":\"active\"}";
+        final String responseBody = "{\"id\":\"sub_123\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -695,7 +695,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.getSubscription("sub_123");
+            final String result = stripeService.getSubscription("sub_123");
 
             assertEquals(responseBody, result);
         }
@@ -706,7 +706,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("getCustomerActiveSubscriptions_success_shouldReturnResponseBody")
     void getCustomerActiveSubscriptions_success_shouldReturnResponseBody() throws Exception {
-        String responseBody = "{\"data\":[{\"id\":\"sub_active\"}]}";
+        final String responseBody = "{\"data\":[{\"id\":\"sub_active\"}]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -716,7 +716,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.getCustomerActiveSubscriptions("cus_789");
+            final String result = stripeService.getCustomerActiveSubscriptions("cus_789");
 
             assertEquals(responseBody, result);
         }
@@ -727,7 +727,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("searchSubscriptions_success_shouldReturnResponseBody")
     void searchSubscriptions_success_shouldReturnResponseBody() throws Exception {
-        String responseBody = "{\"data\":[]}";
+        final String responseBody = "{\"data\":[]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -737,7 +737,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            String result = stripeService.searchSubscriptions("status:'active'");
+            final String result = stripeService.searchSubscriptions("status:'active'");
 
             assertEquals(responseBody, result);
         }
@@ -748,9 +748,9 @@ class StripeServiceTest {
     @Test
     @DisplayName("upgradeOrDowngradeSubscription_customerAsString_shouldCancelAndCreateNew")
     void upgradeOrDowngradeSubscription_customerAsString_shouldCancelAndCreateNew() throws Exception {
-        String oldSubJson = "{\"id\":\"sub_old\",\"customer\":\"cus_upgrade\",\"status\":\"active\"}";
-        String cancelResponse = "{\"id\":\"sub_old\",\"status\":\"canceled\"}";
-        String newSubResponse = "{\"id\":\"sub_new\",\"status\":\"active\"}";
+        final String oldSubJson = "{\"id\":\"sub_old\",\"customer\":\"cus_upgrade\",\"status\":\"active\"}";
+        final String cancelResponse = "{\"id\":\"sub_old\",\"status\":\"canceled\"}";
+        final String newSubResponse = "{\"id\":\"sub_new\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             // getSubscription (GET)
@@ -777,7 +777,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(newSubResponse, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new");
+            final Map<String, Object> result = stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new");
 
             assertNotNull(result);
             assertEquals("sub_new", result.get("id"));
@@ -787,9 +787,9 @@ class StripeServiceTest {
     @Test
     @DisplayName("upgradeOrDowngradeSubscription_customerAsMap_shouldExtractIdAndProceed")
     void upgradeOrDowngradeSubscription_customerAsMap_shouldExtractIdAndProceed() throws Exception {
-        String oldSubJson = "{\"id\":\"sub_old2\",\"customer\":{\"id\":\"cus_map_id\"},\"status\":\"active\"}";
-        String cancelResponse = "{\"id\":\"sub_old2\",\"status\":\"canceled\"}";
-        String newSubResponse = "{\"id\":\"sub_new2\",\"status\":\"active\"}";
+        final String oldSubJson = "{\"id\":\"sub_old2\",\"customer\":{\"id\":\"cus_map_id\"},\"status\":\"active\"}";
+        final String cancelResponse = "{\"id\":\"sub_old2\",\"status\":\"canceled\"}";
+        final String newSubResponse = "{\"id\":\"sub_new2\",\"status\":\"active\"}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -813,7 +813,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(newSubResponse, HttpStatus.OK));
         })) {
-            Map<String, Object> result = stripeService.upgradeOrDowngradeSubscription("sub_old2", "price_new");
+            final Map<String, Object> result = stripeService.upgradeOrDowngradeSubscription("sub_old2", "price_new");
 
             assertNotNull(result);
             assertEquals("sub_new2", result.get("id"));
@@ -823,7 +823,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("upgradeOrDowngradeSubscription_customerUnexpectedFormat_shouldThrowAppException")
     void upgradeOrDowngradeSubscription_customerUnexpectedFormat_shouldThrowAppException() throws Exception {
-        String oldSubJson = "{\"id\":\"sub_bad\",\"customer\":12345}";
+        final String oldSubJson = "{\"id\":\"sub_bad\",\"customer\":12345}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -833,7 +833,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(oldSubJson, HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.upgradeOrDowngradeSubscription("sub_bad", "price_new"));
             assertTrue(ex.getMessage().contains("Unexpected customer format"));
         }
@@ -850,7 +850,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>("bad json", HttpStatus.OK));
         })) {
-            AppException ex = assertThrows(AppException.class, () ->
+            final AppException ex = assertThrows(AppException.class, () ->
                     stripeService.upgradeOrDowngradeSubscription("sub_invalid", "price_new"));
             assertTrue(ex.getMessage().contains("Failed to parse subscription JSON"));
         }
@@ -861,7 +861,7 @@ class StripeServiceTest {
     @Test
     @DisplayName("listPlans_withMissingNicknameField_shouldReturnNullNickname")
     void listPlans_withMissingNicknameField_shouldReturnNullNickname() throws Exception {
-        String responseBody = "{\"data\":[{\"id\":\"plan_3\",\"active\":true,\"amount\":500,\"currency\":\"usd\",\"interval\":\"month\",\"interval_count\":1,\"product\":\"prod_3\"}]}";
+        final String responseBody = "{\"data\":[{\"id\":\"plan_3\",\"active\":true,\"amount\":500,\"currency\":\"usd\",\"interval\":\"month\",\"interval_count\":1,\"product\":\"prod_3\"}]}";
 
         try (MockedConstruction<RestTemplate> mocked = mockConstruction(RestTemplate.class, (mock, ctx) -> {
             when(mock.exchange(
@@ -871,7 +871,7 @@ class StripeServiceTest {
                     eq(String.class)
             )).thenReturn(new ResponseEntity<>(responseBody, HttpStatus.OK));
         })) {
-            List<PlanDTO> result = stripeService.listPlans();
+            final List<PlanDTO> result = stripeService.listPlans();
 
             assertNotNull(result);
             assertEquals(1, result.size());
