@@ -10,7 +10,7 @@ class AmountsTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        Amounts amounts = Amounts.builder()
+        final Amounts amounts = Amounts.builder()
                 .totalCharges(500.0)
                 .totalAdjustments(50.0)
                 .total(450.0)
@@ -25,7 +25,7 @@ class AmountsTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        Amounts amounts = Amounts.builder().build();
+        final Amounts amounts = Amounts.builder().build();
 
         assertThat(amounts.getTotalCharges()).isNull();
         assertThat(amounts.getTotalAdjustments()).isNull();
@@ -37,7 +37,7 @@ class AmountsTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Amounts amounts = Amounts.builder().build();
+        final Amounts amounts = Amounts.builder().build();
 
         amounts.setTotalCharges(1000.0);
         amounts.setTotalAdjustments(100.0);
@@ -54,8 +54,8 @@ class AmountsTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Amounts a1 = Amounts.builder().totalCharges(500.0).total(500.0).build();
-        Amounts a2 = Amounts.builder().totalCharges(500.0).total(500.0).build();
+        final Amounts a1 = Amounts.builder().totalCharges(500.0).total(500.0).build();
+        final Amounts a2 = Amounts.builder().totalCharges(500.0).total(500.0).build();
 
         assertThat(a1).isEqualTo(a2);
         assertThat(a1.hashCode()).isEqualTo(a2.hashCode());
@@ -63,15 +63,15 @@ class AmountsTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        Amounts a1 = Amounts.builder().totalCharges(500.0).build();
-        Amounts a2 = Amounts.builder().totalCharges(999.0).build();
+        final Amounts a1 = Amounts.builder().totalCharges(500.0).build();
+        final Amounts a2 = Amounts.builder().totalCharges(999.0).build();
 
         assertThat(a1).isNotEqualTo(a2);
     }
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        Amounts amounts = Amounts.builder().totalCharges(500.0).amountDue(450.0).build();
+        final Amounts amounts = Amounts.builder().totalCharges(500.0).amountDue(450.0).build();
 
         assertThat(amounts.toString()).contains("500.0");
         assertThat(amounts.toString()).contains("450.0");
