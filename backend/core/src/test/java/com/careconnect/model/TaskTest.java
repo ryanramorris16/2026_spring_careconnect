@@ -10,7 +10,7 @@ class TaskTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Task t = new Task();
+        final Task t = new Task();
 
         assertThat(t).isNotNull();
         assertThat(t.getId()).isNull();
@@ -24,7 +24,7 @@ class TaskTest {
 
     @Test
     void builder_defaults_initializesNotificationsList() throws Exception {
-        Task t = Task.builder().name("Test task").build();
+        final Task t = Task.builder().name("Test task").build();
 
         assertThat(t.getNotifications()).isNotNull().isEmpty();
     }
@@ -33,9 +33,9 @@ class TaskTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
 
-        Task t = Task.builder()
+        final Task t = Task.builder()
                 .id(1L)
                 .patient(patient)
                 .name("Take medication")
@@ -72,8 +72,8 @@ class TaskTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Task t = new Task();
-        Patient patient = new Patient();
+        final Task t = new Task();
+        final Patient patient = new Patient();
 
         t.setId(2L);
         t.setPatient(patient);
