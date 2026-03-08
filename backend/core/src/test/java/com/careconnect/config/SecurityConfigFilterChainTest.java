@@ -77,11 +77,11 @@ class SecurityConfigFilterChainTest {
         @Bean
         @Primary
         CorsConfigurationSource corsConfigurationSource() throws Exception {
-            CorsConfiguration cfg = new CorsConfiguration();
+            final CorsConfiguration cfg = new CorsConfiguration();
             cfg.setAllowedOrigins(List.of("*"));
             cfg.setAllowedMethods(List.of("*"));
             cfg.setAllowedHeaders(List.of("*"));
-            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+            final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
             source.registerCorsConfiguration("/**", cfg);
             return source;
         }
@@ -179,7 +179,7 @@ class SecurityConfigFilterChainTest {
         // protected path. Spring Security's BasicAuthenticationFilter processes it,
         // userDetailsService throws UsernameNotFoundException → BadCredentialsException,
         // and the httpBasic authenticationEntryPoint fires (401).
-        String invalidCreds = Base64.getEncoder()
+        final String invalidCreds = Base64.getEncoder()
                 .encodeToString("user:wrongpassword".getBytes());
         mockMvc.perform(get("/v1/api/patients/ping")
                         .header("Authorization", "Basic " + invalidCreds))
