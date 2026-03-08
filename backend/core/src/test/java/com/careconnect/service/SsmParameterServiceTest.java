@@ -34,16 +34,16 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameter_parameterExists_returnsValue")
     void getParameter_parameterExists_returnsValue() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("secret-value").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        final String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
 
         assertEquals("secret-value", result);
 
-        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        final ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
         verify(ssmClient).getParameter(captor.capture());
         assertEquals("/careconnect/prod/api-key", captor.getValue().name());
         assertTrue(captor.getValue().withDecryption());
@@ -52,16 +52,16 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameter_withoutDecryption_sendsWithDecryptionFalse")
     void getParameter_withoutDecryption_sendsWithDecryptionFalse() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("plain-value").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = ssmParameterService.getParameter("/careconnect/prod/setting", false);
+        final String result = ssmParameterService.getParameter("/careconnect/prod/setting", false);
 
         assertEquals("plain-value", result);
 
-        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        final ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
         verify(ssmClient).getParameter(captor.capture());
         assertFalse(captor.getValue().withDecryption());
     }
@@ -72,7 +72,7 @@ class SsmParameterServiceTest {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
-        String result = ssmParameterService.getParameter("/careconnect/prod/missing-key", true);
+        final String result = ssmParameterService.getParameter("/careconnect/prod/missing-key", true);
 
         assertNull(result);
     }
@@ -83,7 +83,7 @@ class SsmParameterServiceTest {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(new RuntimeException("Connection error"));
 
-        String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        final String result = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
 
         assertNull(result);
     }
@@ -91,17 +91,17 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameter_cachedValue_returnsCachedWithoutCallingSSM")
     void getParameter_cachedValue_returnsCachedWithoutCallingSSM() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("cached-value").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
         // First call - should go to SSM
-        String result1 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        final String result1 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
         assertEquals("cached-value", result1);
 
         // Second call - should use cache
-        String result2 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
+        final String result2 = ssmParameterService.getParameter("/careconnect/prod/api-key", true);
         assertEquals("cached-value", result2);
 
         // SSM should only be called once
@@ -111,10 +111,10 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameter_differentDecryptionFlags_cachedSeparately")
     void getParameter_differentDecryptionFlags_cachedSeparately() throws Exception {
-        GetParameterResponse response1 = GetParameterResponse.builder()
+        final GetParameterResponse response1 = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("decrypted-value").build())
                 .build();
-        GetParameterResponse response2 = GetParameterResponse.builder()
+        final GetParameterResponse response2 = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("plain-value").build())
                 .build();
 
@@ -123,11 +123,11 @@ class SsmParameterServiceTest {
                 .thenReturn(response2);
 
         // Call with decryption true
-        String result1 = ssmParameterService.getParameter("/param", true);
+        final String result1 = ssmParameterService.getParameter("/param", true);
         assertEquals("decrypted-value", result1);
 
         // Call with decryption false - different cache key
-        String result2 = ssmParameterService.getParameter("/param", false);
+        final String result2 = ssmParameterService.getParameter("/param", false);
         assertEquals("plain-value", result2);
 
         // SSM should be called twice (different cache keys)
@@ -139,16 +139,16 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameter_singleArgOverload_callsWithDecryptionTrue")
     void getParameter_singleArgOverload_callsWithDecryptionTrue() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("auto-decrypted").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = ssmParameterService.getParameter("/careconnect/prod/secret");
+        final String result = ssmParameterService.getParameter("/careconnect/prod/secret");
 
         assertEquals("auto-decrypted", result);
 
-        ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
+        final ArgumentCaptor<GetParameterRequest> captor = ArgumentCaptor.forClass(GetParameterRequest.class);
         verify(ssmClient).getParameter(captor.capture());
         assertTrue(captor.getValue().withDecryption());
     }
@@ -159,7 +159,7 @@ class SsmParameterServiceTest {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
-        String result = ssmParameterService.getParameter("/missing");
+        final String result = ssmParameterService.getParameter("/missing");
 
         assertNull(result);
     }
@@ -169,12 +169,12 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("getParameterOrDefault_parameterExists_returnsParameterValue")
     void getParameterOrDefault_parameterExists_returnsParameterValue() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("real-value").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = ssmParameterService.getParameterOrDefault("/param", "default-value");
+        final String result = ssmParameterService.getParameterOrDefault("/param", "default-value");
 
         assertEquals("real-value", result);
     }
@@ -185,7 +185,7 @@ class SsmParameterServiceTest {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(ParameterNotFoundException.builder().message("Not found").build());
 
-        String result = ssmParameterService.getParameterOrDefault("/missing-param", "fallback");
+        final String result = ssmParameterService.getParameterOrDefault("/missing-param", "fallback");
 
         assertEquals("fallback", result);
     }
@@ -196,7 +196,7 @@ class SsmParameterServiceTest {
         when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(new RuntimeException("Connection error"));
 
-        String result = ssmParameterService.getParameterOrDefault("/error-param", "safe-default");
+        final String result = ssmParameterService.getParameterOrDefault("/error-param", "safe-default");
 
         assertEquals("safe-default", result);
     }
@@ -206,7 +206,7 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("clearCache_afterCaching_forcesNextCallToSSM")
     void clearCache_afterCaching_forcesNextCallToSSM() throws Exception {
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("value1").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
@@ -218,12 +218,12 @@ class SsmParameterServiceTest {
         ssmParameterService.clearCache();
 
         // Second call after cache clear - should go to SSM again
-        GetParameterResponse response2 = GetParameterResponse.builder()
+        final GetParameterResponse response2 = GetParameterResponse.builder()
                 .parameter(Parameter.builder().value("value2").build())
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response2);
 
-        String result = ssmParameterService.getParameter("/param", true);
+        final String result = ssmParameterService.getParameter("/param", true);
         assertEquals("value2", result);
 
         // SSM should be called twice (once before cache clear, once after)
@@ -241,7 +241,7 @@ class SsmParameterServiceTest {
     @Test
     @DisplayName("constructor_validSsmClient_createsServiceSuccessfully")
     void constructor_validSsmClient_createsServiceSuccessfully() throws Exception {
-        SsmParameterService service = new SsmParameterService(ssmClient);
+        final SsmParameterService service = new SsmParameterService(ssmClient);
         assertNotNull(service);
     }
 }
