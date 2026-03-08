@@ -66,7 +66,7 @@ class ConnectionRequestControllerTest {
     @Test
     void createConnectionRequest_shouldReturnSuccess() throws Exception {
 
-        ConnectionRequest saved = new ConnectionRequest();
+        final ConnectionRequest saved = new ConnectionRequest();
         saved.setId(10L);
 
         when(connectionRequestService.createRequest(
