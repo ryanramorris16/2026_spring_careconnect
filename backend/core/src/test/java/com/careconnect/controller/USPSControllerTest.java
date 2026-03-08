@@ -35,13 +35,13 @@ class USPSControllerTest {
 
     @Test
     void getDigest_jwtPresentDatePresent_callsDigestForDate() throws Exception {
-        Jwt jwt = mock(Jwt.class);
+        final Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("user-123");
-        LocalDate date = LocalDate.of(2025, 1, 15);
-        USPSDigest digest = emptyDigest();
+        final LocalDate date = LocalDate.of(2025, 1, 15);
+        final USPSDigest digest = emptyDigest();
         when(service.digestForDate("user-123", date)).thenReturn(Optional.of(digest));
 
-        ResponseEntity<USPSDigest> response = controller.getDigest(jwt, date);
+        final ResponseEntity<USPSDigest> response = controller.getDigest(jwt, date);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(digest);
@@ -50,12 +50,12 @@ class USPSControllerTest {
 
     @Test
     void getDigest_jwtPresentDateNull_callsLatestForUser() throws Exception {
-        Jwt jwt = mock(Jwt.class);
+        final Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("user-123");
-        USPSDigest digest = emptyDigest();
+        final USPSDigest digest = emptyDigest();
         when(service.latestForUser("user-123")).thenReturn(Optional.of(digest));
 
-        ResponseEntity<USPSDigest> response = controller.getDigest(jwt, null);
+        final ResponseEntity<USPSDigest> response = controller.getDigest(jwt, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(digest);
@@ -66,7 +66,7 @@ class USPSControllerTest {
     void getDigest_jwtNullDateNull_usesDemoUserFallback() throws Exception {
         when(service.latestForUser("demo-user")).thenReturn(Optional.empty());
 
-        ResponseEntity<USPSDigest> response = controller.getDigest(null, null);
+        final ResponseEntity<USPSDigest> response = controller.getDigest(null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         // orElseGet returns a new empty digest
@@ -76,10 +76,10 @@ class USPSControllerTest {
 
     @Test
     void getDigest_jwtNullDatePresent_callsDigestForDateWithDemoUser() throws Exception {
-        LocalDate date = LocalDate.of(2025, 3, 10);
+        final LocalDate date = LocalDate.of(2025, 3, 10);
         when(service.digestForDate("demo-user", date)).thenReturn(Optional.empty());
 
-        ResponseEntity<USPSDigest> response = controller.getDigest(null, date);
+        final ResponseEntity<USPSDigest> response = controller.getDigest(null, date);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
