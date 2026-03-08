@@ -52,11 +52,11 @@ class GamificationServiceTest {
     @Test
     @DisplayName("awardXp_existingProgress_updatesXpAndLevel")
     void awardXp_existingProgress_updatesXpAndLevel() throws Exception {
-        Long userId = 1L;
-        int existingXp = 40;
-        int amount = 20;
+        final Long userId = 1L;
+        final int existingXp = 40;
+        final int amount = 20;
 
-        XPProgress existing = new XPProgress();
+        final XPProgress existing = new XPProgress();
         existing.setUserId(userId);
         existing.setXp(existingXp);
         existing.setLevel(1);
@@ -64,7 +64,7 @@ class GamificationServiceTest {
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
         when(xpProgressRepository.save(any(XPProgress.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        XPProgress result = gamificationService.awardXp(userId, amount);
+        final XPProgress result = gamificationService.awardXp(userId, amount);
 
         assertThat(result.getXp()).isEqualTo(60);
         // calculateLevel(60) = 60/50 + 1 = 2
@@ -76,13 +76,13 @@ class GamificationServiceTest {
     @Test
     @DisplayName("awardXp_noExistingProgress_createsNewProgressAndAwardsXp")
     void awardXp_noExistingProgress_createsNewProgressAndAwardsXp() throws Exception {
-        Long userId = 2L;
-        int amount = 10;
+        final Long userId = 2L;
+        final int amount = 10;
 
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.empty());
         when(xpProgressRepository.save(any(XPProgress.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        XPProgress result = gamificationService.awardXp(userId, amount);
+        final XPProgress result = gamificationService.awardXp(userId, amount);
 
         assertThat(result.getUserId()).isEqualTo(userId);
         assertThat(result.getXp()).isEqualTo(10);
@@ -95,9 +95,9 @@ class GamificationServiceTest {
     @Test
     @DisplayName("awardXp_zeroAmount_xpUnchangedLevelStays")
     void awardXp_zeroAmount_xpUnchangedLevelStays() throws Exception {
-        Long userId = 3L;
+        final Long userId = 3L;
 
-        XPProgress existing = new XPProgress();
+        final XPProgress existing = new XPProgress();
         existing.setUserId(userId);
         existing.setXp(100);
         existing.setLevel(3);
@@ -105,7 +105,7 @@ class GamificationServiceTest {
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
         when(xpProgressRepository.save(any(XPProgress.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        XPProgress result = gamificationService.awardXp(userId, 0);
+        final XPProgress result = gamificationService.awardXp(userId, 0);
 
         assertThat(result.getXp()).isEqualTo(100);
         // calculateLevel(100) = 100/50 + 1 = 3
@@ -115,9 +115,9 @@ class GamificationServiceTest {
     @Test
     @DisplayName("awardXp_levelBoundary_levelIncreasesCorrectly")
     void awardXp_levelBoundary_levelIncreasesCorrectly() throws Exception {
-        Long userId = 4L;
+        final Long userId = 4L;
 
-        XPProgress existing = new XPProgress();
+        final XPProgress existing = new XPProgress();
         existing.setUserId(userId);
         existing.setXp(49);
         existing.setLevel(1);
@@ -125,7 +125,7 @@ class GamificationServiceTest {
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
         when(xpProgressRepository.save(any(XPProgress.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        XPProgress result = gamificationService.awardXp(userId, 1);
+        final XPProgress result = gamificationService.awardXp(userId, 1);
 
         assertThat(result.getXp()).isEqualTo(50);
         // calculateLevel(50) = 50/50 + 1 = 2
@@ -139,8 +139,8 @@ class GamificationServiceTest {
     @Test
     @DisplayName("grantAchievement_achievementNotFound_throwsRuntimeException")
     void grantAchievement_achievementNotFound_throwsRuntimeException() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 99L;
+        final Long userId = 1L;
+        final Long achievementId = 99L;
 
         when(achievementRepository.findById(achievementId)).thenReturn(Optional.empty());
 
@@ -152,14 +152,14 @@ class GamificationServiceTest {
     @Test
     @DisplayName("grantAchievement_userAlreadyHasAchievement_doesNotSaveDuplicate")
     void grantAchievement_userAlreadyHasAchievement_doesNotSaveDuplicate() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 10L;
+        final Long userId = 1L;
+        final Long achievementId = 10L;
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle("First Check-In");
 
-        UserAchievement existingUa = new UserAchievement();
+        final UserAchievement existingUa = new UserAchievement();
         existingUa.setUserId(userId);
         existingUa.setAchievement(achievement);
 
@@ -174,10 +174,10 @@ class GamificationServiceTest {
     @Test
     @DisplayName("grantAchievement_userDoesNotHaveAchievement_savesNewUserAchievement")
     void grantAchievement_userDoesNotHaveAchievement_savesNewUserAchievement() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 10L;
+        final Long userId = 1L;
+        final Long achievementId = 10L;
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle("First Check-In");
 
@@ -186,10 +186,10 @@ class GamificationServiceTest {
 
         gamificationService.grantAchievement(userId, achievementId);
 
-        ArgumentCaptor<UserAchievement> captor = ArgumentCaptor.forClass(UserAchievement.class);
+        final ArgumentCaptor<UserAchievement> captor = ArgumentCaptor.forClass(UserAchievement.class);
         verify(userAchievementRepository).save(captor.capture());
 
-        UserAchievement saved = captor.getValue();
+        final UserAchievement saved = captor.getValue();
         assertThat(saved.getUserId()).isEqualTo(userId);
         assertThat(saved.getAchievement()).isEqualTo(achievement);
         assertThat(saved.getEarnedAt()).isNotNull();
@@ -198,19 +198,19 @@ class GamificationServiceTest {
     @Test
     @DisplayName("grantAchievement_userHasDifferentAchievement_savesNewOne")
     void grantAchievement_userHasDifferentAchievement_savesNewOne() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 10L;
-        Long otherAchievementId = 20L;
+        final Long userId = 1L;
+        final Long achievementId = 10L;
+        final Long otherAchievementId = 20L;
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle("First Check-In");
 
-        Achievement otherAchievement = new Achievement();
+        final Achievement otherAchievement = new Achievement();
         otherAchievement.setId(otherAchievementId);
         otherAchievement.setTitle("Other Achievement");
 
-        UserAchievement existingUa = new UserAchievement();
+        final UserAchievement existingUa = new UserAchievement();
         existingUa.setUserId(userId);
         existingUa.setAchievement(otherAchievement);
 
@@ -229,14 +229,14 @@ class GamificationServiceTest {
     @Test
     @DisplayName("getAllAchievements_achievementsExist_returnsAll")
     void getAllAchievements_achievementsExist_returnsAll() throws Exception {
-        Achievement a1 = new Achievement();
+        final Achievement a1 = new Achievement();
         a1.setTitle("First Check-In");
-        Achievement a2 = new Achievement();
+        final Achievement a2 = new Achievement();
         a2.setTitle("Streak Master");
 
         when(achievementRepository.findAll()).thenReturn(List.of(a1, a2));
 
-        List<Achievement> result = gamificationService.getAllAchievements();
+        final List<Achievement> result = gamificationService.getAllAchievements();
 
         assertThat(result).hasSize(2);
         verify(achievementRepository).findAll();
@@ -247,7 +247,7 @@ class GamificationServiceTest {
     void getAllAchievements_noAchievements_returnsEmptyList() throws Exception {
         when(achievementRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<Achievement> result = gamificationService.getAllAchievements();
+        final List<Achievement> result = gamificationService.getAllAchievements();
 
         assertThat(result).isEmpty();
     }
@@ -259,14 +259,14 @@ class GamificationServiceTest {
     @Test
     @DisplayName("getUserAchievements_userHasAchievements_returnsList")
     void getUserAchievements_userHasAchievements_returnsList() throws Exception {
-        Long userId = 1L;
+        final Long userId = 1L;
 
-        UserAchievement ua = new UserAchievement();
+        final UserAchievement ua = new UserAchievement();
         ua.setUserId(userId);
 
         when(userAchievementRepository.findByUserId(userId)).thenReturn(List.of(ua));
 
-        List<UserAchievement> result = gamificationService.getUserAchievements(userId);
+        final List<UserAchievement> result = gamificationService.getUserAchievements(userId);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getUserId()).isEqualTo(userId);
@@ -275,11 +275,11 @@ class GamificationServiceTest {
     @Test
     @DisplayName("getUserAchievements_userHasNone_returnsEmptyList")
     void getUserAchievements_userHasNone_returnsEmptyList() throws Exception {
-        Long userId = 99L;
+        final Long userId = 99L;
 
         when(userAchievementRepository.findByUserId(userId)).thenReturn(Collections.emptyList());
 
-        List<UserAchievement> result = gamificationService.getUserAchievements(userId);
+        final List<UserAchievement> result = gamificationService.getUserAchievements(userId);
 
         assertThat(result).isEmpty();
     }
@@ -291,14 +291,14 @@ class GamificationServiceTest {
     @Test
     @DisplayName("getXpProgress_progressExists_returnsOptionalWithValue")
     void getXpProgress_progressExists_returnsOptionalWithValue() throws Exception {
-        Long userId = 1L;
-        XPProgress progress = new XPProgress();
+        final Long userId = 1L;
+        final XPProgress progress = new XPProgress();
         progress.setUserId(userId);
         progress.setXp(150);
 
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.of(progress));
 
-        Optional<XPProgress> result = gamificationService.getXpProgress(userId);
+        final Optional<XPProgress> result = gamificationService.getXpProgress(userId);
 
         assertThat(result).isPresent();
         assertThat(result.get().getXp()).isEqualTo(150);
@@ -307,11 +307,11 @@ class GamificationServiceTest {
     @Test
     @DisplayName("getXpProgress_noProgress_returnsEmptyOptional")
     void getXpProgress_noProgress_returnsEmptyOptional() throws Exception {
-        Long userId = 99L;
+        final Long userId = 99L;
 
         when(xpProgressRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
-        Optional<XPProgress> result = gamificationService.getXpProgress(userId);
+        final Optional<XPProgress> result = gamificationService.getXpProgress(userId);
 
         assertThat(result).isEmpty();
     }
@@ -323,8 +323,8 @@ class GamificationServiceTest {
     @Test
     @DisplayName("unlockAchievement_achievementNotFoundByTitle_returnsEarlyWithoutSaving")
     void unlockAchievement_achievementNotFoundByTitle_returnsEarlyWithoutSaving() throws Exception {
-        Long userId = 1L;
-        String title = "Nonexistent";
+        final Long userId = 1L;
+        final String title = "Nonexistent";
 
         when(achievementRepository.findByTitle(title)).thenReturn(Optional.empty());
 
@@ -338,11 +338,11 @@ class GamificationServiceTest {
     @Test
     @DisplayName("unlockAchievement_alreadyUnlocked_returnsEarlyWithoutSaving")
     void unlockAchievement_alreadyUnlocked_returnsEarlyWithoutSaving() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 5L;
-        String title = "Streak Master";
+        final Long userId = 1L;
+        final Long achievementId = 5L;
+        final String title = "Streak Master";
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle(title);
 
@@ -358,12 +358,12 @@ class GamificationServiceTest {
     @Test
     @DisplayName("unlockAchievement_newUnlock_awardsXpAndSavesUserAchievement")
     void unlockAchievement_newUnlock_awardsXpAndSavesUserAchievement() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 5L;
-        String title = "Streak Master";
-        int xpAward = 25;
+        final Long userId = 1L;
+        final Long achievementId = 5L;
+        final String title = "Streak Master";
+        final int xpAward = 25;
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle(title);
 
@@ -377,16 +377,16 @@ class GamificationServiceTest {
         gamificationService.unlockAchievement(userId, title, xpAward);
 
         // Verify XP was awarded (xpProgressRepository.save called via awardXp)
-        ArgumentCaptor<XPProgress> xpCaptor = ArgumentCaptor.forClass(XPProgress.class);
+        final ArgumentCaptor<XPProgress> xpCaptor = ArgumentCaptor.forClass(XPProgress.class);
         verify(xpProgressRepository).save(xpCaptor.capture());
-        XPProgress savedXp = xpCaptor.getValue();
+        final XPProgress savedXp = xpCaptor.getValue();
         assertThat(savedXp.getXp()).isEqualTo(xpAward);
         assertThat(savedXp.getUserId()).isEqualTo(userId);
 
         // Verify user achievement was saved
-        ArgumentCaptor<UserAchievement> uaCaptor = ArgumentCaptor.forClass(UserAchievement.class);
+        final ArgumentCaptor<UserAchievement> uaCaptor = ArgumentCaptor.forClass(UserAchievement.class);
         verify(userAchievementRepository).save(uaCaptor.capture());
-        UserAchievement savedUa = uaCaptor.getValue();
+        final UserAchievement savedUa = uaCaptor.getValue();
         assertThat(savedUa.getUserId()).isEqualTo(userId);
         assertThat(savedUa.getAchievement()).isEqualTo(achievement);
         assertThat(savedUa.getEarnedAt()).isNotNull();
@@ -395,16 +395,16 @@ class GamificationServiceTest {
     @Test
     @DisplayName("unlockAchievement_existingXpProgress_addsXpToExisting")
     void unlockAchievement_existingXpProgress_addsXpToExisting() throws Exception {
-        Long userId = 1L;
-        Long achievementId = 7L;
-        String title = "Health Hero";
-        int xpAward = 50;
+        final Long userId = 1L;
+        final Long achievementId = 7L;
+        final String title = "Health Hero";
+        final int xpAward = 50;
 
-        Achievement achievement = new Achievement();
+        final Achievement achievement = new Achievement();
         achievement.setId(achievementId);
         achievement.setTitle(title);
 
-        XPProgress existingProgress = new XPProgress();
+        final XPProgress existingProgress = new XPProgress();
         existingProgress.setUserId(userId);
         existingProgress.setXp(100);
         existingProgress.setLevel(3);
@@ -416,9 +416,9 @@ class GamificationServiceTest {
 
         gamificationService.unlockAchievement(userId, title, xpAward);
 
-        ArgumentCaptor<XPProgress> xpCaptor = ArgumentCaptor.forClass(XPProgress.class);
+        final ArgumentCaptor<XPProgress> xpCaptor = ArgumentCaptor.forClass(XPProgress.class);
         verify(xpProgressRepository).save(xpCaptor.capture());
-        XPProgress savedXp = xpCaptor.getValue();
+        final XPProgress savedXp = xpCaptor.getValue();
         assertThat(savedXp.getXp()).isEqualTo(150);
         // calculateLevel(150) = 150/50 + 1 = 4
         assertThat(savedXp.getLevel()).isEqualTo(4);
