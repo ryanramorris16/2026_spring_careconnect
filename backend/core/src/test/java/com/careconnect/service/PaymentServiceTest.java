@@ -28,7 +28,7 @@ class PaymentServiceTest {
     @Test
     @DisplayName("savePayment - valid payment - delegates to repository save")
     void savePayment_validPayment_delegatesToRepositorySave() throws Exception {
-        Payment payment = Payment.builder()
+        final Payment payment = Payment.builder()
                 .id(1L)
                 .amountCents(5000)
                 .status("SUCCEEDED")
@@ -51,8 +51,8 @@ class PaymentServiceTest {
     @Test
     @DisplayName("getByStripeSessionId - existing session id - returns payment")
     void getByStripeSessionId_existingSessionId_returnsPayment() throws Exception {
-        String sessionId = "sess_abc123";
-        Payment expected = Payment.builder()
+        final String sessionId = "sess_abc123";
+        final Payment expected = Payment.builder()
                 .id(1L)
                 .stripeSessionId(sessionId)
                 .amountCents(9900)
@@ -61,7 +61,7 @@ class PaymentServiceTest {
 
         when(paymentRepository.findByStripeSessionId(sessionId)).thenReturn(expected);
 
-        Payment result = paymentService.getByStripeSessionId(sessionId);
+        final Payment result = paymentService.getByStripeSessionId(sessionId);
 
         assertNotNull(result);
         assertEquals(sessionId, result.getStripeSessionId());
@@ -72,11 +72,11 @@ class PaymentServiceTest {
     @Test
     @DisplayName("getByStripeSessionId - non-existing session id - returns null")
     void getByStripeSessionId_nonExistingSessionId_returnsNull() throws Exception {
-        String sessionId = "sess_nonexistent";
+        final String sessionId = "sess_nonexistent";
 
         when(paymentRepository.findByStripeSessionId(sessionId)).thenReturn(null);
 
-        Payment result = paymentService.getByStripeSessionId(sessionId);
+        final Payment result = paymentService.getByStripeSessionId(sessionId);
 
         assertNull(result);
         verify(paymentRepository, times(1)).findByStripeSessionId(sessionId);
@@ -87,7 +87,7 @@ class PaymentServiceTest {
     void getByStripeSessionId_nullSessionId_returnsNullFromRepository() throws Exception {
         when(paymentRepository.findByStripeSessionId(null)).thenReturn(null);
 
-        Payment result = paymentService.getByStripeSessionId(null);
+        final Payment result = paymentService.getByStripeSessionId(null);
 
         assertNull(result);
         verify(paymentRepository, times(1)).findByStripeSessionId(null);
