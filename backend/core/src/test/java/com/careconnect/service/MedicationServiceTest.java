@@ -85,7 +85,7 @@ class MedicationServiceTest {
         when(medicationRepository.findByPatientAndIsActiveTrueOrderByCreatedAtDesc(patient))
                 .thenReturn(List.of(medication));
 
-        List<MedicationDTO> result = medicationService.getActiveMedicationsForPatient(1L);
+        final List<MedicationDTO> result = medicationService.getActiveMedicationsForPatient(1L);
 
         assertEquals(1, result.size());
         assertEquals("Aspirin", result.get(0).medicationName());
@@ -112,7 +112,7 @@ class MedicationServiceTest {
         when(medicationRepository.findByPatientAndIsActiveTrueOrderByCreatedAtDesc(patient))
                 .thenReturn(List.of());
 
-        List<MedicationDTO> result = medicationService.getActiveMedicationsForPatient(1L);
+        final List<MedicationDTO> result = medicationService.getActiveMedicationsForPatient(1L);
 
         assertTrue(result.isEmpty());
     }
@@ -122,7 +122,7 @@ class MedicationServiceTest {
     void getActiveMedicationsForPatient_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.getActiveMedicationsForPatient(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -140,7 +140,7 @@ class MedicationServiceTest {
         when(medicationRepository.findByPatientOrderByCreatedAtDesc(patient))
                 .thenReturn(List.of(medication));
 
-        List<MedicationDTO> result = medicationService.getAllMedicationsForPatient(1L);
+        final List<MedicationDTO> result = medicationService.getAllMedicationsForPatient(1L);
 
         assertEquals(1, result.size());
         assertEquals("Aspirin", result.get(0).medicationName());
@@ -151,7 +151,7 @@ class MedicationServiceTest {
     void getAllMedicationsForPatient_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.getAllMedicationsForPatient(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -165,7 +165,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("createMedication - valid DTO with isActive true - creates medication with given isActive")
     void createMedication_validDTOWithIsActiveTrue_createsMedication() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .patientId(1L)
                 .medicationName("Ibuprofen")
                 .dosage("200mg")
@@ -182,12 +182,12 @@ class MedicationServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> {
-            Medication saved = invocation.getArgument(0);
+            final Medication saved = invocation.getArgument(0);
             saved.setId(20L);
             return saved;
         });
 
-        MedicationDTO result = medicationService.createMedication(dto);
+        final MedicationDTO result = medicationService.createMedication(dto);
 
         assertEquals("Ibuprofen", result.medicationName());
         assertEquals("200mg", result.dosage());
@@ -199,7 +199,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("createMedication - valid DTO with isActive null - defaults isActive to false")
     void createMedication_validDTOWithIsActiveNull_defaultsIsActiveToFalse() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .patientId(1L)
                 .medicationName("Vitamin D")
                 .isActive(null)
@@ -207,12 +207,12 @@ class MedicationServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> {
-            Medication saved = invocation.getArgument(0);
+            final Medication saved = invocation.getArgument(0);
             saved.setId(30L);
             return saved;
         });
 
-        MedicationDTO result = medicationService.createMedication(dto);
+        final MedicationDTO result = medicationService.createMedication(dto);
 
         assertFalse(result.isActive());
     }
@@ -220,7 +220,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("createMedication - valid DTO with isActive false - sets isActive to false")
     void createMedication_validDTOWithIsActiveFalse_setsIsActiveToFalse() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .patientId(1L)
                 .medicationName("Vitamin C")
                 .isActive(false)
@@ -228,12 +228,12 @@ class MedicationServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> {
-            Medication saved = invocation.getArgument(0);
+            final Medication saved = invocation.getArgument(0);
             saved.setId(31L);
             return saved;
         });
 
-        MedicationDTO result = medicationService.createMedication(dto);
+        final MedicationDTO result = medicationService.createMedication(dto);
 
         assertFalse(result.isActive());
     }
@@ -241,14 +241,14 @@ class MedicationServiceTest {
     @Test
     @DisplayName("createMedication - patient not found - throws AppException")
     void createMedication_patientNotFound_throwsAppException() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .patientId(99L)
                 .medicationName("Test")
                 .build();
 
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.createMedication(dto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -262,7 +262,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("addMedication - valid patientId and DTO - creates medication with correct patient and isActive false")
     void addMedication_validPatientIdAndDTO_createsMedicationWithIsActiveFalse() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .medicationName("Metformin")
                 .dosage("500mg")
                 .frequency("Once daily")
@@ -278,12 +278,12 @@ class MedicationServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> {
-            Medication saved = invocation.getArgument(0);
+            final Medication saved = invocation.getArgument(0);
             saved.setId(40L);
             return saved;
         });
 
-        MedicationDTO result = medicationService.addMedication(1L, dto);
+        final MedicationDTO result = medicationService.addMedication(1L, dto);
 
         assertEquals("Metformin", result.medicationName());
         assertEquals(1L, result.patientId());
@@ -293,13 +293,13 @@ class MedicationServiceTest {
     @Test
     @DisplayName("addMedication - patient not found - throws AppException")
     void addMedication_patientNotFound_throwsAppException() throws Exception {
-        MedicationDTO dto = MedicationDTO.builder()
+        final MedicationDTO dto = MedicationDTO.builder()
                 .medicationName("Test")
                 .build();
 
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.addMedication(99L, dto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -312,7 +312,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("updateMedication - all fields non-null - updates all fields")
     void updateMedication_allFieldsNonNull_updatesAllFields() throws Exception {
-        MedicationDTO updateDto = MedicationDTO.builder()
+        final MedicationDTO updateDto = MedicationDTO.builder()
                 .medicationName("Updated Name")
                 .dosage("200mg")
                 .frequency("Twice daily")
@@ -329,7 +329,7 @@ class MedicationServiceTest {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MedicationDTO result = medicationService.updateMedication(10L, updateDto);
+        final MedicationDTO result = medicationService.updateMedication(10L, updateDto);
 
         assertEquals("Updated Name", result.medicationName());
         assertEquals("200mg", result.dosage());
@@ -347,7 +347,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("updateMedication - all fields null - no fields updated except updatedAt")
     void updateMedication_allFieldsNull_noFieldsUpdated() throws Exception {
-        MedicationDTO updateDto = MedicationDTO.builder()
+        final MedicationDTO updateDto = MedicationDTO.builder()
                 .medicationName(null)
                 .dosage(null)
                 .frequency(null)
@@ -364,7 +364,7 @@ class MedicationServiceTest {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MedicationDTO result = medicationService.updateMedication(10L, updateDto);
+        final MedicationDTO result = medicationService.updateMedication(10L, updateDto);
 
         // Original values should remain unchanged
         assertEquals("Aspirin", result.medicationName());
@@ -383,11 +383,11 @@ class MedicationServiceTest {
     @Test
     @DisplayName("updateMedication - medication not found - throws AppException")
     void updateMedication_medicationNotFound_throwsAppException() throws Exception {
-        MedicationDTO updateDto = MedicationDTO.builder().medicationName("X").build();
+        final MedicationDTO updateDto = MedicationDTO.builder().medicationName("X").build();
 
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.updateMedication(99L, updateDto));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -404,7 +404,7 @@ class MedicationServiceTest {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(medicationRepository.save(any(Medication.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MedicationDTO result = medicationService.approveMedication(1L, 10L);
+        final MedicationDTO result = medicationService.approveMedication(1L, 10L);
 
         assertTrue(result.isActive());
         assertEquals("Aspirin", result.medicationName());
@@ -422,7 +422,7 @@ class MedicationServiceTest {
     void approveMedication_medicationNotFound_throwsAppException() throws Exception {
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.approveMedication(1L, 99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -434,7 +434,7 @@ class MedicationServiceTest {
     void approveMedication_medicationNotBelongingToPatient_throwsForbidden() throws Exception {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.approveMedication(999L, 10L));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
@@ -469,7 +469,7 @@ class MedicationServiceTest {
     void deactivateMedication_medicationNotFound_throwsAppException() throws Exception {
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.deactivateMedication(1L, 99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -481,7 +481,7 @@ class MedicationServiceTest {
     void deactivateMedication_medicationNotBelongingToPatient_throwsForbidden() throws Exception {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.deactivateMedication(999L, 10L));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
@@ -495,7 +495,7 @@ class MedicationServiceTest {
     @Test
     @DisplayName("hardDeleteMedication - valid params with active link - deletes and notifies")
     void hardDeleteMedication_validParamsWithActiveLink_deletesAndNotifies() throws Exception {
-        Long caregiverId = 50L;
+        final Long caregiverId = 50L;
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(caregiverPatientLinkService.hasActiveLink(caregiverId, 1L)).thenReturn(true);
 
@@ -516,7 +516,7 @@ class MedicationServiceTest {
     void hardDeleteMedication_medicationNotFound_throwsAppException() throws Exception {
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.hardDeleteMedication(1L, 99L, 50L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
@@ -526,11 +526,11 @@ class MedicationServiceTest {
     @Test
     @DisplayName("hardDeleteMedication - caregiver has no active link - throws FORBIDDEN")
     void hardDeleteMedication_noActiveLink_throwsForbidden() throws Exception {
-        Long caregiverId = 50L;
+        final Long caregiverId = 50L;
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(caregiverPatientLinkService.hasActiveLink(caregiverId, 1L)).thenReturn(false);
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.hardDeleteMedication(1L, 10L, caregiverId));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
@@ -540,11 +540,11 @@ class MedicationServiceTest {
     @Test
     @DisplayName("hardDeleteMedication - medication does not belong to patient - throws FORBIDDEN")
     void hardDeleteMedication_medicationNotBelongingToPatient_throwsForbidden() throws Exception {
-        Long caregiverId = 50L;
+        final Long caregiverId = 50L;
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
         when(caregiverPatientLinkService.hasActiveLink(caregiverId, 999L)).thenReturn(true);
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.hardDeleteMedication(999L, 10L, caregiverId));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
@@ -560,7 +560,7 @@ class MedicationServiceTest {
     void getMedication_medicationExists_returnsOptionalWithDTO() throws Exception {
         when(medicationRepository.findById(10L)).thenReturn(Optional.of(medication));
 
-        Optional<MedicationDTO> result = medicationService.getMedication(10L);
+        final Optional<MedicationDTO> result = medicationService.getMedication(10L);
 
         assertTrue(result.isPresent());
         assertEquals("Aspirin", result.get().medicationName());
@@ -572,7 +572,7 @@ class MedicationServiceTest {
     void getMedication_medicationDoesNotExist_returnsEmptyOptional() throws Exception {
         when(medicationRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<MedicationDTO> result = medicationService.getMedication(99L);
+        final Optional<MedicationDTO> result = medicationService.getMedication(99L);
 
         assertFalse(result.isPresent());
     }
@@ -589,7 +589,7 @@ class MedicationServiceTest {
         when(medicationRepository.findByPatientAndApprovalStatus(patient, "PENDING"))
                 .thenReturn(List.of(medication));
 
-        List<MedicationDTO> result = medicationService.getPendingMedications(1L);
+        final List<MedicationDTO> result = medicationService.getPendingMedications(1L);
 
         assertEquals(1, result.size());
         assertEquals("Aspirin", result.get(0).medicationName());
@@ -602,7 +602,7 @@ class MedicationServiceTest {
         when(medicationRepository.findByPatientAndApprovalStatus(patient, "PENDING"))
                 .thenReturn(List.of());
 
-        List<MedicationDTO> result = medicationService.getPendingMedications(1L);
+        final List<MedicationDTO> result = medicationService.getPendingMedications(1L);
 
         assertTrue(result.isEmpty());
     }
@@ -612,7 +612,7 @@ class MedicationServiceTest {
     void getPendingMedications_patientNotFound_throwsAppException() throws Exception {
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        AppException ex = assertThrows(AppException.class,
+        final AppException ex = assertThrows(AppException.class,
                 () -> medicationService.getPendingMedications(99L));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
