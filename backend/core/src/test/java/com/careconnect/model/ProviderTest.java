@@ -10,7 +10,7 @@ class ProviderTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Provider provider = new Provider();
+        final Provider provider = new Provider();
 
         assertThat(provider).isNotNull();
         assertThat(provider.getId()).isNull();
@@ -25,7 +25,7 @@ class ProviderTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        Provider provider = new Provider(1L, "Dr. Smith", "Cardiology", "City Hospital", "555-1234", "smith@hospital.org");
+        final Provider provider = new Provider(1L, "Dr. Smith", "Cardiology", "City Hospital", "555-1234", "smith@hospital.org");
 
         assertThat(provider.getId()).isEqualTo(1L);
         assertThat(provider.getName()).isEqualTo("Dr. Smith");
@@ -39,7 +39,7 @@ class ProviderTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        Provider provider = Provider.builder()
+        final Provider provider = Provider.builder()
                 .id(2L)
                 .name("Dr. Jones")
                 .specialty("Neurology")
@@ -60,7 +60,7 @@ class ProviderTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Provider provider = new Provider();
+        final Provider provider = new Provider();
 
         provider.setId(3L);
         provider.setName("Dr. Lee");
