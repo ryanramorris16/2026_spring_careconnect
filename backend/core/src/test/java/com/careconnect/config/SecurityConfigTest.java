@@ -3,6 +3,8 @@ package com.careconnect.config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,7 +39,7 @@ class SecurityConfigTest {
         // Verifies that the returned encoder is specifically a BCryptPasswordEncoder,
         // confirming the algorithm choice rather than accepting any PasswordEncoder
         // implementation (e.g. NoOpPasswordEncoder used only for legacy/dev scenarios).
-        var encoder = securityConfig.passwordEncoder();
+        final PasswordEncoder encoder = securityConfig.passwordEncoder();
         assertInstanceOf(
                 org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.class,
                 encoder
@@ -49,9 +51,9 @@ class SecurityConfigTest {
         // Verifies the core encode/match round-trip: a raw password is hashed, the hash
         // differs from the plaintext (i.e. it is actually encoded), and matches() confirms
         // the original password against the stored hash — the critical login-time check.
-        var encoder = securityConfig.passwordEncoder();
-        String raw = "testPassword123";
-        String encoded = encoder.encode(raw);
+        final PasswordEncoder encoder = securityConfig.passwordEncoder();
+        final String raw = "testPassword123";
+        final String encoded = encoder.encode(raw);
 
         assertNotEquals(raw, encoded);
         assertTrue(encoder.matches(raw, encoded));
@@ -61,8 +63,8 @@ class SecurityConfigTest {
     void passwordEncoder_RejectsMismatch() throws Exception {
         // Verifies that matches() returns false for a wrong password, ensuring that
         // incorrect credentials are rejected during authentication.
-        var encoder = securityConfig.passwordEncoder();
-        String encoded = encoder.encode("correctPassword");
+        final PasswordEncoder encoder = securityConfig.passwordEncoder();
+        final String encoded = encoder.encode("correctPassword");
 
         assertFalse(encoder.matches("wrongPassword", encoded));
     }
@@ -74,10 +76,10 @@ class SecurityConfigTest {
         // This prevents attackers from deducing which users share the same password.
 
         // BCrypt uses random salt, so hashes should differ
-        var encoder = securityConfig.passwordEncoder();
-        String raw = "samePassword";
-        String hash1 = encoder.encode(raw);
-        String hash2 = encoder.encode(raw);
+        final PasswordEncoder encoder = securityConfig.passwordEncoder();
+        final String raw = "samePassword";
+        final String hash1 = encoder.encode(raw);
+        final String hash2 = encoder.encode(raw);
 
         assertNotEquals(hash1, hash2);
         // But both should still match the original
