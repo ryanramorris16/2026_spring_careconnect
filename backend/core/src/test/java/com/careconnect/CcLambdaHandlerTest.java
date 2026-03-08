@@ -70,9 +70,9 @@ class CcLambdaHandlerTest {
 
     @Test
     void testHandleRequestProcessesInputStream() throws IOException {
-        String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/test\"}";
-        InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
-        OutputStream outputStream = new ByteArrayOutputStream();
+        final String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/test\"}";
+        final InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
+        final OutputStream outputStream = new ByteArrayOutputStream();
 
         handler.handleRequest(inputStream, outputStream, mockContext);
 
@@ -81,7 +81,7 @@ class CcLambdaHandlerTest {
 
     @Test
     void testHandleRequestWithNullInputStream() throws IOException {
-        OutputStream outputStream = new ByteArrayOutputStream();
+        final OutputStream outputStream = new ByteArrayOutputStream();
 
         handler.handleRequest(null, outputStream, mockContext);
 
@@ -90,8 +90,8 @@ class CcLambdaHandlerTest {
 
     @Test
     void testHandleRequestWithNullOutputStream() throws IOException {
-        String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/test\"}";
-        InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
+        final String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/test\"}";
+        final InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
 
         handler.handleRequest(inputStream, null, mockContext);
 
@@ -100,9 +100,9 @@ class CcLambdaHandlerTest {
 
     @Test
     void testHandleRequestWithValidStreams() throws IOException {
-        String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/health\"}";
-        InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final String requestJson = "{\"httpMethod\":\"GET\",\"path\":\"/health\"}";
+        final InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         handler.handleRequest(inputStream, outputStream, mockContext);
 
@@ -112,9 +112,9 @@ class CcLambdaHandlerTest {
 
     @Test
     void testContextParameterIsUsed() throws IOException {
-        String requestJson = "{\"httpMethod\":\"POST\",\"path\":\"/api/test\"}";
-        InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
-        OutputStream outputStream = new ByteArrayOutputStream();
+        final String requestJson = "{\"httpMethod\":\"POST\",\"path\":\"/api/test\"}";
+        final InputStream inputStream = new ByteArrayInputStream(requestJson.getBytes());
+        final OutputStream outputStream = new ByteArrayOutputStream();
 
         when(mockContext.getFunctionName()).thenReturn("test-function");
 
