@@ -15,7 +15,7 @@ class ScheduledVisitTest {
 
     @Test
     void noArgConstructor_appliesFieldDefaults() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
 
         assertThat(sv).isNotNull();
         assertThat(sv.getId()).isNull();
@@ -34,11 +34,11 @@ class ScheduledVisitTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        LocalDate date = LocalDate.of(2026, 3, 15);
-        LocalTime time = LocalTime.of(9, 0);
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDate date = LocalDate.of(2026, 3, 15);
+        final LocalTime time = LocalTime.of(9, 0);
+        final LocalDateTime now = LocalDateTime.now();
 
-        ScheduledVisit sv = new ScheduledVisit(
+        final ScheduledVisit sv = new ScheduledVisit(
                 1L, 10L, 20L, "PERSONAL_CARE", date, time, 90,
                 "High", "Bring wheelchair", "Scheduled",
                 now, now, "admin", "admin");
@@ -63,9 +63,9 @@ class ScheduledVisitTest {
 
     @Test
     void onCreate_setsTimestampsWhenNull() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
 
-        Method m = ScheduledVisit.class.getDeclaredMethod("onCreate");
+        final Method m = ScheduledVisit.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(sv);
 
@@ -75,12 +75,12 @@ class ScheduledVisitTest {
 
     @Test
     void onCreate_doesNotOverwriteExistingTimestamps() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
-        LocalDateTime existing = LocalDateTime.now().minusDays(1);
+        final ScheduledVisit sv = new ScheduledVisit();
+        final LocalDateTime existing = LocalDateTime.now().minusDays(1);
         sv.setCreatedAt(existing);
         sv.setUpdatedAt(existing);
 
-        Method m = ScheduledVisit.class.getDeclaredMethod("onCreate");
+        final Method m = ScheduledVisit.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(sv);
 
@@ -92,11 +92,11 @@ class ScheduledVisitTest {
 
     @Test
     void onUpdate_refreshesUpdatedAt() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.setUpdatedAt(LocalDateTime.now().minusDays(1));
-        LocalDateTime before = sv.getUpdatedAt();
+        final LocalDateTime before = sv.getUpdatedAt();
 
-        Method m = ScheduledVisit.class.getDeclaredMethod("onUpdate");
+        final Method m = ScheduledVisit.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(sv);
 
@@ -107,28 +107,28 @@ class ScheduledVisitTest {
 
     @Test
     void markInProgress_setsStatus() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markInProgress();
         assertThat(sv.getStatus()).isEqualTo("In Progress");
     }
 
     @Test
     void markCompleted_setsStatus() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markCompleted();
         assertThat(sv.getStatus()).isEqualTo("Completed");
     }
 
     @Test
     void markCancelled_setsStatus() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markCancelled();
         assertThat(sv.getStatus()).isEqualTo("Cancelled");
     }
 
     @Test
     void markNoShow_setsStatus() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markNoShow();
         assertThat(sv.getStatus()).isEqualTo("No Show");
     }
@@ -137,41 +137,41 @@ class ScheduledVisitTest {
 
     @Test
     void isScheduled_whenStatusIsScheduled_returnsTrue() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         // default status is "Scheduled"
         assertThat(sv.isScheduled()).isTrue();
     }
 
     @Test
     void isScheduled_whenStatusIsNotScheduled_returnsFalse() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markInProgress();
         assertThat(sv.isScheduled()).isFalse();
     }
 
     @Test
     void isCompleted_whenStatusIsCompleted_returnsTrue() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markCompleted();
         assertThat(sv.isCompleted()).isTrue();
     }
 
     @Test
     void isCompleted_whenStatusIsNotCompleted_returnsFalse() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         assertThat(sv.isCompleted()).isFalse();
     }
 
     @Test
     void isCancelled_whenStatusIsCancelled_returnsTrue() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         sv.markCancelled();
         assertThat(sv.isCancelled()).isTrue();
     }
 
     @Test
     void isCancelled_whenStatusIsNotCancelled_returnsFalse() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
+        final ScheduledVisit sv = new ScheduledVisit();
         assertThat(sv.isCancelled()).isFalse();
     }
 
@@ -179,9 +179,9 @@ class ScheduledVisitTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ScheduledVisit sv = new ScheduledVisit();
-        LocalDate date = LocalDate.of(2026, 4, 1);
-        LocalTime time = LocalTime.of(14, 30);
+        final ScheduledVisit sv = new ScheduledVisit();
+        final LocalDate date = LocalDate.of(2026, 4, 1);
+        final LocalTime time = LocalTime.of(14, 30);
 
         sv.setId(5L);
         sv.setCaregiverId(11L);
