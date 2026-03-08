@@ -57,7 +57,7 @@ class TokenProviderTest {
     void testGenerateToken_validUuidFormat() throws Exception {
         // The value must be parseable as a UUID — invalid formats would cause
         // UUID.fromString() to throw IllegalArgumentException.
-        String token = tokenProvider.generateToken();
+        final String token = tokenProvider.generateToken();
         assertDoesNotThrow(() -> UUID.fromString(token),
                 "Token '" + token + "' is not a valid UUID");
     }
@@ -66,7 +66,7 @@ class TokenProviderTest {
     @DisplayName("generateToken: token contains exactly four hyphens at the correct positions")
     void testGenerateToken_hyphenPositions() throws Exception {
         // UUID canonical format places hyphens at indices 8, 13, 18, and 23.
-        String token = tokenProvider.generateToken();
+        final String token = tokenProvider.generateToken();
         assertEquals('-', token.charAt(8));
         assertEquals('-', token.charAt(13));
         assertEquals('-', token.charAt(18));
@@ -77,7 +77,7 @@ class TokenProviderTest {
     @DisplayName("generateToken: token contains only hex characters and hyphens")
     void testGenerateToken_onlyHexAndHyphens() throws Exception {
         // Every character must be a lowercase hex digit or a hyphen separator.
-        String token = tokenProvider.generateToken();
+        final String token = tokenProvider.generateToken();
         assertTrue(token.matches("[0-9a-f\\-]+"),
                 "Token contains unexpected characters: " + token);
     }
@@ -91,8 +91,8 @@ class TokenProviderTest {
     void testGenerateToken_twoCallsDiffer() throws Exception {
         // Tokens are used for identity/security; the same value must not be
         // returned on back-to-back calls.
-        String first  = tokenProvider.generateToken();
-        String second = tokenProvider.generateToken();
+        final String first  = tokenProvider.generateToken();
+        final String second = tokenProvider.generateToken();
         assertNotEquals(first, second);
     }
 
@@ -101,9 +101,9 @@ class TokenProviderTest {
     void testGenerateToken_bulkUniqueness() throws Exception {
         // A large sample confirms statistical uniqueness — collisions here would
         // indicate a broken UUID source rather than an expected probability event.
-        Set<String> seen = new HashSet<>();
+        final Set<String> seen = new HashSet<>();
         for (int i = 0; i < 1000; i++) {
-            String token = tokenProvider.generateToken();
+            final String token = tokenProvider.generateToken();
             assertTrue(seen.add(token),
                     "Duplicate token detected on iteration " + i + ": " + token);
         }
