@@ -56,7 +56,7 @@ class DevDataLoaderTest {
     void run_DoesNothingWhenDisabled() throws Exception {
         // Verifies that when the loader is constructed with enabled=false, run() returns
         // immediately without touching the DataSource — no connection is opened.
-        DevDataLoader disabledLoader = new DevDataLoader(dataSource, false);
+        final DevDataLoader disabledLoader = new DevDataLoader(dataSource, false);
 
         assertDoesNotThrow(() -> disabledLoader.run());
         verifyNoInteractions(dataSource);
@@ -180,15 +180,15 @@ class DevDataLoaderTest {
     void run_IgnoresPatientMedicationTableException() throws Exception {
         // Verifies that if the patient_medication table does not yet exist during
         // post-load verification, the exception is swallowed and loading completes cleanly.
-        ResultSet countRs = mock(ResultSet.class);
+        final ResultSet countRs = mock(ResultSet.class);
         when(countRs.next()).thenReturn(true);
         when(countRs.getInt(1)).thenReturn(0);
 
-        ResultSet patientRs = mock(ResultSet.class);
+        final ResultSet patientRs = mock(ResultSet.class);
         when(patientRs.next()).thenReturn(true);
         when(patientRs.getInt(1)).thenReturn(1);
 
-        ResultSet caregiverRs = mock(ResultSet.class);
+        final ResultSet caregiverRs = mock(ResultSet.class);
         when(caregiverRs.next()).thenReturn(true);
         when(caregiverRs.getInt(1)).thenReturn(1);
 
