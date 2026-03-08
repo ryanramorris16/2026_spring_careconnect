@@ -65,10 +65,10 @@ class EvvSubmissionServiceTest {
 
     @Test
     void queueForSubmission_callsOutboxEnqueueAndAuditLog() throws Exception {
-        EvvRecord record = mock(EvvRecord.class);
+        final EvvRecord record = mock(EvvRecord.class);
         when(record.getStateCode()).thenReturn("MD");
 
-        EvvSubmissionService svc = serviceWithClients();
+        final EvvSubmissionService svc = serviceWithClients();
         svc.queueForSubmission(record, 7L);
 
         verify(outbox).enqueue(record, "maryland-info-only");
