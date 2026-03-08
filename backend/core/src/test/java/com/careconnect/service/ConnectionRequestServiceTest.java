@@ -92,7 +92,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.existsByCaregiverAndPatientAndStatus(caregiver, patient, "PENDING")).thenReturn(false);
         when(connectionRequestRepo.save(any(ConnectionRequest.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "Please connect.");
+        final ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "Please connect.");
 
         assertNotNull(result);
         assertEquals("PENDING", result.getStatus());
@@ -118,7 +118,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.existsByCaregiverAndPatientAndStatus(caregiver, patient, "PENDING")).thenReturn(false);
         when(connectionRequestRepo.save(any(ConnectionRequest.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", null);
+        final ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", null);
 
         assertNotNull(result);
         assertNull(result.getMessage());
@@ -133,7 +133,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.existsByCaregiverAndPatientAndStatus(caregiver, patient, "PENDING")).thenReturn(false);
         when(connectionRequestRepo.save(any(ConnectionRequest.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "");
+        final ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "");
 
         assertNotNull(result);
         assertEquals("", result.getMessage());
@@ -145,7 +145,7 @@ class ConnectionRequestServiceTest {
     void createRequest_caregiverNotFound_throwsIllegalArgumentException() throws Exception {
         when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> connectionRequestService.createRequest(99L, "john@example.com", "Family", "msg"));
 
         assertEquals("Caregiver not found", ex.getMessage());
@@ -158,7 +158,7 @@ class ConnectionRequestServiceTest {
         when(userRepo.findById(1L)).thenReturn(Optional.of(caregiver));
         when(userRepo.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> connectionRequestService.createRequest(1L, "unknown@example.com", "Family", "msg"));
 
         assertEquals("Patient not found with email: unknown@example.com", ex.getMessage());
@@ -172,7 +172,7 @@ class ConnectionRequestServiceTest {
         when(userRepo.findByEmail("john@example.com")).thenReturn(Optional.of(patient));
         when(connectionRequestRepo.existsByCaregiverAndPatientAndStatus(caregiver, patient, "PENDING")).thenReturn(true);
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
+        final IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> connectionRequestService.createRequest(1L, "john@example.com", "Family", "msg"));
 
         assertEquals("There's already a pending connection request to this patient", ex.getMessage());
@@ -190,7 +190,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.existsByCaregiverAndPatientAndStatus(caregiver, patient, "PENDING")).thenReturn(false);
         when(connectionRequestRepo.save(any(ConnectionRequest.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "msg");
+        final ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "msg");
 
         assertNotNull(result);
         verify(connectionRequestRepo).save(any(ConnectionRequest.class));
@@ -210,7 +210,7 @@ class ConnectionRequestServiceTest {
         when(notificationService.sendNotificationToUser(anyLong(), anyString(), anyString(), anyString(), anyMap()))
                 .thenThrow(new RuntimeException("Firebase unavailable"));
 
-        ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "msg");
+        final ConnectionRequest result = connectionRequestService.createRequest(1L, "john@example.com", "Family", "msg");
 
         assertNotNull(result);
         assertEquals("PENDING", result.getStatus());
@@ -237,9 +237,9 @@ class ConnectionRequestServiceTest {
         verify(connectionRequestRepo).save(pendingRequest);
 
         // Verify caregiver-patient link creation
-        ArgumentCaptor<CaregiverPatientLink> linkCaptor = ArgumentCaptor.forClass(CaregiverPatientLink.class);
+        final ArgumentCaptor<CaregiverPatientLink> linkCaptor = ArgumentCaptor.forClass(CaregiverPatientLink.class);
         verify(linkRepo).save(linkCaptor.capture());
-        CaregiverPatientLink savedLink = linkCaptor.getValue();
+        final CaregiverPatientLink savedLink = linkCaptor.getValue();
         assertEquals(caregiver, savedLink.getCaregiverUser());
         assertEquals(patient, savedLink.getPatientUser());
         assertEquals(caregiver, savedLink.getCreatedBy());
@@ -277,7 +277,7 @@ class ConnectionRequestServiceTest {
     void processResponse_invalidToken_throwsIllegalArgumentException() throws Exception {
         when(connectionRequestRepo.findByToken("bad-token")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> connectionRequestService.processResponse("bad-token", true));
 
         assertEquals("Invalid request token", ex.getMessage());
@@ -289,7 +289,7 @@ class ConnectionRequestServiceTest {
         pendingRequest.setStatus("ACCEPTED");
         when(connectionRequestRepo.findByToken("test-token-123")).thenReturn(Optional.of(pendingRequest));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
+        final IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> connectionRequestService.processResponse("test-token-123", true));
 
         assertEquals("This request has already been processed", ex.getMessage());
@@ -301,7 +301,7 @@ class ConnectionRequestServiceTest {
         pendingRequest.setStatus("REJECTED");
         when(connectionRequestRepo.findByToken("test-token-123")).thenReturn(Optional.of(pendingRequest));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
+        final IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> connectionRequestService.processResponse("test-token-123", false));
 
         assertEquals("This request has already been processed", ex.getMessage());
@@ -356,10 +356,10 @@ class ConnectionRequestServiceTest {
 
         // notificationService IS injected, so notification is sent with default "Caregiver"
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, String>> dataCaptor = ArgumentCaptor.forClass(Map.class);
+        final ArgumentCaptor<Map<String, String>> dataCaptor = ArgumentCaptor.forClass(Map.class);
         verify(notificationService).sendNotificationToUser(
                 eq(1L), anyString(), anyString(), eq("CONNECTION_ACCEPTED"), dataCaptor.capture());
-        Map<String, String> capturedData = dataCaptor.getValue();
+        final Map<String, String> capturedData = dataCaptor.getValue();
         assertEquals("Caregiver", capturedData.get("relationshipType"));
 
         verify(emailService).sendHtmlEmail(eq("jane@example.com"), anyString(), anyString(), eq("html"));
@@ -376,7 +376,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.findByPatientAndStatus(patient, "PENDING"))
                 .thenReturn(List.of(pendingRequest));
 
-        List<ConnectionRequest> result = connectionRequestService.getPendingRequestsForPatient(2L);
+        final List<ConnectionRequest> result = connectionRequestService.getPendingRequestsForPatient(2L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -390,7 +390,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.findByPatientAndStatus(patient, "PENDING"))
                 .thenReturn(List.of());
 
-        List<ConnectionRequest> result = connectionRequestService.getPendingRequestsForPatient(2L);
+        final List<ConnectionRequest> result = connectionRequestService.getPendingRequestsForPatient(2L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -401,7 +401,7 @@ class ConnectionRequestServiceTest {
     void getPendingRequestsForPatient_patientNotFound_throwsIllegalArgumentException() throws Exception {
         when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> connectionRequestService.getPendingRequestsForPatient(99L));
 
         assertEquals("Patient not found", ex.getMessage());
@@ -418,7 +418,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.findByCaregiverAndStatus(caregiver, "PENDING"))
                 .thenReturn(List.of(pendingRequest));
 
-        List<ConnectionRequest> result = connectionRequestService.getPendingRequestsByCaregiver(1L);
+        final List<ConnectionRequest> result = connectionRequestService.getPendingRequestsByCaregiver(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -432,7 +432,7 @@ class ConnectionRequestServiceTest {
         when(connectionRequestRepo.findByCaregiverAndStatus(caregiver, "PENDING"))
                 .thenReturn(List.of());
 
-        List<ConnectionRequest> result = connectionRequestService.getPendingRequestsByCaregiver(1L);
+        final List<ConnectionRequest> result = connectionRequestService.getPendingRequestsByCaregiver(1L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -443,7 +443,7 @@ class ConnectionRequestServiceTest {
     void getPendingRequestsByCaregiver_caregiverNotFound_throwsIllegalArgumentException() throws Exception {
         when(userRepo.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> connectionRequestService.getPendingRequestsByCaregiver(99L));
 
         assertEquals("Caregiver not found", ex.getMessage());
