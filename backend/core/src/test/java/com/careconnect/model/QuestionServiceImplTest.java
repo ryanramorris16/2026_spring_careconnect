@@ -30,13 +30,13 @@ class QuestionServiceImplTest {
 
     @Test
     void listQuestions_nullActive_returnsAllOrderedByOrdinal() throws Exception {
-        Question q1 = Question.builder().id(1L).prompt("Q1").type(QuestionType.TEXT)
+        final Question q1 = Question.builder().id(1L).prompt("Q1").type(QuestionType.TEXT)
                 .active(true).ordinal(1).build();
-        Question q2 = Question.builder().id(2L).prompt("Q2").type(QuestionType.YES_NO)
+        final Question q2 = Question.builder().id(2L).prompt("Q2").type(QuestionType.YES_NO)
                 .active(false).ordinal(2).build();
         when(repo.findAllByOrderByOrdinalAsc()).thenReturn(List.of(q1, q2));
 
-        List<QuestionDTO> result = service.listQuestions(null);
+        final List<QuestionDTO> result = service.listQuestions(null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).prompt()).isEqualTo("Q1");
@@ -48,11 +48,11 @@ class QuestionServiceImplTest {
 
     @Test
     void listQuestions_trueActive_returnsActiveOnlyOrdered() throws Exception {
-        Question q = Question.builder().id(1L).prompt("Active Q").type(QuestionType.TEXT)
+        final Question q = Question.builder().id(1L).prompt("Active Q").type(QuestionType.TEXT)
                 .active(true).ordinal(1).build();
         when(repo.findAllByActiveTrueOrderByOrdinalAsc()).thenReturn(List.of(q));
 
-        List<QuestionDTO> result = service.listQuestions(true);
+        final List<QuestionDTO> result = service.listQuestions(true);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).active()).isTrue();
@@ -63,11 +63,11 @@ class QuestionServiceImplTest {
 
     @Test
     void listQuestions_falseActive_returnsInactiveOnlyOrdered() throws Exception {
-        Question q = Question.builder().id(2L).prompt("Inactive Q").type(QuestionType.YES_NO)
+        final Question q = Question.builder().id(2L).prompt("Inactive Q").type(QuestionType.YES_NO)
                 .active(false).ordinal(3).build();
         when(repo.findAllByActiveFalseOrderByOrdinalAsc()).thenReturn(List.of(q));
 
-        List<QuestionDTO> result = service.listQuestions(false);
+        final List<QuestionDTO> result = service.listQuestions(false);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).active()).isFalse();
@@ -78,11 +78,11 @@ class QuestionServiceImplTest {
 
     @Test
     void findActiveOrdered_returnsActiveMappedToDtos() throws Exception {
-        Question q = Question.builder().id(3L).prompt("Active?").type(QuestionType.TRUE_FALSE)
+        final Question q = Question.builder().id(3L).prompt("Active?").type(QuestionType.TRUE_FALSE)
                 .active(true).ordinal(2).build();
         when(repo.findAllByActiveTrueOrderByOrdinalAsc()).thenReturn(List.of(q));
 
-        List<QuestionDTO> result = service.findActiveOrdered();
+        final List<QuestionDTO> result = service.findActiveOrdered();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).id()).isEqualTo(3L);
@@ -94,11 +94,11 @@ class QuestionServiceImplTest {
 
     @Test
     void getOne_existingId_returnsDto() throws Exception {
-        Question q = Question.builder().id(5L).prompt("Pain level?").type(QuestionType.NUMBER)
+        final Question q = Question.builder().id(5L).prompt("Pain level?").type(QuestionType.NUMBER)
                 .active(true).ordinal(0).build();
         when(repo.findById(5L)).thenReturn(Optional.of(q));
 
-        Optional<QuestionDTO> result = service.getOne(5L);
+        final Optional<QuestionDTO> result = service.getOne(5L);
 
         assertThat(result).isPresent();
         assertThat(result.get().id()).isEqualTo(5L);
@@ -111,7 +111,7 @@ class QuestionServiceImplTest {
     void getOne_nonExistingId_returnsEmpty() throws Exception {
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<QuestionDTO> result = service.getOne(99L);
+        final Optional<QuestionDTO> result = service.getOne(99L);
 
         assertThat(result).isEmpty();
     }
@@ -120,13 +120,13 @@ class QuestionServiceImplTest {
 
     @Test
     void create_savesAndReturnsMappedDto() throws Exception {
-        QuestionUpsertDTO body = new QuestionUpsertDTO("How do you feel?", QuestionType.TEXT, false, 1);
+        final QuestionUpsertDTO body = new QuestionUpsertDTO("How do you feel?", QuestionType.TEXT, false, 1);
 
-        Question saved = Question.builder().id(10L).prompt("How do you feel?")
+        final Question saved = Question.builder().id(10L).prompt("How do you feel?")
                 .type(QuestionType.TEXT).required(false).active(true).ordinal(1).build();
         when(repo.save(any(Question.class))).thenReturn(saved);
 
-        QuestionDTO result = service.create(body);
+        final QuestionDTO result = service.create(body);
 
         assertThat(result.id()).isEqualTo(10L);
         assertThat(result.prompt()).isEqualTo("How do you feel?");
@@ -138,17 +138,17 @@ class QuestionServiceImplTest {
 
     @Test
     void update_existingId_savesAndReturnsMappedDto() throws Exception {
-        QuestionUpsertDTO body = new QuestionUpsertDTO("Updated prompt?", QuestionType.YES_NO, true, 2);
+        final QuestionUpsertDTO body = new QuestionUpsertDTO("Updated prompt?", QuestionType.YES_NO, true, 2);
 
-        Question existing = Question.builder().id(7L).prompt("Old prompt?")
+        final Question existing = Question.builder().id(7L).prompt("Old prompt?")
                 .type(QuestionType.TEXT).active(true).ordinal(0).build();
-        Question updated = Question.builder().id(7L).prompt("Updated prompt?")
+        final Question updated = Question.builder().id(7L).prompt("Updated prompt?")
                 .type(QuestionType.YES_NO).required(true).active(true).ordinal(2).build();
 
         when(repo.findById(7L)).thenReturn(Optional.of(existing));
         when(repo.save(any(Question.class))).thenReturn(updated);
 
-        Optional<QuestionDTO> result = service.update(7L, body);
+        final Optional<QuestionDTO> result = service.update(7L, body);
 
         assertThat(result).isPresent();
         assertThat(result.get().prompt()).isEqualTo("Updated prompt?");
@@ -159,10 +159,10 @@ class QuestionServiceImplTest {
 
     @Test
     void update_nonExistingId_returnsEmpty() throws Exception {
-        QuestionUpsertDTO body = new QuestionUpsertDTO("X", QuestionType.TEXT, false, 0);
+        final QuestionUpsertDTO body = new QuestionUpsertDTO("X", QuestionType.TEXT, false, 0);
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<QuestionDTO> result = service.update(99L, body);
+        final Optional<QuestionDTO> result = service.update(99L, body);
 
         assertThat(result).isEmpty();
     }
@@ -171,15 +171,15 @@ class QuestionServiceImplTest {
 
     @Test
     void setActive_existingId_updatesActiveFlag() throws Exception {
-        Question existing = Question.builder().id(4L).prompt("Q?")
+        final Question existing = Question.builder().id(4L).prompt("Q?")
                 .type(QuestionType.TEXT).active(true).ordinal(0).build();
-        Question deactivated = Question.builder().id(4L).prompt("Q?")
+        final Question deactivated = Question.builder().id(4L).prompt("Q?")
                 .type(QuestionType.TEXT).active(false).ordinal(0).build();
 
         when(repo.findById(4L)).thenReturn(Optional.of(existing));
         when(repo.save(any(Question.class))).thenReturn(deactivated);
 
-        Optional<QuestionDTO> result = service.setActive(4L, false);
+        final Optional<QuestionDTO> result = service.setActive(4L, false);
 
         assertThat(result).isPresent();
         assertThat(result.get().active()).isFalse();
@@ -192,7 +192,7 @@ class QuestionServiceImplTest {
     void setActive_nonExistingId_returnsEmpty() throws Exception {
         when(repo.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<QuestionDTO> result = service.setActive(99L, true);
+        final Optional<QuestionDTO> result = service.setActive(99L, true);
 
         assertThat(result).isEmpty();
     }
