@@ -41,12 +41,12 @@ class GamificationControllerTest {
 
     @Test
     void awardXp_returns200_withUpdatedProgress() throws Exception {
-        XPProgress progress = mock(XPProgress.class);
+        final XPProgress progress = mock(XPProgress.class);
         when(gamificationService.awardXp(USER_ID, 50)).thenReturn(progress);
 
-        Map<String, Object> body = Map.of("userId", USER_ID, "amount", 50);
+        final Map<String, Object> body = Map.of("userId", USER_ID, "amount", 50);
 
-        ResponseEntity<?> response = controller.awardXp(body);
+        final ResponseEntity<?> response = controller.awardXp(body);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(progress);
@@ -56,10 +56,10 @@ class GamificationControllerTest {
 
     @Test
     void getXpProgress_returns200_whenProgressFound() throws Exception {
-        XPProgress progress = mock(XPProgress.class);
+        final XPProgress progress = mock(XPProgress.class);
         when(gamificationService.getXpProgress(USER_ID)).thenReturn(Optional.of(progress));
 
-        ResponseEntity<?> response = controller.getXpProgress(USER_ID);
+        final ResponseEntity<?> response = controller.getXpProgress(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(progress);
@@ -69,7 +69,7 @@ class GamificationControllerTest {
     void getXpProgress_returns404_whenProgressNotFound() throws Exception {
         when(gamificationService.getXpProgress(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.getXpProgress(USER_ID);
+        final ResponseEntity<?> response = controller.getXpProgress(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.valueOf(404));
     }
@@ -78,10 +78,10 @@ class GamificationControllerTest {
 
     @Test
     void getUserAchievements_returns200_withList() throws Exception {
-        List<UserAchievement> achievements = List.of(mock(UserAchievement.class));
+        final List<UserAchievement> achievements = List.of(mock(UserAchievement.class));
         when(gamificationService.getUserAchievements(USER_ID)).thenReturn(achievements);
 
-        ResponseEntity<List<UserAchievement>> response = controller.getUserAchievements(USER_ID);
+        final ResponseEntity<List<UserAchievement>> response = controller.getUserAchievements(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(achievements);
@@ -91,10 +91,10 @@ class GamificationControllerTest {
 
     @Test
     void getAllAchievements_returns200_withList() throws Exception {
-        List<Achievement> achievements = List.of(mock(Achievement.class));
+        final List<Achievement> achievements = List.of(mock(Achievement.class));
         when(gamificationService.getAllAchievements()).thenReturn(achievements);
 
-        ResponseEntity<List<Achievement>> response = controller.getAllAchievements();
+        final ResponseEntity<List<Achievement>> response = controller.getAllAchievements();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(achievements);
