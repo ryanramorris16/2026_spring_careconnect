@@ -13,7 +13,7 @@ class PackageItemTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        PackageItem item = new PackageItem();
+        final PackageItem item = new PackageItem();
 
         assertThat(item).isNotNull();
         assertThat(item.getTrackingNumber()).isNull();
@@ -26,10 +26,10 @@ class PackageItemTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        OffsetDateTime deliveryDate = OffsetDateTime.of(2025, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
-        ActionLinks links = ActionLinks.builder().build();
+        final OffsetDateTime deliveryDate = OffsetDateTime.of(2025, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+        final ActionLinks links = ActionLinks.builder().build();
 
-        PackageItem item = new PackageItem("TRACK123", "Amazon", deliveryDate, links);
+        final PackageItem item = new PackageItem("TRACK123", "Amazon", deliveryDate, links);
 
         assertThat(item.getTrackingNumber()).isEqualTo("TRACK123");
         assertThat(item.getSender()).isEqualTo("Amazon");
@@ -41,9 +41,9 @@ class PackageItemTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
+        final OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
 
-        PackageItem item = PackageItem.builder()
+        final PackageItem item = PackageItem.builder()
                 .trackingNumber("TRACK456")
                 .sender("Best Buy")
                 .expectedDeliveryDate(deliveryDate)
@@ -58,9 +58,9 @@ class PackageItemTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PackageItem item = new PackageItem();
-        OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
-        ActionLinks links = new ActionLinks();
+        final PackageItem item = new PackageItem();
+        final OffsetDateTime deliveryDate = OffsetDateTime.now(ZoneOffset.UTC);
+        final ActionLinks links = new ActionLinks();
 
         item.setTrackingNumber("TRACK789");
         item.setSender("Walmart");
