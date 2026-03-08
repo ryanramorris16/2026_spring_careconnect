@@ -59,12 +59,12 @@ class SecurityUtilTest {
 
     @Test
     void getCurrentUser_validBearerToken_returnsUserInfo() {
-        String token = "valid-jwt-token";
+        final String token = "valid-jwt-token";
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtTokenProvider.getUsername(token)).thenReturn("user@example.com");
         when(jwtTokenProvider.getRole(token)).thenReturn(Role.PATIENT);
 
-        SecurityUtil.UserInfo info = securityUtil.getCurrentUser(request);
+        final SecurityUtil.UserInfo info = securityUtil.getCurrentUser(request);
 
         assertThat(info).isNotNull();
         assertThat(info.email).isEqualTo("user@example.com");
@@ -75,7 +75,7 @@ class SecurityUtilTest {
 
     @Test
     void resolveCurrentUser_nullAuth_throwsRuntimeException() {
-        SecurityContext ctx = mock(SecurityContext.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
         when(ctx.getAuthentication()).thenReturn(null);
         SecurityContextHolder.setContext(ctx);
 
@@ -86,8 +86,8 @@ class SecurityUtilTest {
 
     @Test
     void resolveCurrentUser_notAuthenticated_throwsRuntimeException() {
-        SecurityContext ctx = mock(SecurityContext.class);
-        Authentication auth = mock(Authentication.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(false);
         when(ctx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(ctx);
@@ -99,33 +99,33 @@ class SecurityUtilTest {
 
     @Test
 void resolveCurrentUser_withRoleAuthority_findsUserByEmailAndRole() {
-        SecurityContext ctx = mock(SecurityContext.class);
-        Authentication auth = mock(Authentication.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("admin@test.com");
 
-        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
         doReturn(authorities).when(auth).getAuthorities();
 
         when(ctx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(ctx);
 
-        User expectedUser = User.builder().email("admin@test.com").role(Role.ADMIN).build();
+        final User expectedUser = User.builder().email("admin@test.com").role(Role.ADMIN).build();
         when(userRepository.findByEmailAndRole("admin@test.com", Role.ADMIN))
                 .thenReturn(Optional.of(expectedUser));
 
-        User result = securityUtil.resolveCurrentUser();
+        final User result = securityUtil.resolveCurrentUser();
         assertThat(result.getEmail()).isEqualTo("admin@test.com");
     }
 
     @Test
 void resolveCurrentUser_withRoleAuthority_userNotFound_throwsRuntimeException() {
-        SecurityContext ctx = mock(SecurityContext.class);
-        Authentication auth = mock(Authentication.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("missing@test.com");
 
-        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_CAREGIVER"));
+        final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_CAREGIVER"));
         doReturn(authorities).when(auth).getAuthorities();
 
         when(ctx.getAuthentication()).thenReturn(auth);
@@ -141,33 +141,33 @@ void resolveCurrentUser_withRoleAuthority_userNotFound_throwsRuntimeException() 
 
     @Test
 void resolveCurrentUser_withoutRoleAuthority_findsUserByEmail() {
-        SecurityContext ctx = mock(SecurityContext.class);
-        Authentication auth = mock(Authentication.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("user@test.com");
 
-        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("SCOPE_read"));
+        final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("SCOPE_read"));
         doReturn(authorities).when(auth).getAuthorities();
 
         when(ctx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(ctx);
 
-        User expectedUser = User.builder().email("user@test.com").role(Role.PATIENT).build();
+        final User expectedUser = User.builder().email("user@test.com").role(Role.PATIENT).build();
         when(userRepository.findByEmail("user@test.com"))
                 .thenReturn(Optional.of(expectedUser));
 
-        User result = securityUtil.resolveCurrentUser();
+        final User result = securityUtil.resolveCurrentUser();
         assertThat(result.getEmail()).isEqualTo("user@test.com");
     }
 
     @Test
 void resolveCurrentUser_withoutRoleAuthority_userNotFound_throwsRuntimeException() {
-        SecurityContext ctx = mock(SecurityContext.class);
-        Authentication auth = mock(Authentication.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("gone@test.com");
 
-        List<SimpleGrantedAuthority> authorities = List.of();
+        final List<SimpleGrantedAuthority> authorities = List.of();
         doReturn(authorities).when(auth).getAuthorities();
 
         when(ctx.getAuthentication()).thenReturn(auth);
@@ -185,7 +185,7 @@ void resolveCurrentUser_withoutRoleAuthority_userNotFound_throwsRuntimeException
 
     @Test
     void userInfo_constructorSetsFields() {
-        SecurityUtil.UserInfo info = new SecurityUtil.UserInfo("admin@example.com", Role.ADMIN);
+        final SecurityUtil.UserInfo info = new SecurityUtil.UserInfo("admin@example.com", Role.ADMIN);
 
         assertThat(info.email).isEqualTo("admin@example.com");
         assertThat(info.role).isEqualTo(Role.ADMIN);
