@@ -10,7 +10,7 @@ class XPEventTest {
 
     @Test
     void constructor_setsFields() throws Exception {
-        XPEvent event = new XPEvent("LOGIN", 50);
+        final XPEvent event = new XPEvent("LOGIN", 50);
 
         assertThat(event.getEventName()).isEqualTo("LOGIN");
         assertThat(event.getXpPoints()).isEqualTo(50);
@@ -20,14 +20,14 @@ class XPEventTest {
 
     @Test
     void setEventName_updatesField() throws Exception {
-        XPEvent event = new XPEvent("OLD", 10);
+        final XPEvent event = new XPEvent("OLD", 10);
         event.setEventName("NEW_EVENT");
         assertThat(event.getEventName()).isEqualTo("NEW_EVENT");
     }
 
     @Test
     void setXpPoints_updatesField() throws Exception {
-        XPEvent event = new XPEvent("EVENT", 10);
+        final XPEvent event = new XPEvent("EVENT", 10);
         event.setXpPoints(100);
         assertThat(event.getXpPoints()).isEqualTo(100);
     }
