@@ -33,7 +33,7 @@ class MedicationControllerTest {
     private static final Long CAREGIVER_ID  = 7L;
 
     private MedicationDTO dto(String name) {
-        MedicationDTO d = new MedicationDTO(null, null, name, null, null, null, null, null, null, null, null, null, null);
+        final MedicationDTO d = new MedicationDTO(null, null, name, null, null, null, null, null, null, null, null, null, null);
         return d;
     }
 
@@ -41,10 +41,10 @@ class MedicationControllerTest {
 
     @Test
     void getAllMedications_returnsListFromService() throws Exception {
-        List<MedicationDTO> meds = List.of(dto("Med-A"), dto("Med-B"));
+        final List<MedicationDTO> meds = List.of(dto("Med-A"), dto("Med-B"));
         when(medicationService.getAllMedicationsForPatient(PATIENT_ID)).thenReturn(meds);
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getAllMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getAllMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(meds);
@@ -54,7 +54,7 @@ class MedicationControllerTest {
     void getAllMedications_emptyList_returnsOkWithEmptyBody() throws Exception {
         when(medicationService.getAllMedicationsForPatient(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getAllMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getAllMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
@@ -64,10 +64,10 @@ class MedicationControllerTest {
 
     @Test
     void getActiveMedications_returnsActiveList() throws Exception {
-        List<MedicationDTO> active = List.of(dto("Active-Med"));
+        final List<MedicationDTO> active = List.of(dto("Active-Med"));
         when(medicationService.getActiveMedicationsForPatient(PATIENT_ID)).thenReturn(active);
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getActiveMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getActiveMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(active);
@@ -77,7 +77,7 @@ class MedicationControllerTest {
     void getActiveMedications_emptyList_returnsOk() throws Exception {
         when(medicationService.getActiveMedicationsForPatient(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getActiveMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getActiveMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
@@ -87,10 +87,10 @@ class MedicationControllerTest {
 
     @Test
     void getPendingMedications_returnsPendingList() throws Exception {
-        List<MedicationDTO> pending = List.of(dto("Pending-Med"));
+        final List<MedicationDTO> pending = List.of(dto("Pending-Med"));
         when(medicationService.getPendingMedications(PATIENT_ID)).thenReturn(pending);
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getPendingMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getPendingMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(pending);
@@ -100,7 +100,7 @@ class MedicationControllerTest {
     void getPendingMedications_emptyList_returnsOk() throws Exception {
         when(medicationService.getPendingMedications(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<List<MedicationDTO>> response = controller.getPendingMedications(PATIENT_ID);
+        final ResponseEntity<List<MedicationDTO>> response = controller.getPendingMedications(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
@@ -110,11 +110,11 @@ class MedicationControllerTest {
 
     @Test
     void addMedication_delegatesToServiceAndReturnsCreated() throws Exception {
-        MedicationDTO input = dto("New-Med");
-        MedicationDTO created = dto("New-Med");
+        final MedicationDTO input = dto("New-Med");
+        final MedicationDTO created = dto("New-Med");
         when(medicationService.addMedication(PATIENT_ID, input)).thenReturn(created);
 
-        ResponseEntity<MedicationDTO> response = controller.addMedication(PATIENT_ID, input);
+        final ResponseEntity<MedicationDTO> response = controller.addMedication(PATIENT_ID, input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(created);
@@ -125,14 +125,14 @@ class MedicationControllerTest {
 
     @Test
     void approveMedication_returnsOkWithMessageAndApprovedDto() throws Exception {
-        MedicationDTO approved = dto("Approved-Med");
+        final MedicationDTO approved = dto("Approved-Med");
         when(medicationService.approveMedication(PATIENT_ID, MEDICATION_ID)).thenReturn(approved);
 
-        ResponseEntity<?> response = controller.approveMedication(PATIENT_ID, MEDICATION_ID);
+        final ResponseEntity<?> response = controller.approveMedication(PATIENT_ID, MEDICATION_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).isNotNull();
         assertThat(body.get("message")).isEqualTo("Medication approved successfully");
         assertThat(body.get("approvedMedication")).isEqualTo(approved);
@@ -145,11 +145,11 @@ class MedicationControllerTest {
     void deleteMedication_deactivatesAndReturnsMessage() throws Exception {
         doNothing().when(medicationService).deactivateMedication(PATIENT_ID, MEDICATION_ID);
 
-        ResponseEntity<?> response = controller.deleteMedication(PATIENT_ID, MEDICATION_ID);
+        final ResponseEntity<?> response = controller.deleteMedication(PATIENT_ID, MEDICATION_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).isNotNull();
         assertThat(body.get("message")).isEqualTo("Medication removed and notification sent");
         verify(medicationService).deactivateMedication(PATIENT_ID, MEDICATION_ID);
@@ -161,11 +161,11 @@ class MedicationControllerTest {
     void deleteMedicationByCaregiver_hardDeletesAndReturnsMessage() throws Exception {
         doNothing().when(medicationService).hardDeleteMedication(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
 
-        ResponseEntity<?> response = controller.deleteMedicationByCaregiver(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
+        final ResponseEntity<?> response = controller.deleteMedicationByCaregiver(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).isNotNull();
         assertThat(body.get("message")).isEqualTo("Medication deleted successfully");
         verify(medicationService).hardDeleteMedication(PATIENT_ID, MEDICATION_ID, CAREGIVER_ID);
