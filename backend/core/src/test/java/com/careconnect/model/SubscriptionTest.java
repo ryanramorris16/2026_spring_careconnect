@@ -12,7 +12,7 @@ class SubscriptionTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Subscription s = new Subscription();
+        final Subscription s = new Subscription();
 
         assertThat(s).isNotNull();
         assertThat(s.getId()).isNull();
@@ -30,10 +30,10 @@ class SubscriptionTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Subscription s = new Subscription();
-        User user = new User();
-        Plan plan = new Plan();
-        Instant now = Instant.now();
+        final Subscription s = new Subscription();
+        final User user = new User();
+        final Plan plan = new Plan();
+        final Instant now = Instant.now();
 
         s.setId(1L);
         s.setStripeSubscriptionId("sub_abc123");
