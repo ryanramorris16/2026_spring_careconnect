@@ -51,28 +51,28 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.create(req);
+            final ResponseEntity<EvvRecord> response = controller.create(req);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
-            EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(record);
 
-            ResponseEntity<EvvRecord> response = controller.create(req);
+            final ResponseEntity<EvvRecord> response = controller.create(req);
 
             assertThat(response.getBody()).isSameAs(record);
         }
 
         @Test
         void callsServiceWithDefaultUserId() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
             controller.create(req);
@@ -88,39 +88,39 @@ class EvvControllerTest {
 
         @Test
         void returns200_whenApproveIsTrue() throws Exception {
-            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            final EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+            final ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returns200_whenApproveIsFalse() throws Exception {
-            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            final EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+            final ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
-            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            final EvvRecord record = EvvRecord.builder().id(RECORD_ID).build();
+            final EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
 
-            ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
+            final ResponseEntity<EvvRecord> response = controller.review(RECORD_ID, action);
 
             assertThat(response.getBody()).isSameAs(record);
         }
 
         @Test
         void queuesForSubmission_whenApproveIsTrue() throws Exception {
-            EvvRecord record = new EvvRecord();
-            EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
+            final EvvRecord record = new EvvRecord();
+            final EvvReviewRequest action = new EvvReviewRequest(true, COMMENT);
             when(evvService.review(RECORD_ID, true, DEFAULT_USER_ID, COMMENT)).thenReturn(record);
 
             controller.review(RECORD_ID, action);
@@ -130,7 +130,7 @@ class EvvControllerTest {
 
         @Test
         void doesNotQueueForSubmission_whenApproveIsFalse() throws Exception {
-            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            final EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
             controller.review(RECORD_ID, action);
@@ -140,7 +140,7 @@ class EvvControllerTest {
 
         @Test
         void callsServiceWithAllArguments() throws Exception {
-            EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
+            final EvvReviewRequest action = new EvvReviewRequest(false, COMMENT);
             when(evvService.review(RECORD_ID, false, DEFAULT_USER_ID, COMMENT)).thenReturn(new EvvRecord());
 
             controller.review(RECORD_ID, action);
@@ -156,28 +156,28 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
+            final ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
-            EvvRecord record = EvvRecord.builder().id(5L).build();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecord record = EvvRecord.builder().id(5L).build();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(record);
 
-            ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
+            final ResponseEntity<EvvRecord> response = controller.createOfflineRecord(req, DEVICE_ID);
 
             assertThat(response.getBody()).isSameAs(record);
         }
 
         @Test
         void callsServiceWithDeviceIdAndDefaultUserId() throws Exception {
-            EvvRecordRequestDto req = new EvvRecordRequestDto();
+            final EvvRecordRequestDto req = new EvvRecordRequestDto();
             when(evvService.createOfflineRecord(req, DEFAULT_USER_ID, DEVICE_ID)).thenReturn(new EvvRecord());
 
             controller.createOfflineRecord(req, DEVICE_ID);
@@ -193,28 +193,28 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            final EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.correctRecord(req);
+            final ResponseEntity<EvvRecord> response = controller.correctRecord(req);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
-            EvvRecord record = EvvRecord.builder().id(7L).build();
+            final EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            final EvvRecord record = EvvRecord.builder().id(7L).build();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(record);
 
-            ResponseEntity<EvvRecord> response = controller.correctRecord(req);
+            final ResponseEntity<EvvRecord> response = controller.correctRecord(req);
 
             assertThat(response.getBody()).isSameAs(record);
         }
 
         @Test
         void callsServiceWithDefaultUserId() throws Exception {
-            EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
+            final EvvCorrectionRequestDto req = new EvvCorrectionRequestDto();
             when(evvService.correctRecord(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
             controller.correctRecord(req);
@@ -230,28 +230,28 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            EorApprovalRequestDto req = new EorApprovalRequestDto();
+            final EorApprovalRequestDto req = new EorApprovalRequestDto();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
-            ResponseEntity<EvvRecord> response = controller.approveEor(req);
+            final ResponseEntity<EvvRecord> response = controller.approveEor(req);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EorApprovalRequestDto req = new EorApprovalRequestDto();
-            EvvRecord record = EvvRecord.builder().id(9L).build();
+            final EorApprovalRequestDto req = new EorApprovalRequestDto();
+            final EvvRecord record = EvvRecord.builder().id(9L).build();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(record);
 
-            ResponseEntity<EvvRecord> response = controller.approveEor(req);
+            final ResponseEntity<EvvRecord> response = controller.approveEor(req);
 
             assertThat(response.getBody()).isSameAs(record);
         }
 
         @Test
         void callsServiceWithDefaultUserId() throws Exception {
-            EorApprovalRequestDto req = new EorApprovalRequestDto();
+            final EorApprovalRequestDto req = new EorApprovalRequestDto();
             when(evvService.approveEor(req, DEFAULT_USER_ID)).thenReturn(new EvvRecord());
 
             controller.approveEor(req);
@@ -267,33 +267,33 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
-            Page<EvvRecord> page = mock(Page.class);
+            final Page<EvvRecord> page = mock(Page.class);
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
-            ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
+            final ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsPageFromService() throws Exception {
-            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
-            Page<EvvRecord> page = mock(Page.class);
+            final Page<EvvRecord> page = mock(Page.class);
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
-            ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
+            final ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
 
             assertThat(response.getBody()).isSameAs(page);
         }
 
         @Test
         void callsServiceWithSearchRequest() throws Exception {
-            EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
+            final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
-            Page<EvvRecord> page = mock(Page.class);
+            final Page<EvvRecord> page = mock(Page.class);
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
             controller.searchRecords(searchRequest);
@@ -311,17 +311,17 @@ class EvvControllerTest {
         void returns200() throws Exception {
             when(evvService.getPendingEorApprovals()).thenReturn(List.of());
 
-            ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
+            final ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsListFromService() throws Exception {
-            EvvRecord record = new EvvRecord();
+            final EvvRecord record = new EvvRecord();
             when(evvService.getPendingEorApprovals()).thenReturn(List.of(record));
 
-            ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
+            final ResponseEntity<List<EvvRecord>> response = controller.getPendingEorApprovals();
 
             assertThat(response.getBody()).containsExactly(record);
         }
@@ -345,17 +345,17 @@ class EvvControllerTest {
         void returns200() throws Exception {
             when(evvService.getPendingCorrections()).thenReturn(List.of());
 
-            ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
+            final ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsListFromService() throws Exception {
-            EvvCorrection correction = new EvvCorrection();
+            final EvvCorrection correction = new EvvCorrection();
             when(evvService.getPendingCorrections()).thenReturn(List.of(correction));
 
-            ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
+            final ResponseEntity<List<EvvCorrection>> response = controller.getPendingCorrections();
 
             assertThat(response.getBody()).containsExactly(correction);
         }
@@ -380,7 +380,7 @@ class EvvControllerTest {
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
                     .thenReturn(new EvvCorrection());
 
-            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
+            final ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -391,18 +391,18 @@ class EvvControllerTest {
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, null))
                     .thenReturn(new EvvCorrection());
 
-            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, null);
+            final ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, null);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            EvvCorrection correction = EvvCorrection.builder().id(CORRECTION_ID).build();
+            final EvvCorrection correction = EvvCorrection.builder().id(CORRECTION_ID).build();
             when(evvService.approveCorrection(CORRECTION_ID, DEFAULT_USER_ID, COMMENT))
                     .thenReturn(correction);
 
-            ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
+            final ResponseEntity<EvvCorrection> response = controller.approveCorrection(CORRECTION_ID, COMMENT);
 
             assertThat(response.getBody()).isSameAs(correction);
         }
@@ -437,17 +437,17 @@ class EvvControllerTest {
         void returns200() throws Exception {
             when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of());
 
-            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
+            final ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsListFromService() throws Exception {
-            EvvOfflineQueue item = new EvvOfflineQueue();
+            final EvvOfflineQueue item = new EvvOfflineQueue();
             when(evvService.getOfflineQueue(DEFAULT_USER_ID)).thenReturn(List.of(item));
 
-            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
+            final ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineQueue();
 
             assertThat(response.getBody()).containsExactly(item);
         }
@@ -469,14 +469,14 @@ class EvvControllerTest {
 
         @Test
         void returns200() throws Exception {
-            ResponseEntity<String> response = controller.syncOfflineData();
+            final ResponseEntity<String> response = controller.syncOfflineData();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void bodyIsFixedConfirmationMessage() throws Exception {
-            ResponseEntity<String> response = controller.syncOfflineData();
+            final ResponseEntity<String> response = controller.syncOfflineData();
 
             assertThat(response.getBody()).isEqualTo("Offline data sync initiated");
         }
@@ -512,17 +512,17 @@ class EvvControllerTest {
         void returns200() throws Exception {
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of());
 
-            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
+            final ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsListFromService() throws Exception {
-            EvvOfflineQueue item = new EvvOfflineQueue();
+            final EvvOfflineQueue item = new EvvOfflineQueue();
             when(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID)).thenReturn(List.of(item));
 
-            ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
+            final ResponseEntity<List<EvvOfflineQueue>> response = controller.getOfflineStatus();
 
             assertThat(response.getBody()).containsExactly(item);
         }
