@@ -44,7 +44,7 @@ class DeepSeekControllerTest {
     }
 
     private DeepSeekController.ChatBody buildChatBody() {
-        DeepSeekController.ChatBody body = new DeepSeekController.ChatBody();
+        final DeepSeekController.ChatBody body = new DeepSeekController.ChatBody();
         body.setModel("deepseek-chat");
         body.setMessages(List.of(new Message("user", "Hello")));
         body.setTemperature(0.7);
@@ -67,16 +67,16 @@ class DeepSeekControllerTest {
     void chat_success_returnsOk() throws Exception {
         when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
 
-        DeepSeekResponse mockResponse = new DeepSeekResponse();
+        final DeepSeekResponse mockResponse = new DeepSeekResponse();
         mockResponse.setId("chatcmpl-123");
         mockResponse.setModel("deepseek-chat");
         when(deepSeekService.sendChatRequest(any())).thenReturn(mockResponse);
 
-        ResponseEntity<?> response = controller.chat(buildChatBody());
+        final ResponseEntity<?> response = controller.chat(buildChatBody());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isInstanceOf(DeepSeekResponse.class);
-        DeepSeekResponse body = (DeepSeekResponse) response.getBody();
+        final DeepSeekResponse body = (DeepSeekResponse) response.getBody();
         assertThat(body.getId()).isEqualTo("chatcmpl-123");
     }
 
@@ -86,11 +86,11 @@ class DeepSeekControllerTest {
         when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
         when(deepSeekService.sendChatRequest(any())).thenThrow(new RuntimeException("Connection refused"));
 
-        ResponseEntity<?> response = controller.chat(buildChatBody());
+        final ResponseEntity<?> response = controller.chat(buildChatBody());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
         assertThat(response.getBody()).isInstanceOf(DeepSeekController.ErrorPayload.class);
-        DeepSeekController.ErrorPayload error = (DeepSeekController.ErrorPayload) response.getBody();
+        final DeepSeekController.ErrorPayload error = (DeepSeekController.ErrorPayload) response.getBody();
         assertThat(error.getCode()).isEqualTo("DEEPSEEK_ERROR");
         assertThat(error.getMessage()).isEqualTo("Connection refused");
     }
