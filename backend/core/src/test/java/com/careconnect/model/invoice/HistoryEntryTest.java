@@ -13,7 +13,7 @@ class HistoryEntryTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        HistoryEntry entry = new HistoryEntry();
+        final HistoryEntry entry = new HistoryEntry();
 
         assertThat(entry).isNotNull();
         assertThat(entry.getId()).isNull();
@@ -30,10 +30,10 @@ class HistoryEntryTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        Invoice invoice = Invoice.builder().id("INV-100").build();
-        OffsetDateTime timestamp = OffsetDateTime.of(2025, 5, 1, 10, 0, 0, 0, ZoneOffset.UTC);
+        final Invoice invoice = Invoice.builder().id("INV-100").build();
+        final OffsetDateTime timestamp = OffsetDateTime.of(2025, 5, 1, 10, 0, 0, 0, ZoneOffset.UTC);
 
-        HistoryEntry entry = new HistoryEntry(
+        final HistoryEntry entry = new HistoryEntry(
                 1L, invoice, 3, "{\"status\":\"paid\"}", "user-42", "STATUS_UPDATE",
                 "Status changed from pending to paid", timestamp
         );
@@ -52,9 +52,9 @@ class HistoryEntryTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        HistoryEntry entry = new HistoryEntry();
-        Invoice invoice = Invoice.builder().id("INV-200").build();
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        final HistoryEntry entry = new HistoryEntry();
+        final Invoice invoice = Invoice.builder().id("INV-200").build();
+        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         entry.setId(10L);
         entry.setInvoice(invoice);
@@ -79,8 +79,8 @@ class HistoryEntryTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
-        HistoryEntry e2 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
+        final HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
+        final HistoryEntry e2 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
 
         assertThat(e1).isEqualTo(e2);
         assertThat(e1.hashCode()).isEqualTo(e2.hashCode());
@@ -88,21 +88,21 @@ class HistoryEntryTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
-        HistoryEntry e2 = new HistoryEntry(2L, null, 2, null, "user-2", "UPDATE", null, null);
+        final HistoryEntry e1 = new HistoryEntry(1L, null, 1, null, "user-1", "CREATE", null, null);
+        final HistoryEntry e2 = new HistoryEntry(2L, null, 2, null, "user-2", "UPDATE", null, null);
 
         assertThat(e1).isNotEqualTo(e2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        HistoryEntry entry = new HistoryEntry();
+        final HistoryEntry entry = new HistoryEntry();
         assertThat(entry).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        HistoryEntry entry = new HistoryEntry();
+        final HistoryEntry entry = new HistoryEntry();
         assertThat(entry).isNotEqualTo("a string");
     }
 }
