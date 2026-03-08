@@ -72,13 +72,13 @@ class StripeCheckoutServiceTest {
     void createCheckoutSession_withPriceId_shouldUseExistingPrice() throws StripeException {
         // The createCheckoutSession method calls Session.create (static Stripe API call).
         // We use a MockedStatic to intercept the static method.
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_test_session");
 
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSession(
+            final Session result = stripeCheckoutService.createCheckoutSession(
                     "cus_test123", "price_abc", 1999L, "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -90,13 +90,13 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("createCheckoutSession_withPlanName_shouldCreatePriceDataOnTheFly")
     void createCheckoutSession_withPlanName_shouldCreatePriceDataOnTheFly() throws StripeException {
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_test_session2");
 
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSession(
+            final Session result = stripeCheckoutService.createCheckoutSession(
                     "cus_test123", "Premium Plan", 2999L, "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -122,7 +122,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_withMatchingPlan_shouldSavePaymentAndSubscription")
     void saveCheckoutSession_subscriptionMode_withMatchingPlan_shouldSavePaymentAndSubscription() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_1");
         when(session.getPaymentIntent()).thenReturn("pi_intent_1");
         when(session.getMode()).thenReturn("subscription");
@@ -130,7 +130,7 @@ class StripeCheckoutServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        List<Plan> plans = List.of(plan);
+        final List<Plan> plans = List.of(plan);
         when(planRepository.findByName("Premium")).thenReturn(plans);
 
         stripeCheckoutService.saveCheckoutSession(1L, "Premium", 1999L, session);
@@ -142,7 +142,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_noMatchingPlan_shouldSaveSubscriptionWithoutPlan")
     void saveCheckoutSession_subscriptionMode_noMatchingPlan_shouldSaveSubscriptionWithoutPlan() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_2");
         when(session.getPaymentIntent()).thenReturn("pi_intent_2");
         when(session.getMode()).thenReturn("subscription");
@@ -160,7 +160,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_subscriptionMode_planLookupThrows_shouldStillSaveSubscription")
     void saveCheckoutSession_subscriptionMode_planLookupThrows_shouldStillSaveSubscription() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_3");
         when(session.getPaymentIntent()).thenReturn("pi_intent_3");
         when(session.getMode()).thenReturn("subscription");
@@ -178,7 +178,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_notSubscriptionMode_shouldOnlySavePayment")
     void saveCheckoutSession_notSubscriptionMode_shouldOnlySavePayment() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_4");
         when(session.getPaymentIntent()).thenReturn("pi_intent_4");
         when(session.getMode()).thenReturn("payment");
@@ -194,7 +194,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_subscriptionModeButNullSubscription_shouldNotSaveSubscription")
     void saveCheckoutSession_subscriptionModeButNullSubscription_shouldNotSaveSubscription() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(session.getId()).thenReturn("cs_session_5");
         when(session.getPaymentIntent()).thenReturn("pi_intent_5");
         when(session.getMode()).thenReturn("subscription");
@@ -211,7 +211,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("saveCheckoutSession_userNotFound_shouldThrow")
     void saveCheckoutSession_userNotFound_shouldThrow() throws Exception {
-        Session session = mock(Session.class);
+        final Session session = mock(Session.class);
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class, () ->
@@ -225,13 +225,13 @@ class StripeCheckoutServiceTest {
     void createCheckoutSessionForUser_validUser_shouldCreateSession() throws StripeException {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_user_session");
 
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForUser(
+            final Session result = stripeCheckoutService.createCheckoutSessionForUser(
                     1L, "price_abc", 1999L, "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -244,7 +244,7 @@ class StripeCheckoutServiceTest {
     void createCheckoutSessionForUser_userNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 stripeCheckoutService.createCheckoutSessionForUser(
                         999L, "price_abc", 1999L, "http://success", "http://cancel"));
 
@@ -280,13 +280,13 @@ class StripeCheckoutServiceTest {
     void createCheckoutSessionForCaregiver_validCaregiver_shouldCreateSession() throws StripeException {
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_caregiver_session");
 
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForCaregiver(
+            final Session result = stripeCheckoutService.createCheckoutSessionForCaregiver(
                     10L, "price_abc", 1999L, "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -299,7 +299,7 @@ class StripeCheckoutServiceTest {
     void createCheckoutSessionForCaregiver_caregiverNotFound_shouldThrowIllegalArgumentException() throws Exception {
         when(caregiverRepository.findById(999L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 stripeCheckoutService.createCheckoutSessionForCaregiver(
                         999L, "price_abc", 1999L, "http://success", "http://cancel"));
 
@@ -312,7 +312,7 @@ class StripeCheckoutServiceTest {
         user.setStripeCustomerId(null);
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 stripeCheckoutService.createCheckoutSessionForCaregiver(
                         10L, "price_abc", 1999L, "http://success", "http://cancel"));
 
@@ -325,7 +325,7 @@ class StripeCheckoutServiceTest {
         user.setStripeCustomerId("");
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 stripeCheckoutService.createCheckoutSessionForCaregiver(
                         10L, "price_abc", 1999L, "http://success", "http://cancel"));
 
@@ -339,7 +339,7 @@ class StripeCheckoutServiceTest {
     void getCaregiverStripeCustomerId_validCaregiver_shouldReturnCustomerId() throws Exception {
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        String result = stripeCheckoutService.getCaregiverStripeCustomerId(10L);
+        final String result = stripeCheckoutService.getCaregiverStripeCustomerId(10L);
 
         assertEquals("cus_test123", result);
     }
@@ -378,10 +378,10 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("getAvailablePlans_shouldReturnActivePlans")
     void getAvailablePlans_shouldReturnActivePlans() throws Exception {
-        List<Plan> activePlans = List.of(plan);
+        final List<Plan> activePlans = List.of(plan);
         when(planRepository.findByIsActiveTrue()).thenReturn(activePlans);
 
-        List<Plan> result = stripeCheckoutService.getAvailablePlans();
+        final List<Plan> result = stripeCheckoutService.getAvailablePlans();
 
         assertEquals(1, result.size());
         assertEquals("Premium", result.get(0).getName());
@@ -392,7 +392,7 @@ class StripeCheckoutServiceTest {
     void getAvailablePlans_noActivePlans_shouldReturnEmptyList() throws Exception {
         when(planRepository.findByIsActiveTrue()).thenReturn(Collections.emptyList());
 
-        List<Plan> result = stripeCheckoutService.getAvailablePlans();
+        final List<Plan> result = stripeCheckoutService.getAvailablePlans();
 
         assertTrue(result.isEmpty());
     }
@@ -405,7 +405,7 @@ class StripeCheckoutServiceTest {
         when(planRepository.findById(100L)).thenReturn(Optional.of(plan));
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_plan_session");
         when(mockSession.getMode()).thenReturn("subscription");
         when(mockSession.getSubscription()).thenReturn("sub_plan_abc");
@@ -413,7 +413,7 @@ class StripeCheckoutServiceTest {
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForPlan(
+            final Session result = stripeCheckoutService.createCheckoutSessionForPlan(
                     10L, "100", "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -425,7 +425,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("createCheckoutSessionForPlan_withNonStripePriceCode_shouldCreatePriceDataOnTheFly")
     void createCheckoutSessionForPlan_withNonStripePriceCode_shouldCreatePriceDataOnTheFly() throws StripeException {
-        Plan planNonStripe = new Plan();
+        final Plan planNonStripe = new Plan();
         planNonStripe.setId(101L);
         planNonStripe.setCode("basic_plan");
         planNonStripe.setName("Basic");
@@ -435,7 +435,7 @@ class StripeCheckoutServiceTest {
         when(planRepository.findById(101L)).thenReturn(Optional.of(planNonStripe));
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_plan_session2");
         when(mockSession.getMode()).thenReturn("subscription");
         when(mockSession.getSubscription()).thenReturn("sub_plan_def");
@@ -443,7 +443,7 @@ class StripeCheckoutServiceTest {
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForPlan(
+            final Session result = stripeCheckoutService.createCheckoutSessionForPlan(
                     10L, "101", "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -455,7 +455,7 @@ class StripeCheckoutServiceTest {
     @Test
     @DisplayName("createCheckoutSessionForPlan_withNullCode_shouldCreatePriceDataOnTheFly")
     void createCheckoutSessionForPlan_withNullCode_shouldCreatePriceDataOnTheFly() throws StripeException {
-        Plan planNullCode = new Plan();
+        final Plan planNullCode = new Plan();
         planNullCode.setId(102L);
         planNullCode.setCode(null);
         planNullCode.setName("Null Code Plan");
@@ -465,7 +465,7 @@ class StripeCheckoutServiceTest {
         when(planRepository.findById(102L)).thenReturn(Optional.of(planNullCode));
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_plan_null");
         when(mockSession.getMode()).thenReturn("subscription");
         when(mockSession.getSubscription()).thenReturn("sub_plan_null");
@@ -473,7 +473,7 @@ class StripeCheckoutServiceTest {
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForPlan(
+            final Session result = stripeCheckoutService.createCheckoutSessionForPlan(
                     10L, "102", "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -486,14 +486,14 @@ class StripeCheckoutServiceTest {
         when(planRepository.findById(100L)).thenReturn(Optional.of(plan));
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_plan_payment");
         when(mockSession.getMode()).thenReturn("payment");
 
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForPlan(
+            final Session result = stripeCheckoutService.createCheckoutSessionForPlan(
                     10L, "100", "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -525,12 +525,12 @@ class StripeCheckoutServiceTest {
     @DisplayName("createPlan_withoutStripe_shouldSavePlanWithProvidedCode")
     void createPlan_withoutStripe_shouldSavePlanWithProvidedCode() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(200L);
             return p;
         });
 
-        Plan result = stripeCheckoutService.createPlan("basic_code", "Basic", 999, "monthly", true, false);
+        final Plan result = stripeCheckoutService.createPlan("basic_code", "Basic", 999, "monthly", true, false);
 
         assertNotNull(result);
         assertEquals("basic_code", result.getCode());
@@ -547,12 +547,12 @@ class StripeCheckoutServiceTest {
         // When createInStripe is true, the code calls Stripe API using System.getenv + static calls.
         // Without a real Stripe key, it will fail in the catch block and fall back to the provided code.
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(201L);
             return p;
         });
 
-        Plan result = stripeCheckoutService.createPlan("fallback_code", "Fallback", 1500, "yearly", false, true);
+        final Plan result = stripeCheckoutService.createPlan("fallback_code", "Fallback", 1500, "yearly", false, true);
 
         assertNotNull(result);
         // Due to Stripe failure, it should fall back to the original code
@@ -564,12 +564,12 @@ class StripeCheckoutServiceTest {
     @DisplayName("createPlan_withNullIsActive_shouldDefaultToTrue")
     void createPlan_withNullIsActive_shouldDefaultToTrue() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(202L);
             return p;
         });
 
-        Plan result = stripeCheckoutService.createPlan("code1", "Plan1", 500, "monthly", null, false);
+        final Plan result = stripeCheckoutService.createPlan("code1", "Plan1", 500, "monthly", null, false);
 
         assertNotNull(result);
         assertTrue(result.getIsActive());
@@ -581,12 +581,12 @@ class StripeCheckoutServiceTest {
     @DisplayName("createPlan_5arg_shouldDelegateToCreatePlanWithFalseStripeFlag")
     void createPlan_5arg_shouldDelegateToCreatePlanWithFalseStripeFlag() throws Exception {
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(203L);
             return p;
         });
 
-        Plan result = stripeCheckoutService.createPlan("code2", "Plan2", 700, "yearly", true);
+        final Plan result = stripeCheckoutService.createPlan("code2", "Plan2", 700, "yearly", true);
 
         assertNotNull(result);
         assertEquals("code2", result.getCode());
@@ -608,7 +608,7 @@ class StripeCheckoutServiceTest {
         when(planRepository.findById(100L)).thenReturn(Optional.of(plan));
         when(caregiverRepository.findById(10L)).thenReturn(Optional.of(caregiver));
 
-        Session mockSession = mock(Session.class);
+        final Session mockSession = mock(Session.class);
         when(mockSession.getId()).thenReturn("cs_plan_session3");
         when(mockSession.getMode()).thenReturn("subscription");
         when(mockSession.getSubscription()).thenReturn("sub_plan_xyz");
@@ -616,7 +616,7 @@ class StripeCheckoutServiceTest {
         try (MockedStatic<Session> sessionMock = mockStatic(Session.class)) {
             sessionMock.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockSession);
 
-            Session result = stripeCheckoutService.createCheckoutSessionForPlan(
+            final Session result = stripeCheckoutService.createCheckoutSessionForPlan(
                     10L, "100", "http://success", "http://cancel");
 
             assertNotNull(result);
@@ -635,18 +635,18 @@ class StripeCheckoutServiceTest {
         when(mockPrice.getId()).thenReturn("price_created_123");
 
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(300L);
             return p;
         });
 
         try (MockedStatic<com.stripe.model.Product> productMock = mockStatic(com.stripe.model.Product.class);
-             MockedStatic<com.stripe.model.Price> priceMock = mockStatic(com.stripe.model.Price.class)) {
+             final MockedStatic<com.stripe.model.Price> priceMock = mockStatic(com.stripe.model.Price.class)) {
 
             productMock.when(() -> com.stripe.model.Product.create(anyMap())).thenReturn(mockProduct);
             priceMock.when(() -> com.stripe.model.Price.create(anyMap())).thenReturn(mockPrice);
 
-            Plan result = stripeCheckoutService.createPlan("orig_code", "Stripe Plan", 2500, "month", true, true);
+            final Plan result = stripeCheckoutService.createPlan("orig_code", "Stripe Plan", 2500, "month", true, true);
 
             assertNotNull(result);
             assertEquals("price_created_123", result.getCode());
