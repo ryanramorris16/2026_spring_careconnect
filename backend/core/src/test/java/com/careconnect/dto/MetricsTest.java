@@ -15,7 +15,7 @@ class MetricsTest {
 
     @Test
     void noArgConstructor_fieldsAreNull() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
 
         assertThat(metrics.getId()).isNull();
         assertThat(metrics.getMetricType()).isNull();
@@ -30,9 +30,9 @@ class MetricsTest {
 
     @Test
     void allArgsConstructor_setsAllFields() throws Exception {
-        LocalDateTime ts = LocalDateTime.of(2026, 3, 10, 8, 0);
+        final LocalDateTime ts = LocalDateTime.of(2026, 3, 10, 8, 0);
 
-        Metrics metrics = new Metrics(1L, "heart_rate", 72.0, "bpm", ts, 5L, "fitbit");
+        final Metrics metrics = new Metrics(1L, "heart_rate", 72.0, "bpm", ts, 5L, "fitbit");
 
         assertThat(metrics.getId()).isEqualTo(1L);
         assertThat(metrics.getMetricType()).isEqualTo("heart_rate");
@@ -47,28 +47,28 @@ class MetricsTest {
 
     @Test
     void setAndGetId_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setId(10L);
         assertThat(metrics.getId()).isEqualTo(10L);
     }
 
     @Test
     void setAndGetValue_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setValue(98.6);
         assertThat(metrics.getValue()).isEqualTo(98.6);
     }
 
     @Test
     void setAndGetUnit_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setUnit("mmHg");
         assertThat(metrics.getUnit()).isEqualTo("mmHg");
     }
 
     @Test
     void setAndGetPatientId_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setPatientId(3L);
         assertThat(metrics.getPatientId()).isEqualTo(3L);
     }
@@ -77,22 +77,22 @@ class MetricsTest {
 
     @Test
     void setMetricType_getMetricType_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setMetricType("blood_pressure");
         assertThat(metrics.getMetricType()).isEqualTo("blood_pressure");
     }
 
     @Test
     void setSource_getSource_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
+        final Metrics metrics = new Metrics();
         metrics.setSource("manual");
         assertThat(metrics.getSource()).isEqualTo("manual");
     }
 
     @Test
     void setTimestamp_getTimestamp_roundTrips() throws Exception {
-        Metrics metrics = new Metrics();
-        LocalDateTime ts = LocalDateTime.of(2026, 5, 20, 14, 45);
+        final Metrics metrics = new Metrics();
+        final LocalDateTime ts = LocalDateTime.of(2026, 5, 20, 14, 45);
         metrics.setTimestamp(ts);
         assertThat(metrics.getTimestamp()).isEqualTo(ts);
     }
@@ -101,9 +101,9 @@ class MetricsTest {
 
     @Test
     void equals_sameValues_areEqual() throws Exception {
-        LocalDateTime ts = LocalDateTime.of(2026, 1, 1, 0, 0);
-        Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
-        Metrics m2 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
+        final LocalDateTime ts = LocalDateTime.of(2026, 1, 1, 0, 0);
+        final Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
+        final Metrics m2 = new Metrics(1L, "steps", 10000.0, "count", ts, 2L, "manual");
 
         assertThat(m1).isEqualTo(m2);
         assertThat(m1.hashCode()).isEqualTo(m2.hashCode());
@@ -111,15 +111,15 @@ class MetricsTest {
 
     @Test
     void equals_differentValues_areNotEqual() throws Exception {
-        Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", null, 2L, "manual");
-        Metrics m2 = new Metrics(2L, "steps", 10000.0, "count", null, 2L, "manual");
+        final Metrics m1 = new Metrics(1L, "steps", 10000.0, "count", null, 2L, "manual");
+        final Metrics m2 = new Metrics(2L, "steps", 10000.0, "count", null, 2L, "manual");
 
         assertThat(m1).isNotEqualTo(m2);
     }
 
     @Test
     void toString_containsMetricType() throws Exception {
-        Metrics metrics = new Metrics(1L, "oxygen_saturation", 98.0, "%", null, 4L, "pulse_ox");
+        final Metrics metrics = new Metrics(1L, "oxygen_saturation", 98.0, "%", null, 4L, "pulse_ox");
         assertThat(metrics.toString()).contains("oxygen_saturation");
     }
 }
