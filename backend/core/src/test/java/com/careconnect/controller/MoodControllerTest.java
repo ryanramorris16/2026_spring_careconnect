@@ -33,7 +33,7 @@ class MoodControllerTest {
     private static final Long CAREGIVER_ID = 10L;
 
     private Mood makeMood(Long userId, int score, String label) {
-        Mood m = new Mood(userId, score, label);
+        final Mood m = new Mood(userId, score, label);
         m.setCreatedAt(LocalDateTime.now());
         return m;
     }
@@ -42,11 +42,11 @@ class MoodControllerTest {
 
     @Test
     void saveMood_returns200_withSavedMood() throws Exception {
-        Mood saved = makeMood(USER_ID, 8, "Happy");
+        final Mood saved = makeMood(USER_ID, 8, "Happy");
         when(moodService.saveMood(USER_ID, 8, "Happy")).thenReturn(saved);
 
-        Map<String, Object> payload = Map.of("score", 8, "label", "Happy");
-        ResponseEntity<Mood> response = controller.saveMood(USER_ID, payload);
+        final Map<String, Object> payload = Map.of("score", 8, "label", "Happy");
+        final ResponseEntity<Mood> response = controller.saveMood(USER_ID, payload);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(saved);
@@ -54,11 +54,11 @@ class MoodControllerTest {
 
     @Test
     void saveMood_returnsCorrectMoodValues() throws Exception {
-        Mood saved = makeMood(USER_ID, 3, "Sad");
+        final Mood saved = makeMood(USER_ID, 3, "Sad");
         when(moodService.saveMood(USER_ID, 3, "Sad")).thenReturn(saved);
 
-        Map<String, Object> payload = Map.of("score", 3, "label", "Sad");
-        ResponseEntity<Mood> response = controller.saveMood(USER_ID, payload);
+        final Map<String, Object> payload = Map.of("score", 3, "label", "Sad");
+        final ResponseEntity<Mood> response = controller.saveMood(USER_ID, payload);
 
         assertThat(response.getBody().getScore()).isEqualTo(3);
         assertThat(response.getBody().getLabel()).isEqualTo("Sad");
@@ -69,21 +69,21 @@ class MoodControllerTest {
     @Test
     void getCaregiverMoodSummaries_allPatientsHaveMoods() throws Exception {
         // The controller hardcodes patientIds = [1, 2, 3]
-        Mood mood1 = makeMood(1L, 7, "Good");
-        Mood mood2 = makeMood(2L, 5, "Neutral");
-        Mood mood3 = makeMood(3L, 9, "Excellent");
+        final Mood mood1 = makeMood(1L, 7, "Good");
+        final Mood mood2 = makeMood(2L, 5, "Neutral");
+        final Mood mood3 = makeMood(3L, 9, "Excellent");
 
         when(moodService.getMoods(1L)).thenReturn(List.of(mood1));
         when(moodService.getMoods(2L)).thenReturn(List.of(mood2));
         when(moodService.getMoods(3L)).thenReturn(List.of(mood3));
 
-        ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
+        final ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = response.getBody();
+        final Map<String, Object> body = response.getBody();
         assertThat(body.get("caregiverId")).isEqualTo(CAREGIVER_ID);
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> summaries = (List<Map<String, Object>>) body.get("summaries");
+        final List<Map<String, Object>> summaries = (List<Map<String, Object>>) body.get("summaries");
         assertThat(summaries).hasSize(3);
         assertThat(summaries.get(0).get("score")).isEqualTo(7);
         assertThat(summaries.get(0).get("label")).isEqualTo("Good");
@@ -92,16 +92,16 @@ class MoodControllerTest {
     @Test
     void getCaregiverMoodSummaries_somePatientsNoMoods() throws Exception {
         // patient 1 has moods, patient 2 and 3 do not
-        Mood mood1 = makeMood(1L, 7, "Good");
+        final Mood mood1 = makeMood(1L, 7, "Good");
         when(moodService.getMoods(1L)).thenReturn(List.of(mood1));
         when(moodService.getMoods(2L)).thenReturn(List.of());
         when(moodService.getMoods(3L)).thenReturn(List.of());
 
-        ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
+        final ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> summaries =
+        final List<Map<String, Object>> summaries =
                 (List<Map<String, Object>>) response.getBody().get("summaries");
         assertThat(summaries).hasSize(1);
         assertThat(summaries.get(0).get("patientId")).isEqualTo(1L);
@@ -113,26 +113,26 @@ class MoodControllerTest {
         when(moodService.getMoods(2L)).thenReturn(List.of());
         when(moodService.getMoods(3L)).thenReturn(List.of());
 
-        ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
+        final ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> summaries =
+        final List<Map<String, Object>> summaries =
                 (List<Map<String, Object>>) response.getBody().get("summaries");
         assertThat(summaries).isEmpty();
     }
 
     @Test
     void getCaregiverMoodSummaries_summaryContainsCreatedAt() throws Exception {
-        Mood mood = makeMood(1L, 6, "Okay");
+        final Mood mood = makeMood(1L, 6, "Okay");
         when(moodService.getMoods(1L)).thenReturn(List.of(mood));
         when(moodService.getMoods(2L)).thenReturn(List.of());
         when(moodService.getMoods(3L)).thenReturn(List.of());
 
-        ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
+        final ResponseEntity<Map<String, Object>> response = controller.getCaregiverMoodSummaries(CAREGIVER_ID);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> summaries =
+        final List<Map<String, Object>> summaries =
                 (List<Map<String, Object>>) response.getBody().get("summaries");
         assertThat(summaries.get(0)).containsKey("createdAt");
     }
@@ -141,10 +141,10 @@ class MoodControllerTest {
 
     @Test
     void getMoods_returns200_withMoodList() throws Exception {
-        List<Mood> moods = List.of(makeMood(USER_ID, 7, "Good"), makeMood(USER_ID, 5, "Okay"));
+        final List<Mood> moods = List.of(makeMood(USER_ID, 7, "Good"), makeMood(USER_ID, 5, "Okay"));
         when(moodService.getMoods(USER_ID)).thenReturn(moods);
 
-        ResponseEntity<List<Mood>> response = controller.getMoods(USER_ID);
+        final ResponseEntity<List<Mood>> response = controller.getMoods(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(moods);
@@ -154,7 +154,7 @@ class MoodControllerTest {
     void getMoods_returns200_emptyList() throws Exception {
         when(moodService.getMoods(USER_ID)).thenReturn(List.of());
 
-        ResponseEntity<List<Mood>> response = controller.getMoods(USER_ID);
+        final ResponseEntity<List<Mood>> response = controller.getMoods(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEmpty();
