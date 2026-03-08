@@ -18,7 +18,7 @@ class EvvRecordLocationTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
 
         assertThat(loc).isNotNull();
         assertThat(loc.getId()).isNull();
@@ -36,12 +36,12 @@ class EvvRecordLocationTest {
 
     @Test
     void builder_allFields() throws Exception {
-        UUID id = UUID.randomUUID();
-        OffsetDateTime now = OffsetDateTime.now();
-        Map<String, Object> addressSnapshot = new HashMap<>();
+        final UUID id = UUID.randomUUID();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final Map<String, Object> addressSnapshot = new HashMap<>();
         addressSnapshot.put("street", "1 Main St");
 
-        EvvRecordLocation loc = EvvRecordLocation.builder()
+        final EvvRecordLocation loc = EvvRecordLocation.builder()
                 .id(id)
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -68,9 +68,9 @@ class EvvRecordLocationTest {
 
     @Test
     void onCreate_setsIdAndCreatedAtWhenNull() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
 
-        Method m = EvvRecordLocation.class.getDeclaredMethod("onCreate");
+        final Method m = EvvRecordLocation.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(loc);
 
@@ -80,13 +80,13 @@ class EvvRecordLocationTest {
 
     @Test
     void onCreate_doesNotOverwriteExistingValues() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
-        UUID existingId = UUID.randomUUID();
-        OffsetDateTime existingTime = OffsetDateTime.now().minusDays(1);
+        final EvvRecordLocation loc = new EvvRecordLocation();
+        final UUID existingId = UUID.randomUUID();
+        final OffsetDateTime existingTime = OffsetDateTime.now().minusDays(1);
         loc.setId(existingId);
         loc.setCreatedAt(existingTime);
 
-        Method m = EvvRecordLocation.class.getDeclaredMethod("onCreate");
+        final Method m = EvvRecordLocation.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(loc);
 
@@ -98,7 +98,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_gpsWithCoordinates_succeeds() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.GPS);
         loc.setLatitude(new BigDecimal("39.2904"));
         loc.setLongitude(new BigDecimal("-76.6122"));
@@ -108,7 +108,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_gpsMissingLatitude_throwsIllegalState() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.GPS);
         loc.setLongitude(new BigDecimal("-76.6122"));
 
@@ -119,7 +119,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_gpsMissingLongitude_throwsIllegalState() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.GPS);
         loc.setLatitude(new BigDecimal("39.2904"));
 
@@ -131,9 +131,9 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_patientAddressWithSnapshot_succeeds() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.PATIENT_ADDRESS);
-        Map<String, Object> snapshot = new HashMap<>();
+        final Map<String, Object> snapshot = new HashMap<>();
         snapshot.put("street", "1 Main St");
         loc.setAddressSnapshotJson(snapshot);
 
@@ -142,7 +142,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_patientAddressNullSnapshot_throwsIllegalState() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.PATIENT_ADDRESS);
         loc.setAddressSnapshotJson(null);
 
@@ -153,7 +153,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_patientAddressEmptySnapshot_throwsIllegalState() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         loc.setType(EvvLocationType.PATIENT_ADDRESS);
         loc.setAddressSnapshotJson(new HashMap<>());
 
@@ -165,7 +165,7 @@ class EvvRecordLocationTest {
 
     @Test
     void validate_nullType_doesNotThrow() throws Exception {
-        EvvRecordLocation loc = new EvvRecordLocation();
+        final EvvRecordLocation loc = new EvvRecordLocation();
         // type is null – neither branch matches, method returns normally
         loc.validate();
     }
