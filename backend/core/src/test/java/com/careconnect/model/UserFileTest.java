@@ -16,7 +16,7 @@ class UserFileTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        UserFile uf = new UserFile();
+        final UserFile uf = new UserFile();
 
         assertThat(uf).isNotNull();
         assertThat(uf.getId()).isNull();
@@ -36,7 +36,7 @@ class UserFileTest {
 
     @Test
     void builder_defaults() throws Exception {
-        UserFile uf = UserFile.builder()
+        final UserFile uf = UserFile.builder()
                 .filename("test.pdf")
                 .originalFilename("original.pdf")
                 .fileData(new byte[]{1, 2, 3})
@@ -54,10 +54,10 @@ class UserFileTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
         byte[] data = {10, 20, 30};
 
-        UserFile uf = UserFile.builder()
+        final UserFile uf = UserFile.builder()
                 .id(1L)
                 .filename("file.pdf")
                 .originalFilename("original.pdf")
@@ -98,10 +98,10 @@ class UserFileTest {
 
     @Test
     void onCreate_setsTimestampsAndDefaultsIsActive() throws Exception {
-        UserFile uf = new UserFile();
+        final UserFile uf = new UserFile();
         uf.setIsActive(null);
 
-        Method m = UserFile.class.getDeclaredMethod("onCreate");
+        final Method m = UserFile.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(uf);
 
@@ -112,10 +112,10 @@ class UserFileTest {
 
     @Test
     void onCreate_preservesExistingIsActiveFalse() throws Exception {
-        UserFile uf = new UserFile();
+        final UserFile uf = new UserFile();
         uf.setIsActive(false);
 
-        Method m = UserFile.class.getDeclaredMethod("onCreate");
+        final Method m = UserFile.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(uf);
 
@@ -126,11 +126,11 @@ class UserFileTest {
 
     @Test
     void onUpdate_refreshesUpdatedAt() throws Exception {
-        UserFile uf = new UserFile();
+        final UserFile uf = new UserFile();
         uf.setUpdatedAt(LocalDateTime.now().minusDays(1));
-        LocalDateTime before = uf.getUpdatedAt();
+        final LocalDateTime before = uf.getUpdatedAt();
 
-        Method m = UserFile.class.getDeclaredMethod("onUpdate");
+        final Method m = UserFile.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(uf);
 
