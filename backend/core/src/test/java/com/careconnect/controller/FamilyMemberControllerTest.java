@@ -67,7 +67,7 @@ class FamilyMemberControllerTest {
     }
 
     private User makeFamilyMemberUser() throws Exception {
-        User u = new User();
+        final User u = new User();
         u.setId(USER_ID);
         u.setRole(Role.FAMILY_MEMBER);
         return u;
@@ -95,7 +95,7 @@ class FamilyMemberControllerTest {
          * Covers: user found but role != FAMILY_MEMBER
          * → throws AppException(FORBIDDEN)
          */
-        User nonFamily = new User();
+        final User nonFamily = new User();
         nonFamily.setId(USER_ID);
         nonFamily.setRole(Role.PATIENT);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(nonFamily));
@@ -114,12 +114,12 @@ class FamilyMemberControllerTest {
          * Covers: getCurrentFamilyMember() happy path (role == FAMILY_MEMBER)
          * and successful delegation to familyMemberService.
          */
-        User user = makeFamilyMemberUser();
-        List<PatientDataResponse> patients = List.of();
+        final User user = makeFamilyMemberUser();
+        final List<PatientDataResponse> patients = List.of();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.getAccessiblePatients(USER_ID)).thenReturn(patients);
 
-        ResponseEntity<List<PatientDataResponse>> response = controller.getAccessiblePatients();
+        final ResponseEntity<List<PatientDataResponse>> response = controller.getAccessiblePatients();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(patients);
@@ -132,12 +132,12 @@ class FamilyMemberControllerTest {
         /*
          * Covers: getCurrentFamilyMember() and getPatientData() delegation.
          */
-        User user = makeFamilyMemberUser();
-        PatientDataResponse patientData = mock(PatientDataResponse.class);
+        final User user = makeFamilyMemberUser();
+        final PatientDataResponse patientData = mock(PatientDataResponse.class);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.getPatientData(USER_ID, PATIENT_ID)).thenReturn(patientData);
 
-        ResponseEntity<PatientDataResponse> response = controller.getPatientData(PATIENT_ID);
+        final ResponseEntity<PatientDataResponse> response = controller.getPatientData(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(patientData);
@@ -150,11 +150,11 @@ class FamilyMemberControllerTest {
         /*
          * Covers: successful delegation to familyMemberService.hasAccessToPatient().
          */
-        User user = makeFamilyMemberUser();
+        final User user = makeFamilyMemberUser();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
 
-        ResponseEntity<Boolean> response = controller.hasAccessToPatient(PATIENT_ID);
+        final ResponseEntity<Boolean> response = controller.hasAccessToPatient(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isTrue();
@@ -168,7 +168,7 @@ class FamilyMemberControllerTest {
          * Covers: hasAccessToPatient returns false
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
          */
-        User user = makeFamilyMemberUser();
+        final User user = makeFamilyMemberUser();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
@@ -184,13 +184,13 @@ class FamilyMemberControllerTest {
          * Covers: hasAccessToPatient returns true
          * → delegates to analyticsService.getDashboard().
          */
-        User user = makeFamilyMemberUser();
-        DashboardDTO dashboard = mock(DashboardDTO.class);
+        final User user = makeFamilyMemberUser();
+        final DashboardDTO dashboard = mock(DashboardDTO.class);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(30))).thenReturn(dashboard);
 
-        ResponseEntity<DashboardDTO> response = controller.getPatientDashboard(PATIENT_ID, 30);
+        final ResponseEntity<DashboardDTO> response = controller.getPatientDashboard(PATIENT_ID, 30);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(dashboard);
@@ -204,7 +204,7 @@ class FamilyMemberControllerTest {
          * Covers: hasAccessToPatient returns false
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
          */
-        User user = makeFamilyMemberUser();
+        final User user = makeFamilyMemberUser();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
@@ -220,13 +220,13 @@ class FamilyMemberControllerTest {
          * Covers: hasAccessToPatient returns true
          * → delegates to analyticsService.getVitals().
          */
-        User user = makeFamilyMemberUser();
-        List<VitalSampleDTO> vitals = List.of();
+        final User user = makeFamilyMemberUser();
+        final List<VitalSampleDTO> vitals = List.of();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(vitals);
 
-        ResponseEntity<List<VitalSampleDTO>> response = controller.getPatientVitals(PATIENT_ID, 7);
+        final ResponseEntity<List<VitalSampleDTO>> response = controller.getPatientVitals(PATIENT_ID, 7);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(vitals);
