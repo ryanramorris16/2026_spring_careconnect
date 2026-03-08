@@ -14,7 +14,7 @@ class SummaryMetricTest {
 
     @Test
     void noArgConstructor_createsInstanceWithNullFields() throws Exception {
-        SummaryMetric m = new SummaryMetric();
+        final SummaryMetric m = new SummaryMetric();
 
         assertThat(m).isNotNull();
         assertThat(m.getId()).isNull();
@@ -29,11 +29,11 @@ class SummaryMetricTest {
 
     @Test
     void allArgsConstructor_setsAllFields() throws Exception {
-        Patient patient = new Patient();
-        Instant start = Instant.now().minusSeconds(3600);
-        Instant end = Instant.now();
+        final Patient patient = new Patient();
+        final Instant start = Instant.now().minusSeconds(3600);
+        final Instant end = Instant.now();
 
-        SummaryMetric m = new SummaryMetric(1L, patient, start, end, 0.85, 72.5);
+        final SummaryMetric m = new SummaryMetric(1L, patient, start, end, 0.85, 72.5);
 
         assertThat(m.getId()).isEqualTo(1L);
         assertThat(m.getPatient()).isSameAs(patient);
@@ -47,11 +47,11 @@ class SummaryMetricTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        Patient patient = new Patient();
-        Instant start = Instant.now().minusSeconds(3600);
-        Instant end = Instant.now();
+        final Patient patient = new Patient();
+        final Instant start = Instant.now().minusSeconds(3600);
+        final Instant end = Instant.now();
 
-        SummaryMetric m = SummaryMetric.builder()
+        final SummaryMetric m = SummaryMetric.builder()
                 .id(1L)
                 .patient(patient)
                 .periodStart(start)
@@ -70,7 +70,7 @@ class SummaryMetricTest {
 
     @Test
     void builder_defaults_allNull() throws Exception {
-        SummaryMetric m = SummaryMetric.builder().build();
+        final SummaryMetric m = SummaryMetric.builder().build();
 
         assertThat(m.getId()).isNull();
         assertThat(m.getPatient()).isNull();
@@ -84,9 +84,9 @@ class SummaryMetricTest {
 
     @Test
     void setters_updateAllFields() throws Exception {
-        SummaryMetric m = new SummaryMetric();
-        Patient patient = new Patient();
-        Instant now = Instant.now();
+        final SummaryMetric m = new SummaryMetric();
+        final Patient patient = new Patient();
+        final Instant now = Instant.now();
 
         m.setId(10L);
         m.setPatient(patient);
@@ -107,14 +107,14 @@ class SummaryMetricTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Patient patient = new Patient();
-        Instant start = Instant.parse("2025-01-01T00:00:00Z");
-        Instant end = Instant.parse("2025-01-02T00:00:00Z");
+        final Patient patient = new Patient();
+        final Instant start = Instant.parse("2025-01-01T00:00:00Z");
+        final Instant end = Instant.parse("2025-01-02T00:00:00Z");
 
-        SummaryMetric m1 = SummaryMetric.builder()
+        final SummaryMetric m1 = SummaryMetric.builder()
                 .id(1L).patient(patient).periodStart(start).periodEnd(end)
                 .adherenceRate(0.85).avgHeartRate(72.5).build();
-        SummaryMetric m2 = SummaryMetric.builder()
+        final SummaryMetric m2 = SummaryMetric.builder()
                 .id(1L).patient(patient).periodStart(start).periodEnd(end)
                 .adherenceRate(0.85).avgHeartRate(72.5).build();
 
@@ -124,41 +124,41 @@ class SummaryMetricTest {
 
     @Test
     void equals_differentId_returnsNotEqual() throws Exception {
-        SummaryMetric m1 = SummaryMetric.builder().id(1L).build();
-        SummaryMetric m2 = SummaryMetric.builder().id(2L).build();
+        final SummaryMetric m1 = SummaryMetric.builder().id(1L).build();
+        final SummaryMetric m2 = SummaryMetric.builder().id(2L).build();
 
         assertThat(m1).isNotEqualTo(m2);
     }
 
     @Test
     void equals_differentAdherenceRate_returnsNotEqual() throws Exception {
-        SummaryMetric m1 = SummaryMetric.builder().adherenceRate(0.5).build();
-        SummaryMetric m2 = SummaryMetric.builder().adherenceRate(0.9).build();
+        final SummaryMetric m1 = SummaryMetric.builder().adherenceRate(0.5).build();
+        final SummaryMetric m2 = SummaryMetric.builder().adherenceRate(0.9).build();
 
         assertThat(m1).isNotEqualTo(m2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        SummaryMetric m = SummaryMetric.builder().id(1L).build();
+        final SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        SummaryMetric m = SummaryMetric.builder().id(1L).build();
+        final SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isNotEqualTo("not a SummaryMetric");
     }
 
     @Test
     void equals_self_returnsTrue() throws Exception {
-        SummaryMetric m = SummaryMetric.builder().id(1L).build();
+        final SummaryMetric m = SummaryMetric.builder().id(1L).build();
         assertThat(m).isEqualTo(m);
     }
 
     @Test
     void hashCode_consistentForSameObject() throws Exception {
-        SummaryMetric m = SummaryMetric.builder().id(1L).adherenceRate(0.5).build();
+        final SummaryMetric m = SummaryMetric.builder().id(1L).adherenceRate(0.5).build();
         assertThat(m.hashCode()).isEqualTo(m.hashCode());
     }
 
@@ -166,13 +166,13 @@ class SummaryMetricTest {
 
     @Test
     void toString_containsFieldNames() throws Exception {
-        SummaryMetric m = SummaryMetric.builder()
+        final SummaryMetric m = SummaryMetric.builder()
                 .id(1L)
                 .adherenceRate(0.85)
                 .avgHeartRate(72.5)
                 .build();
 
-        String str = m.toString();
+        final String str = m.toString();
         assertThat(str).contains("SummaryMetric");
         assertThat(str).contains("id=1");
         assertThat(str).contains("adherenceRate=0.85");
@@ -181,8 +181,8 @@ class SummaryMetricTest {
 
     @Test
     void toString_nullFields_handlesGracefully() throws Exception {
-        SummaryMetric m = new SummaryMetric();
-        String str = m.toString();
+        final SummaryMetric m = new SummaryMetric();
+        final String str = m.toString();
         assertThat(str).contains("SummaryMetric");
         assertThat(str).contains("id=null");
     }
@@ -191,14 +191,14 @@ class SummaryMetricTest {
 
     @Test
     void canEqual_sameType_returnsTrue() throws Exception {
-        SummaryMetric m1 = new SummaryMetric();
-        SummaryMetric m2 = new SummaryMetric();
+        final SummaryMetric m1 = new SummaryMetric();
+        final SummaryMetric m2 = new SummaryMetric();
         assertThat(m1.canEqual(m2)).isTrue();
     }
 
     @Test
     void canEqual_differentType_returnsFalse() throws Exception {
-        SummaryMetric m = new SummaryMetric();
+        final SummaryMetric m = new SummaryMetric();
         assertThat(m.canEqual("string")).isFalse();
     }
 
@@ -206,8 +206,8 @@ class SummaryMetricTest {
 
     @Test
     void auditableFields_gettersAndSetters() throws Exception {
-        SummaryMetric m = new SummaryMetric();
-        LocalDateTime now = LocalDateTime.now();
+        final SummaryMetric m = new SummaryMetric();
+        final LocalDateTime now = LocalDateTime.now();
 
         m.setCreatedAt(now.minusDays(1));
         m.setUpdatedAt(now);
@@ -218,7 +218,7 @@ class SummaryMetricTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        SummaryMetric m = new SummaryMetric();
+        final SummaryMetric m = new SummaryMetric();
         assertThat(m.getCreatedAt()).isNull();
         assertThat(m.getUpdatedAt()).isNull();
 
@@ -230,9 +230,9 @@ class SummaryMetricTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        SummaryMetric m = new SummaryMetric();
+        final SummaryMetric m = new SummaryMetric();
         m.onCreate();
-        LocalDateTime originalCreatedAt = m.getCreatedAt();
+        final LocalDateTime originalCreatedAt = m.getCreatedAt();
 
         m.onUpdate();
 
@@ -244,7 +244,7 @@ class SummaryMetricTest {
 
     @Test
     void getGeneratedAt_throwsStackOverflowError() throws Exception {
-        SummaryMetric m = new SummaryMetric();
+        final SummaryMetric m = new SummaryMetric();
 
         assertThatThrownBy(m::getGeneratedAt)
                 .isInstanceOf(StackOverflowError.class);
