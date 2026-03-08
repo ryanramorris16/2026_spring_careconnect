@@ -117,7 +117,7 @@ class CaregiverServiceTest {
         void getPatientsByCaregiver_withActiveLinks_shouldReturnPatientList() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -128,7 +128,7 @@ class CaregiverServiceTest {
             when(users.findById(2L)).thenReturn(Optional.of(patientUser));
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(testPatient));
 
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
 
             assertNotNull(result);
             assertEquals(1, result.size());
@@ -141,7 +141,7 @@ class CaregiverServiceTest {
         void getPatientsByCaregiver_filterByEmail_shouldFilterCorrectly() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -153,11 +153,11 @@ class CaregiverServiceTest {
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(testPatient));
 
             // Filter by matching email
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, "patient@test.com", null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, "patient@test.com", null);
             assertEquals(1, result.size());
 
             // Filter by non-matching email
-            List<PatientWithLinkDto> filtered = caregiverService.getPatientsByCaregiver(10L, "other@test.com", null);
+            final List<PatientWithLinkDto> filtered = caregiverService.getPatientsByCaregiver(10L, "other@test.com", null);
             assertEquals(0, filtered.size());
         }
 
@@ -166,7 +166,7 @@ class CaregiverServiceTest {
         void getPatientsByCaregiver_filterByName_shouldFilterCorrectly() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -178,11 +178,11 @@ class CaregiverServiceTest {
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(testPatient));
 
             // Filter by matching name
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, "John");
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, "John");
             assertEquals(1, result.size());
 
             // Filter by non-matching name
-            List<PatientWithLinkDto> filtered = caregiverService.getPatientsByCaregiver(10L, null, "Alice");
+            final List<PatientWithLinkDto> filtered = caregiverService.getPatientsByCaregiver(10L, null, "Alice");
             assertEquals(0, filtered.size());
         }
 
@@ -191,7 +191,7 @@ class CaregiverServiceTest {
         void getPatientsByCaregiver_userNotFound_shouldFilterOut() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -201,7 +201,7 @@ class CaregiverServiceTest {
                     .thenReturn(List.of(linkResponse));
             when(users.findById(2L)).thenReturn(Optional.empty());
 
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
 
             assertEquals(0, result.size());
         }
@@ -211,7 +211,7 @@ class CaregiverServiceTest {
         void getPatientsByCaregiver_patientNotFoundForUser_shouldFilterOut() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -222,7 +222,7 @@ class CaregiverServiceTest {
             when(users.findById(2L)).thenReturn(Optional.of(patientUser));
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
 
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
 
             assertEquals(0, result.size());
         }
@@ -230,7 +230,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("getPatientsByCaregiver_patientWithNullEmail_shouldFilterOutWhenEmailFilterProvided")
         void getPatientsByCaregiver_patientWithNullEmail_shouldFilterOutWhenEmailFilterProvided() throws Exception {
-            Patient patientWithNullEmail = Patient.builder()
+            final Patient patientWithNullEmail = Patient.builder()
                     .id(20L)
                     .firstName("John")
                     .lastName("Doe")
@@ -240,7 +240,7 @@ class CaregiverServiceTest {
 
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -251,7 +251,7 @@ class CaregiverServiceTest {
             when(users.findById(2L)).thenReturn(Optional.of(patientUser));
             when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patientWithNullEmail));
 
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, "patient@test.com", null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, "patient@test.com", null);
 
             assertEquals(0, result.size());
         }
@@ -272,7 +272,7 @@ class CaregiverServiceTest {
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
                     .thenReturn(List.of());
 
-            List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
+            final List<PatientWithLinkDto> result = caregiverService.getPatientsByCaregiver(10L, null, null);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -290,7 +290,7 @@ class CaregiverServiceTest {
         void getCaregiverById_validId_shouldReturnCaregiver() throws Exception {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            Caregiver result = caregiverService.getCaregiverById(10L);
+            final Caregiver result = caregiverService.getCaregiverById(10L);
 
             assertNotNull(result);
             assertEquals("Jane", result.getFirstName());
@@ -315,7 +315,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("updateCaregiver_validData_shouldUpdateAndReturn")
         void updateCaregiver_validData_shouldUpdateAndReturn() throws Exception {
-            Caregiver updatedData = Caregiver.builder()
+            final Caregiver updatedData = Caregiver.builder()
                     .firstName("Updated")
                     .lastName("Name")
                     .dob("1985-01-01")
@@ -328,7 +328,7 @@ class CaregiverServiceTest {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(caregiverRepository.save(any(Caregiver.class))).thenReturn(testCaregiver);
 
-            Caregiver result = caregiverService.updateCaregiver(10L, updatedData);
+            final Caregiver result = caregiverService.updateCaregiver(10L, updatedData);
 
             assertNotNull(result);
             verify(caregiverRepository).save(testCaregiver);
@@ -357,7 +357,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_validData_shouldCreatePatientAndSendEmail")
         void registerPatient_validData_shouldCreatePatientAndSendEmail() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -368,17 +368,17 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
             when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> {
-                Patient p = inv.getArgument(0);
+                final Patient p = inv.getArgument(0);
                 p.setId(25L);
                 return p;
             });
 
-            Patient result = caregiverService.registerPatient(reg);
+            final Patient result = caregiverService.registerPatient(reg);
 
             assertNotNull(result);
             verify(users).save(any(User.class));
@@ -390,7 +390,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_withCaregiverId_shouldCreateLink")
         void registerPatient_withCaregiverId_shouldCreateLink() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -402,18 +402,18 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
             when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> {
-                Patient p = inv.getArgument(0);
+                final Patient p = inv.getArgument(0);
                 p.setId(25L);
                 return p;
             });
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
 
-            Patient result = caregiverService.registerPatient(reg);
+            final Patient result = caregiverService.registerPatient(reg);
 
             assertNotNull(result);
             verify(caregiverPatientLinkService).createPermanentLink(
@@ -423,7 +423,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_emailAlreadyRegistered_shouldThrowRegistrationException")
         void registerPatient_emailAlreadyRegistered_shouldThrowRegistrationException() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("existing@test.com");
 
             when(users.existsByEmail("existing@test.com")).thenReturn(true);
@@ -434,7 +434,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_withNullAddress_shouldHandleGracefully")
         void registerPatient_withNullAddress_shouldHandleGracefully() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -445,17 +445,17 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
             when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> {
-                Patient p = inv.getArgument(0);
+                final Patient p = inv.getArgument(0);
                 p.setId(25L);
                 return p;
             });
 
-            Patient result = caregiverService.registerPatient(reg);
+            final Patient result = caregiverService.registerPatient(reg);
 
             assertNotNull(result);
         }
@@ -463,7 +463,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_caregiverNotFound_shouldThrowAppException")
         void registerPatient_caregiverNotFound_shouldThrowAppException() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -472,12 +472,12 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
             when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> {
-                Patient p = inv.getArgument(0);
+                final Patient p = inv.getArgument(0);
                 p.setId(25L);
                 return p;
             });
@@ -489,7 +489,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_linkCreationFails_shouldThrowAppException")
         void registerPatient_linkCreationFails_shouldThrowAppException() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -498,12 +498,12 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
             when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> {
-                Patient p = inv.getArgument(0);
+                final Patient p = inv.getArgument(0);
                 p.setId(25L);
                 return p;
             });
@@ -517,7 +517,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerPatient_databaseSaveFailure_shouldThrowAppException")
         void registerPatient_databaseSaveFailure_shouldThrowAppException() throws Exception {
-            PatientRegistration reg = new PatientRegistration();
+            final PatientRegistration reg = new PatientRegistration();
             reg.setEmail("newpatient@test.com");
             reg.setFirstName("New");
             reg.setLastName("Patient");
@@ -528,7 +528,7 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newpatient@test.com")).thenReturn(false);
             when(encoder.encode(anyString())).thenReturn("encodedPassword");
             when(users.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
@@ -546,7 +546,7 @@ class CaregiverServiceTest {
     class RegisterCaregiverTests {
 
         private CaregiverRegistration createValidCaregiverReg() throws Exception {
-            CaregiverRegistration reg = new CaregiverRegistration();
+            final CaregiverRegistration reg = new CaregiverRegistration();
             reg.setFirstName("New");
             reg.setLastName("Caregiver");
             reg.setDob("1985-05-15");
@@ -554,12 +554,12 @@ class CaregiverServiceTest {
             reg.setAddress(new AddressDto("456 Elm St", null, "Town", "VA", "22001", null));
             reg.setCaregiverType("PROFESSIONAL");
 
-            LoginRequest credentials = new LoginRequest();
+            final LoginRequest credentials = new LoginRequest();
             credentials.setEmail("newcaregiver@test.com");
             credentials.setPassword("password123");
             reg.setCredentials(credentials);
 
-            ProfessionalInfoDto profDto = new ProfessionalInfoDto();
+            final ProfessionalInfoDto profDto = new ProfessionalInfoDto();
             profDto.setLicenseNumber("LIC123");
             profDto.setIssuingState("MD");
             profDto.setYearsExperience(5);
@@ -571,19 +571,19 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_validData_shouldCreateCaregiverWithStripe")
         void registerCaregiver_validData_shouldCreateCaregiverWithStripe() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(encoder.encode("password123")).thenReturn("encodedPassword");
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
             verify(caregiverRepository).save(any(Caregiver.class));
@@ -592,10 +592,10 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_withPlanId_shouldCreateSubscription")
         void registerCaregiver_withPlanId_shouldCreateSubscription() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
-            Plan plan = new Plan();
+            final Plan plan = new Plan();
             plan.setId(1L);
             plan.setCode("price_basic");
 
@@ -604,7 +604,7 @@ class CaregiverServiceTest {
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
@@ -612,7 +612,7 @@ class CaregiverServiceTest {
             when(stripeService.createSubscription("cus_test123", "price_basic"))
                     .thenReturn(Map.of("id", "sub_test123", "success", true));
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
             verify(subscriptionRepository).save(any(Subscription.class));
@@ -621,7 +621,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_emailAlreadyRegistered_shouldThrowRegistrationException")
         void registerCaregiver_emailAlreadyRegistered_shouldThrowRegistrationException() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(true);
 
@@ -631,7 +631,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_nullCaregiverType_shouldDefaultToProfessional")
         void registerCaregiver_nullCaregiverType_shouldDefaultToProfessional() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setCaregiverType(null);
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -639,12 +639,12 @@ class CaregiverServiceTest {
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
         }
@@ -652,7 +652,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_blankCaregiverType_shouldDefaultToProfessional")
         void registerCaregiver_blankCaregiverType_shouldDefaultToProfessional() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setCaregiverType("  ");
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -660,12 +660,12 @@ class CaregiverServiceTest {
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
         }
@@ -673,7 +673,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_nullStripeService_shouldUseMock")
         void registerCaregiver_nullStripeService_shouldUseMock() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             // Set stripeService to null to test mock path
             org.springframework.test.util.ReflectionTestUtils.setField(caregiverService, "stripeService", null);
@@ -681,12 +681,12 @@ class CaregiverServiceTest {
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(encoder.encode("password123")).thenReturn("encodedPassword");
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
         }
@@ -694,7 +694,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_stripeCreateCustomerFails_shouldThrowAppException")
         void registerCaregiver_stripeCreateCustomerFails_shouldThrowAppException() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(stripeService.createCustomer(anyString(), anyString()))
@@ -706,7 +706,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_stripeReturnsNullId_shouldThrowAppException")
         void registerCaregiver_stripeReturnsNullId_shouldThrowAppException() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
@@ -718,7 +718,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_databaseSaveFails_shouldThrowAppException")
         void registerCaregiver_databaseSaveFails_shouldThrowAppException() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(encoder.encode("password123")).thenReturn("encodedPassword");
@@ -733,7 +733,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_nullProfessionalInfo_shouldHandleGracefully")
         void registerCaregiver_nullProfessionalInfo_shouldHandleGracefully() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setProfessional(null);
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
@@ -741,12 +741,12 @@ class CaregiverServiceTest {
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
         }
@@ -754,10 +754,10 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_subscriptionCreationFails_shouldStillSucceed")
         void registerCaregiver_subscriptionCreationFails_shouldStillSucceed() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
-            Plan plan = new Plan();
+            final Plan plan = new Plan();
             plan.setId(1L);
             plan.setCode("price_basic");
 
@@ -766,7 +766,7 @@ class CaregiverServiceTest {
             when(stripeService.createCustomer("New Caregiver", "newcaregiver@test.com"))
                     .thenReturn(Map.of("id", "cus_test123", "success", true));
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
@@ -775,7 +775,7 @@ class CaregiverServiceTest {
                     .thenThrow(new RuntimeException("Stripe subscription error"));
 
             // Should still succeed even when subscription creation fails
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
         }
@@ -783,25 +783,25 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("registerCaregiver_withPlanAndNullStripeService_shouldUseMockSubscription")
         void registerCaregiver_withPlanAndNullStripeService_shouldUseMockSubscription() throws Exception {
-            CaregiverRegistration reg = createValidCaregiverReg();
+            final CaregiverRegistration reg = createValidCaregiverReg();
             reg.setPlanId("1");
 
             org.springframework.test.util.ReflectionTestUtils.setField(caregiverService, "stripeService", null);
 
-            Plan plan = new Plan();
+            final Plan plan = new Plan();
             plan.setId(1L);
             plan.setCode("price_basic");
 
             when(users.existsByEmail("newcaregiver@test.com")).thenReturn(false);
             when(encoder.encode("password123")).thenReturn("encodedPassword");
             when(caregiverRepository.save(any(Caregiver.class))).thenAnswer(inv -> {
-                Caregiver c = inv.getArgument(0);
+                final Caregiver c = inv.getArgument(0);
                 c.setId(15L);
                 return c;
             });
             when(planRepository.findById(1L)).thenReturn(Optional.of(plan));
 
-            Caregiver result = caregiverService.registerCaregiver(reg);
+            final Caregiver result = caregiverService.registerCaregiver(reg);
 
             assertNotNull(result);
             verify(subscriptionRepository).save(any(Subscription.class));
@@ -853,7 +853,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("hasAccessToPatient_familyMemberRole_shouldCheckFamilyMemberLink")
         void hasAccessToPatient_familyMemberRole_shouldCheckFamilyMemberLink() throws Exception {
-            User fmUser = new User();
+            final User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setRole(Role.FAMILY_MEMBER);
 
@@ -866,7 +866,7 @@ class CaregiverServiceTest {
         @Test
         @DisplayName("hasAccessToPatient_adminRole_shouldAlwaysReturnTrue")
         void hasAccessToPatient_adminRole_shouldAlwaysReturnTrue() throws Exception {
-            User adminUser = new User();
+            final User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setRole(Role.ADMIN);
 
@@ -940,7 +940,7 @@ class CaregiverServiceTest {
             when(caregiverRepository.findById(10L)).thenReturn(Optional.of(testCaregiver));
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
 
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
@@ -949,7 +949,7 @@ class CaregiverServiceTest {
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
                     .thenReturn(List.of(linkResponse));
 
-            PatientWithLinkDto result = caregiverService.getPatientWithLinkById(10L, 20L);
+            final PatientWithLinkDto result = caregiverService.getPatientWithLinkById(10L, 20L);
 
             assertNotNull(result);
             assertEquals("John", result.patient().firstName());
@@ -985,7 +985,7 @@ class CaregiverServiceTest {
             when(patientRepository.findById(20L)).thenReturn(Optional.of(testPatient));
 
             // Link is for a different patient user ID
-            CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
+            final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     99L, "Other Patient", "other@test.com",
                     "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
