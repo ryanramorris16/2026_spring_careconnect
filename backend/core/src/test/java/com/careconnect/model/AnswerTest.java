@@ -13,7 +13,7 @@ class AnswerTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Answer answer = new Answer();
+        final Answer answer = new Answer();
 
         assertThat(answer).isNotNull();
         assertThat(answer.getId()).isNull();
@@ -28,7 +28,7 @@ class AnswerTest {
 
     @Test
     void builder_createdAt_defaultsToNow() throws Exception {
-        Answer answer = Answer.builder()
+        final Answer answer = Answer.builder()
                 .checkIn(new CheckIn())
                 .question(new Question())
                 .build();
@@ -40,11 +40,11 @@ class AnswerTest {
 
     @Test
     void builder_allFields() throws Exception {
-        CheckIn checkIn = new CheckIn();
-        Question question = new Question();
-        OffsetDateTime now = OffsetDateTime.now();
+        final CheckIn checkIn = new CheckIn();
+        final Question question = new Question();
+        final OffsetDateTime now = OffsetDateTime.now();
 
-        Answer answer = Answer.builder()
+        final Answer answer = Answer.builder()
                 .id(1L)
                 .checkIn(checkIn)
                 .question(question)
@@ -67,10 +67,10 @@ class AnswerTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Answer answer = new Answer();
-        CheckIn checkIn = new CheckIn();
-        Question question = new Question();
-        OffsetDateTime now = OffsetDateTime.now();
+        final Answer answer = new Answer();
+        final CheckIn checkIn = new CheckIn();
+        final Question question = new Question();
+        final OffsetDateTime now = OffsetDateTime.now();
 
         answer.setId(2L);
         answer.setCheckIn(checkIn);
@@ -93,9 +93,9 @@ class AnswerTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        OffsetDateTime now = OffsetDateTime.now();
-        Answer a1 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
-        Answer a2 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final Answer a1 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
+        final Answer a2 = Answer.builder().id(1L).valueText("hello").createdAt(now).build();
 
         assertThat(a1).isEqualTo(a2);
         assertThat(a1.hashCode()).isEqualTo(a2.hashCode());
@@ -103,8 +103,8 @@ class AnswerTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        Answer a1 = Answer.builder().id(1L).build();
-        Answer a2 = Answer.builder().id(2L).build();
+        final Answer a1 = Answer.builder().id(1L).build();
+        final Answer a2 = Answer.builder().id(2L).build();
 
         assertThat(a1).isNotEqualTo(a2);
     }
