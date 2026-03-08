@@ -55,7 +55,7 @@ class NotificationSettingServiceTest {
     void getByUserId_settingExists_returnsExistingSettingAsDTO() throws Exception {
         when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.of(existingSetting));
 
-        NotificationSettingDTO result = notificationSettingService.getByUserId(1L);
+        final NotificationSettingDTO result = notificationSettingService.getByUserId(1L);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
@@ -76,7 +76,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("getByUserId_settingDoesNotExist_createsDefaultAndReturnsDTO")
     void getByUserId_settingDoesNotExist_createsDefaultAndReturnsDTO() throws Exception {
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(2L)
                 .gamification(true)
                 .emergency(true)
@@ -92,7 +92,7 @@ class NotificationSettingServiceTest {
         when(notificationSettingRepository.findByUserId(2L)).thenReturn(Optional.empty());
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.getByUserId(2L);
+        final NotificationSettingDTO result = notificationSettingService.getByUserId(2L);
 
         assertNotNull(result);
         assertEquals(20L, result.id());
@@ -111,7 +111,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("getByUserId_settingWithAllFalseFlags_returnsDTOWithAllFalse")
     void getByUserId_settingWithAllFalseFlags_returnsDTOWithAllFalse() throws Exception {
-        NotificationSetting allFalse = NotificationSetting.builder()
+        final NotificationSetting allFalse = NotificationSetting.builder()
                 .userId(3L)
                 .build();
         allFalse.setId(30L);
@@ -126,7 +126,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(3L)).thenReturn(Optional.of(allFalse));
 
-        NotificationSettingDTO result = notificationSettingService.getByUserId(3L);
+        final NotificationSettingDTO result = notificationSettingService.getByUserId(3L);
 
         assertNotNull(result);
         assertEquals(3L, result.userId());
@@ -143,7 +143,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("createOrUpdate_settingExists_updatesExistingSettingAndReturnsDTO")
     void createOrUpdate_settingExists_updatesExistingSettingAndReturnsDTO() throws Exception {
-        NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
+        final NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(1L)
                 .gamification(false)
                 .emergency(false)
@@ -155,7 +155,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.of(existingSetting));
 
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(1L)
                 .build();
         savedSetting.setId(10L);
@@ -170,7 +170,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
+        final NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
@@ -189,7 +189,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("createOrUpdate_settingDoesNotExist_createsNewSettingAndReturnsDTO")
     void createOrUpdate_settingDoesNotExist_createsNewSettingAndReturnsDTO() throws Exception {
-        NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
+        final NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(5L)
                 .gamification(true)
                 .emergency(true)
@@ -201,7 +201,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(5L)).thenReturn(Optional.empty());
 
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(5L)
                 .build();
         savedSetting.setId(50L);
@@ -216,7 +216,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
+        final NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
 
         assertNotNull(result);
         assertEquals(50L, result.id());
@@ -235,7 +235,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("createOrUpdate_allFieldsTrue_returnsAllTrueDTO")
     void createOrUpdate_allFieldsTrue_returnsAllTrueDTO() throws Exception {
-        NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
+        final NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(7L)
                 .gamification(true)
                 .emergency(true)
@@ -247,7 +247,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(7L)).thenReturn(Optional.empty());
 
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(7L)
                 .gamification(true)
                 .emergency(true)
@@ -262,7 +262,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
+        final NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
 
         assertNotNull(result);
         assertTrue(result.gamification());
@@ -276,7 +276,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("createOrUpdate_allFieldsFalse_returnsAllFalseDTO")
     void createOrUpdate_allFieldsFalse_returnsAllFalseDTO() throws Exception {
-        NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
+        final NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(8L)
                 .gamification(false)
                 .emergency(false)
@@ -288,7 +288,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(8L)).thenReturn(Optional.empty());
 
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(8L)
                 .build();
         savedSetting.setId(80L);
@@ -303,7 +303,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
+        final NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
 
         assertNotNull(result);
         assertFalse(result.gamification());
@@ -317,7 +317,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("createOrUpdate_existingSettingPartialUpdate_updatesOnlySpecifiedFields")
     void createOrUpdate_existingSettingPartialUpdate_updatesOnlySpecifiedFields() throws Exception {
-        NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
+        final NotificationSettingDTO inputDTO = NotificationSettingDTO.builder()
                 .userId(1L)
                 .gamification(false)
                 .emergency(true)
@@ -329,7 +329,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(1L)).thenReturn(Optional.of(existingSetting));
 
-        NotificationSetting savedSetting = NotificationSetting.builder()
+        final NotificationSetting savedSetting = NotificationSetting.builder()
                 .userId(1L)
                 .build();
         savedSetting.setId(10L);
@@ -344,7 +344,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.save(any(NotificationSetting.class))).thenReturn(savedSetting);
 
-        NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
+        final NotificationSettingDTO result = notificationSettingService.createOrUpdate(inputDTO);
 
         assertNotNull(result);
         assertFalse(result.gamification());
@@ -360,7 +360,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("getByUserId_settingWithNullTimestamps_returnsDTOWithNullTimestamps")
     void getByUserId_settingWithNullTimestamps_returnsDTOWithNullTimestamps() throws Exception {
-        NotificationSetting settingNoTimestamps = NotificationSetting.builder()
+        final NotificationSetting settingNoTimestamps = NotificationSetting.builder()
                 .userId(9L)
                 .build();
         settingNoTimestamps.setId(90L);
@@ -368,7 +368,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(9L)).thenReturn(Optional.of(settingNoTimestamps));
 
-        NotificationSettingDTO result = notificationSettingService.getByUserId(9L);
+        final NotificationSettingDTO result = notificationSettingService.getByUserId(9L);
 
         assertNotNull(result);
         assertEquals(90L, result.id());
@@ -380,7 +380,7 @@ class NotificationSettingServiceTest {
     @Test
     @DisplayName("getByUserId_settingWithNullId_returnsDTOWithNullId")
     void getByUserId_settingWithNullId_returnsDTOWithNullId() throws Exception {
-        NotificationSetting settingNoId = NotificationSetting.builder()
+        final NotificationSetting settingNoId = NotificationSetting.builder()
                 .userId(11L)
                 .build();
         settingNoId.setCreatedAt(now);
@@ -388,7 +388,7 @@ class NotificationSettingServiceTest {
 
         when(notificationSettingRepository.findByUserId(11L)).thenReturn(Optional.of(settingNoId));
 
-        NotificationSettingDTO result = notificationSettingService.getByUserId(11L);
+        final NotificationSettingDTO result = notificationSettingService.getByUserId(11L);
 
         assertNotNull(result);
         assertNull(result.id());
