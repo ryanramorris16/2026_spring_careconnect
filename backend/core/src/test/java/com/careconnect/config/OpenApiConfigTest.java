@@ -44,10 +44,10 @@ class OpenApiConfigTest {
     void openApiDefinitionContainsCorrectMetadata() throws Exception {
         // Verifies the API title, version, description snippet, contact details, and
         // license information shown in the generated Swagger UI / OpenAPI JSON.
-        OpenAPIDefinition definition =
+        final OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
-        Info info = definition.info();
+        final Info info = definition.info();
 
         assertEquals("CareConnect Backend API", info.title());
         assertEquals("1.0.0", info.version());
@@ -65,10 +65,10 @@ class OpenApiConfigTest {
     void openApiDefinitionContainsServers() throws Exception {
         // Verifies that both the local development server and the production API server
         // are listed so that developers can target either from Swagger UI.
-        OpenAPIDefinition definition =
+        final OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
-        Server[] servers = definition.servers();
+        final Server[] servers = definition.servers();
 
         assertEquals(2, servers.length);
 
@@ -84,10 +84,10 @@ class OpenApiConfigTest {
         // Verifies that the three authentication methods used by the API (JWT bearer token,
         // HTTP Basic, and cookie-based) are declared as global security requirements so
         // every endpoint in the spec is marked as requiring authentication by default.
-        OpenAPIDefinition definition =
+        final OpenAPIDefinition definition =
                 OpenApiConfig.class.getAnnotation(OpenAPIDefinition.class);
 
-        SecurityRequirement[] security = definition.security();
+        final SecurityRequirement[] security = definition.security();
 
         assertEquals(3, security.length);
 
@@ -106,7 +106,7 @@ class OpenApiConfigTest {
         // Verifies that the three @SecurityScheme annotations are present, which define
         // how each authentication type works (e.g. Bearer token in Authorization header,
         // Basic credentials, or a session cookie) so Swagger UI can send real auth requests.
-        SecurityScheme[] schemes =
+        final SecurityScheme[] schemes =
                 OpenApiConfig.class.getAnnotationsByType(SecurityScheme.class);
 
         assertEquals(3, schemes.length);
