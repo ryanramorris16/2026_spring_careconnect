@@ -10,7 +10,7 @@ class PaymentStatusTest {
 
     @Test
     void enumValues_allPresent() throws Exception {
-        PaymentStatus[] values = PaymentStatus.values();
+        final PaymentStatus[] values = PaymentStatus.values();
 
         assertThat(values).containsExactlyInAnyOrder(
                 PaymentStatus.pending,
