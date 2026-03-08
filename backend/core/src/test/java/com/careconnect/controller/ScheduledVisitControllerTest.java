@@ -122,7 +122,7 @@ class ScheduledVisitControllerTest {
         @DisplayName("Returns 500 when request fails validation")
         void returns500WhenRequestInvalid() throws Exception {
             // Arrange
-            ScheduledVisitRequest invalidRequest = new ScheduledVisitRequest(
+            final ScheduledVisitRequest invalidRequest = new ScheduledVisitRequest(
                     10L,
                     "Bathing Assistance",
                     LocalDate.of(2026, 3, 1),
@@ -373,7 +373,7 @@ class ScheduledVisitControllerTest {
         @DisplayName("Updates scheduled visit")
         void updatesScheduledVisit() throws Exception {
             // Arrange
-            ScheduledVisitResponse updatedVisit = new ScheduledVisitResponse(
+            final ScheduledVisitResponse updatedVisit = new ScheduledVisitResponse(
                     101L,
                     5L,
                     10L,
@@ -391,7 +391,7 @@ class ScheduledVisitControllerTest {
             when(scheduledVisitService.updateScheduledVisit(eq(101L), any(ScheduledVisitRequest.class)))
                     .thenReturn(updatedVisit);
 
-            ScheduledVisitRequest updateRequest = new ScheduledVisitRequest(
+            final ScheduledVisitRequest updateRequest = new ScheduledVisitRequest(
                     10L,
                     "Meal Preparation",
                     LocalDate.of(2026, 3, 2),
@@ -419,7 +419,7 @@ class ScheduledVisitControllerTest {
         @DisplayName("Returns 500 when update request fails validation")
         void returns500WhenUpdateRequestInvalid() throws Exception {
             // Arrange
-            ScheduledVisitRequest invalidUpdateRequest = new ScheduledVisitRequest(
+            final ScheduledVisitRequest invalidUpdateRequest = new ScheduledVisitRequest(
                     10L,
                     "Meal Preparation",
                     LocalDate.of(2026, 3, 2),
@@ -483,7 +483,7 @@ class ScheduledVisitControllerTest {
         @DisplayName("Updates visit status")
         void updatesVisitStatus() throws Exception {
             // Arrange
-            ScheduledVisitResponse completedVisit = new ScheduledVisitResponse(
+            final ScheduledVisitResponse completedVisit = new ScheduledVisitResponse(
                     sampleVisit.getId(),
                     sampleVisit.getCaregiverId(),
                     sampleVisit.getPatientId(),
