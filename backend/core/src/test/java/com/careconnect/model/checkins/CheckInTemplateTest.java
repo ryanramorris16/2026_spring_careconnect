@@ -8,7 +8,7 @@ class CheckInTemplateTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        CheckInTemplate template = new CheckInTemplate();
+        final CheckInTemplate template = new CheckInTemplate();
         assertThat(template).isNotNull();
     }
 }
