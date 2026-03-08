@@ -181,7 +181,7 @@ class QuestionControllerTest {
         @DisplayName("Returns updated question when id exists")
         void returnsUpdatedQuestionWhenFound() throws Exception {
             // Arrange
-            QuestionDTO updated = new QuestionDTO(1L, "Updated prompt", "TEXT", false, true, 2);
+            final QuestionDTO updated = new QuestionDTO(1L, "Updated prompt", "TEXT", false, true, 2);
             when(questionService.update(eq(1L), any(QuestionUpsertDTO.class)))
                     .thenReturn(Optional.of(updated));
 
