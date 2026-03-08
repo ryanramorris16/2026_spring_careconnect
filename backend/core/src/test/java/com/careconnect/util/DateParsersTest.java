@@ -14,7 +14,7 @@ class DateParsersTest {
 
     @Test
     void privateConstructor_isInstantiableViaReflection() throws Exception {
-        Constructor<DateParsers> ctor = DateParsers.class.getDeclaredConstructor();
+        final Constructor<DateParsers> ctor = DateParsers.class.getDeclaredConstructor();
         ctor.setAccessible(true);
         assertThat(ctor.newInstance()).isNotNull();
     }
@@ -23,25 +23,25 @@ class DateParsersTest {
 
     @Test
     void parseOffsetOrLocalToUtc_null_returnsNow() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc(null);
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc(null);
         assertThat(result).isNotNull();
     }
 
     @Test
     void parseOffsetOrLocalToUtc_empty_returnsNow() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("");
         assertThat(result).isNotNull();
     }
 
     @Test
     void parseOffsetOrLocalToUtc_blank_returnsNow() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("   ");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("   ");
         assertThat(result).isNotNull();
     }
 
     @Test
     void parseOffsetOrLocalToUtc_isoOffsetWithZ_parsesCorrectly() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.990Z");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.990Z");
         assertThat(result.getYear()).isEqualTo(2025);
         assertThat(result.getMonthValue()).isEqualTo(10);
         assertThat(result.getDayOfMonth()).isEqualTo(5);
@@ -51,14 +51,14 @@ class DateParsersTest {
 
     @Test
     void parseOffsetOrLocalToUtc_isoOffsetWithPositiveOffset_parsesCorrectly() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.990+05:00");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.990+05:00");
         assertThat(result).isNotNull();
         assertThat(result.getYear()).isEqualTo(2025);
     }
 
     @Test
     void parseOffsetOrLocalToUtc_isoLocalDateTime_parsesAsUtc() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.000");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05T10:43:21.000");
         assertThat(result.getYear()).isEqualTo(2025);
         assertThat(result.getMonthValue()).isEqualTo(10);
         assertThat(result.getDayOfMonth()).isEqualTo(5);
@@ -67,7 +67,7 @@ class DateParsersTest {
 
     @Test
     void parseOffsetOrLocalToUtc_isoDateOnly_parsesAsStartOfDayUtc() throws Exception {
-        OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05");
+        final OffsetDateTime result = DateParsers.parseOffsetOrLocalToUtc("2025-10-05");
         assertThat(result.getYear()).isEqualTo(2025);
         assertThat(result.getMonthValue()).isEqualTo(10);
         assertThat(result.getDayOfMonth()).isEqualTo(5);
@@ -95,7 +95,7 @@ class DateParsersTest {
 
     @Test
     void parseNullable_validIsoOffset_returnsValue() throws Exception {
-        OffsetDateTime result = DateParsers.parseNullableOffsetOrLocalToUtc("2025-10-05T10:43:21.990Z");
+        final OffsetDateTime result = DateParsers.parseNullableOffsetOrLocalToUtc("2025-10-05T10:43:21.990Z");
         assertThat(result).isNotNull();
         assertThat(result.getYear()).isEqualTo(2025);
     }
@@ -109,8 +109,8 @@ class DateParsersTest {
 
     @Test
     void format_utcDateTime_returnsIsoString() throws Exception {
-        OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 10, 43, 21, 0, ZoneOffset.UTC);
-        String result = DateParsers.format(odt);
+        final OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 10, 43, 21, 0, ZoneOffset.UTC);
+        final String result = DateParsers.format(odt);
         assertThat(result).isNotNull();
         assertThat(result).contains("2025-10-05");
         assertThat(result).contains("10:43:21");
@@ -119,8 +119,8 @@ class DateParsersTest {
     @Test
     void format_nonUtcOffset_convertsToUtc() throws Exception {
         // 15:43 +05:00 = 10:43 UTC
-        OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 15, 43, 21, 0, ZoneOffset.ofHours(5));
-        String result = DateParsers.format(odt);
+        final OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 15, 43, 21, 0, ZoneOffset.ofHours(5));
+        final String result = DateParsers.format(odt);
         assertThat(result).isNotNull();
         assertThat(result).contains("2025-10-05T10:43:21");
     }
@@ -134,8 +134,8 @@ class DateParsersTest {
 
     @Test
     void formatNullable_validDateTime_returnsString() throws Exception {
-        OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 10, 43, 21, 0, ZoneOffset.UTC);
-        String result = DateParsers.formatNullable(odt);
+        final OffsetDateTime odt = OffsetDateTime.of(2025, 10, 5, 10, 43, 21, 0, ZoneOffset.UTC);
+        final String result = DateParsers.formatNullable(odt);
         assertThat(result).isNotNull().contains("2025-10-05");
     }
 }
