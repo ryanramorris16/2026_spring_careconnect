@@ -12,7 +12,7 @@ class PostTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        Post post = new Post();
+        final Post post = new Post();
 
         assertThat(post).isNotNull();
         assertThat(post.getId()).isNull();
@@ -26,8 +26,8 @@ class PostTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        Post post = new Post(1L, 10L, "Hello World", "http://img.example.com/pic.jpg", now);
+        final LocalDateTime now = LocalDateTime.now();
+        final Post post = new Post(1L, 10L, "Hello World", "http://img.example.com/pic.jpg", now);
 
         assertThat(post.getId()).isEqualTo(1L);
         assertThat(post.getUserId()).isEqualTo(10L);
@@ -40,8 +40,8 @@ class PostTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Post post = new Post();
-        LocalDateTime now = LocalDateTime.now();
+        final Post post = new Post();
+        final LocalDateTime now = LocalDateTime.now();
 
         post.setUserId(55L);
         post.setContent("Updated content");
