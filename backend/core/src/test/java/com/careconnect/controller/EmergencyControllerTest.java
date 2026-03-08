@@ -37,7 +37,7 @@ class EmergencyControllerTest {
         void returns200_whenPdfGeneratedSuccessfully() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -46,7 +46,7 @@ class EmergencyControllerTest {
         void returnsPdfBytes_asBody() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isEqualTo(PDF_BYTES);
         }
@@ -55,7 +55,7 @@ class EmergencyControllerTest {
         void contentTypeIsApplicationPdf() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
         }
@@ -64,9 +64,9 @@ class EmergencyControllerTest {
         void contentDispositionIsInline_withEmergencyId() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
-            String disposition = response.getHeaders().getFirst("Content-Disposition");
+            final String disposition = response.getHeaders().getFirst("Content-Disposition");
             assertThat(disposition)
                     .contains("inline")
                     .contains("vial-of-life-" + EMERGENCY_ID + ".pdf");
@@ -76,7 +76,7 @@ class EmergencyControllerTest {
         void contentLengthMatchesPdfSize() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getHeaders().getContentLength()).isEqualTo((long) PDF_BYTES.length);
         }
@@ -86,7 +86,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new IllegalArgumentException("patient not found"));
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -96,7 +96,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("unexpected failure"));
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -106,7 +106,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new IllegalArgumentException("not found"));
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isNull();
         }
@@ -116,7 +116,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("failure"));
 
-            ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.getEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isNull();
         }
@@ -140,7 +140,7 @@ class EmergencyControllerTest {
         void returns200_whenPdfGeneratedSuccessfully() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -149,7 +149,7 @@ class EmergencyControllerTest {
         void returnsPdfBytes_asBody() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isEqualTo(PDF_BYTES);
         }
@@ -158,7 +158,7 @@ class EmergencyControllerTest {
         void contentTypeIsApplicationPdf() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
         }
@@ -167,9 +167,9 @@ class EmergencyControllerTest {
         void contentDispositionIsAttachment_withEmergencyId() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
-            String disposition = response.getHeaders().getFirst("Content-Disposition");
+            final String disposition = response.getHeaders().getFirst("Content-Disposition");
             assertThat(disposition)
                     .contains("attachment")
                     .contains("vial-of-life-" + EMERGENCY_ID + ".pdf");
@@ -179,9 +179,9 @@ class EmergencyControllerTest {
         void contentDispositionIsNotInline() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
-            String disposition = response.getHeaders().getFirst("Content-Disposition");
+            final String disposition = response.getHeaders().getFirst("Content-Disposition");
             assertThat(disposition).doesNotContain("inline");
         }
 
@@ -189,7 +189,7 @@ class EmergencyControllerTest {
         void contentLengthMatchesPdfSize() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getHeaders().getContentLength()).isEqualTo((long) PDF_BYTES.length);
         }
@@ -199,7 +199,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new IllegalArgumentException("patient not found"));
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -209,7 +209,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("unexpected failure"));
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -219,7 +219,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new IllegalArgumentException("not found"));
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isNull();
         }
@@ -229,7 +229,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("failure"));
 
-            ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
+            final ResponseEntity<byte[]> response = controller.downloadEmergencyPdf(EMERGENCY_ID);
 
             assertThat(response.getBody()).isNull();
         }
@@ -251,14 +251,14 @@ class EmergencyControllerTest {
 
         @Test
         void returns200() throws Exception {
-            ResponseEntity<String> response = controller.healthCheck();
+            final ResponseEntity<String> response = controller.healthCheck();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void bodyConfirmsServiceIsOperational() throws Exception {
-            ResponseEntity<String> response = controller.healthCheck();
+            final ResponseEntity<String> response = controller.healthCheck();
 
             assertThat(response.getBody()).isEqualTo("Emergency PDF service is operational");
         }
@@ -280,7 +280,7 @@ class EmergencyControllerTest {
         void returns200_whenVialIdValidAndPdfGeneratedSuccessfully() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
+            final ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -289,7 +289,7 @@ class EmergencyControllerTest {
         void bodyContainsSuccessAndByteCount_onSuccess() throws Exception {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID)).thenReturn(PDF_BYTES);
 
-            ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
+            final ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
 
             assertThat(response.getBody())
                     .contains("SUCCESS")
@@ -298,14 +298,14 @@ class EmergencyControllerTest {
 
         @Test
         void returns400_whenEmergencyIdDoesNotStartWithVial() throws Exception {
-            ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
+            final ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @Test
         void bodyDescribesInvalidFormat_whenPrefixIsWrong() throws Exception {
-            ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
+            final ResponseEntity<String> response = controller.debugPatientData("NOTVALID999");
 
             assertThat(response.getBody()).contains("Invalid emergency ID format");
         }
@@ -313,14 +313,14 @@ class EmergencyControllerTest {
         @Test
         void returns400_whenSuffixAfterVialIsNotNumeric() throws Exception {
             // "VIALabcdef" → starts with VIAL but "abcdef" is not a Long
-            ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
+            final ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @Test
         void bodyDescribesParseFailure_whenSuffixIsNotNumeric() throws Exception {
-            ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
+            final ResponseEntity<String> response = controller.debugPatientData("VIALabcdef");
 
             assertThat(response.getBody()).contains("Could not parse patient ID");
         }
@@ -330,7 +330,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("pdf generation error"));
 
-            ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
+            final ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -340,7 +340,7 @@ class EmergencyControllerTest {
             when(vialOfLifePdfService.generateVialOfLifePdf(EMERGENCY_ID))
                     .thenThrow(new RuntimeException("pdf generation error"));
 
-            ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
+            final ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
 
             assertThat(response.getBody())
                     .contains("Error generating PDF")
@@ -379,7 +379,7 @@ class EmergencyControllerTest {
          */
         @Test
         void returns500_whenNullEmergencyIdTriggersOuterCatch() throws Exception {
-            ResponseEntity<String> response = controller.debugPatientData(null);
+            final ResponseEntity<String> response = controller.debugPatientData(null);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
             assertThat(response.getBody())
@@ -395,12 +395,12 @@ class EmergencyControllerTest {
         @Test
         void returns500_withNullServiceMessage_whenServiceFieldIsNull()
                 throws NoSuchFieldException, IllegalAccessException {
-            java.lang.reflect.Field field =
+            final java.lang.reflect.Field field =
                     EmergencyController.class.getDeclaredField("vialOfLifePdfService");
             field.setAccessible(true);
             field.set(controller, null);
 
-            ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
+            final ResponseEntity<String> response = controller.debugPatientData(EMERGENCY_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
             assertThat(response.getBody()).isEqualTo("VialOfLifePdfService is null");
