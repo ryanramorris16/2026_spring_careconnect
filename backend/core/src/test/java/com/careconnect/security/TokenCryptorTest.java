@@ -8,9 +8,9 @@ class TokenCryptorTest {
 
     @Test
     void roundTripEncryptionAndDecryption() throws Exception {
-        var cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
+        final TokenCryptor cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
 
-        String encrypted = cryptor.encrypt("sensitive-token");
+        final String encrypted = cryptor.encrypt("sensitive-token");
 
         assertNotNull(encrypted);
         assertNotEquals("sensitive-token", encrypted);
@@ -19,7 +19,7 @@ class TokenCryptorTest {
 
     @Test
     void handlesNullAndBlankValuesGracefully() throws Exception {
-        var cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
+        final TokenCryptor cryptor = new TokenCryptor("unit-test-secret-32-bytes-long!!!");
 
         assertNull(cryptor.encrypt(null));
         assertEquals("", cryptor.encrypt(""));
