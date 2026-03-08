@@ -45,7 +45,7 @@ class WebSocketModeConfigTest {
         when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn(null);
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn(null);
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -57,7 +57,7 @@ class WebSocketModeConfigTest {
         when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("");
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -69,7 +69,7 @@ class WebSocketModeConfigTest {
         when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("   ");
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("   ");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -81,7 +81,7 @@ class WebSocketModeConfigTest {
         // the local server.
         when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("https://abc123.execute-api.us-east-1.amazonaws.com/prod");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("aws", mode);
     }
@@ -92,7 +92,7 @@ class WebSocketModeConfigTest {
         // mode, confirming the logic checks for presence/non-blankness only.
         when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("wss://example.com");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("aws", mode);
     }
