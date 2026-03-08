@@ -46,7 +46,7 @@ class CallNotificationHandlerTest {
         lenient().when(usr.getEmail()).thenReturn(email);
         lenient().when(usr.getRole()).thenReturn(Role.PATIENT);
 
-        String json = "{\"type\":\"authenticate\",\"token\":\"" + token + "\"}";
+        final String json = "{\"type\":\"authenticate\",\"token\":\"" + token + "\"}";
         handler.handleTextMessage(sess, new TextMessage(json));
     }
 
@@ -469,7 +469,7 @@ class CallNotificationHandlerTest {
     void getOnlineUsers_returnsMapOfIdToEmail() throws Exception {
         authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
 
-        Map<String, String> online = handler.getOnlineUsers();
+        final Map<String, String> online = handler.getOnlineUsers();
 
         assertThat(online).containsEntry("1", "u@u.com");
     }
