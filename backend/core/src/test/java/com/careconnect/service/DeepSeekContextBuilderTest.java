@@ -48,21 +48,21 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildAllergyContext_nullList_returnsNoKnownAllergies")
         void buildAllergyContext_nullList_returnsNoKnownAllergies() throws Exception {
-            String result = builder.buildAllergyContext(1L, null);
+            final String result = builder.buildAllergyContext(1L, null);
             assertThat(result).isEqualTo("The patient has no known recorded drug allergies.");
         }
 
         @Test
         @DisplayName("buildAllergyContext_emptyList_returnsNoKnownAllergies")
         void buildAllergyContext_emptyList_returnsNoKnownAllergies() throws Exception {
-            String result = builder.buildAllergyContext(1L, Collections.emptyList());
+            final String result = builder.buildAllergyContext(1L, Collections.emptyList());
             assertThat(result).isEqualTo("The patient has no known recorded drug allergies.");
         }
 
         @Test
         @DisplayName("buildAllergyContext_singleAllergy_returnsFormattedContext")
         void buildAllergyContext_singleAllergy_returnsFormattedContext() throws Exception {
-            Allergy allergy = Allergy.builder()
+            final Allergy allergy = Allergy.builder()
                     .allergen("Penicillin")
                     .allergyType(AllergyType.MEDICATION)
                     .severity(AllergySeverity.SEVERE)
@@ -70,7 +70,7 @@ class DeepSeekContextBuilderTest {
                     .isActive(true)
                     .build();
 
-            String result = builder.buildAllergyContext(1L, List.of(allergy));
+            final String result = builder.buildAllergyContext(1L, List.of(allergy));
 
             assertThat(result).startsWith("Patient Allergy Record:\n");
             assertThat(result).contains("- Allergen: Penicillin");
@@ -84,7 +84,7 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildAllergyContext_multipleAllergies_returnsAllEntriesFormatted")
         void buildAllergyContext_multipleAllergies_returnsAllEntriesFormatted() throws Exception {
-            Allergy allergy1 = Allergy.builder()
+            final Allergy allergy1 = Allergy.builder()
                     .allergen("Penicillin")
                     .allergyType(AllergyType.MEDICATION)
                     .severity(AllergySeverity.SEVERE)
@@ -92,7 +92,7 @@ class DeepSeekContextBuilderTest {
                     .isActive(true)
                     .build();
 
-            Allergy allergy2 = Allergy.builder()
+            final Allergy allergy2 = Allergy.builder()
                     .allergen("Peanuts")
                     .allergyType(AllergyType.FOOD)
                     .severity(AllergySeverity.MODERATE)
@@ -100,7 +100,7 @@ class DeepSeekContextBuilderTest {
                     .isActive(false)
                     .build();
 
-            String result = builder.buildAllergyContext(42L, List.of(allergy1, allergy2));
+            final String result = builder.buildAllergyContext(42L, List.of(allergy1, allergy2));
 
             assertThat(result).startsWith("Patient Allergy Record:\n");
             assertThat(result).contains("- Allergen: Penicillin");
@@ -115,7 +115,7 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildAllergyContext_nullFields_returnsNullStringsInOutput")
         void buildAllergyContext_nullFields_returnsNullStringsInOutput() throws Exception {
-            Allergy allergy = Allergy.builder()
+            final Allergy allergy = Allergy.builder()
                     .allergen(null)
                     .allergyType(null)
                     .severity(null)
@@ -123,7 +123,7 @@ class DeepSeekContextBuilderTest {
                     .isActive(null)
                     .build();
 
-            String result = builder.buildAllergyContext(1L, List.of(allergy));
+            final String result = builder.buildAllergyContext(1L, List.of(allergy));
 
             assertThat(result).startsWith("Patient Allergy Record:\n");
             assertThat(result).contains("- Allergen: null");
@@ -136,7 +136,7 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildAllergyContext_nullPatientId_stillBuildsContext")
         void buildAllergyContext_nullPatientId_stillBuildsContext() throws Exception {
-            Allergy allergy = Allergy.builder()
+            final Allergy allergy = Allergy.builder()
                     .allergen("Dust")
                     .allergyType(AllergyType.ENVIRONMENTAL)
                     .severity(AllergySeverity.MILD)
@@ -144,7 +144,7 @@ class DeepSeekContextBuilderTest {
                     .isActive(true)
                     .build();
 
-            String result = builder.buildAllergyContext(null, List.of(allergy));
+            final String result = builder.buildAllergyContext(null, List.of(allergy));
 
             assertThat(result).contains("- Allergen: Dust");
         }
@@ -161,22 +161,22 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullList_returnsNoSymptomEntries")
         void buildSymptomContext_nullList_returnsNoSymptomEntries() throws Exception {
-            String result = builder.buildSymptomContext(1L, null);
+            final String result = builder.buildSymptomContext(1L, null);
             assertThat(result).isEqualTo("No prior symptom entries on record.");
         }
 
         @Test
         @DisplayName("buildSymptomContext_emptyList_returnsNoSymptomEntries")
         void buildSymptomContext_emptyList_returnsNoSymptomEntries() throws Exception {
-            String result = builder.buildSymptomContext(1L, Collections.emptyList());
+            final String result = builder.buildSymptomContext(1L, Collections.emptyList());
             assertThat(result).isEqualTo("No prior symptom entries on record.");
         }
 
         @Test
         @DisplayName("buildSymptomContext_singleSymptom_returnsFormattedContext")
         void buildSymptomContext_singleSymptom_returnsFormattedContext() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("headache")
                     .symptomValue("moderate")
                     .severity(3)
@@ -184,8 +184,8 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
-            String expectedTs = TS.format(now);
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String expectedTs = TS.format(now);
 
             assertThat(result).startsWith("Recent Symptom History:\n");
             assertThat(result).contains("- " + expectedTs);
@@ -199,10 +199,10 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_multipleSymptoms_returnsAllEntriesFormatted")
         void buildSymptomContext_multipleSymptoms_returnsAllEntriesFormatted() throws Exception {
-            Instant t1 = Instant.parse("2025-01-15T10:30:00Z");
-            Instant t2 = Instant.parse("2025-01-16T14:00:00Z");
+            final Instant t1 = Instant.parse("2025-01-15T10:30:00Z");
+            final Instant t2 = Instant.parse("2025-01-16T14:00:00Z");
 
-            SymptomEntry entry1 = SymptomEntry.builder()
+            final SymptomEntry entry1 = SymptomEntry.builder()
                     .symptomKey("headache")
                     .symptomValue("severe")
                     .severity(5)
@@ -210,7 +210,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(t1)
                     .build();
 
-            SymptomEntry entry2 = SymptomEntry.builder()
+            final SymptomEntry entry2 = SymptomEntry.builder()
                     .symptomKey("cough")
                     .symptomValue("mild")
                     .severity(1)
@@ -218,7 +218,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(t2)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry1, entry2));
+            final String result = builder.buildSymptomContext(1L, List.of(entry1, entry2));
 
             assertThat(result).contains("| key: headache");
             assertThat(result).contains("| key: cough");
@@ -231,8 +231,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullSymptomKey_returnsEmptyString")
         void buildSymptomContext_nullSymptomKey_returnsEmptyString() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey(null)
                     .symptomValue("moderate")
                     .severity(2)
@@ -240,7 +240,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             // nz(null) returns ""
             assertThat(result).contains("| key: ");
@@ -250,8 +250,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullSymptomValue_returnsEmptyString")
         void buildSymptomContext_nullSymptomValue_returnsEmptyString() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("fever")
                     .symptomValue(null)
                     .severity(4)
@@ -259,7 +259,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             // nz(null) returns "", then next field is prefixed with " | ", so two spaces appear
             assertThat(result).contains("| value:  |");
@@ -268,8 +268,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullSeverity_returnsEmptyStringForSeverity")
         void buildSymptomContext_nullSeverity_returnsEmptyStringForSeverity() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("nausea")
                     .symptomValue("mild")
                     .severity(null)
@@ -277,7 +277,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             // severity == null -> "", then next field is prefixed with " | ", so two spaces appear
             assertThat(result).contains("| severity:  |");
@@ -286,8 +286,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullCompleted_returnsFalse")
         void buildSymptomContext_nullCompleted_returnsFalse() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("fatigue")
                     .symptomValue("moderate")
                     .severity(3)
@@ -295,7 +295,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             // Boolean.TRUE.equals(null) -> false
             assertThat(result).contains("| completed: false");
@@ -304,8 +304,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_completedFalse_returnsFalse")
         void buildSymptomContext_completedFalse_returnsFalse() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("dizziness")
                     .symptomValue("light")
                     .severity(2)
@@ -313,7 +313,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             assertThat(result).contains("| completed: false");
         }
@@ -321,8 +321,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_nullPatientId_stillBuildsContext")
         void buildSymptomContext_nullPatientId_stillBuildsContext() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey("cough")
                     .symptomValue("dry")
                     .severity(2)
@@ -330,7 +330,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(null, List.of(entry));
+            final String result = builder.buildSymptomContext(null, List.of(entry));
 
             assertThat(result).contains("| key: cough");
         }
@@ -338,8 +338,8 @@ class DeepSeekContextBuilderTest {
         @Test
         @DisplayName("buildSymptomContext_allFieldsNull_handlesGracefully")
         void buildSymptomContext_allFieldsNull_handlesGracefully() throws Exception {
-            Instant now = Instant.now();
-            SymptomEntry entry = SymptomEntry.builder()
+            final Instant now = Instant.now();
+            final SymptomEntry entry = SymptomEntry.builder()
                     .symptomKey(null)
                     .symptomValue(null)
                     .severity(null)
@@ -347,7 +347,7 @@ class DeepSeekContextBuilderTest {
                     .takenAt(now)
                     .build();
 
-            String result = builder.buildSymptomContext(1L, List.of(entry));
+            final String result = builder.buildSymptomContext(1L, List.of(entry));
 
             assertThat(result).startsWith("Recent Symptom History:\n");
             assertThat(result).contains("| completed: false");
