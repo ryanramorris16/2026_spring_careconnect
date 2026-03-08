@@ -109,7 +109,7 @@ class AIChatControllerTest {
 
         // Stub securityUtil.resolveCurrentUser() so that controller-level
         // role checks (e.g. isFamilyMember()) do not NPE.
-        User mockUser = new User();
+        final User mockUser = new User();
         mockUser.setId(1L);
         mockUser.setEmail("testuser@test.com");
         mockUser.setRole(Role.PATIENT);
@@ -195,7 +195,7 @@ class AIChatControllerTest {
     @Test
     @DisplayName("POST /chat - service returns failure returns 400 with error details")
     void sendMessage_serviceReturnsFailure_returns400() throws Exception {
-        ChatResponse failResponse = ChatResponse.builder()
+        final ChatResponse failResponse = ChatResponse.builder()
                 .success(false)
                 .errorMessage("AI unavailable")
                 .errorCode("AI_ERROR")
@@ -579,7 +579,7 @@ class AIChatControllerTest {
     @Test
     @DisplayName("POST /config - new config (no id) returns 201 Created")
     void saveUserAIConfig_newConfig_returns201() throws Exception {
-        UserAIConfigDTO newConfig = UserAIConfigDTO.builder()
+        final UserAIConfigDTO newConfig = UserAIConfigDTO.builder()
                 .userId(1L)
                 .patientId(2L)
                 .aiProvider(AIProvider.OPENAI)
