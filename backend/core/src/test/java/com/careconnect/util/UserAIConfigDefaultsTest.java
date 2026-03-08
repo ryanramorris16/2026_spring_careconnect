@@ -24,7 +24,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void createMedicalDefaultConfig_returnsFullyPopulatedConfig() throws Exception {
-        UserAIConfig config = UserAIConfigDefaults.createMedicalDefaultConfig(1L, 2L);
+        final UserAIConfig config = UserAIConfigDefaults.createMedicalDefaultConfig(1L, 2L);
 
         assertThat(config).isNotNull();
         assertThat(config.getUserId()).isEqualTo(1L);
@@ -52,7 +52,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void getSystemPrompt_nullSystemPromptAndNullPatientId_returnsGenericPrompt() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt(null);
         config.setPatientId(null);
 
@@ -62,7 +62,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void getSystemPrompt_nullSystemPromptAndNonNullPatientId_returnsMedicalPrompt() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt(null);
         config.setPatientId(42L);
 
@@ -72,7 +72,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void getSystemPrompt_blankSystemPromptAndNonNullPatientId_returnsMedicalPrompt() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("   ");
         config.setPatientId(42L);
 
@@ -82,7 +82,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void getSystemPrompt_blankSystemPromptAndNullPatientId_returnsGenericPrompt() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("   ");
         config.setPatientId(null);
 
@@ -92,7 +92,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void getSystemPrompt_nonBlankSystemPrompt_returnsIt() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
         config.setSystemPrompt("Custom system prompt for this user");
 
         assertThat(UserAIConfigDefaults.getSystemPrompt(config))
@@ -103,7 +103,7 @@ class UserAIConfigDefaultsTest {
 
     @Test
     void constructor_shouldBeInstantiable() throws Exception {
-        UserAIConfigDefaults defaults = new UserAIConfigDefaults();
+        final UserAIConfigDefaults defaults = new UserAIConfigDefaults();
         assertThat(defaults).isNotNull();
     }
 }
