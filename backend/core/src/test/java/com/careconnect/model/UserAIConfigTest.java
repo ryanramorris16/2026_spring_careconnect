@@ -11,7 +11,7 @@ class UserAIConfigTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
 
         assertThat(config).isNotNull();
         assertThat(config.getId()).isNull();
@@ -29,7 +29,7 @@ class UserAIConfigTest {
 
     @Test
     void builder_allFields() throws Exception {
-        UserAIConfig config = UserAIConfig.builder()
+        final UserAIConfig config = UserAIConfig.builder()
                 .id(1L)
                 .patientId(10L)
                 .userId(5L)
@@ -70,7 +70,7 @@ class UserAIConfigTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        UserAIConfig config = new UserAIConfig();
+        final UserAIConfig config = new UserAIConfig();
 
         config.setPatientId(20L);
         config.setUserId(15L);
