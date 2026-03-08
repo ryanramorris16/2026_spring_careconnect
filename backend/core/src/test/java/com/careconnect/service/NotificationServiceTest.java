@@ -30,7 +30,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotification_validRequest_returnsSuccessResponse")
     void sendNotification_validRequest_returnsSuccessResponse() throws Exception {
-        FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Test Title")
                 .body("Test Body")
                 .targetToken("fcm-token-123")
@@ -39,7 +39,7 @@ class NotificationServiceTest {
                 .notificationType("VITAL_ALERT")
                 .build();
 
-        NotificationResponse response = notificationService.sendNotification(request);
+        final NotificationResponse response = notificationService.sendNotification(request);
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -51,10 +51,10 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotification_requestWithAllFields_returnsSuccessResponse")
     void sendNotification_requestWithAllFields_returnsSuccessResponse() throws Exception {
-        Map<String, String> data = new HashMap<>();
+        final Map<String, String> data = new HashMap<>();
         data.put("key1", "value1");
 
-        FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Alert")
                 .body("Your vitals are abnormal")
                 .imageUrl("https://example.com/image.png")
@@ -66,7 +66,7 @@ class NotificationServiceTest {
                 .data(data)
                 .build();
 
-        NotificationResponse response = notificationService.sendNotification(request);
+        final NotificationResponse response = notificationService.sendNotification(request);
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -76,12 +76,12 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotification_requestWithMinimalFields_returnsSuccessResponse")
     void sendNotification_requestWithMinimalFields_returnsSuccessResponse() throws Exception {
-        FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Reminder")
                 .body("Take your medication")
                 .build();
 
-        NotificationResponse response = notificationService.sendNotification(request);
+        final NotificationResponse response = notificationService.sendNotification(request);
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -91,7 +91,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotification_nullRequest_returnsSuccessResponse")
     void sendNotification_nullRequest_returnsSuccessResponse() throws Exception {
-        NotificationResponse response = notificationService.sendNotification(null);
+        final NotificationResponse response = notificationService.sendNotification(null);
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -103,13 +103,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendBulkNotifications_singleRequestList_returnsListWithOneSuccessResponse")
     void sendBulkNotifications_singleRequestList_returnsListWithOneSuccessResponse() throws Exception {
-        FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
                 .title("Bulk Title")
                 .body("Bulk Body")
                 .targetToken("token-1")
                 .build();
 
-        List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of(request));
+        final List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of(request));
 
         assertNotNull(responses);
         assertFalse(responses.isEmpty());
@@ -121,21 +121,21 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendBulkNotifications_multipleRequests_returnsListWithSuccessResponse")
     void sendBulkNotifications_multipleRequests_returnsListWithSuccessResponse() throws Exception {
-        FirebaseNotificationRequest request1 = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request1 = FirebaseNotificationRequest.builder()
                 .title("Title 1")
                 .body("Body 1")
                 .targetToken("token-1")
                 .notificationType("VITAL_ALERT")
                 .build();
 
-        FirebaseNotificationRequest request2 = FirebaseNotificationRequest.builder()
+        final FirebaseNotificationRequest request2 = FirebaseNotificationRequest.builder()
                 .title("Title 2")
                 .body("Body 2")
                 .targetToken("token-2")
                 .notificationType("MEDICATION_REMINDER")
                 .build();
 
-        List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of(request1, request2));
+        final List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of(request1, request2));
 
         assertNotNull(responses);
         assertFalse(responses.isEmpty());
@@ -145,7 +145,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse")
     void sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse() throws Exception {
-        List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of());
+        final List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of());
 
         assertNotNull(responses);
         assertEquals(1, responses.size());
@@ -157,9 +157,9 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotificationToUser_validUserWithAllParameters_returnsSuccessResponseList")
     void sendNotificationToUser_validUserWithAllParameters_returnsSuccessResponseList() throws Exception {
-        Map<String, String> data = Map.of("alertLevel", "HIGH");
+        final Map<String, String> data = Map.of("alertLevel", "HIGH");
 
-        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+        final List<NotificationResponse> responses = notificationService.sendNotificationToUser(
                 1L, "Vital Alert", "Heart rate is abnormal", "VITAL_ALERT", data);
 
         assertNotNull(responses);
@@ -172,7 +172,7 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotificationToUser_nullDataMap_returnsSuccessResponseList")
     void sendNotificationToUser_nullDataMap_returnsSuccessResponseList() throws Exception {
-        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+        final List<NotificationResponse> responses = notificationService.sendNotificationToUser(
                 2L, "Medication Reminder", "Time to take Aspirin", "MEDICATION_REMINDER", null);
 
         assertNotNull(responses);
@@ -183,9 +183,9 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendNotificationToUser_emergencyNotificationType_returnsSuccessResponseList")
     void sendNotificationToUser_emergencyNotificationType_returnsSuccessResponseList() throws Exception {
-        Map<String, String> data = Map.of("location", "Home");
+        final Map<String, String> data = Map.of("location", "Home");
 
-        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+        final List<NotificationResponse> responses = notificationService.sendNotificationToUser(
                 3L, "Emergency", "Fall detected", "EMERGENCY", data);
 
         assertNotNull(responses);
@@ -198,13 +198,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendVitalAlert_validVitalData_returnsCompletedFutureWithSuccessResponse")
     void sendVitalAlert_validVitalData_returnsCompletedFutureWithSuccessResponse() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendVitalAlert(1L, "HEART_RATE", "120", "HIGH");
 
         assertNotNull(future);
         assertTrue(future.isDone());
 
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
         assertEquals(1, responses.size());
         assertTrue(responses.get(0).isSuccess());
@@ -214,22 +214,22 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendVitalAlert_bloodPressureVitalType_returnsCompletedFutureWithSuccess")
     void sendVitalAlert_bloodPressureVitalType_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendVitalAlert(2L, "BLOOD_PRESSURE", "180/110", "CRITICAL");
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertTrue(responses.get(0).isSuccess());
     }
 
     @Test
     @DisplayName("sendVitalAlert_lowAlertLevel_returnsCompletedFutureWithSuccess")
     void sendVitalAlert_lowAlertLevel_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendVitalAlert(3L, "OXYGEN_SATURATION", "95", "LOW");
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertFalse(responses.isEmpty());
         assertTrue(responses.get(0).isSuccess());
     }
@@ -239,13 +239,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendMedicationReminder_validMedicationData_returnsCompletedFutureWithSuccessResponse")
     void sendMedicationReminder_validMedicationData_returnsCompletedFutureWithSuccessResponse() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendMedicationReminder(1L, "Aspirin", "100mg", "08:00 AM");
 
         assertNotNull(future);
         assertTrue(future.isDone());
 
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
         assertEquals(1, responses.size());
         assertTrue(responses.get(0).isSuccess());
@@ -255,22 +255,22 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendMedicationReminder_differentMedication_returnsCompletedFutureWithSuccess")
     void sendMedicationReminder_differentMedication_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendMedicationReminder(2L, "Metformin", "500mg", "12:00 PM");
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertTrue(responses.get(0).isSuccess());
     }
 
     @Test
     @DisplayName("sendMedicationReminder_eveningSchedule_returnsCompletedFutureWithSuccess")
     void sendMedicationReminder_eveningSchedule_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendMedicationReminder(3L, "Lisinopril", "10mg", "09:00 PM");
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertFalse(responses.isEmpty());
     }
 
@@ -279,13 +279,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendEmergencyAlert_validEmergencyData_returnsCompletedFutureWithSuccessResponse")
     void sendEmergencyAlert_validEmergencyData_returnsCompletedFutureWithSuccessResponse() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendEmergencyAlert(1L, "FALL_DETECTED", "Living Room");
 
         assertNotNull(future);
         assertTrue(future.isDone());
 
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
         assertEquals(1, responses.size());
         assertTrue(responses.get(0).isSuccess());
@@ -295,22 +295,22 @@ class NotificationServiceTest {
     @Test
     @DisplayName("sendEmergencyAlert_cardiacEmergency_returnsCompletedFutureWithSuccess")
     void sendEmergencyAlert_cardiacEmergency_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendEmergencyAlert(2L, "CARDIAC_EVENT", "Bedroom");
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertTrue(responses.get(0).isSuccess());
     }
 
     @Test
     @DisplayName("sendEmergencyAlert_nullLocation_returnsCompletedFutureWithSuccess")
     void sendEmergencyAlert_nullLocation_returnsCompletedFutureWithSuccess() throws Exception {
-        CompletableFuture<List<NotificationResponse>> future =
+        final CompletableFuture<List<NotificationResponse>> future =
                 notificationService.sendEmergencyAlert(3L, "SOS", null);
 
         assertNotNull(future);
-        List<NotificationResponse> responses = future.get();
+        final List<NotificationResponse> responses = future.get();
         assertFalse(responses.isEmpty());
         assertTrue(responses.get(0).isSuccess());
     }
