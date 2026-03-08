@@ -37,13 +37,13 @@ class WebConfigTest {
         // Build the configurer bean and drive addCorsMappings() to populate a real
         // CorsRegistry, then extract the resulting CorsConfiguration for "/**"
         // using ReflectionTestUtils because getCorsConfigurations() is package-private.
-        WebConfig webConfig = new WebConfig();
+        final WebConfig webConfig = new WebConfig();
         corsConfigurer = webConfig.corsConfigurer();
 
-        CorsRegistry registry = new CorsRegistry();
+        final CorsRegistry registry = new CorsRegistry();
         corsConfigurer.addCorsMappings(registry);
 
-        Map<String, CorsConfiguration> configs =
+        final Map<String, CorsConfiguration> configs =
                 (Map<String, CorsConfiguration>) ReflectionTestUtils.invokeMethod(registry, "getCorsConfigurations");
         config = configs.get("/**");
     }
@@ -65,7 +65,7 @@ class WebConfigTest {
     void corsConfigurer_HasCorrectAllowedOrigins() throws Exception {
         // Verifies that the five explicit localhost origins (covering common dev ports
         // and both hostname variants) are all present in the allowed-origins list.
-        List<String> expected = List.of(
+        final List<String> expected = List.of(
                 "http://localhost:8080",
                 "http://127.0.0.1:8080",
                 "http://localhost:5173",
@@ -80,7 +80,7 @@ class WebConfigTest {
         // Verifies that wildcard port patterns are registered in addition to the
         // explicit origins, allowing any port on localhost or 127.0.0.1 (e.g. for
         // dev servers that pick a random port).
-        List<String> patterns = config.getAllowedOriginPatterns();
+        final List<String> patterns = config.getAllowedOriginPatterns();
         assertNotNull(patterns);
         assertTrue(patterns.contains("http://localhost:*"));
         assertTrue(patterns.contains("http://127.0.0.1:*"));
@@ -91,7 +91,7 @@ class WebConfigTest {
     void corsConfigurer_AllowsCorrectMethods() throws Exception {
         // Verifies that the standard RESTful HTTP methods plus OPTIONS (for browser
         // preflight requests) are all permitted by the CORS policy.
-        List<String> methods = config.getAllowedMethods();
+        final List<String> methods = config.getAllowedMethods();
         assertNotNull(methods);
         assertTrue(methods.containsAll(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")));
         assertEquals(5, methods.size());
