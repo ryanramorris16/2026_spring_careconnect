@@ -10,7 +10,7 @@ class FamilyMemberTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        FamilyMember fm = new FamilyMember();
+        final FamilyMember fm = new FamilyMember();
 
         assertThat(fm).isNotNull();
         assertThat(fm.getId()).isNull();
@@ -26,10 +26,10 @@ class FamilyMemberTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        User user = new User();
-        Address address = new Address("1 Oak St", null, "Towson", "MD", "21204");
+        final User user = new User();
+        final Address address = new Address("1 Oak St", null, "Towson", "MD", "21204");
 
-        FamilyMember fm = new FamilyMember(1L, user, "Mary", "Smith", "mary@family.com", "410-555-0200", address);
+        final FamilyMember fm = new FamilyMember(1L, user, "Mary", "Smith", "mary@family.com", "410-555-0200", address);
 
         assertThat(fm.getId()).isEqualTo(1L);
         assertThat(fm.getUser()).isSameAs(user);
@@ -44,7 +44,7 @@ class FamilyMemberTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        FamilyMember fm = FamilyMember.builder()
+        final FamilyMember fm = FamilyMember.builder()
                 .id(2L)
                 .firstName("Bob")
                 .lastName("Jones")
@@ -63,9 +63,9 @@ class FamilyMemberTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        FamilyMember fm = new FamilyMember();
-        User user = new User();
-        Address address = new Address();
+        final FamilyMember fm = new FamilyMember();
+        final User user = new User();
+        final Address address = new Address();
 
         fm.setId(3L);
         fm.setUser(user);
