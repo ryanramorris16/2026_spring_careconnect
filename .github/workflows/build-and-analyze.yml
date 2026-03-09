@@ -711,10 +711,6 @@ jobs:
       # Output: quality/analysis/raw/trivy.json
       # Format: {"Results": [{Target, Type, Vulnerabilities: [...]}]}
       # ------------------------------------------------------
-
-
-
-        
       - name: Run Trivy (Filesystem SCA)
         shell: bash
         run: |
@@ -743,6 +739,19 @@ jobs:
 
           test -s "${OUT}" || echo '{"Results":[]}' > "${OUT}"
 
+      # ------------------------------------------------------
+      # Diagnostic — Check NVD API Key presence
+      # ------------------------------------------------------
+      - name: Diagnostic — NVD API Key presence
+        shell: bash
+        run: |
+          if [[ -n "${NVD_KEY}" ]]; then
+            echo "NVD_API_KEY is set (length: ${#NVD_KEY} chars)"
+          else
+            echo "::warning::NVD_API_KEY is NOT set or empty"
+          fi
+        env:
+          NVD_KEY: ${{ secrets.NVD_API_KEY }}
 
       # ------------------------------------------------------
       # Cache: OWASP Dependency-Check NVD database
@@ -878,13 +887,22 @@ jobs:
           done
 
       # ------------------------------------------------------
-      # Step 11: Upload Analysis Artifacts
+      # Step 11: Set SHORT_SHA
+      # ------------------------------------------------------
+      - name: Set SHORT_SHA
+        if: always()
+        id: sha
+        shell: bash
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------
+      # Step 12: Upload Analysis Artifacts
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.run_number }}_${{ env.SHORT_SHA }}_quality_analysis_report
+          name: ${{ github.run_number }}_${{ steps.sha.outputs.short_sha }}_quality_analysis_report
           path: |
             quality/analysis/
             !quality/analysis/dc-data/**
