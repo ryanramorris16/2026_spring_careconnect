@@ -80,27 +80,27 @@ class ChatCleanupServiceTest {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
-        ChatConversation conversation1 = new ChatConversation();
+        final ChatConversation conversation1 = new ChatConversation();
         conversation1.setConversationId("conv-1");
         conversation1.setIsActive(true);
 
-        ChatConversation conversation2 = new ChatConversation();
+        final ChatConversation conversation2 = new ChatConversation();
         conversation2.setConversationId("conv-2");
         conversation2.setIsActive(true);
 
-        List<ChatConversation> oldConversations = Arrays.asList(conversation1, conversation2);
+        final List<ChatConversation> oldConversations = Arrays.asList(conversation1, conversation2);
         when(chatConversationRepository.findByCreatedAtBeforeAndIsActiveTrue(any(LocalDateTime.class)))
                 .thenReturn(oldConversations);
 
-        ChatMessage msg1 = new ChatMessage();
+        final ChatMessage msg1 = new ChatMessage();
         msg1.setId(1L);
-        ChatMessage msg2 = new ChatMessage();
+        final ChatMessage msg2 = new ChatMessage();
         msg2.setId(2L);
-        List<ChatMessage> messages1 = Arrays.asList(msg1, msg2);
+        final List<ChatMessage> messages1 = Arrays.asList(msg1, msg2);
 
-        ChatMessage msg3 = new ChatMessage();
+        final ChatMessage msg3 = new ChatMessage();
         msg3.setId(3L);
-        List<ChatMessage> messages2 = Collections.singletonList(msg3);
+        final List<ChatMessage> messages2 = Collections.singletonList(msg3);
 
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation1))
                 .thenReturn(messages1);
@@ -130,7 +130,7 @@ class ChatCleanupServiceTest {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
-        ChatConversation conversation = new ChatConversation();
+        final ChatConversation conversation = new ChatConversation();
         conversation.setConversationId("conv-empty");
         conversation.setIsActive(true);
 
@@ -171,19 +171,19 @@ class ChatCleanupServiceTest {
     @Test
     @DisplayName("deleteConversationImmediately_conversationFoundWithMessages_shouldDeleteAndDeactivate")
     void deleteConversationImmediately_conversationFoundWithMessages_shouldDeleteAndDeactivate() throws Exception {
-        String conversationId = "conv-123";
-        ChatConversation conversation = new ChatConversation();
+        final String conversationId = "conv-123";
+        final ChatConversation conversation = new ChatConversation();
         conversation.setConversationId(conversationId);
         conversation.setIsActive(true);
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue(conversationId))
                 .thenReturn(Optional.of(conversation));
 
-        ChatMessage msg1 = new ChatMessage();
+        final ChatMessage msg1 = new ChatMessage();
         msg1.setId(1L);
-        ChatMessage msg2 = new ChatMessage();
+        final ChatMessage msg2 = new ChatMessage();
         msg2.setId(2L);
-        List<ChatMessage> messages = Arrays.asList(msg1, msg2);
+        final List<ChatMessage> messages = Arrays.asList(msg1, msg2);
 
         when(chatMessageRepository.findByConversationOrderByCreatedAtAsc(conversation))
                 .thenReturn(messages);
@@ -198,8 +198,8 @@ class ChatCleanupServiceTest {
     @Test
     @DisplayName("deleteConversationImmediately_conversationFoundNoMessages_shouldDeactivateOnly")
     void deleteConversationImmediately_conversationFoundNoMessages_shouldDeactivateOnly() throws Exception {
-        String conversationId = "conv-empty";
-        ChatConversation conversation = new ChatConversation();
+        final String conversationId = "conv-empty";
+        final ChatConversation conversation = new ChatConversation();
         conversation.setConversationId(conversationId);
         conversation.setIsActive(true);
 
@@ -221,7 +221,7 @@ class ChatCleanupServiceTest {
     @Test
     @DisplayName("deleteConversationImmediately_conversationNotFound_shouldDoNothing")
     void deleteConversationImmediately_conversationNotFound_shouldDoNothing() throws Exception {
-        String conversationId = "conv-nonexistent";
+        final String conversationId = "conv-nonexistent";
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue(conversationId))
                 .thenReturn(Optional.empty());
@@ -236,12 +236,12 @@ class ChatCleanupServiceTest {
     @Test
     @DisplayName("deleteConversationImmediately_exceptionThrown_shouldWrapAndRethrowAsRuntimeException")
     void deleteConversationImmediately_exceptionThrown_shouldWrapAndRethrowAsRuntimeException() throws Exception {
-        String conversationId = "conv-error";
+        final String conversationId = "conv-error";
 
         when(chatConversationRepository.findByConversationIdAndIsActiveTrue(conversationId))
                 .thenThrow(new RuntimeException("Database error"));
 
-        RuntimeException thrown = assertThrows(RuntimeException.class,
+        final RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> chatCleanupService.deleteConversationImmediately(conversationId));
 
         assertEquals("Failed to delete conversation", thrown.getMessage());
@@ -258,7 +258,7 @@ class ChatCleanupServiceTest {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(30);
 
-        String result = chatCleanupService.getRetentionPolicyInfo();
+        final String result = chatCleanupService.getRetentionPolicyInfo();
 
         assertTrue(result.contains("30 days"));
         assertTrue(result.contains("automatically deleted"));
@@ -270,7 +270,7 @@ class ChatCleanupServiceTest {
     void getRetentionPolicyInfo_autoCleanupDisabled_shouldReturnDisabledMessage() throws Exception {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(false);
 
-        String result = chatCleanupService.getRetentionPolicyInfo();
+        final String result = chatCleanupService.getRetentionPolicyInfo();
 
         assertTrue(result.contains("Automatic chat deletion is currently disabled"));
         assertTrue(result.contains("manually delete conversations"));
@@ -283,7 +283,7 @@ class ChatCleanupServiceTest {
         when(chatMemoryConfig.isAutoCleanup()).thenReturn(true);
         when(chatMemoryConfig.getCleanupAfterDays()).thenReturn(7);
 
-        String result = chatCleanupService.getRetentionPolicyInfo();
+        final String result = chatCleanupService.getRetentionPolicyInfo();
 
         assertTrue(result.contains("7 days"));
     }

@@ -12,7 +12,7 @@ class PaymentTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Payment payment = new Payment();
+        final Payment payment = new Payment();
 
         assertThat(payment).isNotNull();
         assertThat(payment.getId()).isNull();
@@ -27,11 +27,11 @@ class PaymentTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Subscription subscription = new Subscription();
-        User user = new User();
-        Instant now = Instant.now();
+        final Subscription subscription = new Subscription();
+        final User user = new User();
+        final Instant now = Instant.now();
 
-        Payment payment = Payment.builder()
+        final Payment payment = Payment.builder()
                 .id(1L)
                 .subscription(subscription)
                 .user(user)
@@ -58,8 +58,8 @@ class PaymentTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Payment payment = new Payment();
-        User user = new User();
+        final Payment payment = new Payment();
+        final User user = new User();
 
         payment.setAmountCents(499);
         payment.setStripeSessionId("sess_xyz");
@@ -78,8 +78,8 @@ class PaymentTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Payment p1 = Payment.builder().id(1L).status("SUCCEEDED").build();
-        Payment p2 = Payment.builder().id(1L).status("SUCCEEDED").build();
+        final Payment p1 = Payment.builder().id(1L).status("SUCCEEDED").build();
+        final Payment p2 = Payment.builder().id(1L).status("SUCCEEDED").build();
 
         assertThat(p1).isEqualTo(p2);
         assertThat(p1.hashCode()).isEqualTo(p2.hashCode());

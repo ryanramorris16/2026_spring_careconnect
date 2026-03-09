@@ -13,7 +13,7 @@ class MoodPainLogTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        MoodPainLog log = new MoodPainLog();
+        final MoodPainLog log = new MoodPainLog();
 
         assertThat(log).isNotNull();
         assertThat(log.getId()).isNull();
@@ -26,10 +26,10 @@ class MoodPainLogTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        LocalDateTime now = LocalDateTime.now();
+        final Patient patient = new Patient();
+        final LocalDateTime now = LocalDateTime.now();
 
-        MoodPainLog log = MoodPainLog.builder()
+        final MoodPainLog log = MoodPainLog.builder()
                 .id(1L)
                 .patient(patient)
                 .moodValue(7)
@@ -54,9 +54,9 @@ class MoodPainLogTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        MoodPainLog log = new MoodPainLog();
-        Patient patient = new Patient();
-        LocalDateTime now = LocalDateTime.now();
+        final MoodPainLog log = new MoodPainLog();
+        final Patient patient = new Patient();
+        final LocalDateTime now = LocalDateTime.now();
 
         log.setId(2L);
         log.setPatient(patient);
@@ -76,9 +76,9 @@ class MoodPainLogTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        MoodPainLog log = new MoodPainLog();
+        final MoodPainLog log = new MoodPainLog();
 
-        Method m = MoodPainLog.class.getDeclaredMethod("onCreate");
+        final Method m = MoodPainLog.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(log);
 
@@ -90,9 +90,9 @@ class MoodPainLogTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        MoodPainLog log = new MoodPainLog();
+        final MoodPainLog log = new MoodPainLog();
 
-        Method m = MoodPainLog.class.getDeclaredMethod("onUpdate");
+        final Method m = MoodPainLog.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(log);
 

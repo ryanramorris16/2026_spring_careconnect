@@ -4,8 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest;
@@ -98,14 +96,14 @@ class SsmPropertySourceInitializerTest {
         // the public API without a full AWS-connected prod environment.
 
         // Mock SSM Client to return a controlled parameter value
-        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+        final SsmClient ssmClient = Mockito.mock(SsmClient.class);
 
-        Parameter mockParameter = Parameter.builder()
+        final Parameter mockParameter = Parameter.builder()
                 .name("/careconnect/prod/stripe-secret-key")
                 .value("test-secret")
                 .build();
 
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(mockParameter)
                 .build();
 
@@ -113,12 +111,13 @@ class SsmPropertySourceInitializerTest {
                 .thenReturn(response);
 
         // Access private method using reflection
-        Method method = SsmPropertySourceInitializer.class
+        final Method method = SsmPropertySourceInitializer.class
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
 
         method.setAccessible(true);
 
-        Map<String, Object> result =
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
         assertFalse(result.isEmpty());
@@ -136,17 +135,18 @@ class SsmPropertySourceInitializerTest {
         // denied), loadParametersFromSsm() returns an empty map rather than propagating
         // the exception — preventing a single missing secret from crashing startup.
 
-        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+        final SsmClient ssmClient = Mockito.mock(SsmClient.class);
 
         Mockito.when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenThrow(new RuntimeException("Parameter not found"));
 
-        Method method = SsmPropertySourceInitializer.class
+        final Method method = SsmPropertySourceInitializer.class
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
 
         method.setAccessible(true);
 
-        Map<String, Object> result =
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
         assertTrue(result.isEmpty());
@@ -223,9 +223,9 @@ class SsmPropertySourceInitializerTest {
         // PARAMETER_MAPPING. With 15 parameters defined and all calls succeeding, the
         // result must contain exactly 15 entries.
 
-        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+        final SsmClient ssmClient = Mockito.mock(SsmClient.class);
 
-        GetParameterResponse response = GetParameterResponse.builder()
+        final GetParameterResponse response = GetParameterResponse.builder()
                 .parameter(Parameter.builder()
                         .name("irrelevant-name")
                         .value("mock-value")
@@ -235,11 +235,12 @@ class SsmPropertySourceInitializerTest {
         Mockito.when(ssmClient.getParameter(any(GetParameterRequest.class)))
                 .thenReturn(response);
 
-        Method method = SsmPropertySourceInitializer.class
+        final Method method = SsmPropertySourceInitializer.class
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
         method.setAccessible(true);
 
-        Map<String, Object> result =
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
         // All 15 SSM_PARAMETERS entries are in PARAMETER_MAPPING, so all should load.
@@ -266,9 +267,9 @@ class SsmPropertySourceInitializerTest {
         // SSM call succeeds (stripe-secret-key) and all subsequent calls throw, so the
         // returned map contains exactly the one successfully fetched property.
 
-        SsmClient ssmClient = Mockito.mock(SsmClient.class);
+        final SsmClient ssmClient = Mockito.mock(SsmClient.class);
 
-        GetParameterResponse firstResponse = GetParameterResponse.builder()
+        final GetParameterResponse firstResponse = GetParameterResponse.builder()
                 .parameter(Parameter.builder()
                         .name("/careconnect/prod/stripe-secret-key")
                         .value("only-this-one")
@@ -279,11 +280,12 @@ class SsmPropertySourceInitializerTest {
                 .thenReturn(firstResponse)
                 .thenThrow(new RuntimeException("Access denied"));
 
-        Method method = SsmPropertySourceInitializer.class
+        final Method method = SsmPropertySourceInitializer.class
                 .getDeclaredMethod("loadParametersFromSsm", SsmClient.class);
         method.setAccessible(true);
 
-        Map<String, Object> result =
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> result =
                 (Map<String, Object>) method.invoke(initializer, ssmClient);
 
         assertEquals(1, result.size());

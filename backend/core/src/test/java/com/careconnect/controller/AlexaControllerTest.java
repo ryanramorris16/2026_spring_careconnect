@@ -20,8 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.dto.v2.TaskDtoV2;
@@ -68,22 +68,22 @@ class AlexaControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real JWT infrastructure, a database, or task storage.
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TaskServiceV2 taskService;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     // --- Shared test constants ---
@@ -169,14 +169,14 @@ class AlexaControllerTest {
     @Test
     @DisplayName("GET /calendarTasks/get returns only this-week tasks when filter=week")
     void testGetCalendarTasks_weekFilter_includesTaskForToday() throws Exception {
-        TaskDtoV2 todayTask = TaskDtoV2.builder()
+        final TaskDtoV2 todayTask = TaskDtoV2.builder()
                 .id(2L)
                 .name("Today Task")
                 .date(LocalDate.now() + "T00:00:00")
                 .isCompleted(false)
                 .build();
 
-        TaskDtoV2 oldTask = TaskDtoV2.builder()
+        final TaskDtoV2 oldTask = TaskDtoV2.builder()
                 .id(3L)
                 .name("Old Task")
                 .date(LocalDate.now().minusDays(10) + "T00:00:00")
@@ -264,7 +264,7 @@ class AlexaControllerTest {
     @Test
     @DisplayName("GET /calendarTasks/get resolves patient via caregiver role")
     void testGetCalendarTasks_caregiverRole() throws Exception {
-        User caregiverUser = new User();
+        final User caregiverUser = new User();
         caregiverUser.setId(20L);
         caregiverUser.setEmail("caregiver@test.com");
         caregiverUser.setRole(Role.CAREGIVER);
@@ -296,7 +296,7 @@ class AlexaControllerTest {
     @Test
     @DisplayName("GET /calendarTasks/get uses default week filter when no filter param provided")
     void testGetCalendarTasks_defaultFilterIsWeek() throws Exception {
-        TaskDtoV2 todayTask = TaskDtoV2.builder()
+        final TaskDtoV2 todayTask = TaskDtoV2.builder()
                 .id(4L)
                 .name("Now Task")
                 .date(LocalDate.now() + "T00:00:00")
@@ -330,7 +330,7 @@ class AlexaControllerTest {
     void testAddCalendarTask_success() throws Exception {
         Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(sampleTask);
 
-        Map<String, Object> body = Map.of(
+        final Map<String, Object> body = Map.of(
                 "name", "Take Medication",
                 "date", LocalDate.now().toString(),
                 "taskType", "Medication"
@@ -361,7 +361,7 @@ class AlexaControllerTest {
     void testAddCalendarTask_tokenFromBody() throws Exception {
         Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(sampleTask);
 
-        Map<String, Object> body = Map.of(
+        final Map<String, Object> body = Map.of(
                 "name", "Walk Outside",
                 "date", LocalDate.now().toString(),
                 "accessToken", VALID_TOKEN
@@ -386,7 +386,7 @@ class AlexaControllerTest {
     @Test
     @DisplayName("POST /calendarTasks/add returns 401 when token is missing or invalid")
     void testAddCalendarTask_invalidToken() throws Exception {
-        Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
+        final Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
 
         mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -410,7 +410,7 @@ class AlexaControllerTest {
     void testAddCalendarTask_patientNotFound() throws Exception {
         Mockito.when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
 
-        Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
+        final Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
 
         mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
                         .header("Authorization", BEARER_TOKEN)
@@ -431,7 +431,7 @@ class AlexaControllerTest {
     @Test
     @DisplayName("POST /calendarTasks/add returns 400 when task name is missing")
     void testAddCalendarTask_missingName() throws Exception {
-        Map<String, Object> body = Map.of("date", LocalDate.now().toString());
+        final Map<String, Object> body = Map.of("date", LocalDate.now().toString());
 
         mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
                         .header("Authorization", BEARER_TOKEN)
@@ -458,7 +458,7 @@ class AlexaControllerTest {
         Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
                 .thenThrow(new RuntimeException("Unauthorized access to patient data"));
 
-        Map<String, Object> body = Map.of(
+        final Map<String, Object> body = Map.of(
                 "name", "Take Medication",
                 "date", LocalDate.now().toString()
         );
@@ -487,7 +487,7 @@ class AlexaControllerTest {
         Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
                 .thenThrow(new RuntimeException("Database connection lost"));
 
-        Map<String, Object> body = Map.of(
+        final Map<String, Object> body = Map.of(
                 "name", "Take Medication",
                 "date", LocalDate.now().toString()
         );
@@ -513,7 +513,7 @@ class AlexaControllerTest {
     @Test
     @DisplayName("POST /calendarTasks/add normalizes an invalid date to today")
     void testAddCalendarTask_invalidDateDefaultsToToday() throws Exception {
-        TaskDtoV2 created = TaskDtoV2.builder()
+        final TaskDtoV2 created = TaskDtoV2.builder()
                 .id(5L)
                 .name("Walk")
                 .date(LocalDate.now() + "T00:00:00")
@@ -522,7 +522,7 @@ class AlexaControllerTest {
 
         Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(created);
 
-        Map<String, Object> body = Map.of(
+        final Map<String, Object> body = Map.of(
                 "name", "Walk",
                 "date", "not-a-date"
         );

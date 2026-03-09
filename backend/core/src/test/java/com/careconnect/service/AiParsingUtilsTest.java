@@ -29,13 +29,13 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("extractContent_validResponse_returnsContent")
     void extractContent_validResponse_returnsContent() throws Exception {
-        Message msg = new Message();
+        final Message msg = new Message();
         msg.setContent("Hello world");
 
-        Choice choice = new Choice();
+        final Choice choice = new Choice();
         choice.setMessage(msg);
 
-        DeepSeekResponse resp = new DeepSeekResponse();
+        final DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(List.of(choice));
 
         assertEquals("Hello world", AiParsingUtils.extractContent(resp));
@@ -44,7 +44,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("extractContent_nullChoices_returnsEmptyString")
     void extractContent_nullChoices_returnsEmptyString() throws Exception {
-        DeepSeekResponse resp = new DeepSeekResponse();
+        final DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(null);
 
         assertEquals("", AiParsingUtils.extractContent(resp));
@@ -53,7 +53,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("extractContent_emptyChoices_returnsEmptyString")
     void extractContent_emptyChoices_returnsEmptyString() throws Exception {
-        DeepSeekResponse resp = new DeepSeekResponse();
+        final DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(Collections.emptyList());
 
         assertEquals("", AiParsingUtils.extractContent(resp));
@@ -62,10 +62,10 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("extractContent_nullMessage_returnsEmptyString")
     void extractContent_nullMessage_returnsEmptyString() throws Exception {
-        Choice choice = new Choice();
+        final Choice choice = new Choice();
         choice.setMessage(null);
 
-        DeepSeekResponse resp = new DeepSeekResponse();
+        final DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(List.of(choice));
 
         assertEquals("", AiParsingUtils.extractContent(resp));
@@ -74,13 +74,13 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("extractContent_nullContent_returnsEmptyString")
     void extractContent_nullContent_returnsEmptyString() throws Exception {
-        Message msg = new Message();
+        final Message msg = new Message();
         msg.setContent(null);
 
-        Choice choice = new Choice();
+        final Choice choice = new Choice();
         choice.setMessage(msg);
 
-        DeepSeekResponse resp = new DeepSeekResponse();
+        final DeepSeekResponse resp = new DeepSeekResponse();
         resp.setChoices(List.of(choice));
 
         assertEquals("", AiParsingUtils.extractContent(resp));
@@ -90,10 +90,10 @@ class AiParsingUtilsTest {
     @DisplayName("extractContent_exceptionThrown_returnsEmptyString")
     void extractContent_exceptionThrown_returnsEmptyString() throws Exception {
         // Passing null directly to trigger exception path
-        DeepSeekResponse resp = null;
+        final DeepSeekResponse resp = null;
         // The method handles exceptions internally
         try {
-            String result = AiParsingUtils.extractContent(resp);
+            final String result = AiParsingUtils.extractContent(resp);
             assertEquals("", result);
         } catch (Exception e) {
             // If NPE is thrown before the try-catch, it means the exception block won't catch it
@@ -106,7 +106,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("tryParseJson_validJson_returnsJsonNode")
     void tryParseJson_validJson_returnsJsonNode() throws Exception {
-        JsonNode node = AiParsingUtils.tryParseJson(objectMapper, "{\"key\":\"value\"}");
+        final JsonNode node = AiParsingUtils.tryParseJson(objectMapper, "{\"key\":\"value\"}");
 
         assertNotNull(node);
         assertEquals("value", node.get("key").asText());
@@ -141,7 +141,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("asText_keyExists_returnsValue")
     void asText_keyExists_returnsValue() throws Exception {
-        JsonNode node = objectMapper.readTree("{\"name\":\"Alice\"}");
+        final JsonNode node = objectMapper.readTree("{\"name\":\"Alice\"}");
 
         assertEquals("Alice", AiParsingUtils.asText(node, "name"));
     }
@@ -149,7 +149,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("asText_keyMissing_returnsEmptyString")
     void asText_keyMissing_returnsEmptyString() throws Exception {
-        JsonNode node = objectMapper.readTree("{\"name\":\"Alice\"}");
+        final JsonNode node = objectMapper.readTree("{\"name\":\"Alice\"}");
 
         assertEquals("", AiParsingUtils.asText(node, "age"));
     }
@@ -163,7 +163,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("asText_nullValueInJson_returnsEmptyString")
     void asText_nullValueInJson_returnsEmptyString() throws Exception {
-        JsonNode node = objectMapper.readTree("{\"name\":null}");
+        final JsonNode node = objectMapper.readTree("{\"name\":null}");
 
         assertEquals("", AiParsingUtils.asText(node, "name"));
     }
@@ -171,7 +171,7 @@ class AiParsingUtilsTest {
     @Test
     @DisplayName("asText_emptyStringValue_returnsEmptyString")
     void asText_emptyStringValue_returnsEmptyString() throws Exception {
-        JsonNode node = objectMapper.readTree("{\"name\":\"\"}");
+        final JsonNode node = objectMapper.readTree("{\"name\":\"\"}");
 
         assertEquals("", AiParsingUtils.asText(node, "name"));
     }

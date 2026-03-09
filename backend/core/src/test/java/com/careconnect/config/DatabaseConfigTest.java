@@ -4,7 +4,6 @@ import com.careconnect.service.ParameterStoreService;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -53,7 +52,7 @@ class DatabaseConfigTest {
         when(parameterStoreService.getSecureParameter("db-pass-key"))
                 .thenReturn("password");
 
-        DataSourceProperties properties = databaseConfig.dataSourceProperties();
+        final DataSourceProperties properties = databaseConfig.dataSourceProperties();
 
         assertEquals("jdbc:h2:mem:testdb", properties.getUrl());
         assertEquals("sa", properties.getUsername());
@@ -76,19 +75,20 @@ class DatabaseConfigTest {
         when(parameterStoreService.getSecureParameter("db-pass-key"))
                 .thenReturn("password");
 
-        DataSourceProperties properties = databaseConfig.dataSourceProperties();
+        final DataSourceProperties properties = databaseConfig.dataSourceProperties();
 
-        MockEnvironment env = new MockEnvironment();
+        final MockEnvironment env = new MockEnvironment();
         env.setProperty("spring.datasource.hikari.maximum-pool-size", "5");
 
-        DataSource dataSource = databaseConfig.dataSource(properties, env);
+        final DataSource dataSource = databaseConfig.dataSource(properties, env);
 
         assertNotNull(dataSource);
         assertTrue(dataSource instanceof HikariDataSource);
 
-        HikariDataSource hikari = (HikariDataSource) dataSource;
-        assertEquals("jdbc:h2:mem:testdb", hikari.getJdbcUrl());
-        assertEquals("sa", hikari.getUsername());
+        try (HikariDataSource hikari = (HikariDataSource) dataSource) {
+            assertEquals("jdbc:h2:mem:testdb", hikari.getJdbcUrl());
+            assertEquals("sa", hikari.getUsername());
+        }
     }
 
     @Test
@@ -96,7 +96,7 @@ class DatabaseConfigTest {
         // Documents the expected failure mode when ParameterStoreService is null:
         // a NullPointerException is thrown rather than silently using empty credentials.
         // This is intentional — misconfigured secrets should fail fast at startup.
-        DatabaseConfig configWithoutService = new DatabaseConfig(null);
+        final DatabaseConfig configWithoutService = new DatabaseConfig(null);
 
         org.springframework.test.util.ReflectionTestUtils.setField(configWithoutService, "jdbcUrl", "key1");
         org.springframework.test.util.ReflectionTestUtils.setField(configWithoutService, "userParameter", "key2");
@@ -118,15 +118,15 @@ class DatabaseConfigTest {
         when(parameterStoreService.getSecureParameter("db-pass-key"))
                 .thenReturn("password");
 
-        DataSourceProperties properties = databaseConfig.dataSourceProperties();
+        final DataSourceProperties properties = databaseConfig.dataSourceProperties();
 
-        MockEnvironment env = new MockEnvironment();
+        final MockEnvironment env = new MockEnvironment();
         env.setProperty("spring.datasource.hikari.maximum-pool-size", "7");
 
-        DataSource dataSource = databaseConfig.dataSource(properties, env);
+        final DataSource dataSource = databaseConfig.dataSource(properties, env);
 
-        HikariDataSource hikari = (HikariDataSource) dataSource;
-
-        assertEquals(7, hikari.getMaximumPoolSize());
+        try (HikariDataSource hikari = (HikariDataSource) dataSource) {
+            assertEquals(7, hikari.getMaximumPoolSize());
+        }
     }
 }

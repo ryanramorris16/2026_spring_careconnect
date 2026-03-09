@@ -57,8 +57,8 @@ class SymptomEntryServiceTest {
     void testCreateSymptom_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, the service must
         // save the entry and return a DTO that mirrors all input fields.
-        Instant now = Instant.now();
-        SymptomEntryDTO dto = SymptomEntryDTO.builder()
+        final Instant now = Instant.now();
+        final SymptomEntryDTO dto = SymptomEntryDTO.builder()
                 .patientId(1L)
                 .symptomKey("headache")
                 .symptomValue("mild")
@@ -68,12 +68,12 @@ class SymptomEntryServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomEntryRepository.save(any(SymptomEntry.class))).thenAnswer(inv -> {
-            SymptomEntry e = inv.getArgument(0);
+            final SymptomEntry e = inv.getArgument(0);
             e.setId(10L);
             return e;
         });
 
-        SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
+        final SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
@@ -92,7 +92,7 @@ class SymptomEntryServiceTest {
     void testCreateSymptom_nullTakenAt_usesNow() throws Exception {
         // When the caller omits takenAt, the service must substitute Instant.now()
         // so the saved entry always has a valid timestamp.
-        SymptomEntryDTO dto = SymptomEntryDTO.builder()
+        final SymptomEntryDTO dto = SymptomEntryDTO.builder()
                 .patientId(1L)
                 .symptomKey("cough")
                 .symptomValue("dry")
@@ -101,14 +101,14 @@ class SymptomEntryServiceTest {
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomEntryRepository.save(any(SymptomEntry.class))).thenAnswer(inv -> {
-            SymptomEntry e = inv.getArgument(0);
+            final SymptomEntry e = inv.getArgument(0);
             e.setId(11L);
             return e;
         });
 
-        Instant before = Instant.now();
-        SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
-        Instant after = Instant.now();
+        final Instant before = Instant.now();
+        final SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
+        final Instant after = Instant.now();
 
         assertNotNull(result.takenAt());
         // The auto-assigned timestamp must fall within the test execution window
@@ -121,14 +121,14 @@ class SymptomEntryServiceTest {
     void testCreateSymptom_patientNotFound_throws() throws Exception {
         // A symptom entry cannot exist without a valid patient reference;
         // the service must surface this as an IllegalArgumentException.
-        SymptomEntryDTO dto = SymptomEntryDTO.builder()
+        final SymptomEntryDTO dto = SymptomEntryDTO.builder()
                 .patientId(99L)
                 .symptomKey("fever")
                 .build();
 
         when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> symptomEntryService.createSymptom(dto));
 
@@ -141,7 +141,7 @@ class SymptomEntryServiceTest {
     void testCreateSymptom_alwaysSetsCompleted() throws Exception {
         // The service always marks a newly created entry as completed=true;
         // the DTO's completed field (if any) is not consulted.
-        SymptomEntryDTO dto = SymptomEntryDTO.builder()
+        final SymptomEntryDTO dto = SymptomEntryDTO.builder()
                 .patientId(1L)
                 .symptomKey("nausea")
                 .symptomValue("moderate")
@@ -152,7 +152,7 @@ class SymptomEntryServiceTest {
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomEntryRepository.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
+        final SymptomEntryDTO result = symptomEntryService.createSymptom(dto);
 
         assertTrue(result.completed());
     }
@@ -166,21 +166,21 @@ class SymptomEntryServiceTest {
     void testGetSymptomsForPatient_filtersCorrectly() throws Exception {
         // The repository returns all entries; the service must filter to the
         // requested patient ID so unrelated entries are excluded.
-        Patient other = Patient.builder().id(2L).build();
+        final Patient other = Patient.builder().id(2L).build();
 
-        SymptomEntry match = SymptomEntry.builder()
+        final SymptomEntry match = SymptomEntry.builder()
                 .id(1L).patient(patient)
                 .symptomKey("headache").symptomValue("mild")
                 .takenAt(Instant.now()).completed(true).build();
 
-        SymptomEntry noMatch = SymptomEntry.builder()
+        final SymptomEntry noMatch = SymptomEntry.builder()
                 .id(2L).patient(other)
                 .symptomKey("fever").symptomValue("high")
                 .takenAt(Instant.now()).completed(true).build();
 
         when(symptomEntryRepository.findAll()).thenReturn(List.of(match, noMatch));
 
-        List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
+        final List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
 
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).id());
@@ -193,14 +193,14 @@ class SymptomEntryServiceTest {
     void testGetSymptomsForPatient_noMatches_returnsEmpty() throws Exception {
         // If the patient has no recorded symptoms the result must be an empty
         // list, not null or an exception.
-        Patient other = Patient.builder().id(2L).build();
-        SymptomEntry entry = SymptomEntry.builder()
+        final Patient other = Patient.builder().id(2L).build();
+        final SymptomEntry entry = SymptomEntry.builder()
                 .id(1L).patient(other)
                 .symptomKey("cough").takenAt(Instant.now()).completed(true).build();
 
         when(symptomEntryRepository.findAll()).thenReturn(List.of(entry));
 
-        List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
+        final List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -210,16 +210,16 @@ class SymptomEntryServiceTest {
     @DisplayName("getSymptomsForPatient: returns all entries when every entry belongs to the patient")
     void testGetSymptomsForPatient_multipleMatches_returnsAll() throws Exception {
         // All three entries belong to patient 1; all must be included in order.
-        SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
+        final SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
                 .symptomKey("headache").takenAt(Instant.now()).completed(true).build();
-        SymptomEntry e2 = SymptomEntry.builder().id(2L).patient(patient)
+        final SymptomEntry e2 = SymptomEntry.builder().id(2L).patient(patient)
                 .symptomKey("fatigue").takenAt(Instant.now()).completed(true).build();
-        SymptomEntry e3 = SymptomEntry.builder().id(3L).patient(patient)
+        final SymptomEntry e3 = SymptomEntry.builder().id(3L).patient(patient)
                 .symptomKey("nausea").takenAt(Instant.now()).completed(true).build();
 
         when(symptomEntryRepository.findAll()).thenReturn(List.of(e1, e2, e3));
 
-        List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
+        final List<SymptomEntryDTO> result = symptomEntryService.getSymptomsForPatient(1L);
 
         assertEquals(3, result.size());
     }
@@ -229,15 +229,15 @@ class SymptomEntryServiceTest {
     void testGetSymptomsForPatient_mapsAllDtoFields() throws Exception {
         // Verify that the private mapToDTO helper correctly transfers all fields
         // by inspecting the returned DTO's individual properties.
-        Instant ts = Instant.parse("2025-06-01T10:00:00Z");
-        SymptomEntry entry = SymptomEntry.builder()
+        final Instant ts = Instant.parse("2025-06-01T10:00:00Z");
+        final SymptomEntry entry = SymptomEntry.builder()
                 .id(5L).patient(patient)
                 .symptomKey("pain").symptomValue("severe")
                 .severity(4).takenAt(ts).completed(true).build();
 
         when(symptomEntryRepository.findAll()).thenReturn(List.of(entry));
 
-        SymptomEntryDTO dto = symptomEntryService.getSymptomsForPatient(1L).get(0);
+        final SymptomEntryDTO dto = symptomEntryService.getSymptomsForPatient(1L).get(0);
 
         assertEquals(5L, dto.id());
         assertEquals(1L, dto.patientId());
@@ -271,7 +271,7 @@ class SymptomEntryServiceTest {
         // descriptive IllegalArgumentException before any delete is attempted.
         when(symptomEntryRepository.existsById(99L)).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> symptomEntryService.deleteSymptom(99L));
 

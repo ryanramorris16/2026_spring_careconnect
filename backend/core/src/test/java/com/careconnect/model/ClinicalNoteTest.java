@@ -13,7 +13,7 @@ class ClinicalNoteTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ClinicalNote note = new ClinicalNote();
+        final ClinicalNote note = new ClinicalNote();
 
         assertThat(note).isNotNull();
         assertThat(note.getId()).isNull();
@@ -29,13 +29,13 @@ class ClinicalNoteTest {
 
     @Test
     void builder_isActive_defaultsToTrue() throws Exception {
-        ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
+        final ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
         assertThat(note.getIsActive()).isTrue();
     }
 
     @Test
     void builder_createdAt_defaultsToNow() throws Exception {
-        ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
+        final ClinicalNote note = ClinicalNote.builder().patientId(1L).build();
         assertThat(note.getCreatedAt()).isNotNull();
     }
 
@@ -43,9 +43,9 @@ class ClinicalNoteTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
-        ClinicalNote note = ClinicalNote.builder()
+        final ClinicalNote note = ClinicalNote.builder()
                 .id(1L)
                 .patientId(10L)
                 .caregiverId(20L)
@@ -72,8 +72,8 @@ class ClinicalNoteTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ClinicalNote note = new ClinicalNote();
-        LocalDateTime now = LocalDateTime.now();
+        final ClinicalNote note = new ClinicalNote();
+        final LocalDateTime now = LocalDateTime.now();
 
         note.setId(2L);
         note.setPatientId(30L);
@@ -98,9 +98,9 @@ class ClinicalNoteTest {
 
     @Test
     void preUpdate_setsUpdatedAt() throws Exception {
-        ClinicalNote note = new ClinicalNote();
+        final ClinicalNote note = new ClinicalNote();
 
-        Method m = ClinicalNote.class.getDeclaredMethod("preUpdate");
+        final Method m = ClinicalNote.class.getDeclaredMethod("preUpdate");
         m.setAccessible(true);
         m.invoke(note);
 
@@ -111,9 +111,9 @@ class ClinicalNoteTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        LocalDateTime ts = LocalDateTime.now();
-        ClinicalNote n1 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();
-        ClinicalNote n2 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();
+        final LocalDateTime ts = LocalDateTime.now();
+        final ClinicalNote n1 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();
+        final ClinicalNote n2 = ClinicalNote.builder().id(1L).patientId(10L).createdAt(ts).build();
 
         assertThat(n1).isEqualTo(n2);
         assertThat(n1.hashCode()).isEqualTo(n2.hashCode());

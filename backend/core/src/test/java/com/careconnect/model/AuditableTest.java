@@ -17,9 +17,9 @@ class AuditableTest {
 
     @Test
     void onCreate_setsCreatedAtAndUpdatedAt() throws Exception {
-        ConcreteAuditable entity = new ConcreteAuditable();
+        final ConcreteAuditable entity = new ConcreteAuditable();
 
-        Method m = Auditable.class.getDeclaredMethod("onCreate");
+        final Method m = Auditable.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(entity);
 
@@ -31,9 +31,9 @@ class AuditableTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        ConcreteAuditable entity = new ConcreteAuditable();
+        final ConcreteAuditable entity = new ConcreteAuditable();
 
-        Method m = Auditable.class.getDeclaredMethod("onUpdate");
+        final Method m = Auditable.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(entity);
 
@@ -44,9 +44,9 @@ class AuditableTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ConcreteAuditable entity = new ConcreteAuditable();
-        LocalDateTime created = LocalDateTime.of(2025, 1, 1, 10, 0);
-        LocalDateTime updated = LocalDateTime.of(2025, 6, 1, 12, 0);
+        final ConcreteAuditable entity = new ConcreteAuditable();
+        final LocalDateTime created = LocalDateTime.of(2025, 1, 1, 10, 0);
+        final LocalDateTime updated = LocalDateTime.of(2025, 6, 1, 12, 0);
 
         entity.setCreatedAt(created);
         entity.setUpdatedAt(updated);
@@ -59,7 +59,7 @@ class AuditableTest {
 
     @Test
     void defaultConstructor_fieldsAreNull() throws Exception {
-        ConcreteAuditable entity = new ConcreteAuditable();
+        final ConcreteAuditable entity = new ConcreteAuditable();
 
         assertThat(entity.getCreatedAt()).isNull();
         assertThat(entity.getUpdatedAt()).isNull();

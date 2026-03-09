@@ -51,7 +51,7 @@ class CustomErrorControllerTest {
     @Test
     void getErrorPath_shouldReturnErrorPath() throws Exception {
 
-        String path = controller.getErrorPath();
+        final String path = controller.getErrorPath();
 
         assertEquals("/error", path);
         /*

@@ -32,7 +32,7 @@ class SubscriptionResponseDTOTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
+        final SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isNull();
@@ -60,7 +60,7 @@ class SubscriptionResponseDTOTest {
         when(mockSubscription.getStartedAt()).thenReturn(NOW);
         when(mockSubscription.getCurrentPeriodEnd()).thenReturn(END);
 
-        SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
+        final SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
 
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getStripeSubscriptionId()).isEqualTo("sub_abc");
@@ -94,7 +94,7 @@ class SubscriptionResponseDTOTest {
         when(mockSubscription.getStartedAt()).thenReturn(NOW);
         when(mockSubscription.getCurrentPeriodEnd()).thenReturn(null);
 
-        SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
+        final SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
 
         assertThat(dto.getUserId()).isNull();
         assertThat(dto.getPlanId()).isEqualTo(3L);
@@ -115,7 +115,7 @@ class SubscriptionResponseDTOTest {
         when(mockSubscription.getStartedAt()).thenReturn(NOW);
         when(mockSubscription.getCurrentPeriodEnd()).thenReturn(END);
 
-        SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
+        final SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
 
         assertThat(dto.getUserId()).isEqualTo(20L);
         assertThat(dto.getPlanId()).isNull();
@@ -128,7 +128,7 @@ class SubscriptionResponseDTOTest {
 
     @Test
     void setters_updateAllFields() throws Exception {
-        SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
+        final SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
 
         dto.setId(99L);
         dto.setStripeSubscriptionId("sub_new");

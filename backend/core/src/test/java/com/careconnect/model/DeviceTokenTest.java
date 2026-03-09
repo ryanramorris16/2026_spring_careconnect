@@ -13,7 +13,7 @@ class DeviceTokenTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        DeviceToken dt = new DeviceToken();
+        final DeviceToken dt = new DeviceToken();
 
         assertThat(dt).isNotNull();
         assertThat(dt.getId()).isNull();
@@ -27,7 +27,7 @@ class DeviceTokenTest {
 
     @Test
     void builder_isActive_defaultsToTrue() throws Exception {
-        DeviceToken dt = DeviceToken.builder()
+        final DeviceToken dt = DeviceToken.builder()
                 .user(new User())
                 .fcmToken("fcm-token-001")
                 .deviceType(DeviceToken.DeviceType.ANDROID)
@@ -39,7 +39,7 @@ class DeviceTokenTest {
 
     @Test
     void builder_createdAt_defaultsToNow() throws Exception {
-        DeviceToken dt = DeviceToken.builder()
+        final DeviceToken dt = DeviceToken.builder()
                 .user(new User())
                 .fcmToken("tok")
                 .deviceType(DeviceToken.DeviceType.IOS)
@@ -53,10 +53,10 @@ class DeviceTokenTest {
 
     @Test
     void builder_allFields() throws Exception {
-        User user = new User();
-        Instant now = Instant.now();
+        final User user = new User();
+        final Instant now = Instant.now();
 
-        DeviceToken dt = DeviceToken.builder()
+        final DeviceToken dt = DeviceToken.builder()
                 .id(1L)
                 .user(user)
                 .fcmToken("fcm-abc")
@@ -83,9 +83,9 @@ class DeviceTokenTest {
 
     @Test
     void preUpdate_setsUpdatedAt() throws Exception {
-        DeviceToken dt = new DeviceToken();
+        final DeviceToken dt = new DeviceToken();
 
-        Method m = DeviceToken.class.getDeclaredMethod("preUpdate");
+        final Method m = DeviceToken.class.getDeclaredMethod("preUpdate");
         m.setAccessible(true);
         m.invoke(dt);
 
@@ -107,9 +107,9 @@ class DeviceTokenTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Instant ts = Instant.now();
-        DeviceToken d1 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();
-        DeviceToken d2 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();
+        final Instant ts = Instant.now();
+        final DeviceToken d1 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();
+        final DeviceToken d2 = DeviceToken.builder().id(1L).fcmToken("tok").createdAt(ts).build();
 
         assertThat(d1).isEqualTo(d2);
         assertThat(d1.hashCode()).isEqualTo(d2.hashCode());

@@ -13,7 +13,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void defaultConstructor_setsDefaults() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
 
         assertThat(link).isNotNull();
         assertThat(link.getId()).isNull();
@@ -25,12 +25,12 @@ class CaregiverPatientLinkTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        User caregiver = new User();
-        User patient = new User();
-        User createdBy = new User();
-        LocalDateTime now = LocalDateTime.now();
+        final User caregiver = new User();
+        final User patient = new User();
+        final User createdBy = new User();
+        final LocalDateTime now = LocalDateTime.now();
 
-        CaregiverPatientLink link = new CaregiverPatientLink(
+        final CaregiverPatientLink link = new CaregiverPatientLink(
                 1L, caregiver, patient, createdBy, now, now,
                 CaregiverPatientLink.LinkStatus.ACTIVE,
                 CaregiverPatientLink.LinkType.TEMPORARY,
@@ -50,11 +50,11 @@ class CaregiverPatientLinkTest {
 
     @Test
     void fourArgConstructor_setsFields() throws Exception {
-        User caregiver = new User();
-        User patient = new User();
-        User createdBy = new User();
+        final User caregiver = new User();
+        final User patient = new User();
+        final User createdBy = new User();
 
-        CaregiverPatientLink link = new CaregiverPatientLink(
+        final CaregiverPatientLink link = new CaregiverPatientLink(
                 caregiver, patient, createdBy, CaregiverPatientLink.LinkType.EMERGENCY);
 
         assertThat(link.getCaregiverUser()).isSameAs(caregiver);
@@ -67,7 +67,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void isActive_statusActive_noExpiry_returnsTrue() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(null);
 
@@ -76,7 +76,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void isActive_statusPending_returnsFalse() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.PENDING);
 
         assertThat(link.isActive()).isFalse();
@@ -84,7 +84,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void isActive_statusActive_expiredDate_returnsFalse() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().minusDays(1));
 
@@ -93,7 +93,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void isActive_statusActive_futureExpiry_returnsTrue() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.ACTIVE);
         link.setExpiresAt(LocalDateTime.now().plusDays(10));
 
@@ -104,21 +104,21 @@ class CaregiverPatientLinkTest {
 
     @Test
     void isExpired_nullExpiresAt_returnsFalse() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(null);
         assertThat(link.isExpired()).isFalse();
     }
 
     @Test
     void isExpired_pastExpiresAt_returnsTrue() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(LocalDateTime.now().minusDays(1));
         assertThat(link.isExpired()).isTrue();
     }
 
     @Test
     void isExpired_futureExpiresAt_returnsFalse() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setExpiresAt(LocalDateTime.now().plusDays(5));
         assertThat(link.isExpired()).isFalse();
     }
@@ -127,7 +127,7 @@ class CaregiverPatientLinkTest {
 
     @Test
     void setStatus_updatesUpdatedAt() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
         link.setStatus(CaregiverPatientLink.LinkStatus.REVOKED);
 
         assertThat(link.getStatus()).isEqualTo(CaregiverPatientLink.LinkStatus.REVOKED);
@@ -138,9 +138,9 @@ class CaregiverPatientLinkTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
 
-        Method m = CaregiverPatientLink.class.getDeclaredMethod("onCreate");
+        final Method m = CaregiverPatientLink.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(link);
 
@@ -152,9 +152,9 @@ class CaregiverPatientLinkTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
 
-        Method m = CaregiverPatientLink.class.getDeclaredMethod("onUpdate");
+        final Method m = CaregiverPatientLink.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(link);
 
@@ -190,11 +190,11 @@ class CaregiverPatientLinkTest {
 
     @Test
     void remainingSetters_updateFields() throws Exception {
-        CaregiverPatientLink link = new CaregiverPatientLink();
-        User caregiver = new User();
-        User patient = new User();
-        User createdBy = new User();
-        LocalDateTime now = LocalDateTime.now();
+        final CaregiverPatientLink link = new CaregiverPatientLink();
+        final User caregiver = new User();
+        final User patient = new User();
+        final User createdBy = new User();
+        final LocalDateTime now = LocalDateTime.now();
 
         link.setId(99L);
         link.setCaregiverUser(caregiver);

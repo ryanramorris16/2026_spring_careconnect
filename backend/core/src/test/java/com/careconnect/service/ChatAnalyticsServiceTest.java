@@ -44,7 +44,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - valid conversation with messages - collects analytics without error")
     void collectAnalytics_validConversationWithMessages_collectsAnalytics() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("I need help with my medication prescription"),
                 createAssistantMessage(100L),
                 createUserMessage("What about my symptom pain?"),
@@ -57,7 +57,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - empty messages list - collects analytics without error")
     void collectAnalytics_emptyMessagesList_collectsAnalytics() throws Exception {
-        List<ChatMessage> messages = Collections.emptyList();
+        final List<ChatMessage> messages = Collections.emptyList();
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -66,7 +66,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - conversation with null updatedAt - session duration is zero")
     void collectAnalytics_nullUpdatedAt_sessionDurationZero() throws Exception {
         conversation.setUpdatedAt(null);
-        List<ChatMessage> messages = List.of(createUserMessage("hello"));
+        final List<ChatMessage> messages = List.of(createUserMessage("hello"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -78,7 +78,7 @@ class ChatAnalyticsServiceTest {
         // When createdAt is null, calculateSessionDuration returns 0 but
         // the builder call to getCreatedAt().toLocalDate() will throw NPE which is caught
         conversation.setCreatedAt(null);
-        List<ChatMessage> messages = List.of(createUserMessage("hello"));
+        final List<ChatMessage> messages = List.of(createUserMessage("hello"));
 
         // This should be caught by the try-catch in collectAnalytics
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
@@ -89,7 +89,7 @@ class ChatAnalyticsServiceTest {
     void collectAnalytics_exceptionDuringProcessing_errorCaughtAndLogged() throws Exception {
         // Setting chatType to null will cause NPE at conversation.getChatType().toString()
         conversation.setChatType(null);
-        List<ChatMessage> messages = List.of(createUserMessage("hello"));
+        final List<ChatMessage> messages = List.of(createUserMessage("hello"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -97,7 +97,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - messages with all topic categories - extracts all topics")
     void collectAnalytics_messagesWithAllTopics_extractsAllTopics() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("I need my medication prescription drug pill"),
                 createUserMessage("I have a symptom with pain and it aches and hurts"),
                 createUserMessage("I have an appointment to visit the doctor and schedule"),
@@ -112,7 +112,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - message with no matching keywords - categorized as GENERAL_INQUIRY")
     void collectAnalytics_noMatchingKeywords_generalInquiry() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("hello how are you today")
         );
 
@@ -122,7 +122,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - only assistant messages - no topic categories extracted from user messages")
     void collectAnalytics_onlyAssistantMessages_noTopicCategories() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(100L),
                 createAssistantMessage(200L)
         );
@@ -133,7 +133,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - assistant messages with null processingTimeMs - averageResponseTime is zero")
     void collectAnalytics_nullProcessingTimeMs_averageResponseTimeZero() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(null),
                 createUserMessage("test")
         );
@@ -144,10 +144,10 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - system messages only - no user or assistant counts")
     void collectAnalytics_systemMessagesOnly_noUserOrAssistantCounts() throws Exception {
-        ChatMessage systemMsg = new ChatMessage();
+        final ChatMessage systemMsg = new ChatMessage();
         systemMsg.setMessageType(ChatMessage.MessageType.SYSTEM);
         systemMsg.setContent("System initialization");
-        List<ChatMessage> messages = List.of(systemMsg);
+        final List<ChatMessage> messages = List.of(systemMsg);
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -155,11 +155,11 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("collectAnalytics - mixed message types - counts user and ai messages correctly")
     void collectAnalytics_mixedMessageTypes_countsCorrectly() throws Exception {
-        ChatMessage systemMsg = new ChatMessage();
+        final ChatMessage systemMsg = new ChatMessage();
         systemMsg.setMessageType(ChatMessage.MessageType.SYSTEM);
         systemMsg.setContent("System message");
 
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("user message"),
                 createAssistantMessage(50L),
                 systemMsg,
@@ -175,10 +175,10 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("getAggregatedAnalytics - valid date range - returns aggregated data map")
     void getAggregatedAnalytics_validDateRange_returnsAggregatedData() throws Exception {
-        LocalDateTime from = LocalDateTime.of(2025, 1, 1, 0, 0);
-        LocalDateTime to = LocalDateTime.of(2025, 12, 31, 23, 59);
+        final LocalDateTime from = LocalDateTime.of(2025, 1, 1, 0, 0);
+        final LocalDateTime to = LocalDateTime.of(2025, 12, 31, 23, 59);
 
-        Map<String, Object> result = chatAnalyticsService.getAggregatedAnalytics(from, to);
+        final Map<String, Object> result = chatAnalyticsService.getAggregatedAnalytics(from, to);
 
         assertNotNull(result);
         assertEquals(0, result.get("totalSessions"));
@@ -188,7 +188,7 @@ class ChatAnalyticsServiceTest {
         assertEquals(0.0, result.get("userSatisfactionScore"));
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> systemPerformance = (Map<String, Object>) result.get("systemPerformance");
+        final Map<String, Object> systemPerformance = (Map<String, Object>) result.get("systemPerformance");
         assertNotNull(systemPerformance);
         assertEquals(0, systemPerformance.get("averageResponseTime"));
         assertEquals(0.0, systemPerformance.get("errorRate"));
@@ -197,10 +197,10 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("getAggregatedAnalytics - returns exactly 6 keys in the map")
     void getAggregatedAnalytics_returnsSixKeys() throws Exception {
-        LocalDateTime from = LocalDateTime.now().minusDays(30);
-        LocalDateTime to = LocalDateTime.now();
+        final LocalDateTime from = LocalDateTime.now().minusDays(30);
+        final LocalDateTime to = LocalDateTime.now();
 
-        Map<String, Object> result = chatAnalyticsService.getAggregatedAnalytics(from, to);
+        final Map<String, Object> result = chatAnalyticsService.getAggregatedAnalytics(from, to);
 
         assertEquals(6, result.size());
         assertTrue(result.containsKey("totalSessions"));
@@ -216,161 +216,161 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("extractTopicCategories - medication keywords - returns MEDICATION_INQUIRY")
     void collectAnalytics_medicationKeyword_medicationInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I need my medication"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I need my medication"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - drug keyword - returns MEDICATION_INQUIRY")
     void collectAnalytics_drugKeyword_medicationInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("what drug should I take"));
+        final List<ChatMessage> messages = List.of(createUserMessage("what drug should I take"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - pill keyword - returns MEDICATION_INQUIRY")
     void collectAnalytics_pillKeyword_medicationInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I took my pill"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I took my pill"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - prescription keyword - returns MEDICATION_INQUIRY")
     void collectAnalytics_prescriptionKeyword_medicationInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my prescription is ready"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my prescription is ready"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - symptom keyword - returns SYMPTOM_TRACKING")
     void collectAnalytics_symptomKeyword_symptomTrackingTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have a symptom"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have a symptom"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - pain keyword - returns SYMPTOM_TRACKING")
     void collectAnalytics_painKeyword_symptomTrackingTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I feel pain"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I feel pain"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - ache keyword - returns SYMPTOM_TRACKING")
     void collectAnalytics_acheKeyword_symptomTrackingTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have an ache"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have an ache"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - hurt keyword - returns SYMPTOM_TRACKING")
     void collectAnalytics_hurtKeyword_symptomTrackingTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my arm hurts"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my arm hurts"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - appointment keyword - returns APPOINTMENT_MANAGEMENT")
     void collectAnalytics_appointmentKeyword_appointmentManagementTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have an appointment"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have an appointment"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - visit keyword - returns APPOINTMENT_MANAGEMENT")
     void collectAnalytics_visitKeyword_appointmentManagementTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have a visit"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have a visit"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - doctor keyword - returns APPOINTMENT_MANAGEMENT")
     void collectAnalytics_doctorKeyword_appointmentManagementTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I need to see the doctor"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I need to see the doctor"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - schedule keyword - returns APPOINTMENT_MANAGEMENT")
     void collectAnalytics_scheduleKeyword_appointmentManagementTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I need to schedule"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I need to schedule"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - allergy keyword - returns ALLERGY_INQUIRY")
     void collectAnalytics_allergyKeyword_allergyInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have an allergy"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have an allergy"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - reaction keyword - returns ALLERGY_INQUIRY")
     void collectAnalytics_reactionKeyword_allergyInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I had a reaction"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I had a reaction"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - intolerance keyword - returns ALLERGY_INQUIRY")
     void collectAnalytics_intoleranceKeyword_allergyInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have an intolerance"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have an intolerance"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - vital keyword - returns VITALS_INQUIRY")
     void collectAnalytics_vitalKeyword_vitalsInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("check my vital signs"));
+        final List<ChatMessage> messages = List.of(createUserMessage("check my vital signs"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - blood pressure keyword - returns VITALS_INQUIRY")
     void collectAnalytics_bloodPressureKeyword_vitalsInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my blood pressure is high"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my blood pressure is high"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - temperature keyword - returns VITALS_INQUIRY")
     void collectAnalytics_temperatureKeyword_vitalsInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("what is my temperature"));
+        final List<ChatMessage> messages = List.of(createUserMessage("what is my temperature"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - heart rate keyword - returns VITALS_INQUIRY")
     void collectAnalytics_heartRateKeyword_vitalsInquiryTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my heart rate is fast"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my heart rate is fast"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - mood keyword - returns MENTAL_HEALTH")
     void collectAnalytics_moodKeyword_mentalHealthTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my mood is bad"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my mood is bad"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - mental keyword - returns MENTAL_HEALTH")
     void collectAnalytics_mentalKeyword_mentalHealthTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("my mental health"));
+        final List<ChatMessage> messages = List.of(createUserMessage("my mental health"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - anxiety keyword - returns MENTAL_HEALTH")
     void collectAnalytics_anxietyKeyword_mentalHealthTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I have anxiety"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I have anxiety"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
     @Test
     @DisplayName("extractTopicCategories - depression keyword - returns MENTAL_HEALTH")
     void collectAnalytics_depressionKeyword_mentalHealthTopic() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("I feel depression"));
+        final List<ChatMessage> messages = List.of(createUserMessage("I feel depression"));
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
 
@@ -380,7 +380,7 @@ class ChatAnalyticsServiceTest {
         // First message has no matching keywords -> GENERAL_INQUIRY gets added
         // Second message does match -> MEDICATION_INQUIRY also added
         // Both should be present
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("hello there"),
                 createUserMessage("I need my medication")
         );
@@ -392,7 +392,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("extractTopicCategories - multiple categories from single message - extracts all matching categories")
     void collectAnalytics_multipleCategoriesSingleMessage_extractsAllCategories() throws Exception {
         // A single message containing keywords from multiple categories
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("I have a medication allergy that causes pain and affects my mood and vital signs, need to schedule a doctor appointment")
         );
 
@@ -406,7 +406,7 @@ class ChatAnalyticsServiceTest {
     void collectAnalytics_bothDatesPresent_calculatesSessionDuration() throws Exception {
         conversation.setCreatedAt(LocalDateTime.of(2025, 6, 15, 10, 0, 0));
         conversation.setUpdatedAt(LocalDateTime.of(2025, 6, 15, 10, 45, 0));
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -415,7 +415,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("calculateSessionDuration - updatedAt is null - returns zero duration")
     void collectAnalytics_updatedAtNull_zeroDuration() throws Exception {
         conversation.setUpdatedAt(null);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -425,7 +425,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("calculateAverageResponseTime - no assistant messages - returns zero")
     void collectAnalytics_noAssistantMessages_averageResponseTimeZero() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -433,7 +433,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("calculateAverageResponseTime - assistant messages with processingTimeMs - calculates average")
     void collectAnalytics_assistantMessagesWithProcessingTime_calculatesAverage() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(100L),
                 createAssistantMessage(300L),
                 createAssistantMessage(200L)
@@ -445,7 +445,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("calculateAverageResponseTime - mix of null and non-null processingTimeMs - only uses non-null values")
     void collectAnalytics_mixNullAndNonNullProcessingTime_usesOnlyNonNull() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(100L),
                 createAssistantMessage(null),
                 createAssistantMessage(200L)
@@ -457,7 +457,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("calculateAverageResponseTime - all assistant messages have null processingTimeMs - returns zero")
     void collectAnalytics_allNullProcessingTime_returnsZero() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(null),
                 createAssistantMessage(null)
         );
@@ -470,10 +470,10 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("ChatAnalytics builder - all fields set - builds correctly")
     void chatAnalytics_builderAllFields_buildsCorrectly() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        List<String> topics = List.of("MEDICATION_INQUIRY", "SYMPTOM_TRACKING");
+        final LocalDateTime now = LocalDateTime.now();
+        final List<String> topics = List.of("MEDICATION_INQUIRY", "SYMPTOM_TRACKING");
 
-        ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
+        final ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
                 .sessionId("test-session-id")
                 .sessionDate(now.toLocalDate())
                 .sessionHour(14)
@@ -505,7 +505,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("ChatAnalytics - setters work correctly")
     void chatAnalytics_setters_workCorrectly() throws Exception {
-        ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
+        final ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
                 .sessionId("initial")
                 .sessionDate(java.time.LocalDate.now())
                 .sessionHour(0)
@@ -532,7 +532,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("ChatAnalytics - toString returns non-null string")
     void chatAnalytics_toString_returnsNonNull() throws Exception {
-        ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
+        final ChatAnalyticsService.ChatAnalytics analytics = ChatAnalyticsService.ChatAnalytics.builder()
                 .sessionId("test")
                 .sessionDate(java.time.LocalDate.now())
                 .sessionHour(10)
@@ -553,11 +553,11 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("ChatAnalytics - equals and hashCode work correctly")
     void chatAnalytics_equalsAndHashCode_workCorrectly() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
         java.time.LocalDate today = java.time.LocalDate.now();
-        List<String> topics = List.of("GENERAL_INQUIRY");
+        final List<String> topics = List.of("GENERAL_INQUIRY");
 
-        ChatAnalyticsService.ChatAnalytics analytics1 = ChatAnalyticsService.ChatAnalytics.builder()
+        final ChatAnalyticsService.ChatAnalytics analytics1 = ChatAnalyticsService.ChatAnalytics.builder()
                 .sessionId("same-id")
                 .sessionDate(today)
                 .sessionHour(10)
@@ -572,7 +572,7 @@ class ChatAnalyticsServiceTest {
                 .createdAt(now)
                 .build();
 
-        ChatAnalyticsService.ChatAnalytics analytics2 = ChatAnalyticsService.ChatAnalytics.builder()
+        final ChatAnalyticsService.ChatAnalytics analytics2 = ChatAnalyticsService.ChatAnalytics.builder()
                 .sessionId("same-id")
                 .sessionDate(today)
                 .sessionHour(10)
@@ -597,7 +597,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - MEDICAL_CONSULTATION chat type - collects analytics")
     void collectAnalytics_medicalConsultationType_collectsAnalytics() throws Exception {
         conversation.setChatType(ChatConversation.ChatType.MEDICAL_CONSULTATION);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -606,7 +606,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - MEDICATION_INQUIRY chat type - collects analytics")
     void collectAnalytics_medicationInquiryType_collectsAnalytics() throws Exception {
         conversation.setChatType(ChatConversation.ChatType.MEDICATION_INQUIRY);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -615,7 +615,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - MOOD_PAIN_SUPPORT chat type - collects analytics")
     void collectAnalytics_moodPainSupportType_collectsAnalytics() throws Exception {
         conversation.setChatType(ChatConversation.ChatType.MOOD_PAIN_SUPPORT);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -624,7 +624,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - EMERGENCY_GUIDANCE chat type - collects analytics")
     void collectAnalytics_emergencyGuidanceType_collectsAnalytics() throws Exception {
         conversation.setChatType(ChatConversation.ChatType.EMERGENCY_GUIDANCE);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -633,7 +633,7 @@ class ChatAnalyticsServiceTest {
     @DisplayName("collectAnalytics - LIFESTYLE_ADVICE chat type - collects analytics")
     void collectAnalytics_lifestyleAdviceType_collectsAnalytics() throws Exception {
         conversation.setChatType(ChatConversation.ChatType.LIFESTYLE_ADVICE);
-        List<ChatMessage> messages = List.of(createUserMessage("test"));
+        final List<ChatMessage> messages = List.of(createUserMessage("test"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -643,7 +643,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("extractTopicCategories - uppercase content converted to lowercase - matches keywords")
     void collectAnalytics_uppercaseContent_matchesKeywords() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("MY MEDICATION IS READY"));
+        final List<ChatMessage> messages = List.of(createUserMessage("MY MEDICATION IS READY"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -651,7 +651,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("extractTopicCategories - mixed case content - matches keywords")
     void collectAnalytics_mixedCaseContent_matchesKeywords() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("My Medication And Symptom"));
+        final List<ChatMessage> messages = List.of(createUserMessage("My Medication And Symptom"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -659,7 +659,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("extractTopicCategories - keyword as substring - matches keywords")
     void collectAnalytics_keywordAsSubstring_matchesKeywords() throws Exception {
-        List<ChatMessage> messages = List.of(createUserMessage("medications are important"));
+        final List<ChatMessage> messages = List.of(createUserMessage("medications are important"));
 
         assertDoesNotThrow(() -> chatAnalyticsService.collectAnalytics(conversation, messages));
     }
@@ -669,7 +669,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("countUserMessages - only user messages - returns correct count")
     void collectAnalytics_onlyUserMessages_correctUserCount() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createUserMessage("msg1"),
                 createUserMessage("msg2"),
                 createUserMessage("msg3")
@@ -681,7 +681,7 @@ class ChatAnalyticsServiceTest {
     @Test
     @DisplayName("countAiMessages - only assistant messages - returns correct count")
     void collectAnalytics_onlyAssistantMessages_correctAiCount() throws Exception {
-        List<ChatMessage> messages = List.of(
+        final List<ChatMessage> messages = List.of(
                 createAssistantMessage(100L),
                 createAssistantMessage(200L)
         );
@@ -692,14 +692,14 @@ class ChatAnalyticsServiceTest {
     // ---- Helper methods ----
 
     private ChatMessage createUserMessage(String content) {
-        ChatMessage message = new ChatMessage();
+        final ChatMessage message = new ChatMessage();
         message.setMessageType(ChatMessage.MessageType.USER);
         message.setContent(content);
         return message;
     }
 
     private ChatMessage createAssistantMessage(Long processingTimeMs) {
-        ChatMessage message = new ChatMessage();
+        final ChatMessage message = new ChatMessage();
         message.setMessageType(ChatMessage.MessageType.ASSISTANT);
         message.setContent("AI response");
         message.setProcessingTimeMs(processingTimeMs);

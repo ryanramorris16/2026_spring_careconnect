@@ -78,7 +78,7 @@ class AnalyticsControllerTest {
     private static final String USER_EMAIL = "user@example.com";
 
     private User makeUser(Long id, Role role) {
-        User u = new User();
+        final User u = new User();
         u.setId(id);
         u.setEmail(USER_EMAIL);
         u.setRole(role);
@@ -86,7 +86,7 @@ class AnalyticsControllerTest {
     }
 
     private Patient makePatient(User owner) {
-        Patient p = new Patient();
+        final Patient p = new Patient();
         p.setId(PATIENT_ID);
         p.setUser(owner);
         return p;
@@ -113,20 +113,20 @@ class AnalyticsControllerTest {
 
         @Test
         void returnsDto() throws Exception {
-            DashboardDTO dto = mock(DashboardDTO.class);
+            final DashboardDTO dto = mock(DashboardDTO.class);
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(7))).thenReturn(dto);
 
-            DashboardDTO result = controller.dashboard(PATIENT_ID, 7);
+            final DashboardDTO result = controller.dashboard(PATIENT_ID, 7);
 
             assertThat(result).isSameAs(dto);
         }
 
         @Test
         void clampsNegativeDaysToOne() throws Exception {
-            DashboardDTO dto = mock(DashboardDTO.class);
+            final DashboardDTO dto = mock(DashboardDTO.class);
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(1))).thenReturn(dto);
 
-            DashboardDTO result = controller.dashboard(PATIENT_ID, -5);
+            final DashboardDTO result = controller.dashboard(PATIENT_ID, -5);
 
             assertThat(result).isSameAs(dto);
             verify(analyticsService).getDashboard(PATIENT_ID, Period.ofDays(1));
@@ -140,10 +140,10 @@ class AnalyticsControllerTest {
 
         @Test
         void returnsCsvBytes() throws Exception {
-            byte[] csv = "col1,col2\n1,2\n".getBytes();
+            final byte[] csv = "col1,col2\n1,2\n".getBytes();
             when(analyticsService.exportVitalsCsv(PATIENT_ID, Period.ofDays(7))).thenReturn(csv);
 
-            ResponseEntity<byte[]> response = controller.exportVitalsCsv(PATIENT_ID, 7);
+            final ResponseEntity<byte[]> response = controller.exportVitalsCsv(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isEqualTo(csv);
@@ -153,7 +153,7 @@ class AnalyticsControllerTest {
 
         @Test
         void clampsNegativeDaysToOne() throws Exception {
-            byte[] csv = new byte[0];
+            final byte[] csv = new byte[0];
             when(analyticsService.exportVitalsCsv(PATIENT_ID, Period.ofDays(1))).thenReturn(csv);
 
             controller.exportVitalsCsv(PATIENT_ID, 0);
@@ -169,10 +169,10 @@ class AnalyticsControllerTest {
 
         @Test
         void returnsPdfBytes() throws Exception {
-            byte[] pdf = new byte[] { 1, 2, 3 };
+            final byte[] pdf = new byte[] { 1, 2, 3 };
             when(analyticsService.exportVitalsPdf(PATIENT_ID, Period.ofDays(7))).thenReturn(pdf);
 
-            ResponseEntity<byte[]> response = controller.exportVitalsPdf(PATIENT_ID, 7);
+            final ResponseEntity<byte[]> response = controller.exportVitalsPdf(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isEqualTo(pdf);
@@ -182,7 +182,7 @@ class AnalyticsControllerTest {
 
         @Test
         void clampsNegativeDaysToOne() throws Exception {
-            byte[] pdf = new byte[0];
+            final byte[] pdf = new byte[0];
             when(analyticsService.exportVitalsPdf(PATIENT_ID, Period.ofDays(1))).thenReturn(pdf);
 
             controller.exportVitalsPdf(PATIENT_ID, 0);
@@ -202,7 +202,7 @@ class AnalyticsControllerTest {
             when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(1)))
                     .thenThrow(new RuntimeException("stop"));
 
-            org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter =
+            final org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter =
                     controller.live(PATIENT_ID);
 
             assertThat(emitter).isNotNull();
@@ -220,14 +220,14 @@ class AnalyticsControllerTest {
         @Test
         void patientCanAccessOwnVitals() throws Exception {
             mockAuth();
-            User patientUser = makeUser(USER_ID, Role.PATIENT);
-            Patient patient = makePatient(patientUser);
+            final User patientUser = makeUser(USER_ID, Role.PATIENT);
+            final Patient patient = makePatient(patientUser);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(patientUser));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(List.of());
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(bodyValue(response, "message")).isEqualTo("Vitals data retrieved successfully");
@@ -236,14 +236,14 @@ class AnalyticsControllerTest {
         @Test
         void patientCannotAccessOtherPatientsVitals() throws Exception {
             mockAuth();
-            User requestingUser = makeUser(OTHER_ID, Role.PATIENT); // different id
-            User patientUser = makeUser(USER_ID, Role.PATIENT);
-            Patient patient = makePatient(patientUser);
+            final User requestingUser = makeUser(OTHER_ID, Role.PATIENT); // different id
+            final User patientUser = makeUser(USER_ID, Role.PATIENT);
+            final Patient patient = makePatient(patientUser);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(requestingUser));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -251,15 +251,15 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithAccessCanReadVitals() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(List.of());
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -267,14 +267,14 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -282,15 +282,15 @@ class AnalyticsControllerTest {
         @Test
         void familyMemberWithAccessCanReadVitals() throws Exception {
             mockAuth();
-            User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(List.of());
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -298,14 +298,14 @@ class AnalyticsControllerTest {
         @Test
         void adminCanAccessAnyPatientsVitals() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(List.of());
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -313,12 +313,12 @@ class AnalyticsControllerTest {
         @Test
         void returnsNotFoundWhenPatientMissing() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
+            final User admin = makeUser(USER_ID, Role.ADMIN);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -326,14 +326,14 @@ class AnalyticsControllerTest {
         @Test
         void returnsEmptyListOnServiceException() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(analyticsService.getVitals(any(), any())).thenThrow(new RuntimeException("DB error"));
 
-            ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
+            final ResponseEntity<?> response = controller.vitals(PATIENT_ID, 7);
 
             // Controller catches generic exceptions and returns 200 with empty list
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -353,16 +353,16 @@ class AnalyticsControllerTest {
         @Test
         void patientCanCreateOwnVitalSample() throws Exception {
             mockAuth();
-            User patientUser = makeUser(USER_ID, Role.PATIENT);
-            Patient patient = makePatient(patientUser);
-            VitalSampleDTO dto = sampleDto();
-            VitalSampleDTO created = sampleDto();
+            final User patientUser = makeUser(USER_ID, Role.PATIENT);
+            final Patient patient = makePatient(patientUser);
+            final VitalSampleDTO dto = sampleDto();
+            final VitalSampleDTO created = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(patientUser));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.createVitalSample(dto)).thenReturn(created);
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(bodyValue(response, "message")).isEqualTo("Vital sample created successfully");
@@ -371,13 +371,13 @@ class AnalyticsControllerTest {
         @Test
         void patientCannotCreateVitalSampleForAnotherPatient() throws Exception {
             mockAuth();
-            User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
-            Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
+            final User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
+            final Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(requestingUser));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-            ResponseEntity<?> response = controller.createVitalSample(sampleDto());
+            final ResponseEntity<?> response = controller.createVitalSample(sampleDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -385,16 +385,16 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithAccessCanCreateVitalSample() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
-            VitalSampleDTO dto = sampleDto();
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final VitalSampleDTO dto = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(vitalSampleService.createVitalSample(dto)).thenReturn(dto);
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         }
@@ -402,14 +402,14 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.createVitalSample(sampleDto());
+            final ResponseEntity<?> response = controller.createVitalSample(sampleDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -417,16 +417,16 @@ class AnalyticsControllerTest {
         @Test
         void familyMemberWithAccessCanCreateVitalSample() throws Exception {
             mockAuth();
-            User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
-            VitalSampleDTO dto = sampleDto();
+            final User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final VitalSampleDTO dto = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(vitalSampleService.createVitalSample(dto)).thenReturn(dto);
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         }
@@ -434,14 +434,14 @@ class AnalyticsControllerTest {
         @Test
         void familyMemberWithoutAccessIsRejected() throws Exception {
             mockAuth();
-            User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.createVitalSample(sampleDto());
+            final ResponseEntity<?> response = controller.createVitalSample(sampleDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -449,15 +449,15 @@ class AnalyticsControllerTest {
         @Test
         void adminCanCreateVitalSampleForAnyPatient() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
-            VitalSampleDTO dto = sampleDto();
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final VitalSampleDTO dto = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.createVitalSample(dto)).thenReturn(dto);
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         }
@@ -465,12 +465,12 @@ class AnalyticsControllerTest {
         @Test
         void returnsNotFoundWhenPatientMissing() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
+            final User admin = makeUser(USER_ID, Role.ADMIN);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = controller.createVitalSample(sampleDto());
+            final ResponseEntity<?> response = controller.createVitalSample(sampleDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -478,16 +478,16 @@ class AnalyticsControllerTest {
         @Test
         void returnsBadRequestOnIllegalArgument() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
-            VitalSampleDTO dto = sampleDto();
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final VitalSampleDTO dto = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.createVitalSample(dto))
                     .thenThrow(new IllegalArgumentException("Invalid heart rate"));
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
             assertThat(bodyValue(response, "error")).isEqualTo("Invalid heart rate");
@@ -496,15 +496,15 @@ class AnalyticsControllerTest {
         @Test
         void returnsInternalServerErrorOnUnexpectedException() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
-            VitalSampleDTO dto = sampleDto();
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final VitalSampleDTO dto = sampleDto();
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.createVitalSample(dto)).thenThrow(new RuntimeException("DB down"));
 
-            ResponseEntity<?> response = controller.createVitalSample(dto);
+            final ResponseEntity<?> response = controller.createVitalSample(dto);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -528,15 +528,15 @@ class AnalyticsControllerTest {
         @Test
         void patientCanUpdateOwnVitalSample() throws Exception {
             mockAuth();
-            User patientUser = makeUser(USER_ID, Role.PATIENT);
-            Patient patient = makePatient(patientUser);
+            final User patientUser = makeUser(USER_ID, Role.PATIENT);
+            final Patient patient = makePatient(patientUser);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(patientUser));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.updateVitalSample(VITAL_ID, updateDto())).thenReturn(updateDto());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(bodyValue(response, "message")).isEqualTo("Vital sample updated successfully");
@@ -545,14 +545,14 @@ class AnalyticsControllerTest {
         @Test
         void patientCannotUpdateAnotherPatientsVitalSample() throws Exception {
             mockAuth();
-            User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
-            Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
+            final User requestingUser = makeUser(OTHER_ID, Role.PATIENT);
+            final Patient patient = makePatient(makeUser(USER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(requestingUser));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -560,8 +560,8 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithAccessCanUpdate() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
@@ -569,7 +569,7 @@ class AnalyticsControllerTest {
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(vitalSampleService.updateVitalSample(VITAL_ID, updateDto())).thenReturn(updateDto());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -577,15 +577,15 @@ class AnalyticsControllerTest {
         @Test
         void caregiverWithoutAccessIsRejected() throws Exception {
             mockAuth();
-            User caregiver = makeUser(USER_ID, Role.CAREGIVER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User caregiver = makeUser(USER_ID, Role.CAREGIVER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -593,8 +593,8 @@ class AnalyticsControllerTest {
         @Test
         void familyMemberWithAccessCanUpdate() throws Exception {
             mockAuth();
-            User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
@@ -602,7 +602,7 @@ class AnalyticsControllerTest {
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
             when(vitalSampleService.updateVitalSample(VITAL_ID, updateDto())).thenReturn(updateDto());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -610,15 +610,15 @@ class AnalyticsControllerTest {
         @Test
         void familyMemberWithoutAccessIsRejected() throws Exception {
             mockAuth();
-            User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User familyMember = makeUser(USER_ID, Role.FAMILY_MEMBER);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(caregiverService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
@@ -626,13 +626,13 @@ class AnalyticsControllerTest {
         @Test
         void returnsNotFoundWhenPatientMissingAfterVitalFound() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
+            final User admin = makeUser(USER_ID, Role.ADMIN);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -640,15 +640,15 @@ class AnalyticsControllerTest {
         @Test
         void adminCanUpdateAnyVitalSample() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
             when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
             when(vitalSampleService.updateVitalSample(VITAL_ID, updateDto())).thenReturn(updateDto());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -656,12 +656,12 @@ class AnalyticsControllerTest {
         @Test
         void returnsNotFoundWhenVitalSampleMissing() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
+            final User admin = makeUser(USER_ID, Role.ADMIN);
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -669,8 +669,8 @@ class AnalyticsControllerTest {
         @Test
         void returnsBadRequestOnIllegalArgument() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
@@ -678,7 +678,7 @@ class AnalyticsControllerTest {
             when(vitalSampleService.updateVitalSample(eq(VITAL_ID), any()))
                     .thenThrow(new IllegalArgumentException("Invalid value"));
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
@@ -686,8 +686,8 @@ class AnalyticsControllerTest {
         @Test
         void returnsInternalServerErrorOnUnexpectedException() throws Exception {
             mockAuth();
-            User admin = makeUser(USER_ID, Role.ADMIN);
-            Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
+            final User admin = makeUser(USER_ID, Role.ADMIN);
+            final Patient patient = makePatient(makeUser(OTHER_ID, Role.PATIENT));
 
             when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(admin));
             when(vitalSampleService.getVitalSample(VITAL_ID)).thenReturn(Optional.of(existingDto()));
@@ -695,7 +695,7 @@ class AnalyticsControllerTest {
             when(vitalSampleService.updateVitalSample(eq(VITAL_ID), any()))
                     .thenThrow(new RuntimeException("Unexpected"));
 
-            ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
+            final ResponseEntity<?> response = controller.updateVitalSample(VITAL_ID, updateDto());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }

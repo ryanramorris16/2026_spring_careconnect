@@ -34,7 +34,7 @@ class EmailTestControllerTest {
 
     /** Returns a mutable config map so individual tests can override fields. */
     private Map<String, Object> configMap(boolean valid) {
-        Map<String, Object> config = new HashMap<>();
+        final Map<String, Object> config = new HashMap<>();
         config.put("configurationValid", valid);
         config.put("provider", "console");
         config.put("mailSenderAvailable", true);
@@ -50,7 +50,7 @@ class EmailTestControllerTest {
         void returns200_whenEmailIsValid() throws Exception {
             when(emailTestService.testEmailConfiguration(TEST_EMAIL)).thenReturn(Map.of("success", true));
 
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Map.of("email", TEST_EMAIL));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -58,10 +58,10 @@ class EmailTestControllerTest {
 
         @Test
         void returnsServiceResult_whenEmailIsValid() throws Exception {
-            Map<String, Object> serviceResult = Map.of("success", true, "message", "sent");
+            final Map<String, Object> serviceResult = Map.of("success", true, "message", "sent");
             when(emailTestService.testEmailConfiguration(TEST_EMAIL)).thenReturn(serviceResult);
 
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Map.of("email", TEST_EMAIL));
 
             assertThat(response.getBody()).isEqualTo(serviceResult);
@@ -78,7 +78,7 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailKeyAbsent() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Collections.emptyMap());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -86,17 +86,17 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailIsNull() throws Exception {
-            Map<String, String> body = new HashMap<>();
+            final Map<String, String> body = new HashMap<>();
             body.put("email", null);
 
-            ResponseEntity<Map<String, Object>> response = controller.sendTestEmail(body);
+            final ResponseEntity<Map<String, Object>> response = controller.sendTestEmail(body);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @Test
         void returns400_whenEmailIsEmpty() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Map.of("email", ""));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -104,7 +104,7 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailIsBlankWhitespace() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Map.of("email", "   "));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -112,7 +112,7 @@ class EmailTestControllerTest {
 
         @Test
         void errorBodyContainsRequiredMessage_whenEmailMissing() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.sendTestEmail(Collections.emptyMap());
 
             assertThat(response.getBody())
@@ -121,7 +121,7 @@ class EmailTestControllerTest {
 
         @Test
         void doesNotCallService_whenEmailIsNull() throws Exception {
-            Map<String, String> body = new HashMap<>();
+            final Map<String, String> body = new HashMap<>();
             body.put("email", null);
 
             controller.sendTestEmail(body);
@@ -153,17 +153,17 @@ class EmailTestControllerTest {
         void returns200() throws Exception {
             when(emailTestService.getEmailConfiguration()).thenReturn(Map.of());
 
-            ResponseEntity<Map<String, Object>> response = controller.getEmailConfig();
+            final ResponseEntity<Map<String, Object>> response = controller.getEmailConfig();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            Map<String, Object> config = Map.of("provider", "console", "fromEmail", "noreply@test.com");
+            final Map<String, Object> config = Map.of("provider", "console", "fromEmail", "noreply@test.com");
             when(emailTestService.getEmailConfiguration()).thenReturn(config);
 
-            ResponseEntity<Map<String, Object>> response = controller.getEmailConfig();
+            final ResponseEntity<Map<String, Object>> response = controller.getEmailConfig();
 
             assertThat(response.getBody()).isEqualTo(config);
         }
@@ -187,17 +187,17 @@ class EmailTestControllerTest {
         void returns200() throws Exception {
             when(emailTestService.validateEmailConfiguration()).thenReturn(Map.of());
 
-            ResponseEntity<Map<String, Object>> response = controller.validateEmailConfiguration();
+            final ResponseEntity<Map<String, Object>> response = controller.validateEmailConfiguration();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            Map<String, Object> validation = Map.of("overallValid", true, "providerSet", true);
+            final Map<String, Object> validation = Map.of("overallValid", true, "providerSet", true);
             when(emailTestService.validateEmailConfiguration()).thenReturn(validation);
 
-            ResponseEntity<Map<String, Object>> response = controller.validateEmailConfiguration();
+            final ResponseEntity<Map<String, Object>> response = controller.validateEmailConfiguration();
 
             assertThat(response.getBody()).isEqualTo(validation);
         }
@@ -221,7 +221,7 @@ class EmailTestControllerTest {
         void returns200_whenEmailIsValid() throws Exception {
             when(emailTestService.testAllEmailTypes(TEST_EMAIL)).thenReturn(Map.of());
 
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Map.of("email", TEST_EMAIL));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -229,13 +229,13 @@ class EmailTestControllerTest {
 
         @Test
         void returnsServiceResult_whenEmailIsValid() throws Exception {
-            Map<String, Object> results = Map.of(
+            final Map<String, Object> results = Map.of(
                     "verificationEmail", "SUCCESS",
                     "passwordResetEmail", "SUCCESS",
                     "passwordSetupEmail", "SUCCESS");
             when(emailTestService.testAllEmailTypes(TEST_EMAIL)).thenReturn(results);
 
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Map.of("email", TEST_EMAIL));
 
             assertThat(response.getBody()).isEqualTo(results);
@@ -252,7 +252,7 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailKeyAbsent() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Collections.emptyMap());
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -260,17 +260,17 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailIsNull() throws Exception {
-            Map<String, String> body = new HashMap<>();
+            final Map<String, String> body = new HashMap<>();
             body.put("email", null);
 
-            ResponseEntity<Map<String, Object>> response = controller.testAllEmailTypes(body);
+            final ResponseEntity<Map<String, Object>> response = controller.testAllEmailTypes(body);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @Test
         void returns400_whenEmailIsEmpty() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Map.of("email", ""));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -278,7 +278,7 @@ class EmailTestControllerTest {
 
         @Test
         void returns400_whenEmailIsBlankWhitespace() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Map.of("email", "   "));
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -286,7 +286,7 @@ class EmailTestControllerTest {
 
         @Test
         void errorBodyContainsRequiredMessage_whenEmailMissing() throws Exception {
-            ResponseEntity<Map<String, Object>> response =
+            final ResponseEntity<Map<String, Object>> response =
                     controller.testAllEmailTypes(Collections.emptyMap());
 
             assertThat(response.getBody())
@@ -295,7 +295,7 @@ class EmailTestControllerTest {
 
         @Test
         void doesNotCallService_whenEmailIsNull() throws Exception {
-            Map<String, String> body = new HashMap<>();
+            final Map<String, String> body = new HashMap<>();
             body.put("email", null);
 
             controller.testAllEmailTypes(body);
@@ -327,7 +327,7 @@ class EmailTestControllerTest {
         void returns200() throws Exception {
             when(emailTestService.getEmailConfiguration()).thenReturn(configMap(true));
 
-            ResponseEntity<Map<String, Object>> response = controller.healthCheck();
+            final ResponseEntity<Map<String, Object>> response = controller.healthCheck();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -336,7 +336,7 @@ class EmailTestControllerTest {
         void statusIsUp_andHealthyIsTrue_whenConfigurationIsValid() throws Exception {
             when(emailTestService.getEmailConfiguration()).thenReturn(configMap(true));
 
-            Map<String, Object> body = controller.healthCheck().getBody();
+            final Map<String, Object> body = controller.healthCheck().getBody();
 
             assertThat(body).containsEntry("status", "UP")
                             .containsEntry("healthy", true);
@@ -346,7 +346,7 @@ class EmailTestControllerTest {
         void statusIsDown_andHealthyIsFalse_whenConfigurationIsInvalid() throws Exception {
             when(emailTestService.getEmailConfiguration()).thenReturn(configMap(false));
 
-            Map<String, Object> body = controller.healthCheck().getBody();
+            final Map<String, Object> body = controller.healthCheck().getBody();
 
             assertThat(body).containsEntry("status", "DOWN")
                             .containsEntry("healthy", false);
@@ -354,22 +354,22 @@ class EmailTestControllerTest {
 
         @Test
         void bodyIncludesProviderFromConfig() throws Exception {
-            Map<String, Object> config = configMap(true);
+            final Map<String, Object> config = configMap(true);
             config.put("provider", "smtp");
             when(emailTestService.getEmailConfiguration()).thenReturn(config);
 
-            Map<String, Object> body = controller.healthCheck().getBody();
+            final Map<String, Object> body = controller.healthCheck().getBody();
 
             assertThat(body).containsEntry("provider", "smtp");
         }
 
         @Test
         void bodyIncludesMailSenderAvailableFromConfig() throws Exception {
-            Map<String, Object> config = configMap(true);
+            final Map<String, Object> config = configMap(true);
             config.put("mailSenderAvailable", false);
             when(emailTestService.getEmailConfiguration()).thenReturn(config);
 
-            Map<String, Object> body = controller.healthCheck().getBody();
+            final Map<String, Object> body = controller.healthCheck().getBody();
 
             assertThat(body).containsEntry("mailSenderAvailable", false);
         }
@@ -387,7 +387,7 @@ class EmailTestControllerTest {
         void bodyContainsFourKeys() throws Exception {
             when(emailTestService.getEmailConfiguration()).thenReturn(configMap(true));
 
-            Map<String, Object> body = controller.healthCheck().getBody();
+            final Map<String, Object> body = controller.healthCheck().getBody();
 
             // healthy, provider, mailSenderAvailable, status
             assertThat(body).containsKeys("healthy", "provider", "mailSenderAvailable", "status");
@@ -403,17 +403,17 @@ class EmailTestControllerTest {
         void returns200() throws Exception {
             when(emailTestService.testSimpleEmail(TEST_EMAIL)).thenReturn(Map.of());
 
-            ResponseEntity<Map<String, Object>> response = controller.testSimpleEmail(TEST_EMAIL);
+            final ResponseEntity<Map<String, Object>> response = controller.testSimpleEmail(TEST_EMAIL);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
 
         @Test
         void returnsServiceResult() throws Exception {
-            Map<String, Object> result = Map.of("success", true, "message", "Simple test email sent successfully");
+            final Map<String, Object> result = Map.of("success", true, "message", "Simple test email sent successfully");
             when(emailTestService.testSimpleEmail(TEST_EMAIL)).thenReturn(result);
 
-            ResponseEntity<Map<String, Object>> response = controller.testSimpleEmail(TEST_EMAIL);
+            final ResponseEntity<Map<String, Object>> response = controller.testSimpleEmail(TEST_EMAIL);
 
             assertThat(response.getBody()).isEqualTo(result);
         }

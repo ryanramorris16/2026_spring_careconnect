@@ -46,10 +46,10 @@ class TemplateControllerTest {
 
     @Test
     void getAllTemplates_returnsOkWithList() throws Exception {
-        List<Template> templates = List.of(template("T1"), template("T2"));
+        final List<Template> templates = List.of(template("T1"), template("T2"));
         when(templateService.getAllTemplates()).thenReturn(templates);
 
-        ResponseEntity<List<Template>> response = controller.getAllTemplates();
+        final ResponseEntity<List<Template>> response = controller.getAllTemplates();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(templates);
@@ -60,10 +60,10 @@ class TemplateControllerTest {
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
-        List<Template> templates = List.of(template("T1"));
+        final List<Template> templates = List.of(template("T1"));
         when(templateService.getAllTemplates()).thenReturn(templates);
 
-        ResponseEntity<List<Template>> response = controller.getAll();
+        final ResponseEntity<List<Template>> response = controller.getAll();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(templates);
@@ -73,10 +73,10 @@ class TemplateControllerTest {
 
     @Test
     void getTemplateById_returnsOkWithTemplate() throws Exception {
-        Template t = template("MyTemplate");
+        final Template t = template("MyTemplate");
         when(templateService.getTemplateById(TEMPLATE_ID)).thenReturn(t);
 
-        ResponseEntity<Template> response = controller.getTemplateById(TEMPLATE_ID);
+        final ResponseEntity<Template> response = controller.getTemplateById(TEMPLATE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(t);
@@ -87,11 +87,11 @@ class TemplateControllerTest {
 
     @Test
     void createTemplate_returnsOkWithCreatedTemplate() throws Exception {
-        TemplateDto dto = templateDto("New");
-        Template created = template("New");
+        final TemplateDto dto = templateDto("New");
+        final Template created = template("New");
         when(templateService.createTemplate(dto)).thenReturn(created);
 
-        ResponseEntity<Template> response = controller.createTemplate(dto);
+        final ResponseEntity<Template> response = controller.createTemplate(dto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(created);
@@ -102,11 +102,11 @@ class TemplateControllerTest {
 
     @Test
     void updateTemplate_returnsOkWithUpdatedTemplate() throws Exception {
-        TemplateDto dto = templateDto("Updated");
-        Template updated = template("Updated");
+        final TemplateDto dto = templateDto("Updated");
+        final Template updated = template("Updated");
         when(templateService.updateTemplate(TEMPLATE_ID, dto)).thenReturn(updated);
 
-        ResponseEntity<Template> response = controller.updateTemplate(TEMPLATE_ID, dto);
+        final ResponseEntity<Template> response = controller.updateTemplate(TEMPLATE_ID, dto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(updated);
@@ -119,7 +119,7 @@ class TemplateControllerTest {
     void deleteTemplate_returnsNoContent() throws Exception {
         when(templateService.deleteTemplate(TEMPLATE_ID)).thenReturn(true);
 
-        ResponseEntity<Void> response = controller.deleteTemplate(TEMPLATE_ID);
+        final ResponseEntity<Void> response = controller.deleteTemplate(TEMPLATE_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(templateService).deleteTemplate(TEMPLATE_ID);

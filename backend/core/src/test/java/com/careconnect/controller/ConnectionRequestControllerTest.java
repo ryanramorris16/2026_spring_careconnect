@@ -1,6 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.dto.ConnectionRequestDto;
 import com.careconnect.model.ConnectionRequest;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.ConnectionRequestService;
@@ -67,7 +66,7 @@ class ConnectionRequestControllerTest {
     @Test
     void createConnectionRequest_shouldReturnSuccess() throws Exception {
 
-        ConnectionRequest saved = new ConnectionRequest();
+        final ConnectionRequest saved = new ConnectionRequest();
         saved.setId(10L);
 
         when(connectionRequestService.createRequest(

@@ -13,7 +13,7 @@ class NotificationSettingTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        NotificationSetting ns = new NotificationSetting();
+        final NotificationSetting ns = new NotificationSetting();
 
         assertThat(ns).isNotNull();
         assertThat(ns.getId()).isNull();
@@ -24,7 +24,7 @@ class NotificationSettingTest {
 
     @Test
     void builder_defaults_allTrue() throws Exception {
-        NotificationSetting ns = NotificationSetting.builder().userId(1L).build();
+        final NotificationSetting ns = NotificationSetting.builder().userId(1L).build();
 
         assertThat(ns.isGamification()).isTrue();
         assertThat(ns.isEmergency()).isTrue();
@@ -38,9 +38,9 @@ class NotificationSettingTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Instant now = Instant.now();
+        final Instant now = Instant.now();
 
-        NotificationSetting ns = NotificationSetting.builder()
+        final NotificationSetting ns = NotificationSetting.builder()
                 .id(1L)
                 .userId(10L)
                 .gamification(false)
@@ -69,9 +69,9 @@ class NotificationSettingTest {
 
     @Test
     void onCreate_setsTimestamps() throws Exception {
-        NotificationSetting ns = new NotificationSetting();
+        final NotificationSetting ns = new NotificationSetting();
 
-        Method m = NotificationSetting.class.getDeclaredMethod("onCreate");
+        final Method m = NotificationSetting.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(ns);
 
@@ -83,9 +83,9 @@ class NotificationSettingTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        NotificationSetting ns = new NotificationSetting();
+        final NotificationSetting ns = new NotificationSetting();
 
-        Method m = NotificationSetting.class.getDeclaredMethod("onUpdate");
+        final Method m = NotificationSetting.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(ns);
 
@@ -96,8 +96,8 @@ class NotificationSettingTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        NotificationSetting ns = new NotificationSetting();
-        Instant now = Instant.now();
+        final NotificationSetting ns = new NotificationSetting();
+        final Instant now = Instant.now();
 
         ns.setId(2L);
         ns.setUserId(20L);
@@ -124,9 +124,9 @@ class NotificationSettingTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Instant now = Instant.now();
-        NotificationSetting n1 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();
-        NotificationSetting n2 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();
+        final Instant now = Instant.now();
+        final NotificationSetting n1 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();
+        final NotificationSetting n2 = NotificationSetting.builder().id(1L).userId(5L).createdAt(now).updatedAt(now).build();
 
         assertThat(n1).isEqualTo(n2);
         assertThat(n1.hashCode()).isEqualTo(n2.hashCode());

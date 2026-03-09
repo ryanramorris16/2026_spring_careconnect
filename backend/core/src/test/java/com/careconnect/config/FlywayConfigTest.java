@@ -33,13 +33,13 @@ class FlywayConfigTest {
 
     @Test
     void flywayMigrationStrategyBeanIsCreated() throws Exception {
-        FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
+        final FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
         assertNotNull(strategy);
     }
 
     @Test
     void migrate_CallsFlywayMigrateSuccessfully() throws Exception {
-        FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
+        final FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
 
         assertDoesNotThrow(() -> strategy.migrate(flyway));
 
@@ -48,7 +48,7 @@ class FlywayConfigTest {
 
     @Test
     void migrate_CatchesExceptionAndDoesNotThrow() throws Exception {
-        FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
+        final FlywayMigrationStrategy strategy = flywayConfig.flywayMigrationStrategy();
 
         doThrow(new RuntimeException("Migration failure"))
                 .when(flyway)

@@ -57,8 +57,8 @@ class SymptomServiceTest {
     void testCreate_happyPath() throws Exception {
         // Given a valid patient and a fully-populated DTO, the service must
         // save the entry and return a DTO that mirrors every input field.
-        Instant ts = Instant.parse("2025-06-01T10:00:00Z");
-        SymptomDTO dto = SymptomDTO.builder()
+        final Instant ts = Instant.parse("2025-06-01T10:00:00Z");
+        final SymptomDTO dto = SymptomDTO.builder()
                 .patientId(1L)
                 .symptomKey("headache")
                 .symptomValue("mild")
@@ -70,12 +70,12 @@ class SymptomServiceTest {
 
         when(patientRepo.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> {
-            SymptomEntry e = inv.getArgument(0);
+            final SymptomEntry e = inv.getArgument(0);
             e.setId(10L);
             return e;
         });
 
-        SymptomDTO result = symptomService.create(dto);
+        final SymptomDTO result = symptomService.create(dto);
 
         assertNotNull(result);
         assertEquals(10L, result.id());
@@ -95,7 +95,7 @@ class SymptomServiceTest {
     void testCreate_nullTakenAt_usesNow() throws Exception {
         // When the caller omits takenAt the service must substitute Instant.now()
         // so the persisted entry always has a valid timestamp.
-        SymptomDTO dto = SymptomDTO.builder()
+        final SymptomDTO dto = SymptomDTO.builder()
                 .patientId(1L)
                 .symptomKey("cough")
                 .takenAt(null)
@@ -103,14 +103,14 @@ class SymptomServiceTest {
 
         when(patientRepo.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> {
-            SymptomEntry e = inv.getArgument(0);
+            final SymptomEntry e = inv.getArgument(0);
             e.setId(11L);
             return e;
         });
 
-        Instant before = Instant.now();
-        SymptomDTO result = symptomService.create(dto);
-        Instant after = Instant.now();
+        final Instant before = Instant.now();
+        final SymptomDTO result = symptomService.create(dto);
+        final Instant after = Instant.now();
 
         assertNotNull(result.takenAt());
         // The auto-assigned timestamp must fall within the test execution window
@@ -123,7 +123,7 @@ class SymptomServiceTest {
     void testCreate_nullCompleted_defaultsTrue() throws Exception {
         // When the caller does not specify a completed flag the service must
         // default it to true, matching the business rule for new entries.
-        SymptomDTO dto = SymptomDTO.builder()
+        final SymptomDTO dto = SymptomDTO.builder()
                 .patientId(1L)
                 .symptomKey("fever")
                 .completed(null)
@@ -133,7 +133,7 @@ class SymptomServiceTest {
         when(patientRepo.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SymptomDTO result = symptomService.create(dto);
+        final SymptomDTO result = symptomService.create(dto);
 
         assertTrue(result.completed());
     }
@@ -143,7 +143,7 @@ class SymptomServiceTest {
     void testCreate_completedFalse_preserved() throws Exception {
         // An explicit false must survive — the default-true logic must not
         // override a value the caller intentionally provided.
-        SymptomDTO dto = SymptomDTO.builder()
+        final SymptomDTO dto = SymptomDTO.builder()
                 .patientId(1L)
                 .symptomKey("rash")
                 .completed(false)
@@ -153,7 +153,7 @@ class SymptomServiceTest {
         when(patientRepo.findById(1L)).thenReturn(Optional.of(patient));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SymptomDTO result = symptomService.create(dto);
+        final SymptomDTO result = symptomService.create(dto);
 
         assertFalse(result.completed());
     }
@@ -163,11 +163,11 @@ class SymptomServiceTest {
     void testCreate_patientNotFound_throws() throws Exception {
         // The service must refuse to create an entry without a valid patient
         // and must not call save under any circumstances.
-        SymptomDTO dto = SymptomDTO.builder().patientId(99L).symptomKey("pain").build();
+        final SymptomDTO dto = SymptomDTO.builder().patientId(99L).symptomKey("pain").build();
 
         when(patientRepo.findById(99L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> symptomService.create(dto));
 
@@ -183,8 +183,8 @@ class SymptomServiceTest {
     @DisplayName("update: applies all non-null DTO fields to the existing entry")
     void testUpdate_allFieldsChanged() throws Exception {
         // Every non-null field in the patch DTO must overwrite the stored value.
-        Instant newTs = Instant.parse("2025-07-01T08:00:00Z");
-        SymptomEntry existing = SymptomEntry.builder()
+        final Instant newTs = Instant.parse("2025-07-01T08:00:00Z");
+        final SymptomEntry existing = SymptomEntry.builder()
                 .id(1L).patient(patient)
                 .symptomKey("old-key").symptomValue("old-value")
                 .severity(1).notes("old note").completed(false)
@@ -194,7 +194,7 @@ class SymptomServiceTest {
         when(symptomRepo.findById(1L)).thenReturn(Optional.of(existing));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SymptomDTO patch = SymptomDTO.builder()
+        final SymptomDTO patch = SymptomDTO.builder()
                 .symptomKey("new-key")
                 .symptomValue("new-value")
                 .severity(5)
@@ -203,7 +203,7 @@ class SymptomServiceTest {
                 .takenAt(newTs)
                 .build();
 
-        SymptomDTO result = symptomService.update(1L, patch);
+        final SymptomDTO result = symptomService.update(1L, patch);
 
         assertEquals("new-key",       result.symptomKey());
         assertEquals("new-value",     result.symptomValue());
@@ -219,7 +219,7 @@ class SymptomServiceTest {
     void testUpdate_nullFieldsNotOverwritten() throws Exception {
         // Null fields in the patch DTO represent "no change"; the service
         // must leave the stored values untouched for those fields.
-        SymptomEntry existing = SymptomEntry.builder()
+        final SymptomEntry existing = SymptomEntry.builder()
                 .id(2L).patient(patient)
                 .symptomKey("headache").symptomValue("mild")
                 .severity(3).notes("original note").completed(true)
@@ -230,9 +230,9 @@ class SymptomServiceTest {
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Only severity changes; all other fields are null (omitted)
-        SymptomDTO patch = SymptomDTO.builder().severity(5).build();
+        final SymptomDTO patch = SymptomDTO.builder().severity(5).build();
 
-        SymptomDTO result = symptomService.update(2L, patch);
+        final SymptomDTO result = symptomService.update(2L, patch);
 
         assertEquals("headache",       result.symptomKey());   // unchanged
         assertEquals("mild",           result.symptomValue()); // unchanged
@@ -248,9 +248,9 @@ class SymptomServiceTest {
         // exception before any save is attempted.
         when(symptomRepo.findById(99L)).thenReturn(Optional.empty());
 
-        SymptomDTO patch = SymptomDTO.builder().symptomKey("cough").build();
+        final SymptomDTO patch = SymptomDTO.builder().symptomKey("cough").build();
 
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> symptomService.update(99L, patch));
 
@@ -263,7 +263,7 @@ class SymptomServiceTest {
     void testUpdate_returnsDtoWithPatientId() throws Exception {
         // The patientId must be taken from the existing entity's patient
         // relationship, not from the patch DTO (which has no patientId).
-        SymptomEntry existing = SymptomEntry.builder()
+        final SymptomEntry existing = SymptomEntry.builder()
                 .id(3L).patient(patient)
                 .symptomKey("nausea").takenAt(Instant.now()).completed(true)
                 .build();
@@ -271,9 +271,9 @@ class SymptomServiceTest {
         when(symptomRepo.findById(3L)).thenReturn(Optional.of(existing));
         when(symptomRepo.save(any(SymptomEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        SymptomDTO patch = SymptomDTO.builder().symptomValue("severe").build();
+        final SymptomDTO patch = SymptomDTO.builder().symptomValue("severe").build();
 
-        SymptomDTO result = symptomService.update(3L, patch);
+        final SymptomDTO result = symptomService.update(3L, patch);
 
         assertEquals(1L, result.patientId());
     }
@@ -286,7 +286,7 @@ class SymptomServiceTest {
     @DisplayName("get: returns a populated Optional<SymptomDTO> when the entry exists")
     void testGet_found() throws Exception {
         // The returned Optional must contain a DTO with all fields from the entity.
-        SymptomEntry entry = SymptomEntry.builder()
+        final SymptomEntry entry = SymptomEntry.builder()
                 .id(5L).patient(patient)
                 .symptomKey("fatigue").symptomValue("chronic")
                 .severity(4).takenAt(Instant.now()).completed(true)
@@ -294,7 +294,7 @@ class SymptomServiceTest {
 
         when(symptomRepo.findById(5L)).thenReturn(Optional.of(entry));
 
-        Optional<SymptomDTO> result = symptomService.get(5L);
+        final Optional<SymptomDTO> result = symptomService.get(5L);
 
         assertTrue(result.isPresent());
         assertEquals(5L, result.get().id());
@@ -308,7 +308,7 @@ class SymptomServiceTest {
         // A missing entry must produce Optional.empty(), not throw or return null.
         when(symptomRepo.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<SymptomDTO> result = symptomService.get(99L);
+        final Optional<SymptomDTO> result = symptomService.get(99L);
 
         assertTrue(result.isEmpty());
     }
@@ -322,16 +322,16 @@ class SymptomServiceTest {
     void testListByPatient_returnsMappedList() throws Exception {
         // The repository already returns entries in descending takenAt order;
         // the service must map every entry to a DTO and preserve that order.
-        SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
+        final SymptomEntry e1 = SymptomEntry.builder().id(1L).patient(patient)
                 .symptomKey("headache").takenAt(Instant.parse("2025-06-02T00:00:00Z"))
                 .completed(true).build();
-        SymptomEntry e2 = SymptomEntry.builder().id(2L).patient(patient)
+        final SymptomEntry e2 = SymptomEntry.builder().id(2L).patient(patient)
                 .symptomKey("fatigue").takenAt(Instant.parse("2025-06-01T00:00:00Z"))
                 .completed(true).build();
 
         when(symptomRepo.findByPatientIdOrderByTakenAtDesc(1L)).thenReturn(List.of(e1, e2));
 
-        List<SymptomDTO> result = symptomService.listByPatient(1L);
+        final List<SymptomDTO> result = symptomService.listByPatient(1L);
 
         assertEquals(2, result.size());
         assertEquals("headache", result.get(0).symptomKey());
@@ -345,7 +345,7 @@ class SymptomServiceTest {
         // An empty repository result must produce an empty list, not null or an exception.
         when(symptomRepo.findByPatientIdOrderByTakenAtDesc(2L)).thenReturn(List.of());
 
-        List<SymptomDTO> result = symptomService.listByPatient(2L);
+        final List<SymptomDTO> result = symptomService.listByPatient(2L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -356,8 +356,8 @@ class SymptomServiceTest {
     void testListByPatient_fieldMapping() throws Exception {
         // Spot-check that the private toDto helper transfers every field
         // correctly when called via listByPatient.
-        Instant ts = Instant.parse("2025-05-15T12:00:00Z");
-        SymptomEntry entry = SymptomEntry.builder()
+        final Instant ts = Instant.parse("2025-05-15T12:00:00Z");
+        final SymptomEntry entry = SymptomEntry.builder()
                 .id(7L).patient(patient)
                 .symptomKey("pain").symptomValue("acute")
                 .severity(5).notes("clinical note")
@@ -365,7 +365,7 @@ class SymptomServiceTest {
 
         when(symptomRepo.findByPatientIdOrderByTakenAtDesc(1L)).thenReturn(List.of(entry));
 
-        SymptomDTO dto = symptomService.listByPatient(1L).get(0);
+        final SymptomDTO dto = symptomService.listByPatient(1L).get(0);
 
         assertEquals(7L,             dto.id());
         assertEquals(1L,             dto.patientId());
@@ -399,7 +399,7 @@ class SymptomServiceTest {
         // IllegalArgumentException before any deletion is attempted.
         when(symptomRepo.existsById(99L)).thenReturn(false);
 
-        IllegalArgumentException ex = assertThrows(
+        final IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
                 () -> symptomService.delete(99L));
 

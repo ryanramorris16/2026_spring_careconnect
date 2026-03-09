@@ -82,7 +82,7 @@ class PasswordResetServiceTest {
     void startReset_emailNotFound_throwsIllegalArgumentException() throws Exception {
         when(users.findByEmail("unknown@example.com")).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.startReset("unknown@example.com", "https://app.careconnect.com"));
 
         assertEquals("Email not found", ex.getMessage());
@@ -152,7 +152,7 @@ class PasswordResetServiceTest {
         when(mail.createMimeMessage()).thenReturn(mimeMessage);
         doThrow(new RuntimeException("SMTP failure")).when(mail).send(any(MimeMessage.class));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> passwordResetService.startReset("patient@example.com", "https://app.careconnect.com"));
 
         assertEquals("Failed to send password reset email", ex.getMessage());
@@ -187,7 +187,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_validToken_updatesPassword")
     void finalizeReset_validToken_updatesPassword() throws Exception {
-        String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
+        final String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
         when(encoder.encode("newPassword123")).thenReturn("encodedNewPassword");
 
@@ -201,10 +201,10 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_userNotFound_throwsIllegalArgumentException")
     void finalizeReset_userNotFound_throwsIllegalArgumentException() throws Exception {
-        String rawToken = Base64.getUrlEncoder().encodeToString("999".getBytes());
+        final String rawToken = Base64.getUrlEncoder().encodeToString("999".getBytes());
         when(users.findById(999L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset(rawToken, "newPassword123"));
 
         assertEquals("Invalid or missing reset token", ex.getMessage());
@@ -213,7 +213,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_invalidBase64Token_throwsIllegalArgumentException")
     void finalizeReset_invalidBase64Token_throwsIllegalArgumentException() throws Exception {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset("!!!invalid!!!", "newPassword123"));
 
         // The catch (IllegalArgumentException e) { throw e; } re-throws the original
@@ -224,9 +224,9 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_tokenDecodesToNonNumeric_throwsIllegalArgumentException")
     void finalizeReset_tokenDecodesToNonNumeric_throwsIllegalArgumentException() throws Exception {
-        String rawToken = Base64.getUrlEncoder().encodeToString("not-a-number".getBytes());
+        final String rawToken = Base64.getUrlEncoder().encodeToString("not-a-number".getBytes());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset(rawToken, "newPassword123"));
 
         // NumberFormatException (subclass of IllegalArgumentException) is re-thrown
@@ -237,10 +237,10 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_orElseThrowIllegalArg_rethrowsSameException")
     void finalizeReset_orElseThrowIllegalArg_rethrowsSameException() throws Exception {
-        String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
+        final String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> passwordResetService.finalizeReset(rawToken, "password"));
 
         assertEquals("Invalid or missing reset token", ex.getMessage());
@@ -249,7 +249,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("finalizeReset_encoderCalledOnce_savesEncodedPassword")
     void finalizeReset_encoderCalledOnce_savesEncodedPassword() throws Exception {
-        String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
+        final String rawToken = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
         when(encoder.encode("P@ssw0rd!")).thenReturn("$2a$10$hashvalue");
 
@@ -272,7 +272,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("isTokenValid_validEncodedUserId_returnsTrue")
     void isTokenValid_validEncodedUserId_returnsTrue() throws Exception {
-        String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
+        final String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenReturn(Optional.of(testUser));
 
         assertTrue(passwordResetService.isTokenValid(encodedUserId));
@@ -281,7 +281,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("isTokenValid_userNotFound_returnsFalse")
     void isTokenValid_userNotFound_returnsFalse() throws Exception {
-        String encodedUserId = Base64.getUrlEncoder().encodeToString("999".getBytes());
+        final String encodedUserId = Base64.getUrlEncoder().encodeToString("999".getBytes());
         when(users.findById(999L)).thenReturn(Optional.empty());
 
         assertFalse(passwordResetService.isTokenValid(encodedUserId));
@@ -296,7 +296,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("isTokenValid_decodesToNonNumeric_returnsFalse")
     void isTokenValid_decodesToNonNumeric_returnsFalse() throws Exception {
-        String encoded = Base64.getUrlEncoder().encodeToString("abc".getBytes());
+        final String encoded = Base64.getUrlEncoder().encodeToString("abc".getBytes());
 
         assertFalse(passwordResetService.isTokenValid(encoded));
     }
@@ -304,7 +304,7 @@ class PasswordResetServiceTest {
     @Test
     @DisplayName("isTokenValid_unexpectedException_returnsFalse")
     void isTokenValid_unexpectedException_returnsFalse() throws Exception {
-        String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
+        final String encodedUserId = Base64.getUrlEncoder().encodeToString("42".getBytes());
         when(users.findById(42L)).thenThrow(new RuntimeException("DB down"));
 
         assertFalse(passwordResetService.isTokenValid(encodedUserId));
@@ -382,7 +382,7 @@ class PasswordResetServiceTest {
         when(users.findByEmail("patient@example.com")).thenReturn(Optional.of(testUser));
         when(mail.createMimeMessage()).thenThrow(new RuntimeException("Cannot create message"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> passwordResetService.startReset("patient@example.com", "https://app.careconnect.com"));
 
         assertEquals("Failed to send password reset email", ex.getMessage());
@@ -397,10 +397,10 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("generateSecureRandomString_validLength_returnsBase64String")
         void generateSecureRandomString_validLength_returnsBase64String() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(passwordResetService, 48);
+            final String result = (String) method.invoke(passwordResetService, 48);
 
             assertNotNull(result);
             assertTrue(result.length() > 0);
@@ -411,11 +411,11 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("generateSecureRandomString_differentCalls_returnDifferentValues")
         void generateSecureRandomString_differentCalls_returnDifferentValues() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
             method.setAccessible(true);
 
-            String result1 = (String) method.invoke(passwordResetService, 48);
-            String result2 = (String) method.invoke(passwordResetService, 48);
+            final String result1 = (String) method.invoke(passwordResetService, 48);
+            final String result2 = (String) method.invoke(passwordResetService, 48);
 
             // Extremely unlikely to be the same
             assertNotEquals(result1, result2);
@@ -424,10 +424,10 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("generateSecureRandomString_smallLength_returnsShortString")
         void generateSecureRandomString_smallLength_returnsShortString() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("generateSecureRandomString", int.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(passwordResetService, 1);
+            final String result = (String) method.invoke(passwordResetService, 1);
 
             assertNotNull(result);
             assertTrue(result.length() >= 1);
@@ -443,10 +443,10 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("hash_validInput_returnsSha256Hex")
         void hash_validInput_returnsSha256Hex() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(passwordResetService, "test-token");
+            final String result = (String) method.invoke(passwordResetService, "test-token");
 
             assertNotNull(result);
             assertEquals(64, result.length()); // SHA-256 hex is 64 chars
@@ -456,11 +456,11 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("hash_sameInput_returnsSameHash")
         void hash_sameInput_returnsSameHash() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
             method.setAccessible(true);
 
-            String result1 = (String) method.invoke(passwordResetService, "same-token");
-            String result2 = (String) method.invoke(passwordResetService, "same-token");
+            final String result1 = (String) method.invoke(passwordResetService, "same-token");
+            final String result2 = (String) method.invoke(passwordResetService, "same-token");
 
             assertEquals(result1, result2);
         }
@@ -468,11 +468,11 @@ class PasswordResetServiceTest {
         @Test
         @DisplayName("hash_differentInputs_returnDifferentHashes")
         void hash_differentInputs_returnDifferentHashes() throws Exception {
-            Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
+            final Method method = PasswordResetService.class.getDeclaredMethod("hash", String.class);
             method.setAccessible(true);
 
-            String result1 = (String) method.invoke(passwordResetService, "token-a");
-            String result2 = (String) method.invoke(passwordResetService, "token-b");
+            final String result1 = (String) method.invoke(passwordResetService, "token-a");
+            final String result2 = (String) method.invoke(passwordResetService, "token-b");
 
             assertNotEquals(result1, result2);
         }
@@ -486,7 +486,7 @@ class PasswordResetServiceTest {
 
         private String invokeGetProviderInfo(String provider) throws Exception {
             ReflectionTestUtils.setField(passwordResetService, "emailProvider", provider);
-            Method method = PasswordResetService.class.getDeclaredMethod("getProviderInfo");
+            final Method method = PasswordResetService.class.getDeclaredMethod("getProviderInfo");
             method.setAccessible(true);
             return (String) method.invoke(passwordResetService);
         }

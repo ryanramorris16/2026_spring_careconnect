@@ -17,7 +17,7 @@ class EvvIntegrationClientTest {
 
     @Test
     void destination_mockReturnsExpectedValue() throws Exception {
-        EvvIntegrationClient client = mock(EvvIntegrationClient.class);
+        final EvvIntegrationClient client = mock(EvvIntegrationClient.class);
         when(client.destination()).thenReturn("test-destination");
 
         assertThat(client.destination()).isEqualTo("test-destination");
@@ -25,8 +25,8 @@ class EvvIntegrationClientTest {
 
     @Test
     void submit_mockCanBeInvoked() throws Exception {
-        EvvIntegrationClient client = mock(EvvIntegrationClient.class);
-        EvvRecord record = Mockito.mock(EvvRecord.class);
+        final EvvIntegrationClient client = mock(EvvIntegrationClient.class);
+        final EvvRecord record = Mockito.mock(EvvRecord.class);
 
         client.submit(record);
 

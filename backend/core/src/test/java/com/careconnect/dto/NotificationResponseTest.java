@@ -13,7 +13,7 @@ class NotificationResponseTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        NotificationResponse response = NotificationResponse.builder()
+        final NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("Test message")
                 .messageId("msg-123")
@@ -32,7 +32,7 @@ class NotificationResponseTest {
 
     @Test
     void builder_staticMethod_returnsBuilderInstance() throws Exception {
-        NotificationResponse.NotificationResponseBuilder builder = NotificationResponse.builder();
+        final NotificationResponse.NotificationResponseBuilder builder = NotificationResponse.builder();
         assertThat(builder).isNotNull();
     }
 
@@ -40,9 +40,9 @@ class NotificationResponseTest {
 
     @Test
     void success_setsCorrectFields() throws Exception {
-        long before = System.currentTimeMillis();
-        NotificationResponse response = NotificationResponse.success("firebase-msg-id");
-        long after = System.currentTimeMillis();
+        final long before = System.currentTimeMillis();
+        final NotificationResponse response = NotificationResponse.success("firebase-msg-id");
+        final long after = System.currentTimeMillis();
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getMessage()).isEqualTo("Notification sent successfully");
@@ -55,9 +55,9 @@ class NotificationResponseTest {
 
     @Test
     void failure_setsCorrectFields() throws Exception {
-        long before = System.currentTimeMillis();
-        NotificationResponse response = NotificationResponse.failure("Connection timeout");
-        long after = System.currentTimeMillis();
+        final long before = System.currentTimeMillis();
+        final NotificationResponse response = NotificationResponse.failure("Connection timeout");
+        final long after = System.currentTimeMillis();
 
         assertThat(response.isSuccess()).isFalse();
         assertThat(response.getMessage()).isEqualTo("Failed to send notification");
@@ -70,7 +70,7 @@ class NotificationResponseTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        NotificationResponse response = NotificationResponse.builder().build();
+        final NotificationResponse response = NotificationResponse.builder().build();
 
         response.setSuccess(true);
         response.setMessage("Updated message");
@@ -89,7 +89,7 @@ class NotificationResponseTest {
 
     @Test
     void equals_sameInstance_returnsTrue() throws Exception {
-        NotificationResponse response = NotificationResponse.builder()
+        final NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
                 .timestamp(123L)
@@ -100,7 +100,7 @@ class NotificationResponseTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        NotificationResponse r1 = NotificationResponse.builder()
+        final NotificationResponse r1 = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
                 .messageId("id-1")
@@ -108,7 +108,7 @@ class NotificationResponseTest {
                 .timestamp(123L)
                 .build();
 
-        NotificationResponse r2 = NotificationResponse.builder()
+        final NotificationResponse r2 = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
                 .messageId("id-1")
@@ -122,14 +122,14 @@ class NotificationResponseTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        NotificationResponse r1 = NotificationResponse.builder()
+        final NotificationResponse r1 = NotificationResponse.builder()
                 .success(true)
                 .message("msg")
                 .messageId("id-1")
                 .timestamp(123L)
                 .build();
 
-        NotificationResponse r2 = NotificationResponse.builder()
+        final NotificationResponse r2 = NotificationResponse.builder()
                 .success(false)
                 .message("other msg")
                 .messageId("id-2")
@@ -142,13 +142,13 @@ class NotificationResponseTest {
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        NotificationResponse response = NotificationResponse.builder().build();
+        final NotificationResponse response = NotificationResponse.builder().build();
         assertThat(response).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        NotificationResponse response = NotificationResponse.builder().build();
+        final NotificationResponse response = NotificationResponse.builder().build();
         assertThat(response).isNotEqualTo("a string");
     }
 
@@ -156,7 +156,7 @@ class NotificationResponseTest {
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        NotificationResponse response = NotificationResponse.builder()
+        final NotificationResponse response = NotificationResponse.builder()
                 .success(true)
                 .message("Notification sent successfully")
                 .messageId("abc-123")
@@ -164,7 +164,7 @@ class NotificationResponseTest {
                 .timestamp(100L)
                 .build();
 
-        String str = response.toString();
+        final String str = response.toString();
         assertThat(str).contains("true");
         assertThat(str).contains("Notification sent successfully");
         assertThat(str).contains("abc-123");

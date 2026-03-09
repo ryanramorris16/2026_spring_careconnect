@@ -64,7 +64,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("testEmailConfiguration_consoleProvider_returnsSuccessResult")
         void testEmailConfiguration_consoleProvider_returnsSuccessResult() throws Exception {
-            Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
+            final Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
 
             assertThat(result.get("testEmail")).isEqualTo("test@example.com");
             assertThat(result.get("emailProvider")).isEqualTo("console");
@@ -80,7 +80,7 @@ class EmailTestServiceTest {
         void testEmailConfiguration_smtpProviderSuccess_returnsSuccessResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
+            final Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("message")).isEqualTo("Test email sent successfully");
@@ -93,7 +93,7 @@ class EmailTestServiceTest {
             doThrow(new RuntimeException("SMTP connection refused"))
                     .when(mailSender).send(any(MimeMessage.class));
 
-            Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
+            final Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(false);
             assertThat((String) result.get("message")).contains("Test email failed");
@@ -105,7 +105,7 @@ class EmailTestServiceTest {
         void testEmailConfiguration_nullMailSenderConsole_returnsSuccess() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
+            final Map<String, Object> result = emailTestService.testEmailConfiguration("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(true);
         }
@@ -122,7 +122,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("getEmailConfiguration_consoleProvider_returnsValidConfig")
         void getEmailConfiguration_consoleProvider_returnsValidConfig() throws Exception {
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("provider")).isEqualTo("console");
             assertThat(config.get("fromEmail")).isEqualTo("noreply@careconnect.local");
@@ -139,7 +139,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", "SG.testkey");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(true);
             assertThat(config.get("sendgridConfigured")).isEqualTo(true);
@@ -151,7 +151,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", "");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("sendgridConfigured")).isEqualTo(false);
@@ -163,7 +163,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "sendgrid");
             ReflectionTestUtils.setField(emailTestService, "sendgridApiKey", null);
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("sendgridConfigured")).isEqualTo(false);
@@ -175,7 +175,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", "re_testkey");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(true);
             assertThat(config.get("resendConfigured")).isEqualTo(true);
@@ -187,7 +187,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", "");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("resendConfigured")).isEqualTo(false);
@@ -199,7 +199,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "resend");
             ReflectionTestUtils.setField(emailTestService, "resendApiKey", null);
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("resendConfigured")).isEqualTo(false);
@@ -212,7 +212,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(true);
             assertThat(config.get("mailgunConfigured")).isEqualTo(true);
@@ -225,7 +225,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("mailgunConfigured")).isEqualTo(false);
@@ -238,7 +238,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", null);
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "mg.example.com");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("mailgunConfigured")).isEqualTo(false);
@@ -251,7 +251,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", "");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("mailgunConfigured")).isEqualTo(false);
@@ -264,7 +264,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailgunApiKey", "key-abc123");
             ReflectionTestUtils.setField(emailTestService, "mailgunDomain", null);
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
             assertThat(config.get("mailgunConfigured")).isEqualTo(false);
@@ -275,7 +275,7 @@ class EmailTestServiceTest {
         void getEmailConfiguration_smtpProviderWithMailSender_returnsValidConfig() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(true);
         }
@@ -286,7 +286,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
         }
@@ -297,7 +297,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailHost", "");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
         }
@@ -308,7 +308,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailPort", "");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("configurationValid")).isEqualTo(false);
         }
@@ -318,7 +318,7 @@ class EmailTestServiceTest {
         void getEmailConfiguration_nullMailSender_showsNotAvailable() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config.get("mailSenderAvailable")).isEqualTo(false);
         }
@@ -328,7 +328,7 @@ class EmailTestServiceTest {
         void getEmailConfiguration_unknownProvider_noProviderSpecificKeys() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "customProvider");
 
-            Map<String, Object> config = emailTestService.getEmailConfiguration();
+            final Map<String, Object> config = emailTestService.getEmailConfiguration();
 
             assertThat(config).doesNotContainKey("sendgridConfigured");
             assertThat(config).doesNotContainKey("resendConfigured");
@@ -347,7 +347,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("sendTestEmail_consoleProvider_returnsTrue")
         void sendTestEmail_consoleProvider_returnsTrue() throws MessagingException {
-            boolean result = emailTestService.sendTestEmail("test@example.com");
+            final boolean result = emailTestService.sendTestEmail("test@example.com");
 
             assertThat(result).isTrue();
             verify(mailSender, never()).send(any(MimeMessage.class));
@@ -359,7 +359,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            boolean result = emailTestService.sendTestEmail("test@example.com");
+            final boolean result = emailTestService.sendTestEmail("test@example.com");
 
             assertThat(result).isTrue();
         }
@@ -369,7 +369,7 @@ class EmailTestServiceTest {
         void sendTestEmail_smtpProvider_sendsAndReturnsTrue() throws MessagingException {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            boolean result = emailTestService.sendTestEmail("test@example.com");
+            final boolean result = emailTestService.sendTestEmail("test@example.com");
 
             assertThat(result).isTrue();
             verify(mailSender).createMimeMessage();
@@ -400,7 +400,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("validateEmailConfiguration_consoleProviderValidConfig_overallValid")
         void validateEmailConfiguration_consoleProviderValidConfig_overallValid() throws Exception {
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("providerSet")).isEqualTo(true);
             assertThat(validation.get("provider")).isEqualTo("console");
@@ -418,7 +418,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_smtpProviderWithMailSender_overallValid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("overallValid")).isEqualTo(true);
         }
@@ -429,7 +429,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("overallValid")).isEqualTo(false);
             assertThat(validation.get("recommendations")).isNotNull();
@@ -442,7 +442,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_nullProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", null);
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("providerSet")).isEqualTo(false);
             assertThat(validation.get("overallValid")).isEqualTo(false);
@@ -456,7 +456,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_emptyProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("providerSet")).isEqualTo(false);
             assertThat(validation.get("overallValid")).isEqualTo(false);
@@ -467,7 +467,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_blankProvider_overallInvalid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "   ");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("providerSet")).isEqualTo(false);
         }
@@ -477,7 +477,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_nullFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", null);
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("fromEmailValid")).isEqualTo(false);
             assertThat(validation.get("overallValid")).isEqualTo(false);
@@ -490,7 +490,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_emptyFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("fromEmailValid")).isEqualTo(false);
         }
@@ -500,7 +500,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_fromEmailNoAt_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "invalidemail");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("fromEmailValid")).isEqualTo(false);
         }
@@ -510,7 +510,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_blankFromEmail_invalidFromEmail() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "fromEmail", "   ");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("fromEmailValid")).isEqualTo(false);
         }
@@ -521,7 +521,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailHost", "");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("smtpConfigValid")).isEqualTo(false);
             assertThat(validation.get("overallValid")).isEqualTo(false);
@@ -535,7 +535,7 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
             ReflectionTestUtils.setField(emailTestService, "mailPort", "");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("smtpConfigValid")).isEqualTo(false);
             assertThat(validation.get("overallValid")).isEqualTo(false);
@@ -552,10 +552,10 @@ class EmailTestServiceTest {
             ReflectionTestUtils.setField(emailTestService, "mailHost", "");
             ReflectionTestUtils.setField(emailTestService, "mailPort", "");
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             assertThat(validation.get("overallValid")).isEqualTo(false);
-            String recommendations = (String) validation.get("recommendations");
+            final String recommendations = (String) validation.get("recommendations");
             assertThat(recommendations).contains("Set EMAIL_PROVIDER");
             assertThat(recommendations).contains("Set FROM_EMAIL");
             assertThat(recommendations).contains("Configure JavaMailSender");
@@ -568,7 +568,7 @@ class EmailTestServiceTest {
         void validateEmailConfiguration_consoleProviderNullMailSender_stillValid() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> validation = emailTestService.validateEmailConfiguration();
+            final Map<String, Object> validation = emailTestService.validateEmailConfiguration();
 
             // Console provider does not require mailSender
             assertThat(validation.get("overallValid")).isEqualTo(true);
@@ -586,7 +586,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("testAllEmailTypes_consoleProvider_allSuccess")
         void testAllEmailTypes_consoleProvider_allSuccess() throws Exception {
-            Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
+            final Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
 
             assertThat(results.get("testEmail")).isEqualTo("test@example.com");
             assertThat(results.get("timestamp")).isNotNull();
@@ -600,7 +600,7 @@ class EmailTestServiceTest {
         void testAllEmailTypes_smtpProvider_allSuccess() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
+            final Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
 
             assertThat(results.get("verificationEmail")).isEqualTo("SUCCESS");
             assertThat(results.get("passwordResetEmail")).isEqualTo("SUCCESS");
@@ -615,7 +615,7 @@ class EmailTestServiceTest {
             doThrow(new RuntimeException("SMTP down"))
                     .when(mailSender).send(any(MimeMessage.class));
 
-            Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
+            final Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
 
             assertThat((String) results.get("verificationEmail")).startsWith("FAILED:");
             assertThat((String) results.get("passwordResetEmail")).startsWith("FAILED:");
@@ -627,7 +627,7 @@ class EmailTestServiceTest {
         void testAllEmailTypes_nullMailSender_allSuccessViaConsoleFallback() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
+            final Map<String, Object> results = emailTestService.testAllEmailTypes("test@example.com");
 
             assertThat(results.get("verificationEmail")).isEqualTo("SUCCESS");
             assertThat(results.get("passwordResetEmail")).isEqualTo("SUCCESS");
@@ -646,7 +646,7 @@ class EmailTestServiceTest {
         @Test
         @DisplayName("testSimpleEmail_consoleProvider_returnsSuccessResult")
         void testSimpleEmail_consoleProvider_returnsSuccessResult() throws Exception {
-            Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
+            final Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
 
             assertThat(result.get("recipientEmail")).isEqualTo("test@example.com");
             assertThat(result.get("emailProvider")).isEqualTo("console");
@@ -661,7 +661,7 @@ class EmailTestServiceTest {
         void testSimpleEmail_smtpProviderSuccess_returnsSuccessResult() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "emailProvider", "smtp");
 
-            Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
+            final Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("message")).isEqualTo("Simple test email sent successfully");
@@ -674,7 +674,7 @@ class EmailTestServiceTest {
             doThrow(new RuntimeException("SMTP connection refused"))
                     .when(mailSender).send(any(MimeMessage.class));
 
-            Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
+            final Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(false);
             assertThat((String) result.get("message")).contains("Simple test email failed");
@@ -686,7 +686,7 @@ class EmailTestServiceTest {
         void testSimpleEmail_nullMailSender_returnsSuccessViaConsoleFallback() throws Exception {
             ReflectionTestUtils.setField(emailTestService, "mailSender", null);
 
-            Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
+            final Map<String, Object> result = emailTestService.testSimpleEmail("test@example.com");
 
             assertThat(result.get("success")).isEqualTo(true);
         }

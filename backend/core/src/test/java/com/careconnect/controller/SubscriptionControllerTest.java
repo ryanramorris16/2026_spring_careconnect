@@ -64,7 +64,7 @@ class SubscriptionControllerTest {
     void listProducts_returnsOkWithProductsString() throws Exception {
         when(stripeService.listProducts()).thenReturn("[{\"id\":\"prod_1\"}]");
 
-        ResponseEntity<String> response = controller.listProducts();
+        final ResponseEntity<String> response = controller.listProducts();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("prod_1");
@@ -74,10 +74,10 @@ class SubscriptionControllerTest {
 
     @Test
     void listPlans_returnsOkWithPlanList() throws Exception {
-        List<PlanDTO> plans = List.of(new PlanDTO("price_1", true, 999, "usd", "month", 1, "prod_1", "Pro"));
+        final List<PlanDTO> plans = List.of(new PlanDTO("price_1", true, 999, "usd", "month", 1, "prod_1", "Pro"));
         when(stripeService.listPlans()).thenReturn(plans);
 
-        ResponseEntity<List<PlanDTO>> response = controller.listPlans();
+        final ResponseEntity<List<PlanDTO>> response = controller.listPlans();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(plans);
@@ -87,10 +87,10 @@ class SubscriptionControllerTest {
 
     @Test
     void createPlan_returnsOkWithPlan() throws Exception {
-        Plan plan = mock(Plan.class);
+        final Plan plan = mock(Plan.class);
         when(subscriptionService.createPlan("PRO", "Pro Plan", 999, "monthly", true)).thenReturn(plan);
 
-        ResponseEntity<?> response = controller.createPlan("PRO", "Pro Plan", 999, "monthly", true);
+        final ResponseEntity<?> response = controller.createPlan("PRO", "Pro Plan", 999, "monthly", true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(plan);
@@ -100,10 +100,10 @@ class SubscriptionControllerTest {
 
     @Test
     void getPlan_returnsOkWithPlan() throws Exception {
-        Plan plan = mock(Plan.class);
+        final Plan plan = mock(Plan.class);
         when(subscriptionService.getPlan(5L)).thenReturn(plan);
 
-        ResponseEntity<?> response = controller.getPlan("5");
+        final ResponseEntity<?> response = controller.getPlan("5");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(plan);
@@ -113,10 +113,10 @@ class SubscriptionControllerTest {
 
     @Test
     void syncPlanWithStripe_success_returnsOk() throws Exception {
-        Plan plan = mock(Plan.class);
+        final Plan plan = mock(Plan.class);
         when(subscriptionService.syncPlanWithStripe(5L, true)).thenReturn(plan);
 
-        ResponseEntity<?> response = controller.syncPlanWithStripe("5", true);
+        final ResponseEntity<?> response = controller.syncPlanWithStripe("5", true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -125,7 +125,7 @@ class SubscriptionControllerTest {
     void syncPlanWithStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.syncPlanWithStripe(5L, true)).thenThrow(new RuntimeException("Stripe error"));
 
-        ResponseEntity<?> response = controller.syncPlanWithStripe("5", true);
+        final ResponseEntity<?> response = controller.syncPlanWithStripe("5", true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -134,10 +134,10 @@ class SubscriptionControllerTest {
 
     @Test
     void syncSubscriptionFromStripe_success_returnsOk() throws Exception {
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         when(subscriptionService.syncSubscriptionFromStripe("sub_abc")).thenReturn(sub);
 
-        ResponseEntity<?> response = controller.syncSubscriptionFromStripe("sub_abc");
+        final ResponseEntity<?> response = controller.syncSubscriptionFromStripe("sub_abc");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -146,7 +146,7 @@ class SubscriptionControllerTest {
     void syncSubscriptionFromStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.syncSubscriptionFromStripe("sub_bad")).thenThrow(new RuntimeException("not found"));
 
-        ResponseEntity<?> response = controller.syncSubscriptionFromStripe("sub_bad");
+        final ResponseEntity<?> response = controller.syncSubscriptionFromStripe("sub_bad");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -157,7 +157,7 @@ class SubscriptionControllerTest {
     void getStripeCustomerSubscriptions_returnsOk() throws Exception {
         when(stripeService.listSubscriptions("cus_1")).thenReturn("[]");
 
-        ResponseEntity<String> response = controller.getStripeCustomerSubscriptions("cus_1");
+        final ResponseEntity<String> response = controller.getStripeCustomerSubscriptions("cus_1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -168,7 +168,7 @@ class SubscriptionControllerTest {
     void syncAllCustomerSubscriptions_success_returnsOk() throws Exception {
         when(subscriptionService.syncAllSubscriptionsForCustomer("cus_1")).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_1");
+        final ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -177,7 +177,7 @@ class SubscriptionControllerTest {
     void syncAllCustomerSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.syncAllSubscriptionsForCustomer("cus_bad")).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_bad");
+        final ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_bad");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -188,7 +188,7 @@ class SubscriptionControllerTest {
     void getSubscription_returnsOk() throws Exception {
         when(stripeService.getSubscription("sub_1")).thenReturn("{\"id\":\"sub_1\"}");
 
-        ResponseEntity<String> response = controller.getSubscription("sub_1");
+        final ResponseEntity<String> response = controller.getSubscription("sub_1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -199,7 +199,7 @@ class SubscriptionControllerTest {
     void searchSubscriptions_returnsOk() throws Exception {
         when(stripeService.searchSubscriptions("query")).thenReturn("[]");
 
-        ResponseEntity<String> response = controller.searchSubscriptions("query");
+        final ResponseEntity<String> response = controller.searchSubscriptions("query");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -208,12 +208,12 @@ class SubscriptionControllerTest {
 
     @Test
     void createCheckoutSession_delegatesToService() throws Exception {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        ResponseEntity<String> serviceResponse = ResponseEntity.ok("url");
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final ResponseEntity<String> serviceResponse = ResponseEntity.ok("url");
         doReturn(serviceResponse).when(subscriptionService)
                 .createCheckoutSession(request, "pro", USER_ID, null, null, null);
 
-        ResponseEntity<?> response = controller.createCheckoutSession(request, "pro", USER_ID, null, null, null);
+        final ResponseEntity<?> response = controller.createCheckoutSession(request, "pro", USER_ID, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -224,7 +224,7 @@ class SubscriptionControllerTest {
     void cancelSubscription_stripeId_cancelsByStripeIdAndReturnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscriptionByStripeId("sub_abc");
 
-        ResponseEntity<?> response = controller.cancelSubscription("sub_abc");
+        final ResponseEntity<?> response = controller.cancelSubscription("sub_abc");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(subscriptionService).cancelSubscriptionByStripeId("sub_abc");
@@ -234,7 +234,7 @@ class SubscriptionControllerTest {
     void cancelSubscription_numericId_cancelsByDatabaseIdAndReturnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscription(42L);
 
-        ResponseEntity<?> response = controller.cancelSubscription("42");
+        final ResponseEntity<?> response = controller.cancelSubscription("42");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         verify(subscriptionService).cancelSubscription(42L);
@@ -242,7 +242,7 @@ class SubscriptionControllerTest {
 
     @Test
     void cancelSubscription_invalidFormat_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.cancelSubscription("not-a-number");
+        final ResponseEntity<?> response = controller.cancelSubscription("not-a-number");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -251,7 +251,7 @@ class SubscriptionControllerTest {
     void cancelSubscription_serviceThrows_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("Stripe down")).when(subscriptionService).cancelSubscriptionByStripeId("sub_x");
 
-        ResponseEntity<?> response = controller.cancelSubscription("sub_x");
+        final ResponseEntity<?> response = controller.cancelSubscription("sub_x");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -262,7 +262,7 @@ class SubscriptionControllerTest {
     void cancelSubscriptionById_success_returnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscription(SUB_ID);
 
-        ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
+        final ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -271,7 +271,7 @@ class SubscriptionControllerTest {
     void cancelSubscriptionById_exception_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("fail")).when(subscriptionService).cancelSubscription(SUB_ID);
 
-        ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
+        final ResponseEntity<?> response = controller.cancelSubscriptionById(SUB_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -282,7 +282,7 @@ class SubscriptionControllerTest {
     void cancelSubscriptionByStripeId_success_returnsOk() throws Exception {
         doNothing().when(subscriptionService).cancelSubscriptionByStripeId("sub_abc");
 
-        ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_abc");
+        final ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_abc");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -291,7 +291,7 @@ class SubscriptionControllerTest {
     void cancelSubscriptionByStripeId_exception_returnsInternalServerError() throws Exception {
         doThrow(new RuntimeException("fail")).when(subscriptionService).cancelSubscriptionByStripeId("sub_bad");
 
-        ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_bad");
+        final ResponseEntity<?> response = controller.cancelSubscriptionByStripeId("sub_bad");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -300,55 +300,55 @@ class SubscriptionControllerTest {
 
     @Test
     void createSubscriptionDirect_bothParamsProvided_returnsOk() throws Exception {
-        Map<String, Object> result = Map.of("id", "sub_new");
+        final Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.createSubscription("cus_1", "price_1")).thenReturn(result);
 
-        ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "price_1", null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void createSubscriptionDirect_paramsFromBody_returnsOk() throws Exception {
-        Map<String, Object> result = Map.of("id", "sub_new");
+        final Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.createSubscription("cus_1", "price_1")).thenReturn(result);
-        Map<String, String> body = Map.of("customerId", "cus_1", "priceId", "price_1");
+        final Map<String, String> body = Map.of("customerId", "cus_1", "priceId", "price_1");
 
-        ResponseEntity<?> response = controller.createSubscriptionDirect(null, null, body);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect(null, null, body);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void createSubscriptionDirect_customerIdMissing_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.createSubscriptionDirect(null, "price_1", null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect(null, "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body).containsEntry("error", "Customer ID is required");
     }
 
     @Test
     void createSubscriptionDirect_customerIdEmpty_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.createSubscriptionDirect("", "price_1", null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect("", "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void createSubscriptionDirect_priceIdMissing_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", null, null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body).containsEntry("error", "Price ID is required");
     }
 
     @Test
     void createSubscriptionDirect_priceIdEmpty_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "", null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -357,7 +357,7 @@ class SubscriptionControllerTest {
     void createSubscriptionDirect_stripeException_returnsBadRequest() throws Exception {
         when(stripeService.createSubscription("cus_1", "price_1")).thenThrow(new RuntimeException("Stripe error"));
 
-        ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "price_1", null);
+        final ResponseEntity<?> response = controller.createSubscriptionDirect("cus_1", "price_1", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -366,10 +366,10 @@ class SubscriptionControllerTest {
 
     @Test
     void createSubscriptionDirectForUser_success_returnsOk() throws Exception {
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         when(subscriptionService.createSubscriptionDirectly(USER_ID, "price_1")).thenReturn(sub);
 
-        ResponseEntity<?> response = controller.createSubscriptionDirectForUser(USER_ID, "price_1");
+        final ResponseEntity<?> response = controller.createSubscriptionDirectForUser(USER_ID, "price_1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -378,7 +378,7 @@ class SubscriptionControllerTest {
     void createSubscriptionDirectForUser_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.createSubscriptionDirectly(USER_ID, "price_1")).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.createSubscriptionDirectForUser(USER_ID, "price_1");
+        final ResponseEntity<?> response = controller.createSubscriptionDirectForUser(USER_ID, "price_1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -387,22 +387,22 @@ class SubscriptionControllerTest {
 
     @Test
     void handleStripeWebhook_success_returnsOk() throws Exception {
-        HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getReader()).thenReturn(new BufferedReader(new StringReader("payload")));
         when(request.getHeader("Stripe-Signature")).thenReturn("sig");
         when(subscriptionService.handleStripeWebhook("payload", "sig", "whsec_test")).thenReturn("ok");
 
-        ResponseEntity<String> response = controller.handleStripeWebhook(request);
+        final ResponseEntity<String> response = controller.handleStripeWebhook(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void handleStripeWebhook_exception_returnsBadRequest() throws Exception {
-        HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getReader()).thenThrow(new RuntimeException("IO error"));
 
-        ResponseEntity<String> response = controller.handleStripeWebhook(request);
+        final ResponseEntity<String> response = controller.handleStripeWebhook(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -411,10 +411,10 @@ class SubscriptionControllerTest {
 
     @Test
     void getUserSubscriptions_success_returnsOk() throws Exception {
-        List<SubscriptionResponseDTO> dtos = List.of(new SubscriptionResponseDTO());
+        final List<SubscriptionResponseDTO> dtos = List.of(new SubscriptionResponseDTO());
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenReturn(dtos);
 
-        ResponseEntity<?> response = controller.getUserSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.getUserSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -423,7 +423,7 @@ class SubscriptionControllerTest {
     void getUserSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.getUserSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.getUserSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -432,11 +432,11 @@ class SubscriptionControllerTest {
 
     @Test
     void refreshAndGetUserSubscriptions_success_returnsOk() throws Exception {
-        List<SubscriptionResponseDTO> dtos = List.of();
+        final List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(List.of());
         when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(USER_ID)).thenReturn(dtos);
 
-        ResponseEntity<?> response = controller.refreshAndGetUserSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.refreshAndGetUserSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -445,7 +445,7 @@ class SubscriptionControllerTest {
     void refreshAndGetUserSubscriptions_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.refreshAndGetUserSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.refreshAndGetUserSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -456,44 +456,44 @@ class SubscriptionControllerTest {
     void forceImportSubscription_userNotFound_returnsBadRequest() throws Exception {
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void forceImportSubscription_subscriptionAlreadyExists_returnsOk() throws Exception {
-        User user = mock(User.class);
-        Subscription existing = new Subscription();
+        final User user = mock(User.class);
+        final Subscription existing = new Subscription();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.of(existing));
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Subscription already exists");
     }
 
     @Test
     void forceImportSubscription_stripeDataEmpty_returnsBadRequest() throws Exception {
-        User user = mock(User.class);
+        final User user = mock(User.class);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
         when(stripeService.getSubscription("sub_xyz")).thenReturn("");
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void forceImportSubscription_fullJson_planFound_returnsOk() throws Exception {
-        User user = mock(User.class);
+        final User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
-        Subscription savedSub = new Subscription();
-        Plan plan = mock(Plan.class);
+        final Subscription savedSub = new Subscription();
+        final Plan plan = mock(Plan.class);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
         when(stripeService.getSubscription("sub_xyz")).thenReturn(
@@ -504,19 +504,19 @@ class SubscriptionControllerTest {
         when(planRepository.findByName("Premium Plan")).thenReturn(List.of(plan));
         when(subscriptionRepository.save(any())).thenReturn(savedSub);
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("message")).isEqualTo("Subscription imported successfully");
     }
 
     @Test
     void forceImportSubscription_minimalJson_noPlan_returnsOk() throws Exception {
-        User user = mock(User.class);
+        final User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
-        Subscription savedSub = new Subscription();
+        final Subscription savedSub = new Subscription();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
         // No status, no items, no period dates
@@ -524,16 +524,16 @@ class SubscriptionControllerTest {
         when(planRepository.findByName("Premium Plan")).thenReturn(List.of());
         when(subscriptionRepository.save(any())).thenReturn(savedSub);
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void forceImportSubscription_itemsWithNoPrice_returnsOk() throws Exception {
-        User user = mock(User.class);
+        final User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
-        Subscription savedSub = new Subscription();
+        final Subscription savedSub = new Subscription();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
         // Items present but no price.id
@@ -542,16 +542,16 @@ class SubscriptionControllerTest {
         when(planRepository.findByName("Premium Plan")).thenReturn(List.of());
         when(subscriptionRepository.save(any())).thenReturn(savedSub);
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
     void forceImportSubscription_emptyItemsData_returnsOk() throws Exception {
-        User user = mock(User.class);
+        final User user = mock(User.class);
         when(user.getStripeCustomerId()).thenReturn("cus_1");
-        Subscription savedSub = new Subscription();
+        final Subscription savedSub = new Subscription();
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByStripeSubscriptionId("sub_xyz")).thenReturn(Optional.empty());
         // Items present but data array is empty
@@ -560,7 +560,7 @@ class SubscriptionControllerTest {
         when(planRepository.findByName("Premium Plan")).thenReturn(List.of());
         when(subscriptionRepository.save(any())).thenReturn(savedSub);
 
-        ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
+        final ResponseEntity<?> response = controller.forceImportSubscription(USER_ID, "sub_xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -569,12 +569,12 @@ class SubscriptionControllerTest {
 
     @Test
     void refreshUserSubscriptionsWithStripe_success_returnsOk() throws Exception {
-        List<Subscription> subs = List.of();
-        List<SubscriptionResponseDTO> dtos = List.of();
+        final List<Subscription> subs = List.of();
+        final List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(subs);
         when(subscriptionEnrichmentService.enrichSubscriptions(subs)).thenReturn(dtos);
 
-        ResponseEntity<?> response = controller.refreshUserSubscriptionsWithStripe(USER_ID);
+        final ResponseEntity<?> response = controller.refreshUserSubscriptionsWithStripe(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -583,7 +583,7 @@ class SubscriptionControllerTest {
     void refreshUserSubscriptionsWithStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.refreshUserSubscriptionsWithStripe(USER_ID);
+        final ResponseEntity<?> response = controller.refreshUserSubscriptionsWithStripe(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -594,7 +594,7 @@ class SubscriptionControllerTest {
     void getUserActiveSubscriptions_success_returnsOk() throws Exception {
         when(subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(USER_ID)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.getUserActiveSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.getUserActiveSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -604,7 +604,7 @@ class SubscriptionControllerTest {
         when(subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(USER_ID))
                 .thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.getUserActiveSubscriptions(USER_ID);
+        final ResponseEntity<?> response = controller.getUserActiveSubscriptions(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -613,12 +613,12 @@ class SubscriptionControllerTest {
 
     @Test
     void syncUserSubscriptionsFromStripe_success_returnsOk() throws Exception {
-        List<Subscription> subs = List.of();
-        List<SubscriptionResponseDTO> dtos = List.of();
+        final List<Subscription> subs = List.of();
+        final List<SubscriptionResponseDTO> dtos = List.of();
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenReturn(subs);
         when(subscriptionEnrichmentService.enrichSubscriptions(subs)).thenReturn(dtos);
 
-        ResponseEntity<?> response = controller.syncUserSubscriptionsFromStripe(USER_ID);
+        final ResponseEntity<?> response = controller.syncUserSubscriptionsFromStripe(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -627,7 +627,7 @@ class SubscriptionControllerTest {
     void syncUserSubscriptionsFromStripe_exception_returnsBadRequest() throws Exception {
         when(subscriptionService.refreshUserSubscriptionsFromStripe(USER_ID)).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.syncUserSubscriptionsFromStripe(USER_ID);
+        final ResponseEntity<?> response = controller.syncUserSubscriptionsFromStripe(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -636,10 +636,10 @@ class SubscriptionControllerTest {
 
     @Test
     void upgradeOrDowngradeSubscription_success_returnsOk() throws Exception {
-        Map<String, Object> result = Map.of("id", "sub_new");
+        final Map<String, Object> result = Map.of("id", "sub_new");
         when(stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new")).thenReturn(result);
 
-        ResponseEntity<?> response = controller.upgradeOrDowngradeSubscription("sub_old", "price_new");
+        final ResponseEntity<?> response = controller.upgradeOrDowngradeSubscription("sub_old", "price_new");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -649,7 +649,7 @@ class SubscriptionControllerTest {
         when(stripeService.upgradeOrDowngradeSubscription("sub_old", "price_new"))
                 .thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.upgradeOrDowngradeSubscription("sub_old", "price_new");
+        final ResponseEntity<?> response = controller.upgradeOrDowngradeSubscription("sub_old", "price_new");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -658,31 +658,31 @@ class SubscriptionControllerTest {
 
     @Test
     void getPaymentRedirectUrl_portalTrue_redirectsToSubscriptionPage() throws Exception {
-        ResponseEntity<?> response = controller.getPaymentRedirectUrl(true);
+        final ResponseEntity<?> response = controller.getPaymentRedirectUrl(true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body.get("redirectUrl")).isEqualTo("http://localhost:3000/account/subscription");
     }
 
     @Test
     void getPaymentRedirectUrl_portalFalse_redirectsToDashboard() throws Exception {
-        ResponseEntity<?> response = controller.getPaymentRedirectUrl(false);
+        final ResponseEntity<?> response = controller.getPaymentRedirectUrl(false);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body.get("redirectUrl")).isEqualTo("http://localhost:3000/dashboard");
     }
 
     @Test
     void getPaymentRedirectUrl_portalNull_redirectsToDashboard() throws Exception {
-        ResponseEntity<?> response = controller.getPaymentRedirectUrl(null);
+        final ResponseEntity<?> response = controller.getPaymentRedirectUrl(null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body.get("redirectUrl")).isEqualTo("http://localhost:3000/dashboard");
     }
 }

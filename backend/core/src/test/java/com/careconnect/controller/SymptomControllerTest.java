@@ -50,9 +50,9 @@ class SymptomControllerTest {
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private void setUpSecurity(String email) {
-        Authentication auth = mock(Authentication.class);
+        final Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn(email);
-        SecurityContext ctx = mock(SecurityContext.class);
+        final SecurityContext ctx = mock(SecurityContext.class);
         when(ctx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(ctx);
     }
@@ -73,9 +73,9 @@ class SymptomControllerTest {
 
     @Test
     void create_nullPatientId_returnsForbidden() throws Exception {
-        SymptomDTO dto = dto(null);
+        final SymptomDTO dto = dto(null);
 
-        ResponseEntity<?> response = controller.create(dto);
+        final ResponseEntity<?> response = controller.create(dto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -83,9 +83,9 @@ class SymptomControllerTest {
     @Test
     void create_noSecurityContext_hasAccessReturnsFalse_returnsForbidden() throws Exception {
         // No security context set → NullPointerException in hasAccessToPatient → returns false
-        SymptomDTO dto = dto(PATIENT_ID);
+        final SymptomDTO dto = dto(PATIENT_ID);
 
-        ResponseEntity<?> response = controller.create(dto);
+        final ResponseEntity<?> response = controller.create(dto);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -93,11 +93,11 @@ class SymptomControllerTest {
     @Test
     void create_patientNotFound_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
+        final User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -105,14 +105,14 @@ class SymptomControllerTest {
     @Test
     void create_patientRole_sameUser_returnsCreated() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
-        Patient patient = patientWithUser(user);
+        final User user = userWithRole(1L, USER_EMAIL, Role.PATIENT);
+        final Patient patient = patientWithUser(user);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(user));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
-        SymptomDTO created = dto(PATIENT_ID);
+        final SymptomDTO created = dto(PATIENT_ID);
         when(symptomService.create(any())).thenReturn(created);
 
-        ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
@@ -120,13 +120,13 @@ class SymptomControllerTest {
     @Test
     void create_patientRole_differentUser_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
-        User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
-        Patient patient = patientWithUser(patientUser);
+        final User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
+        final User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
+        final Patient patient = patientWithUser(patientUser);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(currentUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-        ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -134,13 +134,13 @@ class SymptomControllerTest {
     @Test
     void create_adminRole_serviceThrowsException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
-        Patient patient = patientWithUser(adminUser);
+        final User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
+        final Patient patient = patientWithUser(adminUser);
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(adminUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(symptomService.create(any())).thenThrow(new RuntimeException("DB error"));
 
-        ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.create(dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -151,7 +151,7 @@ class SymptomControllerTest {
     void update_symptomNotFound_returnsNotFound() throws Exception {
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -159,15 +159,15 @@ class SymptomControllerTest {
     @Test
     void update_noAccess_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
-        User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
-        Patient patient = patientWithUser(patientUser);
-        SymptomDTO existing = dto(PATIENT_ID);
+        final User currentUser = userWithRole(1L, USER_EMAIL, Role.PATIENT);
+        final User patientUser = userWithRole(2L, "other@test.com", Role.PATIENT);
+        final Patient patient = patientWithUser(patientUser);
+        final SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(currentUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-        ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -175,16 +175,16 @@ class SymptomControllerTest {
     @Test
     void update_adminAccess_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
-        Patient patient = patientWithUser(adminUser);
-        SymptomDTO existing = dto(PATIENT_ID);
-        SymptomDTO updated = dto(PATIENT_ID);
+        final User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
+        final Patient patient = patientWithUser(adminUser);
+        final SymptomDTO existing = dto(PATIENT_ID);
+        final SymptomDTO updated = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(adminUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(symptomService.update(eq(SYMPTOM_ID), any())).thenReturn(updated);
 
-        ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -192,15 +192,15 @@ class SymptomControllerTest {
     @Test
     void update_serviceException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
-        Patient patient = patientWithUser(adminUser);
-        SymptomDTO existing = dto(PATIENT_ID);
+        final User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
+        final Patient patient = patientWithUser(adminUser);
+        final SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(adminUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(symptomService.update(eq(SYMPTOM_ID), any())).thenThrow(new RuntimeException("fail"));
 
-        ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
+        final ResponseEntity<?> response = controller.update(SYMPTOM_ID, dto(PATIENT_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
@@ -210,13 +210,13 @@ class SymptomControllerTest {
     @Test
     void list_caregiverAccessDenied_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
-        Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
+        final User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
+        final Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(caregiverService.hasAccessToPatient(5L, PATIENT_ID)).thenReturn(false);
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -224,14 +224,14 @@ class SymptomControllerTest {
     @Test
     void list_caregiverAccessGranted_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
-        Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
+        final User caregiver = userWithRole(5L, USER_EMAIL, Role.CAREGIVER);
+        final Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(caregiver));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(caregiverService.hasAccessToPatient(5L, PATIENT_ID)).thenReturn(true);
         when(symptomService.listByPatient(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -239,14 +239,14 @@ class SymptomControllerTest {
     @Test
     void list_familyMemberAccessGranted_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
-        Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
+        final User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
+        final Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(caregiverService.hasAccessToPatient(6L, PATIENT_ID)).thenReturn(true);
         when(symptomService.listByPatient(PATIENT_ID)).thenReturn(List.of());
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -254,13 +254,13 @@ class SymptomControllerTest {
     @Test
     void list_familyMemberAccessDenied_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
-        Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
+        final User familyMember = userWithRole(6L, USER_EMAIL, Role.FAMILY_MEMBER);
+        final Patient patient = patientWithUser(userWithRole(2L, "p@test.com", Role.PATIENT));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(familyMember));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         when(caregiverService.hasAccessToPatient(6L, PATIENT_ID)).thenReturn(false);
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -270,7 +270,7 @@ class SymptomControllerTest {
         setUpSecurity(USER_EMAIL);
         when(userRepository.findByEmail(USER_EMAIL)).thenThrow(new RuntimeException("DB down"));
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -279,13 +279,13 @@ class SymptomControllerTest {
     void list_nullRoleUser_returnsForbidden() throws Exception {
         setUpSecurity(USER_EMAIL);
         // Mock a user whose getRole() returns null — falls through all role checks to "return false"
-        User mockUser = mock(User.class);
+        final User mockUser = mock(User.class);
         when(mockUser.getRole()).thenReturn(null);
-        Patient patient = patientWithUser(mock(User.class));
+        final Patient patient = patientWithUser(mock(User.class));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(mockUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
 
-        ResponseEntity<?> response = controller.list(PATIENT_ID);
+        final ResponseEntity<?> response = controller.list(PATIENT_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -296,7 +296,7 @@ class SymptomControllerTest {
     void delete_symptomNotFound_returnsNotFound() throws Exception {
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
+        final ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -304,10 +304,10 @@ class SymptomControllerTest {
     @Test
     void delete_noAccess_returnsForbidden() throws Exception {
         // No security context → NPE → access = false
-        SymptomDTO existing = dto(PATIENT_ID);
+        final SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
 
-        ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
+        final ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -315,34 +315,34 @@ class SymptomControllerTest {
     @Test
     void delete_success_returnsOk() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
-        Patient patient = patientWithUser(adminUser);
-        SymptomDTO existing = dto(PATIENT_ID);
+        final User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
+        final Patient patient = patientWithUser(adminUser);
+        final SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(adminUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         doNothing().when(symptomService).delete(SYMPTOM_ID);
 
-        ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
+        final ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertThat(body).containsEntry("message", "Symptom deleted");
     }
 
     @Test
     void delete_serviceException_returnsBadRequest() throws Exception {
         setUpSecurity(USER_EMAIL);
-        User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
-        Patient patient = patientWithUser(adminUser);
-        SymptomDTO existing = dto(PATIENT_ID);
+        final User adminUser = userWithRole(1L, USER_EMAIL, Role.ADMIN);
+        final Patient patient = patientWithUser(adminUser);
+        final SymptomDTO existing = dto(PATIENT_ID);
         when(symptomService.get(SYMPTOM_ID)).thenReturn(Optional.of(existing));
         when(userRepository.findByEmail(USER_EMAIL)).thenReturn(Optional.of(adminUser));
         when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(patient));
         doThrow(new RuntimeException("DB error")).when(symptomService).delete(SYMPTOM_ID);
 
-        ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
+        final ResponseEntity<?> response = controller.delete(SYMPTOM_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }

@@ -15,7 +15,7 @@ class EvvAuditEventTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvAuditEvent event = new EvvAuditEvent();
+        final EvvAuditEvent event = new EvvAuditEvent();
 
         assertThat(event).isNotNull();
         assertThat(event.getId()).isNull();
@@ -31,14 +31,14 @@ class EvvAuditEventTest {
 
     @Test
     void builder_allFields() throws Exception {
-        EvvRecord record = new EvvRecord();
-        OffsetDateTime now = OffsetDateTime.now();
-        Map<String, Object> deviceInfo = new HashMap<>();
+        final EvvRecord record = new EvvRecord();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final Map<String, Object> deviceInfo = new HashMap<>();
         deviceInfo.put("platform", "iOS");
-        Map<String, Object> details = new HashMap<>();
+        final Map<String, Object> details = new HashMap<>();
         details.put("reason", "check-in");
 
-        EvvAuditEvent event = EvvAuditEvent.builder()
+        final EvvAuditEvent event = EvvAuditEvent.builder()
                 .id(1L)
                 .evvRecord(record)
                 .eventType("CHECK_IN")
@@ -61,8 +61,8 @@ class EvvAuditEventTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        EvvAuditEvent event = new EvvAuditEvent();
-        OffsetDateTime now = OffsetDateTime.now();
+        final EvvAuditEvent event = new EvvAuditEvent();
+        final OffsetDateTime now = OffsetDateTime.now();
 
         event.setEventType("CHECK_OUT");
         event.setEventTime(now);
@@ -77,10 +77,10 @@ class EvvAuditEventTest {
 
     @Test
     void onCreate_setsEventTimeWhenNull() throws Exception {
-        EvvAuditEvent event = new EvvAuditEvent();
+        final EvvAuditEvent event = new EvvAuditEvent();
         assertThat(event.getEventTime()).isNull();
 
-        Method m = EvvAuditEvent.class.getDeclaredMethod("onCreate");
+        final Method m = EvvAuditEvent.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(event);
 
@@ -89,11 +89,11 @@ class EvvAuditEventTest {
 
     @Test
     void onCreate_doesNotOverwriteExistingEventTime() throws Exception {
-        EvvAuditEvent event = new EvvAuditEvent();
-        OffsetDateTime original = OffsetDateTime.now().minusDays(1);
+        final EvvAuditEvent event = new EvvAuditEvent();
+        final OffsetDateTime original = OffsetDateTime.now().minusDays(1);
         event.setEventTime(original);
 
-        Method m = EvvAuditEvent.class.getDeclaredMethod("onCreate");
+        final Method m = EvvAuditEvent.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(event);
 

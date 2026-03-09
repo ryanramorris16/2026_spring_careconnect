@@ -12,7 +12,7 @@ class MoodEntryTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        MoodEntry entry = new MoodEntry();
+        final MoodEntry entry = new MoodEntry();
 
         assertThat(entry).isNotNull();
         assertThat(entry.getId()).isNull();
@@ -25,10 +25,10 @@ class MoodEntryTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        Instant now = Instant.now();
+        final Patient patient = new Patient();
+        final Instant now = Instant.now();
 
-        MoodEntry entry = MoodEntry.builder()
+        final MoodEntry entry = MoodEntry.builder()
                 .id(1L)
                 .patient(patient)
                 .moodScore(4)
@@ -45,9 +45,9 @@ class MoodEntryTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        MoodEntry entry = new MoodEntry();
-        Patient patient = new Patient();
-        Instant now = Instant.now();
+        final MoodEntry entry = new MoodEntry();
+        final Patient patient = new Patient();
+        final Instant now = Instant.now();
 
         entry.setId(2L);
         entry.setPatient(patient);
@@ -64,8 +64,8 @@ class MoodEntryTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        MoodEntry e1 = MoodEntry.builder().id(1L).moodScore(3).build();
-        MoodEntry e2 = MoodEntry.builder().id(1L).moodScore(3).build();
+        final MoodEntry e1 = MoodEntry.builder().id(1L).moodScore(3).build();
+        final MoodEntry e2 = MoodEntry.builder().id(1L).moodScore(3).build();
 
         assertThat(e1).isEqualTo(e2);
         assertThat(e1.hashCode()).isEqualTo(e2.hashCode());

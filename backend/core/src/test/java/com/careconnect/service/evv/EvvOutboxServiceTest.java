@@ -33,7 +33,7 @@ class EvvOutboxServiceTest {
     private EvvOutboxService evvOutboxService;
 
     private EvvRecord buildMinimalRecord() throws Exception {
-        EvvRecord record = mock(EvvRecord.class);
+        final EvvRecord record = mock(EvvRecord.class);
         lenient().when(record.getId()).thenReturn(1L);
         lenient().when(record.getServiceType()).thenReturn("HOME_HEALTH");
         lenient().when(record.getTimeIn()).thenReturn(OffsetDateTime.parse("2025-01-15T08:00:00Z"));
@@ -51,8 +51,8 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_withPatientAndMaNumber_usesMANumber() throws Exception {
-        EvvRecord record = buildMinimalRecord();
-        Patient patient = mock(Patient.class);
+        final EvvRecord record = buildMinimalRecord();
+        final Patient patient = mock(Patient.class);
         when(patient.getMaNumber()).thenReturn("MA-12345");
         when(record.getPatient()).thenReturn(patient);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -64,8 +64,8 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_withPatientNoMaNumber_usesPatientId() throws Exception {
-        EvvRecord record = buildMinimalRecord();
-        Patient patient = mock(Patient.class);
+        final EvvRecord record = buildMinimalRecord();
+        final Patient patient = mock(Patient.class);
         when(patient.getMaNumber()).thenReturn(null);
         when(patient.getId()).thenReturn(99L);
         when(record.getPatient()).thenReturn(patient);
@@ -78,7 +78,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_withNullPatient_usesUnknown() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
@@ -89,7 +89,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_patientGetterThrows_fallsBackToUnknown() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenThrow(new RuntimeException("DB error"));
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
@@ -100,7 +100,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_withAllLocationFields_includesAllInPayload() throws Exception {
-        EvvRecord record = mock(EvvRecord.class);
+        final EvvRecord record = mock(EvvRecord.class);
         lenient().when(record.getId()).thenReturn(2L);
         lenient().when(record.getServiceType()).thenReturn("PERSONAL_CARE");
         lenient().when(record.getTimeIn()).thenReturn(OffsetDateTime.parse("2025-01-15T08:00:00Z"));
@@ -123,7 +123,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_nullServiceType_usesUnknown() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         when(record.getServiceType()).thenReturn(null);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -135,7 +135,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_nullTimeIn_usesEmpty() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         when(record.getTimeIn()).thenReturn(null);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -147,7 +147,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_nullTimeOut_usesEmpty() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         when(record.getTimeOut()).thenReturn(null);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -159,7 +159,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_legacyLocationEmpty_doesNotAddLocKey() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         // locationLat and locationLng are null (already set in buildMinimalRecord)
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -171,7 +171,7 @@ class EvvOutboxServiceTest {
 
     @Test
     void enqueue_objectMapperThrows_throwsRuntimeException() throws Exception {
-        EvvRecord record = buildMinimalRecord();
+        final EvvRecord record = buildMinimalRecord();
         when(record.getPatient()).thenReturn(null);
         when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("err") {});
 

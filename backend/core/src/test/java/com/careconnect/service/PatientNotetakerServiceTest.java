@@ -85,7 +85,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNotetakerConfigDTO result = service.getNotetakerConfigByPatientId(10L);
+        final PatientNotetakerConfigDTO result = service.getNotetakerConfigByPatientId(10L);
 
         assertNotNull(result);
         assertEquals(10L, result.getPatientId());
@@ -98,7 +98,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNotetakerConfigDTO result = service.getNotetakerConfigByPatientId(10L);
+        final PatientNotetakerConfigDTO result = service.getNotetakerConfigByPatientId(10L);
 
         assertNotNull(result);
         assertNull(result.getId());
@@ -130,18 +130,18 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
         when(patientNotetakerConfigRepository.save(any(PatientNotetakerConfig.class))).thenAnswer(inv -> {
-            PatientNotetakerConfig saved = inv.getArgument(0);
+            final PatientNotetakerConfig saved = inv.getArgument(0);
             saved.setId(2L);
             return saved;
         });
 
-        PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
+        final PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
                 .isEnabled(true)
                 .permitCaregiverAccess(false)
                 .triggerKeywords(List.of())
                 .build();
 
-        PatientNotetakerConfigDTO result = service.createOrUpdatePatientNotetakerConfig(10L, dto);
+        final PatientNotetakerConfigDTO result = service.createOrUpdatePatientNotetakerConfig(10L, dto);
 
         assertNotNull(result);
         assertEquals(10L, result.getPatientId());
@@ -155,13 +155,13 @@ class PatientNotetakerServiceTest {
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
         when(patientNotetakerConfigRepository.save(any(PatientNotetakerConfig.class))).thenReturn(config);
 
-        PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
+        final PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
                 .isEnabled(false)
                 .permitCaregiverAccess(true)
                 .triggerKeywords(new ArrayList<>())
                 .build();
 
-        PatientNotetakerConfigDTO result = service.createOrUpdatePatientNotetakerConfig(10L, dto);
+        final PatientNotetakerConfigDTO result = service.createOrUpdatePatientNotetakerConfig(10L, dto);
 
         assertNotNull(result);
         verify(patientNotetakerConfigRepository).save(config);
@@ -172,7 +172,7 @@ class PatientNotetakerServiceTest {
     void createOrUpdatePatientNotetakerConfig_invalidPatient_throwsIllegalArgumentException() throws Exception {
         when(patientService.getPatientById(99L)).thenReturn(null);
 
-        PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder().build();
+        final PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder().build();
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.createOrUpdatePatientNotetakerConfig(99L, dto));
@@ -186,7 +186,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findByPatientId(10L)).thenReturn(Optional.of(List.of(patientNote)));
 
-        List<PatientNoteDTO> result = service.getAllNotesForPatient(10L);
+        final List<PatientNoteDTO> result = service.getAllNotesForPatient(10L);
 
         assertEquals(1, result.size());
         assertEquals("Patient discussed symptoms", result.get(0).getNote());
@@ -198,7 +198,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findByPatientId(10L)).thenReturn(Optional.empty());
 
-        List<PatientNoteDTO> result = service.getAllNotesForPatient(10L);
+        final List<PatientNoteDTO> result = service.getAllNotesForPatient(10L);
 
         assertTrue(result.isEmpty());
     }
@@ -219,7 +219,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
 
-        PatientNoteDTO result = service.getNoteById(10L, 1L);
+        final PatientNoteDTO result = service.getNoteById(10L, 1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -242,26 +242,26 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_validNoteAiSummarySuccess_returnsDTOWithAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse response = new OpenRouterResponse();
-        Choice choice = new Choice();
-        Message message = new Message("assistant", "Summary of conversation");
+        final OpenRouterResponse response = new OpenRouterResponse();
+        final Choice choice = new Choice();
+        final Message message = new Message("assistant", "Summary of conversation");
         choice.setMessage(message);
         response.setChoices(List.of(choice));
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(2L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Doctor said take medicine daily")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         assertEquals(10L, result.getPatientId());
@@ -275,18 +275,18 @@ class PatientNotetakerServiceTest {
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class)))
                 .thenThrow(new RuntimeException("AI unavailable"));
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(3L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Some note content")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
     }
@@ -306,18 +306,18 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(null);
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(4L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Some note")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
     }
@@ -326,22 +326,22 @@ class PatientNotetakerServiceTest {
     @DisplayName("createNoteForPatient - AI returns response with null choices - sets empty AI summary")
     void createNoteForPatient_aiReturnsNullChoices_setsEmptyAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
-        OpenRouterResponse response = new OpenRouterResponse();
+        final OpenRouterResponse response = new OpenRouterResponse();
         response.setChoices(null);
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(5L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Some note")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
     }
@@ -350,22 +350,22 @@ class PatientNotetakerServiceTest {
     @DisplayName("createNoteForPatient - AI returns response with empty choices - sets empty AI summary")
     void createNoteForPatient_aiReturnsEmptyChoices_setsEmptyAiSummary() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
-        OpenRouterResponse response = new OpenRouterResponse();
+        final OpenRouterResponse response = new OpenRouterResponse();
         response.setChoices(List.of());
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(6L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Some note")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
     }
@@ -375,26 +375,26 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_aiResponseContainsHtml_stripsHtml() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse response = new OpenRouterResponse();
-        Choice choice = new Choice();
-        Message message = new Message("assistant", "Summary text<think>some reasoning</think>");
+        final OpenRouterResponse response = new OpenRouterResponse();
+        final Choice choice = new Choice();
+        final Message message = new Message("assistant", "Summary text<think>some reasoning</think>");
         choice.setMessage(message);
         response.setChoices(List.of(choice));
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(7L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(null);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("A note")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
     }
@@ -406,26 +406,26 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_noteContainsAlertKeyword_detectsKeyword() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse response = new OpenRouterResponse();
-        Choice choice = new Choice();
-        Message message = new Message("assistant", "Summary");
+        final OpenRouterResponse response = new OpenRouterResponse();
+        final Choice choice = new Choice();
+        final Message message = new Message("assistant", "Summary");
         choice.setMessage(message);
         response.setChoices(List.of(choice));
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(8L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Patient reports severe pain in lower back")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         // ALERT type just returns early; no task creation
@@ -438,17 +438,17 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
         // AI summary response
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
-        Message summaryMessage = new Message("assistant", "Summary");
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
+        final Message summaryMessage = new Message("assistant", "Summary");
         summaryChoice.setMessage(summaryMessage);
         summaryResponse.setChoices(List.of(summaryChoice));
 
         // Task generation response - valid JSON for TaskDtoV2
-        String taskJson = "{\"name\":\"Schedule appointment\",\"date\":\"" + LocalDate.now().getYear() + "-06-15\",\"daysOfWeek\":[true,false,false,false,false,false,false],\"description\":\"Follow-up appointment\",\"count\":1,\"frequency\":\"once\",\"taskType\":\"appointment\",\"timeOfDay\":\"10:00:00\"}";
-        OpenRouterResponse taskResponse = new OpenRouterResponse();
-        Choice taskChoice = new Choice();
-        Message taskMessage = new Message("assistant", taskJson);
+        final String taskJson = "{\"name\":\"Schedule appointment\",\"date\":\"" + LocalDate.now().getYear() + "-06-15\",\"daysOfWeek\":[true,false,false,false,false,false,false],\"description\":\"Follow-up appointment\",\"count\":1,\"frequency\":\"once\",\"taskType\":\"appointment\",\"timeOfDay\":\"10:00:00\"}";
+        final OpenRouterResponse taskResponse = new OpenRouterResponse();
+        final Choice taskChoice = new Choice();
+        final Message taskMessage = new Message("assistant", taskJson);
         taskChoice.setMessage(taskMessage);
         taskResponse.setChoices(List.of(taskChoice));
 
@@ -457,18 +457,18 @@ class PatientNotetakerServiceTest {
                 .thenReturn(taskResponse);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(9L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Need to schedule an appointment for next month")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService).createTask(eq(10L), any(TaskDtoV2.class));
@@ -479,13 +479,13 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_taskKeywordInvalidAiJson_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
         summaryChoice.setMessage(new Message("assistant", "Summary"));
         summaryResponse.setChoices(List.of(summaryChoice));
 
-        OpenRouterResponse taskResponse = new OpenRouterResponse();
-        Choice taskChoice = new Choice();
+        final OpenRouterResponse taskResponse = new OpenRouterResponse();
+        final Choice taskChoice = new Choice();
         taskChoice.setMessage(new Message("assistant", "not valid json"));
         taskResponse.setChoices(List.of(taskChoice));
 
@@ -494,18 +494,18 @@ class PatientNotetakerServiceTest {
                 .thenReturn(taskResponse);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(10L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Need to schedule an appointment soon")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService, never()).createTask(anyLong(), any(TaskDtoV2.class));
@@ -516,8 +516,8 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_taskKeywordOpenRouterThrows_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
         summaryChoice.setMessage(new Message("assistant", "Summary"));
         summaryResponse.setChoices(List.of(summaryChoice));
 
@@ -526,18 +526,18 @@ class PatientNotetakerServiceTest {
                 .thenThrow(new RuntimeException("OpenRouter unavailable"));
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(11L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Need to schedule appointment next week")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService, never()).createTask(anyLong(), any(TaskDtoV2.class));
@@ -548,12 +548,12 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_taskKeywordEmptyAiContent_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
         summaryChoice.setMessage(new Message("assistant", "Summary"));
         summaryResponse.setChoices(List.of(summaryChoice));
 
-        OpenRouterResponse taskResponse = new OpenRouterResponse();
+        final OpenRouterResponse taskResponse = new OpenRouterResponse();
         taskResponse.setChoices(null);
 
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class)))
@@ -561,18 +561,18 @@ class PatientNotetakerServiceTest {
                 .thenReturn(taskResponse);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(12L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Need appointment scheduling")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService, never()).createTask(anyLong(), any(TaskDtoV2.class));
@@ -583,15 +583,15 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_taskKeywordAiReturnsTaskWithNullFields_doesNotCreateTask() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
         summaryChoice.setMessage(new Message("assistant", "Summary"));
         summaryResponse.setChoices(List.of(summaryChoice));
 
         // Task JSON with missing required fields (name is null)
-        String taskJson = "{\"name\":null,\"date\":\"2026-06-15\",\"description\":\"desc\",\"taskType\":\"general\"}";
-        OpenRouterResponse taskResponse = new OpenRouterResponse();
-        Choice taskChoice = new Choice();
+        final String taskJson = "{\"name\":null,\"date\":\"2026-06-15\",\"description\":\"desc\",\"taskType\":\"general\"}";
+        final OpenRouterResponse taskResponse = new OpenRouterResponse();
+        final Choice taskChoice = new Choice();
         taskChoice.setMessage(new Message("assistant", taskJson));
         taskResponse.setChoices(List.of(taskChoice));
 
@@ -600,18 +600,18 @@ class PatientNotetakerServiceTest {
                 .thenReturn(taskResponse);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(13L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Appointment needed soon")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService, never()).createTask(anyLong(), any(TaskDtoV2.class));
@@ -622,25 +622,25 @@ class PatientNotetakerServiceTest {
     void createNoteForPatient_noKeywordsMatch_noTaskOrAlertTriggered() throws Exception {
         when(patientService.getPatientById(10L)).thenReturn(patient);
 
-        OpenRouterResponse summaryResponse = new OpenRouterResponse();
-        Choice summaryChoice = new Choice();
+        final OpenRouterResponse summaryResponse = new OpenRouterResponse();
+        final Choice summaryChoice = new Choice();
         summaryChoice.setMessage(new Message("assistant", "Summary"));
         summaryResponse.setChoices(List.of(summaryChoice));
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(summaryResponse);
 
         when(patientNoteRepository.save(any(PatientNote.class))).thenAnswer(inv -> {
-            PatientNote saved = inv.getArgument(0);
+            final PatientNote saved = inv.getArgument(0);
             saved.setId(14L);
             return saved;
         });
         when(patientNotetakerConfigRepository.findByPatientId(10L)).thenReturn(config);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("General wellness check was fine")
                 .aiSummary("")
                 .build();
 
-        PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
+        final PatientNoteDTO result = service.createNoteForPatient(10L, noteDTO);
 
         assertNotNull(result);
         verify(taskService, never()).createTask(anyLong(), any(TaskDtoV2.class));
@@ -655,12 +655,12 @@ class PatientNotetakerServiceTest {
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
         when(patientNoteRepository.save(any(PatientNote.class))).thenReturn(patientNote);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Updated note content")
                 .aiSummary("Updated AI summary")
                 .build();
 
-        PatientNoteDTO result = service.updateNoteForPatient(10L, 1L, noteDTO);
+        final PatientNoteDTO result = service.updateNoteForPatient(10L, 1L, noteDTO);
 
         assertNotNull(result);
         assertEquals("Updated AI summary", patientNote.getAiSummary());
@@ -673,18 +673,18 @@ class PatientNotetakerServiceTest {
         when(patientNoteRepository.findById(1L)).thenReturn(Optional.of(patientNote));
         when(patientNoteRepository.save(any(PatientNote.class))).thenReturn(patientNote);
 
-        OpenRouterResponse response = new OpenRouterResponse();
-        Choice choice = new Choice();
+        final OpenRouterResponse response = new OpenRouterResponse();
+        final Choice choice = new Choice();
         choice.setMessage(new Message("assistant", "New AI Summary"));
         response.setChoices(List.of(choice));
         when(openRouterService.sendChatRequest(any(OpenRouterChatRequest.class))).thenReturn(response);
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Updated note")
                 .aiSummary("Failed to generate AI Summary")
                 .build();
 
-        PatientNoteDTO result = service.updateNoteForPatient(10L, 1L, noteDTO);
+        final PatientNoteDTO result = service.updateNoteForPatient(10L, 1L, noteDTO);
 
         assertNotNull(result);
         verify(openRouterService).sendChatRequest(any(OpenRouterChatRequest.class));
@@ -705,7 +705,7 @@ class PatientNotetakerServiceTest {
         when(patientService.getPatientById(10L)).thenReturn(patient);
         when(patientNoteRepository.findById(99L)).thenReturn(Optional.empty());
 
-        PatientNoteDTO noteDTO = PatientNoteDTO.builder()
+        final PatientNoteDTO noteDTO = PatientNoteDTO.builder()
                 .note("Updated note")
                 .aiSummary("Summary")
                 .build();

@@ -32,7 +32,7 @@ class DcSandataAltEvvClientTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        Field f = DcSandataAltEvvClient.class.getDeclaredField("restTemplate");
+        final Field f = DcSandataAltEvvClient.class.getDeclaredField("restTemplate");
         f.setAccessible(true);
         f.set(client, mockRestTemplate);
     }
@@ -44,7 +44,7 @@ class DcSandataAltEvvClientTest {
 
     @Test
     void submit_successfulResponse_doesNotThrow() throws Exception {
-        EvvRecord record = mock(EvvRecord.class);
+        final EvvRecord record = mock(EvvRecord.class);
         when(record.getTimeIn()).thenReturn(OffsetDateTime.parse("2025-01-15T08:00:00Z"));
         when(record.getLocationLat()).thenReturn(38.9072);
         when(record.getLocationLng()).thenReturn(-77.0369);
@@ -62,7 +62,7 @@ class DcSandataAltEvvClientTest {
 
     @Test
     void submit_nonSuccessResponse_throwsRuntimeException() throws Exception {
-        EvvRecord record = mock(EvvRecord.class);
+        final EvvRecord record = mock(EvvRecord.class);
         when(record.getTimeIn()).thenReturn(OffsetDateTime.parse("2025-01-15T08:00:00Z"));
         when(record.getLocationLat()).thenReturn(38.9072);
         when(record.getLocationLng()).thenReturn(-77.0369);

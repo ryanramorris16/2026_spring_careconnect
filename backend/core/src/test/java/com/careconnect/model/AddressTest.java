@@ -10,7 +10,7 @@ class AddressTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Address address = new Address();
+        final Address address = new Address();
 
         assertThat(address).isNotNull();
         assertThat(address.getLine1()).isNull();
@@ -24,7 +24,7 @@ class AddressTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        Address address = new Address("123 Main St", "Apt 4B", "Springfield", "IL", "62701");
+        final Address address = new Address("123 Main St", "Apt 4B", "Springfield", "IL", "62701");
 
         assertThat(address.getLine1()).isEqualTo("123 Main St");
         assertThat(address.getLine2()).isEqualTo("Apt 4B");
@@ -37,7 +37,7 @@ class AddressTest {
 
     @Test
     void builder_setsAllFields() throws Exception {
-        Address address = Address.builder()
+        final Address address = Address.builder()
                 .line1("456 Oak Ave")
                 .line2("Suite 200")
                 .city("Shelbyville")
@@ -56,7 +56,7 @@ class AddressTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Address address = new Address();
+        final Address address = new Address();
 
         address.setLine1("789 Pine Rd");
         address.setLine2("Floor 3");

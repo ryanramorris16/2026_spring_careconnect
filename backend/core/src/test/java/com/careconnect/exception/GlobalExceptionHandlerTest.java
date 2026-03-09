@@ -25,13 +25,13 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleRegistrationException returns 400 with error message")
     void handleRegistrationException_returns400WithMessage() throws Exception {
-        RegistrationException ex = new RegistrationException("email taken");
+        final RegistrationException ex = new RegistrationException("email taken");
 
-        ResponseEntity<?> response = handler.handleRegistrationException(ex);
+        final ResponseEntity<?> response = handler.handleRegistrationException(ex);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertNotNull(body);
         assertEquals("email taken", body.get("error"));
     }
@@ -41,13 +41,13 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleAppException returns status from exception with error message")
     void handleAppException_returnsExceptionStatus() throws Exception {
-        AppException ex = new AppException(HttpStatus.FORBIDDEN, "access denied");
+        final AppException ex = new AppException(HttpStatus.FORBIDDEN, "access denied");
 
-        ResponseEntity<?> response = handler.handleAppException(ex);
+        final ResponseEntity<?> response = handler.handleAppException(ex);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertNotNull(body);
         assertEquals("access denied", body.get("error"));
     }
@@ -57,13 +57,13 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("handleOtherExceptions returns 500 with generic message")
     void handleOtherExceptions_returns500WithGenericMessage() throws Exception {
-        Exception ex = new Exception("something broke");
+        final Exception ex = new Exception("something broke");
 
-        ResponseEntity<?> response = handler.handleOtherExceptions(ex);
+        final ResponseEntity<?> response = handler.handleOtherExceptions(ex);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         @SuppressWarnings("unchecked")
-        Map<String, String> body = (Map<String, String>) response.getBody();
+        final Map<String, String> body = (Map<String, String>) response.getBody();
         assertNotNull(body);
         assertEquals("An unexpected error occurred", body.get("error"));
     }

@@ -20,8 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.careconnect.controller.v2.TaskControllerV2;
@@ -61,13 +61,13 @@ class TaskControllerV2Test {
     // replaced with a Mockito stub so the controller can be exercised without
     // a real database or business-logic layer.
 
-    @MockBean
+    @MockitoBean
     private TaskServiceV2 taskService;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     @Autowired

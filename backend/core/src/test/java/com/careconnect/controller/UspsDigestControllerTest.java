@@ -42,11 +42,11 @@ class UspsDigestControllerTest {
 
     @Test
     void getLatestDigest_dateProvided_callsDigestForDate_returnsOk() throws Exception {
-        LocalDate date = LocalDate.of(2025, 6, 1);
-        USPSDigest d = digest();
+        final LocalDate date = LocalDate.of(2025, 6, 1);
+        final USPSDigest d = digest();
         when(uspsDigestService.digestForDate("user1", date)).thenReturn(Optional.of(d));
 
-        ResponseEntity<USPSDigest> response = controller.getLatestDigest("user1", date);
+        final ResponseEntity<USPSDigest> response = controller.getLatestDigest("user1", date);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(d);
@@ -55,10 +55,10 @@ class UspsDigestControllerTest {
 
     @Test
     void getLatestDigest_dateNull_callsLatestForUser_returnsOk() throws Exception {
-        USPSDigest d = digest();
+        final USPSDigest d = digest();
         when(uspsDigestService.latestForUser("demo-user")).thenReturn(Optional.of(d));
 
-        ResponseEntity<USPSDigest> response = controller.getLatestDigest("demo-user", null);
+        final ResponseEntity<USPSDigest> response = controller.getLatestDigest("demo-user", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(d);
@@ -69,7 +69,7 @@ class UspsDigestControllerTest {
     void getLatestDigest_notFound_returnsNoContent() throws Exception {
         when(uspsDigestService.latestForUser("demo-user")).thenReturn(Optional.empty());
 
-        ResponseEntity<USPSDigest> response = controller.getLatestDigest("demo-user", null);
+        final ResponseEntity<USPSDigest> response = controller.getLatestDigest("demo-user", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
@@ -78,10 +78,10 @@ class UspsDigestControllerTest {
 
     @Test
     void search_returnsOkWithResults() throws Exception {
-        List<Map<String, Object>> results = List.of(Map.of("key", "value"));
+        final List<Map<String, Object>> results = List.of(Map.of("key", "value"));
         when(uspsDigestService.search("user1", "invoice")).thenReturn(results);
 
-        ResponseEntity<List<Map<String, Object>>> response = controller.search("user1", "invoice");
+        final ResponseEntity<List<Map<String, Object>>> response = controller.search("user1", "invoice");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(results);
@@ -94,7 +94,7 @@ class UspsDigestControllerTest {
     void clearCache_returnsOkWithMessage() throws Exception {
         doNothing().when(uspsDigestService).clearCacheForUser("user1");
 
-        ResponseEntity<String> response = controller.clearCache("user1");
+        final ResponseEntity<String> response = controller.clearCache("user1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).contains("user1");

@@ -51,63 +51,63 @@ class EmailOAuthControllerTest {
 
         @Test
         void returns302Found() throws Exception {
-            ResponseEntity<Void> response = controller.start(USER_ID, null);
+            final ResponseEntity<Void> response = controller.start(USER_ID, null);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         }
 
         @Test
         void locationHeaderIsPresent() throws Exception {
-            ResponseEntity<Void> response = controller.start(USER_ID, null);
+            final ResponseEntity<Void> response = controller.start(USER_ID, null);
             assertThat(response.getHeaders().getLocation()).isNotNull();
         }
 
         @Test
         void redirectsToGoogleAuthEndpoint() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             assertThat(location.toString()).contains("accounts.google.com/o/oauth2/v2/auth");
         }
 
         @Test
         void includesResponseTypeCode() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             assertThat(location.toString()).contains("response_type=code");
         }
 
         @Test
         void includesClientId() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             assertThat(location.toString()).contains(CLIENT_ID);
         }
 
         @Test
         void includesAccessTypeOffline() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             assertThat(location.toString()).contains("access_type=offline");
         }
 
         @Test
         void includesPromptConsent() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             assertThat(location.toString()).contains("prompt=consent");
         }
 
         @Test
         void stateEncodeUserIdOnly_whenReturnUrlIsNull() throws Exception {
-            URI location = controller.start(USER_ID, null).getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, null).getHeaders().getLocation();
             // state = "u:user-123" → UriUtils-encoded: "u%3Auser-123"
             assertThat(location.toString()).contains("u%3A" + USER_ID);
         }
 
         @Test
         void stateEncodeUserIdOnly_whenReturnUrlIsEmpty() throws Exception {
-            URI location = controller.start(USER_ID, "").getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, "").getHeaders().getLocation();
             // empty returnUrl is treated like null; pipe separator never appended
             assertThat(location.toString()).doesNotContain("r%3A");
         }
 
         @Test
         void stateIncludesReturnUrl_whenReturnUrlProvided() throws Exception {
-            URI location = controller.start(USER_ID, "http://frontend/page").getHeaders().getLocation();
+            final URI location = controller.start(USER_ID, "http://frontend/page").getHeaders().getLocation();
             // state = "u:user-123|r:http://frontend/page" → contains encoded "r:"
             assertThat(location.toString()).contains("r%3A");
         }
@@ -126,8 +126,8 @@ class EmailOAuthControllerTest {
 
         @Test
         void differentUserIdsProduceDifferentStateValues() throws Exception {
-            URI location1 = controller.start("user-aaa", null).getHeaders().getLocation();
-            URI location2 = controller.start("user-bbb", null).getHeaders().getLocation();
+            final URI location1 = controller.start("user-aaa", null).getHeaders().getLocation();
+            final URI location2 = controller.start("user-bbb", null).getHeaders().getLocation();
             assertThat(location1.toString()).isNotEqualTo(location2.toString());
         }
     }
@@ -141,17 +141,17 @@ class EmailOAuthControllerTest {
 
         @Test
         void returns302_whenSuccessful() throws Exception {
-            String state = "u:" + USER_ID + "|r:http://localhost:3000/page";
-            ResponseEntity<Void> response = controller.callback(AUTH_CODE, state);
+            final String state = "u:" + USER_ID + "|r:http://localhost:3000/page";
+            final ResponseEntity<Void> response = controller.callback(AUTH_CODE, state);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         }
 
         @Test
         void redirectsToReturnUrl_whenReturnUrlPresentInState() throws Exception {
-            String returnUrl = "http://localhost:3000/settings";
-            String state = "u:" + USER_ID + "|r:" + returnUrl;
+            final String returnUrl = "http://localhost:3000/settings";
+            final String state = "u:" + USER_ID + "|r:" + returnUrl;
 
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
 
             assertThat(location).isNotNull();
             assertThat(location.toString()).isEqualTo(returnUrl);
@@ -159,7 +159,7 @@ class EmailOAuthControllerTest {
 
         @Test
         void callsGoogleOAuthServiceExchange_withParsedUserIdAndCode() throws Exception {
-            String state = "u:" + USER_ID + "|r:http://localhost:3000/page";
+            final String state = "u:" + USER_ID + "|r:http://localhost:3000/page";
             controller.callback(AUTH_CODE, state);
             verify(googleOAuthService).exchange(USER_ID, AUTH_CODE);
         }
@@ -168,14 +168,14 @@ class EmailOAuthControllerTest {
 
         @Test
         void redirectsToFallbackUrl_whenNoReturnUrlInState() throws Exception {
-            String state = "u:" + USER_ID;
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final String state = "u:" + USER_ID;
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
             assertThat(location.toString()).isEqualTo(FRONTEND_URL + "/usps-test");
         }
 
         @Test
         void callsGoogleOAuthServiceExchange_whenNoReturnUrlInState() throws Exception {
-            String state = "u:" + USER_ID;
+            final String state = "u:" + USER_ID;
             controller.callback(AUTH_CODE, state);
             verify(googleOAuthService).exchange(USER_ID, AUTH_CODE);
         }
@@ -185,8 +185,8 @@ class EmailOAuthControllerTest {
         @Test
         void redirectsToFallbackUrl_whenReturnUrlIsEmptyStringInState() throws Exception {
             // state "u:user-123|r:" → returnUrl = "" → treated as missing
-            String state = "u:" + USER_ID + "|r:";
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final String state = "u:" + USER_ID + "|r:";
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
             assertThat(location.toString()).isEqualTo(FRONTEND_URL + "/usps-test");
         }
 
@@ -195,14 +195,14 @@ class EmailOAuthControllerTest {
         @Test
         void redirectsToFallbackUrl_whenReturnUrlIsMalformedUrl() throws Exception {
             // "not-a-valid-url" has no scheme → new java.net.URL() throws MalformedURLException
-            String state = "u:" + USER_ID + "|r:not-a-valid-url";
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final String state = "u:" + USER_ID + "|r:not-a-valid-url";
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
             assertThat(location.toString()).isEqualTo(FRONTEND_URL + "/usps-test");
         }
 
         @Test
         void exchangeStillCalledBeforeUrlValidation_whenReturnUrlIsMalformed() throws Exception {
-            String state = "u:" + USER_ID + "|r:not-a-valid-url";
+            final String state = "u:" + USER_ID + "|r:not-a-valid-url";
             controller.callback(AUTH_CODE, state);
             verify(googleOAuthService).exchange(USER_ID, AUTH_CODE);
         }
@@ -211,22 +211,22 @@ class EmailOAuthControllerTest {
 
         @Test
         void redirectsToSettingsErrorUrl_whenGoogleOAuthServiceThrows() throws Exception {
-            String state = "u:" + USER_ID;
+            final String state = "u:" + USER_ID;
             doThrow(new RuntimeException("token exchange failed"))
                     .when(googleOAuthService).exchange(USER_ID, AUTH_CODE);
 
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
 
             assertThat(location.toString()).startsWith("/settings?error=");
         }
 
         @Test
         void errorUrlContainsEncodedExceptionMessage_whenGoogleOAuthServiceThrows() throws Exception {
-            String state = "u:" + USER_ID;
+            final String state = "u:" + USER_ID;
             doThrow(new RuntimeException("token exchange failed"))
                     .when(googleOAuthService).exchange(USER_ID, AUTH_CODE);
 
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
 
             // URLEncoder encodes spaces as '+' and colons as '%3A'
             assertThat(location.toString()).contains("token+exchange+failed");
@@ -234,10 +234,10 @@ class EmailOAuthControllerTest {
 
         @Test
         void returns302_whenGoogleOAuthServiceThrows() throws Exception {
-            String state = "u:" + USER_ID;
+            final String state = "u:" + USER_ID;
             doThrow(new RuntimeException("oops")).when(googleOAuthService).exchange(USER_ID, AUTH_CODE);
 
-            ResponseEntity<Void> response = controller.callback(AUTH_CODE, state);
+            final ResponseEntity<Void> response = controller.callback(AUTH_CODE, state);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
         }
@@ -247,16 +247,16 @@ class EmailOAuthControllerTest {
         @Test
         void redirectsToSettingsErrorUrl_whenStateMissingUserId() throws Exception {
             // state has r: but no u: → parseStateData throws IllegalArgumentException
-            String state = "r:http://somewhere.com";
+            final String state = "r:http://somewhere.com";
 
-            URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
+            final URI location = controller.callback(AUTH_CODE, state).getHeaders().getLocation();
 
             assertThat(location.toString()).startsWith("/settings?error=");
         }
 
         @Test
         void doesNotCallExchange_whenStateMissingUserId() throws Exception {
-            String state = "r:http://somewhere.com";
+            final String state = "r:http://somewhere.com";
             controller.callback(AUTH_CODE, state);
             verifyNoInteractions(googleOAuthService);
         }
@@ -264,7 +264,7 @@ class EmailOAuthControllerTest {
         @Test
         void redirectsToSettingsErrorUrl_whenStateIsNull() throws Exception {
             // null state → parseStateData throws IllegalArgumentException("Invalid state: null")
-            URI location = controller.callback(AUTH_CODE, null).getHeaders().getLocation();
+            final URI location = controller.callback(AUTH_CODE, null).getHeaders().getLocation();
             assertThat(location.toString()).startsWith("/settings?error=");
         }
 
@@ -276,7 +276,7 @@ class EmailOAuthControllerTest {
 
         @Test
         void credRepoNeverCalledDirectly_inCallbackFlow() throws Exception {
-            String state = "u:" + USER_ID;
+            final String state = "u:" + USER_ID;
             controller.callback(AUTH_CODE, state);
             verifyNoInteractions(credRepo);
         }

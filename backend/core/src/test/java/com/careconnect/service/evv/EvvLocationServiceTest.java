@@ -48,7 +48,7 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_evvRecordNotFound_throwsAppException() throws Exception {
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(99L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -67,7 +67,7 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_GPS_withCoords_newLocation_savesAndReturnsResponse() throws Exception {
-        EvvRecord evvRecord = EvvRecord.builder()
+        final EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
                 .individualName("John Doe")
@@ -81,7 +81,7 @@ class EvvLocationServiceTest {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -96,8 +96,8 @@ class EvvLocationServiceTest {
         when(locationRepository.findByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_IN))
                 .thenReturn(Optional.empty());
 
-        UUID locationId = UUID.randomUUID();
-        EvvRecordLocation savedLocation = EvvRecordLocation.builder()
+        final UUID locationId = UUID.randomUUID();
+        final EvvRecordLocation savedLocation = EvvRecordLocation.builder()
                 .id(locationId)
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -110,7 +110,7 @@ class EvvLocationServiceTest {
 
         when(locationRepository.save(any(EvvRecordLocation.class))).thenReturn(savedLocation);
 
-        EvvLocationResponse response = evvLocationService.saveLocation(request);
+        final EvvLocationResponse response = evvLocationService.saveLocation(request);
 
         assertThat(response).isNotNull();
         assertThat(response.getEvvRecordId()).isEqualTo(1L);
@@ -120,7 +120,7 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_GPS_withCoords_existingLocation_updatesAndReturnsResponse() throws Exception {
-        EvvRecord evvRecord = EvvRecord.builder()
+        final EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
                 .individualName("John Doe")
@@ -134,7 +134,7 @@ class EvvLocationServiceTest {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.GPS)
@@ -144,7 +144,7 @@ class EvvLocationServiceTest {
                         .build())
                 .build();
 
-        EvvRecordLocation existingLocation = EvvRecordLocation.builder()
+        final EvvRecordLocation existingLocation = EvvRecordLocation.builder()
                 .id(UUID.randomUUID())
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -158,7 +158,7 @@ class EvvLocationServiceTest {
         when(locationRepository.findByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_IN))
                 .thenReturn(Optional.of(existingLocation));
 
-        EvvRecordLocation updatedLocation = EvvRecordLocation.builder()
+        final EvvRecordLocation updatedLocation = EvvRecordLocation.builder()
                 .id(existingLocation.getId())
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -170,7 +170,7 @@ class EvvLocationServiceTest {
 
         when(locationRepository.save(any(EvvRecordLocation.class))).thenReturn(updatedLocation);
 
-        EvvLocationResponse response = evvLocationService.saveLocation(request);
+        final EvvLocationResponse response = evvLocationService.saveLocation(request);
 
         assertThat(response).isNotNull();
         verify(locationRepository).save(any(EvvRecordLocation.class));
@@ -178,7 +178,7 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_PATIENT_ADDRESS_patientNull_throwsAppException() throws Exception {
-        EvvRecord evvRecord = EvvRecord.builder()
+        final EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
                 .individualName("Jane Doe")
@@ -193,7 +193,7 @@ class EvvLocationServiceTest {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
@@ -210,14 +210,14 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_PATIENT_ADDRESS_patientAddressNull_throwsAppException() throws Exception {
-        Patient patient = Patient.builder()
+        final Patient patient = Patient.builder()
                 .id(5L)
                 .firstName("Jane")
                 .lastName("Doe")
                 .address(null)
                 .build();
 
-        EvvRecord evvRecord = EvvRecord.builder()
+        final EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
                 .individualName("Jane Doe")
@@ -232,7 +232,7 @@ class EvvLocationServiceTest {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
@@ -249,7 +249,7 @@ class EvvLocationServiceTest {
 
     @Test
     void saveLocation_PATIENT_ADDRESS_withAddress_savesAndReturnsResponse() throws Exception {
-        Address address = Address.builder()
+        final Address address = Address.builder()
                 .line1("123 Main St")
                 .line2("Apt 4")
                 .city("Washington")
@@ -257,14 +257,14 @@ class EvvLocationServiceTest {
                 .zip("20001")
                 .build();
 
-        Patient patient = Patient.builder()
+        final Patient patient = Patient.builder()
                 .id(5L)
                 .firstName("Jane")
                 .lastName("Doe")
                 .address(address)
                 .build();
 
-        EvvRecord evvRecord = EvvRecord.builder()
+        final EvvRecord evvRecord = EvvRecord.builder()
                 .id(1L)
                 .serviceType("HOME_HEALTH")
                 .individualName("Jane Doe")
@@ -279,7 +279,7 @@ class EvvLocationServiceTest {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        EvvLocationRequest request = EvvLocationRequest.builder()
+        final EvvLocationRequest request = EvvLocationRequest.builder()
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
@@ -289,7 +289,7 @@ class EvvLocationServiceTest {
         when(locationRepository.findByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_IN))
                 .thenReturn(Optional.empty());
 
-        EvvRecordLocation savedLocation = EvvRecordLocation.builder()
+        final EvvRecordLocation savedLocation = EvvRecordLocation.builder()
                 .id(UUID.randomUUID())
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -300,7 +300,7 @@ class EvvLocationServiceTest {
 
         when(locationRepository.save(any(EvvRecordLocation.class))).thenReturn(savedLocation);
 
-        EvvLocationResponse response = evvLocationService.saveLocation(request);
+        final EvvLocationResponse response = evvLocationService.saveLocation(request);
 
         assertThat(response).isNotNull();
         assertThat(response.getType()).isEqualTo(EvvLocationType.PATIENT_ADDRESS);
@@ -321,7 +321,7 @@ class EvvLocationServiceTest {
     void getLocationsForRecord_found_returnsMappedList() throws Exception {
         when(evvRecordRepository.existsById(1L)).thenReturn(true);
 
-        EvvRecordLocation location = EvvRecordLocation.builder()
+        final EvvRecordLocation location = EvvRecordLocation.builder()
                 .id(UUID.randomUUID())
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -333,7 +333,7 @@ class EvvLocationServiceTest {
 
         when(locationRepository.findByEvvRecordId(1L)).thenReturn(List.of(location));
 
-        List<EvvLocationResponse> responses = evvLocationService.getLocationsForRecord(1L);
+        final List<EvvLocationResponse> responses = evvLocationService.getLocationsForRecord(1L);
 
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).getRole()).isEqualTo(EvvLocationRole.CHECK_IN);
@@ -353,7 +353,7 @@ class EvvLocationServiceTest {
 
     @Test
     void getLocationByRole_found_returnsResponse() throws Exception {
-        EvvRecordLocation location = EvvRecordLocation.builder()
+        final EvvRecordLocation location = EvvRecordLocation.builder()
                 .id(UUID.randomUUID())
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
@@ -366,7 +366,7 @@ class EvvLocationServiceTest {
         when(locationRepository.findByEvvRecordIdAndRole(1L, EvvLocationRole.CHECK_IN))
                 .thenReturn(Optional.of(location));
 
-        EvvLocationResponse response = evvLocationService.getLocationByRole(1L, EvvLocationRole.CHECK_IN);
+        final EvvLocationResponse response = evvLocationService.getLocationByRole(1L, EvvLocationRole.CHECK_IN);
 
         assertThat(response).isNotNull();
         assertThat(response.getRole()).isEqualTo(EvvLocationRole.CHECK_IN);

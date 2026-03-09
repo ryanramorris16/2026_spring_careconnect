@@ -13,7 +13,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        ProfessionalInfoDto dto = new ProfessionalInfoDto();
+        final ProfessionalInfoDto dto = new ProfessionalInfoDto();
 
         assertThat(dto).isNotNull();
         assertThat(dto.getLicenseNumber()).isNull();
@@ -25,21 +25,21 @@ class ProfessionalInfoDtoTest {
 
     @Test
     void setLicenseNumber_getLicenseNumber_roundTrips() throws Exception {
-        ProfessionalInfoDto dto = new ProfessionalInfoDto();
+        final ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setLicenseNumber("LIC-12345");
         assertThat(dto.getLicenseNumber()).isEqualTo("LIC-12345");
     }
 
     @Test
     void setIssuingState_getIssuingState_roundTrips() throws Exception {
-        ProfessionalInfoDto dto = new ProfessionalInfoDto();
+        final ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setIssuingState("Maryland");
         assertThat(dto.getIssuingState()).isEqualTo("Maryland");
     }
 
     @Test
     void setYearsExperience_getYearsExperience_roundTrips() throws Exception {
-        ProfessionalInfoDto dto = new ProfessionalInfoDto();
+        final ProfessionalInfoDto dto = new ProfessionalInfoDto();
         dto.setYearsExperience(10);
         assertThat(dto.getYearsExperience()).isEqualTo(10);
     }
@@ -48,7 +48,7 @@ class ProfessionalInfoDtoTest {
 
     @Test
     void allSetters_allFieldsUpdated() throws Exception {
-        ProfessionalInfoDto dto = new ProfessionalInfoDto();
+        final ProfessionalInfoDto dto = new ProfessionalInfoDto();
 
         dto.setLicenseNumber("RN-99999");
         dto.setIssuingState("Virginia");

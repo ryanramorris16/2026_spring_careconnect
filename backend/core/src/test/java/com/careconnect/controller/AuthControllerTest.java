@@ -23,10 +23,10 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Base64;
@@ -42,7 +42,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.hamcrest.Matchers;
 
 /**
  * Unit tests for {@link AuthController}, covering the HTTP layer of all
@@ -87,31 +86,31 @@ class AuthControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real infrastructure (DB, JWT signing keys, etc.).
 
-    @MockBean
+    @MockitoBean
     private AuthService authService;
 
-    @MockBean
+    @MockitoBean
     private PasswordResetService reset;
 
-    @MockBean
+    @MockitoBean
     private JwtTokenProvider jwt;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private TokenHashService tokenHashService;
 
-    @MockBean
+    @MockitoBean
     private AlexaCodeStoreService alexaCodeStore;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     // ==========================================
@@ -130,7 +129,7 @@ class AuthControllerTest {
     @Test
     void shouldRegisterUserSuccessfully() throws Exception {
 
-        PatientRegistration request = new PatientRegistration();
+        final PatientRegistration request = new PatientRegistration();
         request.setEmail("test@test.com");
         request.setPassword("password");
         request.setName("Test");
@@ -161,11 +160,11 @@ class AuthControllerTest {
     @Test
     void shouldLoginSuccessfully() throws Exception {
 
-        LoginRequest req = new LoginRequest();
+        final LoginRequest req = new LoginRequest();
         req.setEmail("test@test.com");
         req.setPassword("password");
 
-        LoginResponse response = LoginResponse.builder()
+        final LoginResponse response = LoginResponse.builder()
                 .token("jwt-token")
                 .build();
 
@@ -339,7 +338,7 @@ class AuthControllerTest {
     @Test
     void changePasswordShouldReturnUnauthorizedIfNoToken() throws Exception {
 
-        ChangePasswordRequest req =
+        final ChangePasswordRequest req =
                 new ChangePasswordRequest("old","new");
 
         mockMvc.perform(post("/v1/api/auth/password/change")
@@ -359,7 +358,7 @@ class AuthControllerTest {
         when(authService.changePassword(eq("user@test.com"), any(), any()))
                 .thenAnswer(inv -> ResponseEntity.ok(Map.of("message", "Password changed")));
 
-        ChangePasswordRequest req = new ChangePasswordRequest("old", "new");
+        final ChangePasswordRequest req = new ChangePasswordRequest("old", "new");
 
         mockMvc.perform(post("/v1/api/auth/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -379,7 +378,7 @@ class AuthControllerTest {
         when(authService.changePassword(eq("user@test.com"), any(), any()))
                 .thenAnswer(inv -> ResponseEntity.ok(Map.of("message", "Password changed")));
 
-        ChangePasswordRequest req = new ChangePasswordRequest("old", "new");
+        final ChangePasswordRequest req = new ChangePasswordRequest("old", "new");
 
         mockMvc.perform(post("/v1/api/auth/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -399,7 +398,7 @@ class AuthControllerTest {
         when(authService.changePassword(any(), any(), any()))
                 .thenThrow(new RuntimeException("Incorrect current password"));
 
-        ChangePasswordRequest req = new ChangePasswordRequest("wrong", "new");
+        final ChangePasswordRequest req = new ChangePasswordRequest("wrong", "new");
 
         mockMvc.perform(post("/v1/api/auth/password/change")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -484,7 +483,7 @@ class AuthControllerTest {
      */
     @Test
     void googleCallbackShouldRedirectWithTokenOnSuccess() throws Exception {
-        LoginResponse loginResponse = LoginResponse.builder()
+        final LoginResponse loginResponse = LoginResponse.builder()
                 .token("google-jwt")
                 .id(1L)
                 .email("user@test.com")
@@ -799,7 +798,7 @@ class AuthControllerTest {
      */
     @Test
     void exchangeAlexaTokenShouldReturnBadRequestIfPatientNotFound() throws Exception {
-        User user = Mockito.mock(User.class);
+        final User user = Mockito.mock(User.class);
         when(alexaCodeStore.consumeCode("code")).thenReturn("jwt");
         when(jwt.validateToken("jwt")).thenReturn(true);
         when(jwt.getEmailFromToken("jwt")).thenReturn("user@test.com");
@@ -821,8 +820,8 @@ class AuthControllerTest {
      */
     @Test
     void exchangeAlexaTokenAuthCodeHappyPathShouldReturnOk() throws Exception {
-        User user = Mockito.mock(User.class);
-        Patient patient = Mockito.mock(Patient.class);
+        final User user = Mockito.mock(User.class);
+        final Patient patient = Mockito.mock(Patient.class);
 
         when(alexaCodeStore.consumeCode("valid-code")).thenReturn("valid-jwt");
         when(jwt.validateToken("valid-jwt")).thenReturn(true);
@@ -880,7 +879,7 @@ class AuthControllerTest {
      */
     @Test
     void exchangeAlexaTokenShouldReturnUnauthorizedIfRefreshTokenExpired() throws Exception {
-        Patient patient = Mockito.mock(Patient.class);
+        final Patient patient = Mockito.mock(Patient.class);
         when(patient.isAlexaLinked()).thenReturn(true);
         when(patient.getAlexaRefreshToken()).thenReturn("hashed");
         when(tokenHashService.verifyToken("my-refresh", "hashed")).thenReturn(true);
@@ -902,8 +901,8 @@ class AuthControllerTest {
      */
     @Test
     void exchangeAlexaTokenRefreshTokenHappyPathShouldReturnOk() throws Exception {
-        User user = Mockito.mock(User.class);
-        Patient patient = Mockito.mock(Patient.class);
+        final User user = Mockito.mock(User.class);
+        final Patient patient = Mockito.mock(Patient.class);
 
         when(patient.isAlexaLinked()).thenReturn(true);
         when(patient.getAlexaRefreshToken()).thenReturn("stored-hash");
@@ -973,7 +972,7 @@ class AuthControllerTest {
      */
     @Test
     void unlinkAlexaShouldReturnBadRequestIfPatientNotFound() throws Exception {
-        User user = Mockito.mock(User.class);
+        final User user = Mockito.mock(User.class);
         when(jwt.getEmailFromToken("token")).thenReturn("user@test.com");
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(patientRepository.findByUser(user)).thenReturn(Optional.empty());
@@ -990,8 +989,8 @@ class AuthControllerTest {
      */
     @Test
     void unlinkAlexaShouldReturnOkOnSuccess() throws Exception {
-        User user = Mockito.mock(User.class);
-        Patient patient = Mockito.mock(Patient.class);
+        final User user = Mockito.mock(User.class);
+        final Patient patient = Mockito.mock(Patient.class);
         when(jwt.getEmailFromToken("token")).thenReturn("user@test.com");
         when(userRepository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(patientRepository.findByUser(user)).thenReturn(Optional.of(patient));

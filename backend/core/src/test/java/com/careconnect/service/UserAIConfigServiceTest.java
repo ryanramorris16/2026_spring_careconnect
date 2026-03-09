@@ -74,7 +74,7 @@ class UserAIConfigServiceTest {
     @Test
     @DisplayName("convertDTOToEntity_validDTO_shouldReturnEntity")
     void convertDTOToEntity_validDTO_shouldReturnEntity() throws Exception {
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -98,7 +98,7 @@ class UserAIConfigServiceTest {
     void convertDTOToEntity_nullAiProvider_shouldDefaultToOpenAI() throws Exception {
         sampleDTO.setAiProvider(null);
 
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertEquals(AIProvider.OPENAI, result.getPreferredAiProvider());
     }
@@ -108,7 +108,7 @@ class UserAIConfigServiceTest {
     void convertDTOToEntity_defaultAiProvider_shouldMapToOpenAI() throws Exception {
         sampleDTO.setAiProvider(AIProvider.DEFAULT);
 
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertEquals(AIProvider.OPENAI, result.getPreferredAiProvider());
     }
@@ -118,7 +118,7 @@ class UserAIConfigServiceTest {
     void convertDTOToEntity_deepseekProvider_shouldMapToDeepseek() throws Exception {
         sampleDTO.setAiProvider(AIProvider.DEEPSEEK);
 
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertEquals(AIProvider.DEEPSEEK, result.getPreferredAiProvider());
     }
@@ -128,7 +128,7 @@ class UserAIConfigServiceTest {
     @Test
     @DisplayName("convertToDTO_validConfig_shouldReturnDTO")
     void convertToDTO_validConfig_shouldReturnDTO() throws Exception {
-        UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
+        final UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -151,7 +151,7 @@ class UserAIConfigServiceTest {
     @Test
     @DisplayName("convertToDTO_nullConfig_shouldReturnNull")
     void convertToDTO_nullConfig_shouldReturnNull() throws Exception {
-        UserAIConfigDTO result = userAIConfigService.convertToDTO(null);
+        final UserAIConfigDTO result = userAIConfigService.convertToDTO(null);
 
         assertNull(result);
     }
@@ -161,7 +161,7 @@ class UserAIConfigServiceTest {
     void convertToDTO_defaultProvider_shouldMapToOpenAI() throws Exception {
         sampleConfig.setPreferredAiProvider(AIProvider.DEFAULT);
 
-        UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
+        final UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
 
         assertEquals(AIProvider.OPENAI, result.getAiProvider());
     }
@@ -171,7 +171,7 @@ class UserAIConfigServiceTest {
     void convertToDTO_deepseekProvider_shouldMapToDeepseek() throws Exception {
         sampleConfig.setPreferredAiProvider(AIProvider.DEEPSEEK);
 
-        UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
+        final UserAIConfigDTO result = userAIConfigService.convertToDTO(sampleConfig);
 
         assertEquals(AIProvider.DEEPSEEK, result.getAiProvider());
     }
@@ -181,7 +181,7 @@ class UserAIConfigServiceTest {
     @Test
     @DisplayName("saveUserAIConfig_nullDTO_shouldThrowIllegalArgumentException")
     void saveUserAIConfig_nullDTO_shouldThrowIllegalArgumentException() throws Exception {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 userAIConfigService.saveUserAIConfig(null));
         assertEquals("Config DTO cannot be null", ex.getMessage());
     }
@@ -192,7 +192,7 @@ class UserAIConfigServiceTest {
         sampleDTO.setId(1L);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(sampleConfig);
 
-        UserAIConfigDTO result = userAIConfigService.saveUserAIConfig(sampleDTO);
+        final UserAIConfigDTO result = userAIConfigService.saveUserAIConfig(sampleDTO);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -205,7 +205,7 @@ class UserAIConfigServiceTest {
         sampleDTO.setId(null);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(sampleConfig);
 
-        UserAIConfigDTO result = userAIConfigService.saveUserAIConfig(sampleDTO);
+        final UserAIConfigDTO result = userAIConfigService.saveUserAIConfig(sampleDTO);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -226,7 +226,7 @@ class UserAIConfigServiceTest {
     @DisplayName("saveUserAIConfig_savedEntityHasNullId_shouldThrowIllegalStateException")
     void saveUserAIConfig_savedEntityHasNullId_shouldThrowIllegalStateException() throws Exception {
         sampleDTO.setId(1L);
-        UserAIConfig savedWithNullId = UserAIConfig.builder()
+        final UserAIConfig savedWithNullId = UserAIConfig.builder()
                 .id(null)
                 .userId(100L)
                 .build();
@@ -243,7 +243,7 @@ class UserAIConfigServiceTest {
         sampleDTO.setPatientId(200L);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(null);
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 userAIConfigService.saveUserAIConfig(sampleDTO));
         assertTrue(ex.getMessage().contains("patient 200"));
     }
@@ -255,7 +255,7 @@ class UserAIConfigServiceTest {
         sampleDTO.setPatientId(null);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(null);
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 userAIConfigService.saveUserAIConfig(sampleDTO));
         assertTrue(ex.getMessage().contains("user 100"));
         assertFalse(ex.getMessage().contains("patient"));
@@ -284,7 +284,7 @@ class UserAIConfigServiceTest {
         when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(100L, 200L))
                 .thenReturn(Optional.of(sampleConfig));
 
-        UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, 200L);
+        final UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, 200L);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -297,11 +297,11 @@ class UserAIConfigServiceTest {
         when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(100L, 200L))
                 .thenReturn(Optional.empty());
 
-        UserAIConfig defaultConfig = UserAIConfigDefaults.createMedicalDefaultConfig(100L, 200L);
+        final UserAIConfig defaultConfig = UserAIConfigDefaults.createMedicalDefaultConfig(100L, 200L);
         defaultConfig.setId(5L);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(defaultConfig);
 
-        UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, 200L);
+        final UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, 200L);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -315,7 +315,7 @@ class UserAIConfigServiceTest {
         when(userAIConfigRepository.findByUserIdAndIsActiveTrue(100L))
                 .thenReturn(Optional.of(sampleConfig));
 
-        UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, null);
+        final UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, null);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -327,11 +327,11 @@ class UserAIConfigServiceTest {
         when(userAIConfigRepository.findByUserIdAndIsActiveTrue(100L))
                 .thenReturn(Optional.empty());
 
-        UserAIConfig defaultConfig = UserAIConfigDefaults.createMedicalDefaultConfig(100L, null);
+        final UserAIConfig defaultConfig = UserAIConfigDefaults.createMedicalDefaultConfig(100L, null);
         defaultConfig.setId(6L);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(defaultConfig);
 
-        UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, null);
+        final UserAIConfigDTO result = userAIConfigService.getUserAIConfig(100L, null);
 
         assertNotNull(result);
         assertEquals(100L, result.getUserId());
@@ -355,7 +355,7 @@ class UserAIConfigServiceTest {
         when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(100L, 200L))
                 .thenReturn(Optional.empty());
 
-        UserAIConfig savedNullId = UserAIConfig.builder().userId(100L).build();
+        final UserAIConfig savedNullId = UserAIConfig.builder().userId(100L).build();
         savedNullId.setId(null);
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(savedNullId);
 
@@ -370,7 +370,7 @@ class UserAIConfigServiceTest {
                 .thenReturn(Optional.empty());
         when(userAIConfigRepository.save(any(UserAIConfig.class))).thenReturn(null);
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+        final IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 userAIConfigService.getUserAIConfig(100L, null));
         assertTrue(ex.getMessage().contains("user 100"));
         assertFalse(ex.getMessage().contains("patient"));
@@ -386,7 +386,7 @@ class UserAIConfigServiceTest {
         // Since we're using the actual enum, we test with DEFAULT which maps to OPENAI.
         sampleDTO.setAiProvider(AIProvider.DEFAULT);
 
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertEquals(AIProvider.OPENAI, result.getPreferredAiProvider());
     }
@@ -396,7 +396,7 @@ class UserAIConfigServiceTest {
     void convertDTOToEntity_openaiProvider_shouldMapToOpenAI() throws Exception {
         sampleDTO.setAiProvider(AIProvider.OPENAI);
 
-        UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
+        final UserAIConfig result = userAIConfigService.convertDTOToEntity(sampleDTO);
 
         assertEquals(AIProvider.OPENAI, result.getPreferredAiProvider());
     }

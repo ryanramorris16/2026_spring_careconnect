@@ -62,7 +62,7 @@ class LinkManagementControllerTest {
     private AuthorizationService authorizationService;
 
     private User user(Long id, Role role) {
-        User u = new User();
+        final User u = new User();
         u.setId(id);
         u.setRole(role);
         u.setEmail("u" + id + "@test.com");
@@ -97,7 +97,7 @@ class LinkManagementControllerTest {
             when(caregiverPatientLinkService.createLink(eq(10L), any(), eq(10L)))
                     .thenReturn(caregiverLink(100L, "ACTIVE", LocalDateTime.now().plusDays(3)));
 
-            LinkManagementController.CreateTemporaryLinkRequest body =
+            final LinkManagementController.CreateTemporaryLinkRequest body =
                     new LinkManagementController.CreateTemporaryLinkRequest(1L, LocalDateTime.now().plusDays(3), "Temp access");
 
             // Act + Assert
@@ -119,7 +119,7 @@ class LinkManagementControllerTest {
             // Arrange
             when(userRepository.findById(11L)).thenReturn(Optional.of(user(11L, Role.PATIENT)));
 
-            LinkManagementController.CreateTemporaryLinkRequest body =
+            final LinkManagementController.CreateTemporaryLinkRequest body =
                     new LinkManagementController.CreateTemporaryLinkRequest(2L, LocalDateTime.now().plusDays(2), "Nope");
 
             // Act + Assert
@@ -147,7 +147,7 @@ class LinkManagementControllerTest {
             when(familyMemberService.createTemporaryLink(eq(3L), eq(1L), eq("Sibling"), any(), eq("Visit help"), eq(12L)))
                     .thenReturn(familyLink(200L));
 
-            LinkManagementController.CreateTemporaryFamilyLinkRequest body =
+            final LinkManagementController.CreateTemporaryFamilyLinkRequest body =
                     new LinkManagementController.CreateTemporaryFamilyLinkRequest(
                             3L, 1L, "Sibling", LocalDateTime.now().plusDays(7), "Visit help");
 
@@ -170,7 +170,7 @@ class LinkManagementControllerTest {
             // Arrange
             when(userRepository.findById(13L)).thenReturn(Optional.of(user(13L, Role.FAMILY_MEMBER)));
 
-            LinkManagementController.CreateTemporaryFamilyLinkRequest body =
+            final LinkManagementController.CreateTemporaryFamilyLinkRequest body =
                     new LinkManagementController.CreateTemporaryFamilyLinkRequest(
                             3L, 1L, "Sibling", LocalDateTime.now().plusDays(7), "Nope");
 
@@ -199,7 +199,7 @@ class LinkManagementControllerTest {
             when(caregiverPatientLinkService.updateLink(eq(500L), any(), eq(14L)))
                     .thenReturn(caregiverLink(500L, "ACTIVE", LocalDateTime.now().plusDays(10)));
 
-            LinkManagementController.ExtendExpirationRequest body =
+            final LinkManagementController.ExtendExpirationRequest body =
                     new LinkManagementController.ExtendExpirationRequest("CAREGIVER_PATIENT", LocalDateTime.now().plusDays(10));
 
             // Act + Assert
@@ -221,7 +221,7 @@ class LinkManagementControllerTest {
             // Arrange
             when(userRepository.findById(15L)).thenReturn(Optional.of(user(15L, Role.ADMIN)));
 
-            LinkManagementController.ExtendExpirationRequest body =
+            final LinkManagementController.ExtendExpirationRequest body =
                     new LinkManagementController.ExtendExpirationRequest("UNKNOWN", LocalDateTime.now().plusDays(1));
 
             // Act + Assert
@@ -242,7 +242,7 @@ class LinkManagementControllerTest {
             when(familyMemberService.updateFamilyMemberLink(eq(901L), any(), eq(151L)))
                     .thenReturn(familyLink(901L));
 
-            LinkManagementController.ExtendExpirationRequest body =
+            final LinkManagementController.ExtendExpirationRequest body =
                     new LinkManagementController.ExtendExpirationRequest("FAMILY_MEMBER", LocalDateTime.now().plusDays(4));
 
             // Act + Assert
@@ -264,7 +264,7 @@ class LinkManagementControllerTest {
             // Arrange
             when(userRepository.findById(16L)).thenReturn(Optional.of(user(16L, Role.PATIENT)));
 
-            LinkManagementController.ExtendExpirationRequest body =
+            final LinkManagementController.ExtendExpirationRequest body =
                     new LinkManagementController.ExtendExpirationRequest("CAREGIVER_PATIENT", LocalDateTime.now().plusDays(2));
 
             // Act + Assert

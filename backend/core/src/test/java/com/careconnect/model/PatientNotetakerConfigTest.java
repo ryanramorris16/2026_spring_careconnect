@@ -13,7 +13,7 @@ class PatientNotetakerConfigTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        PatientNotetakerConfig config = new PatientNotetakerConfig();
+        final PatientNotetakerConfig config = new PatientNotetakerConfig();
 
         assertThat(config).isNotNull();
         assertThat(config.getId()).isNull();
@@ -28,10 +28,10 @@ class PatientNotetakerConfigTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        PatientNotetakerKeyword keyword = new PatientNotetakerKeyword("chest pain", PatientNotetakerKeyword.EventType.ALERT);
+        final LocalDateTime now = LocalDateTime.now();
+        final PatientNotetakerKeyword keyword = new PatientNotetakerKeyword("chest pain", PatientNotetakerKeyword.EventType.ALERT);
 
-        PatientNotetakerConfig config = PatientNotetakerConfig.builder()
+        final PatientNotetakerConfig config = PatientNotetakerConfig.builder()
                 .id(1L)
                 .patientId(10L)
                 .isEnabled(true)
@@ -52,8 +52,8 @@ class PatientNotetakerConfigTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PatientNotetakerConfig config = new PatientNotetakerConfig();
-        LocalDateTime now = LocalDateTime.now();
+        final PatientNotetakerConfig config = new PatientNotetakerConfig();
+        final LocalDateTime now = LocalDateTime.now();
 
         config.setId(2L);
         config.setPatientId(20L);
@@ -74,8 +74,8 @@ class PatientNotetakerConfigTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        PatientNotetakerConfig c1 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
-        PatientNotetakerConfig c2 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
+        final PatientNotetakerConfig c1 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
+        final PatientNotetakerConfig c2 = PatientNotetakerConfig.builder().id(1L).patientId(10L).build();
 
         assertThat(c1).isEqualTo(c2);
         assertThat(c1.hashCode()).isEqualTo(c2.hashCode());

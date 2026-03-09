@@ -59,7 +59,7 @@ class FeedServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postRepository.countByUserId(1L)).thenReturn(1L);
 
-        Post result = feedService.createPost(1L, "Hello World", "http://img.com/photo.jpg");
+        final Post result = feedService.createPost(1L, "Hello World", "http://img.com/photo.jpg");
 
         assertNotNull(result);
         assertEquals(10L, result.getId());
@@ -74,7 +74,7 @@ class FeedServiceTest {
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postRepository.countByUserId(1L)).thenReturn(5L);
 
-        Post result = feedService.createPost(1L, "Hello World", null);
+        final Post result = feedService.createPost(1L, "Hello World", null);
 
         assertNotNull(result);
         verify(gamificationService, never()).unlockAchievement(anyLong(), anyString(), anyInt());
@@ -84,13 +84,13 @@ class FeedServiceTest {
     @DisplayName("createPost - null imageUrl - creates post with null imageUrl")
     void createPost_nullImageUrl_createsPostWithNullImageUrl() throws Exception {
         when(postRepository.save(any(Post.class))).thenAnswer(invocation -> {
-            Post saved = invocation.getArgument(0);
+            final Post saved = invocation.getArgument(0);
             saved.setId(11L);
             return saved;
         });
         when(postRepository.countByUserId(1L)).thenReturn(2L);
 
-        Post result = feedService.createPost(1L, "No image post", null);
+        final Post result = feedService.createPost(1L, "No image post", null);
 
         assertNotNull(result);
         assertNull(result.getImageUrl());
@@ -99,7 +99,7 @@ class FeedServiceTest {
     @Test
     @DisplayName("getAllPosts - posts exist - returns all posts")
     void getAllPosts_postsExist_returnsAllPosts() throws Exception {
-        Post post2 = new Post();
+        final Post post2 = new Post();
         post2.setId(11L);
         post2.setUserId(2L);
         post2.setContent("Post 2");
@@ -107,7 +107,7 @@ class FeedServiceTest {
 
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(post, post2));
 
-        List<Post> result = feedService.getAllPosts();
+        final List<Post> result = feedService.getAllPosts();
 
         assertEquals(2, result.size());
     }
@@ -117,7 +117,7 @@ class FeedServiceTest {
     void getAllPosts_noPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
-        List<Post> result = feedService.getAllPosts();
+        final List<Post> result = feedService.getAllPosts();
 
         assertTrue(result.isEmpty());
     }
@@ -127,7 +127,7 @@ class FeedServiceTest {
     void getPostsByUser_userHasPosts_returnsUserPosts() throws Exception {
         when(postRepository.findAllByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(post));
 
-        List<Post> result = feedService.getPostsByUser(1L);
+        final List<Post> result = feedService.getPostsByUser(1L);
 
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).getUserId());
@@ -138,7 +138,7 @@ class FeedServiceTest {
     void getPostsByUser_userHasNoPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByUserIdOrderByCreatedAtDesc(999L)).thenReturn(List.of());
 
-        List<Post> result = feedService.getPostsByUser(999L);
+        final List<Post> result = feedService.getPostsByUser(999L);
 
         assertTrue(result.isEmpty());
     }
@@ -150,7 +150,7 @@ class FeedServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(3);
 
-        List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
+        final List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
 
         assertEquals(1, result.size());
         assertEquals("Test User", result.get(0).getUsername());
@@ -167,7 +167,7 @@ class FeedServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
+        final List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
 
         assertEquals(1, result.size());
         assertEquals("user@test.com", result.get(0).getUsername());
@@ -181,7 +181,7 @@ class FeedServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
+        final List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
 
         assertEquals(1, result.size());
         assertEquals("user@test.com", result.get(0).getUsername());
@@ -194,7 +194,7 @@ class FeedServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
+        final List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
 
         assertEquals(1, result.size());
         assertEquals("Unknown", result.get(0).getUsername());
@@ -205,7 +205,7 @@ class FeedServiceTest {
     void getAllPostsWithCommentCount_noPosts_returnsEmptyList() throws Exception {
         when(postRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of());
 
-        List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
+        final List<PostWithCommentCountDto> result = feedService.getAllPostsWithCommentCount();
 
         assertTrue(result.isEmpty());
     }
@@ -213,13 +213,13 @@ class FeedServiceTest {
     @Test
     @DisplayName("getPostsByUserAndFriends - user with friends and posts - returns posts with comment counts")
     void getPostsByUserAndFriends_userWithFriendsAndPosts_returnsPostsWithCommentCounts() throws Exception {
-        List<Long> friendIds = new ArrayList<>(List.of(2L, 3L));
+        final List<Long> friendIds = new ArrayList<>(List.of(2L, 3L));
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(anyList())).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(5);
 
-        List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
+        final List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
 
         assertEquals(1, result.size());
         assertEquals("Test User", result.get(0).getUsername());
@@ -229,13 +229,13 @@ class FeedServiceTest {
     @Test
     @DisplayName("getPostsByUserAndFriends - user with no friends - returns only own posts")
     void getPostsByUserAndFriends_noFriends_returnsOwnPosts() throws Exception {
-        List<Long> friendIds = new ArrayList<>();
+        final List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
+        final List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
 
         assertEquals(1, result.size());
     }
@@ -244,13 +244,13 @@ class FeedServiceTest {
     @DisplayName("getPostsByUserAndFriends - user with null name in post - returns email")
     void getPostsByUserAndFriends_userWithNullName_returnsEmail() throws Exception {
         user.setName(null);
-        List<Long> friendIds = new ArrayList<>();
+        final List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
+        final List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
 
         assertEquals("user@test.com", result.get(0).getUsername());
     }
@@ -258,13 +258,13 @@ class FeedServiceTest {
     @Test
     @DisplayName("getPostsByUserAndFriends - post author not found - returns Unknown")
     void getPostsByUserAndFriends_postAuthorNotFound_returnsUnknown() throws Exception {
-        List<Long> friendIds = new ArrayList<>();
+        final List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of(post));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
         when(commentRepository.countByPostId(10L)).thenReturn(0);
 
-        List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
+        final List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
 
         assertEquals("Unknown", result.get(0).getUsername());
     }
@@ -272,11 +272,11 @@ class FeedServiceTest {
     @Test
     @DisplayName("getPostsByUserAndFriends - no posts - returns empty list")
     void getPostsByUserAndFriends_noPosts_returnsEmptyList() throws Exception {
-        List<Long> friendIds = new ArrayList<>();
+        final List<Long> friendIds = new ArrayList<>();
         when(userRepository.findConfirmedFriendIds(1L)).thenReturn(friendIds);
         when(postRepository.findAllByUserIdInOrderByCreatedAtDesc(List.of(1L))).thenReturn(List.of());
 
-        List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
+        final List<PostWithCommentCountDto> result = feedService.getPostsByUserAndFriends(1L);
 
         assertTrue(result.isEmpty());
     }

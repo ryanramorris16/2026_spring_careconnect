@@ -16,13 +16,13 @@ class ChatResponseTest {
 
     @Test
     void builder_default_successIsTrue() throws Exception {
-        ChatResponse response = ChatResponse.builder().build();
+        final ChatResponse response = ChatResponse.builder().build();
         assertThat(response.getSuccess()).isTrue();
     }
 
     @Test
     void builder_successSetToFalse_returnsFalse() throws Exception {
-        ChatResponse response = ChatResponse.builder().success(false).build();
+        final ChatResponse response = ChatResponse.builder().success(false).build();
         assertThat(response.getSuccess()).isFalse();
     }
 
@@ -30,9 +30,9 @@ class ChatResponseTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        LocalDateTime now = LocalDateTime.of(2026, 3, 1, 10, 30);
+        final LocalDateTime now = LocalDateTime.of(2026, 3, 1, 10, 30);
 
-        ChatResponse response = ChatResponse.builder()
+        final ChatResponse response = ChatResponse.builder()
                 .conversationId("conv-42")
                 .message("User message")
                 .aiResponse("AI reply")
@@ -79,7 +79,7 @@ class ChatResponseTest {
 
     @Test
     void noArgConstructor_fieldsAreNull() throws Exception {
-        ChatResponse response = new ChatResponse();
+        final ChatResponse response = new ChatResponse();
         assertThat(response.getConversationId()).isNull();
         assertThat(response.getMessage()).isNull();
         assertThat(response.getAiResponse()).isNull();
@@ -89,7 +89,7 @@ class ChatResponseTest {
 
     @Test
     void setters_roundTrip() throws Exception {
-        ChatResponse response = new ChatResponse();
+        final ChatResponse response = new ChatResponse();
 
         response.setConversationId("conv-99");
         response.setMessage("Hello");
@@ -136,7 +136,7 @@ class ChatResponseTest {
 
     @Test
     void builder_errorResponse_setsSuccessFalseAndErrorFields() throws Exception {
-        ChatResponse response = ChatResponse.builder()
+        final ChatResponse response = ChatResponse.builder()
                 .success(false)
                 .errorMessage("Service unavailable")
                 .errorCode("503")

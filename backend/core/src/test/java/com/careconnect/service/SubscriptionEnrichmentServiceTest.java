@@ -91,7 +91,7 @@ class SubscriptionEnrichmentServiceTest {
 
     /** Creates a User with the given ID and optional Stripe customer ID. */
     private User buildUser(Long id, String stripeCustomerId) {
-        User user = User.builder()
+        final User user = User.builder()
                 .id(id)
                 .email("user" + id + "@example.com")
                 .password("pw")
@@ -103,7 +103,7 @@ class SubscriptionEnrichmentServiceTest {
     /** Creates a Subscription with the given fields. */
     private Subscription buildSubscription(
             Long id, User user, String stripeSubId, String status, String priceId) {
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(id);
         sub.setUser(user);
         sub.setStripeSubscriptionId(stripeSubId);
@@ -114,7 +114,7 @@ class SubscriptionEnrichmentServiceTest {
 
     /** Creates a Plan with the given fields. */
     private Plan buildPlan(Long id, String code, String name, Integer priceCents) {
-        Plan plan = new Plan();
+        final Plan plan = new Plan();
         plan.setId(id);
         plan.setCode(code);
         plan.setName(name);
@@ -147,13 +147,13 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedUserSubscriptions_noStripeCustomerId_skipsStripe() throws Exception {
         // Without a Stripe customer ID there is nothing to look up in Stripe.
         // The service must enrich using only the local database records.
-        User user = buildUser(1L, null);
-        Subscription sub = buildSubscription(1L, user, null, "ACTIVE", null);
+        final User user = buildUser(1L, null);
+        final Subscription sub = buildSubscription(1L, user, null, "ACTIVE", null);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
 
-        List<SubscriptionResponseDTO> result = service.getEnrichedUserSubscriptions(1L);
+        final List<SubscriptionResponseDTO> result = service.getEnrichedUserSubscriptions(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -166,23 +166,23 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedUserSubscriptions_inactiveDbSub_updatesFromStripe() throws Exception {
         // When Stripe reports an active subscription but the DB record is CANCELLED or
         // has a different Stripe ID, the service must update the local record and save it.
-        User user = buildUser(2L, "cus_test");
-        Subscription sub = buildSubscription(2L, user, "sub_old", "CANCELLED", PREMIUM_PRICE_ID);
+        final User user = buildUser(2L, "cus_test");
+        final Subscription sub = buildSubscription(2L, user, "sub_old", "CANCELLED", PREMIUM_PRICE_ID);
 
-        String activeSubId = "sub_active_123";
+        final String activeSubId = "sub_active_123";
 
         // Stripe's active-subscription list returns a different sub ID
         when(stripeService.getCustomerActiveSubscriptions("cus_test"))
                 .thenReturn("{\"data\":[{\"id\":\"" + activeSubId + "\"}]}");
 
         // Details of the active Stripe subscription (used for the DB update and enrichment)
-        String stripeSubJson = "{\"status\":\"active\"," +
+        final String stripeSubJson = "{\"status\":\"active\"," +
                 "\"items\":{\"data\":[{\"price\":{\"id\":\"" + PREMIUM_PRICE_ID + "\"}}]}," +
                 "\"current_period_start\":1700000000," +
                 "\"current_period_end\":1702592000}";
         when(stripeService.getSubscription(activeSubId)).thenReturn(stripeSubJson);
 
-        Plan premiumPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final Plan premiumPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
         when(planRepository.findByName("Premium Plan")).thenReturn(List.of(premiumPlan));
@@ -201,16 +201,16 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedUserSubscriptions_alreadyActive_noUpdate() throws Exception {
         // When the DB record is ACTIVE and its Stripe subscription ID matches the one
         // Stripe considers active, no write operation should be performed.
-        String activeSubId = "sub_already_active";
-        User user = buildUser(4L, "cus_active");
-        Subscription sub = buildSubscription(4L, user, activeSubId, "ACTIVE", PREMIUM_PRICE_ID);
+        final String activeSubId = "sub_already_active";
+        final User user = buildUser(4L, "cus_active");
+        final Subscription sub = buildSubscription(4L, user, activeSubId, "ACTIVE", PREMIUM_PRICE_ID);
 
         when(stripeService.getCustomerActiveSubscriptions("cus_active"))
                 .thenReturn("{\"data\":[{\"id\":\"" + activeSubId + "\"}]}");
         // Stub the status-check call from enrichSubscriptions
         when(stripeService.getSubscription(activeSubId)).thenReturn("{\"status\":\"active\"}");
 
-        Plan premiumPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final Plan premiumPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
         when(userRepository.findById(4L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
         when(planRepository.findByCode(PREMIUM_PRICE_ID)).thenReturn(premiumPlan);
@@ -227,20 +227,20 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedUserSubscriptions_noDbSub_createsFromStripe() throws Exception {
         // When Stripe reports an active subscription but no subscription record exists
         // locally for the user, the service must create and persist a new record.
-        User user = buildUser(3L, "cus_create");
-        String activeSubId = "sub_new_create";
+        final User user = buildUser(3L, "cus_create");
+        final String activeSubId = "sub_new_create";
 
         when(stripeService.getCustomerActiveSubscriptions("cus_create"))
                 .thenReturn("{\"data\":[{\"id\":\"" + activeSubId + "\"}]}");
 
-        String stripeSubJson = "{\"status\":\"active\"," +
+        final String stripeSubJson = "{\"status\":\"active\"," +
                 "\"items\":{\"data\":[{\"price\":{\"id\":\"" + PREMIUM_PRICE_ID + "\"}}]}," +
                 "\"current_period_start\":1700000000," +
                 "\"current_period_end\":1702592000}";
         when(stripeService.getSubscription(activeSubId)).thenReturn(stripeSubJson);
 
         // First call returns empty (no existing subs); second call returns the new record
-        Subscription created = buildSubscription(99L, user, activeSubId, "ACTIVE", PREMIUM_PRICE_ID);
+        final Subscription created = buildSubscription(99L, user, activeSubId, "ACTIVE", PREMIUM_PRICE_ID);
         when(subscriptionRepository.findByUser(user))
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of(created));
@@ -272,9 +272,9 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("createMissingPlanMappings: skips subscription that already has a plan linked")
     void testCreateMissingPlanMappings_skipSubscriptionWithPlan() throws Exception {
         // If the subscription already references a Plan entity, no new mapping is needed.
-        User user = buildUser(10L, null);
-        Plan existingPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
-        Subscription sub = buildSubscription(10L, user, "sub_x", "ACTIVE", PREMIUM_PRICE_ID);
+        final User user = buildUser(10L, null);
+        final Plan existingPlan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final Subscription sub = buildSubscription(10L, user, "sub_x", "ACTIVE", PREMIUM_PRICE_ID);
         sub.setPlan(existingPlan); // plan is already set
 
         when(userRepository.findById(10L)).thenReturn(Optional.of(user));
@@ -291,8 +291,8 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("createMissingPlanMappings: skips subscription with null priceId")
     void testCreateMissingPlanMappings_skipSubscriptionWithNullPriceId() throws Exception {
         // A subscription without a Stripe price ID cannot be mapped to any plan.
-        User user = buildUser(11L, null);
-        Subscription sub = buildSubscription(11L, user, "sub_y", "ACTIVE", null);
+        final User user = buildUser(11L, null);
+        final Subscription sub = buildSubscription(11L, user, "sub_y", "ACTIVE", null);
 
         when(userRepository.findById(11L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
@@ -308,16 +308,16 @@ class SubscriptionEnrichmentServiceTest {
     void testCreateMissingPlanMappings_createsMapping_premiumPriceId() throws Exception {
         // A subscription whose price ID is in the premium set and has no existing mapping
         // must result in a new Plan row being saved with code = the price ID.
-        User user = buildUser(12L, null);
-        Subscription sub = buildSubscription(12L, user, "sub_z", "ACTIVE", PREMIUM_PRICE_ID);
-        Plan premiumPlan = buildPlan(1L, "premium_code", "Premium Plan", 3000);
+        final User user = buildUser(12L, null);
+        final Subscription sub = buildSubscription(12L, user, "sub_z", "ACTIVE", PREMIUM_PRICE_ID);
+        final Plan premiumPlan = buildPlan(1L, "premium_code", "Premium Plan", 3000);
 
         when(userRepository.findById(12L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
         when(planRepository.findAll()).thenReturn(List.of(premiumPlan));
         when(planRepository.findByCode(PREMIUM_PRICE_ID)).thenReturn(null); // no mapping yet
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(99L);
             return p;
         });
@@ -333,16 +333,16 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("createMissingPlanMappings: creates a plan mapping for a known standard price ID")
     void testCreateMissingPlanMappings_createsMapping_standardPriceId() throws Exception {
         // Same as above but for the standard price ID set.
-        User user = buildUser(13L, null);
-        Subscription sub = buildSubscription(13L, user, "sub_std", "ACTIVE", STANDARD_PRICE_ID);
-        Plan standardPlan = buildPlan(2L, "standard_code", "Standard Plan", 2000);
+        final User user = buildUser(13L, null);
+        final Subscription sub = buildSubscription(13L, user, "sub_std", "ACTIVE", STANDARD_PRICE_ID);
+        final Plan standardPlan = buildPlan(2L, "standard_code", "Standard Plan", 2000);
 
         when(userRepository.findById(13L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
         when(planRepository.findAll()).thenReturn(List.of(standardPlan));
         when(planRepository.findByCode(STANDARD_PRICE_ID)).thenReturn(null);
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(100L);
             return p;
         });
@@ -357,9 +357,9 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("createMissingPlanMappings: skips save when a mapping for the price ID already exists in the database")
     void testCreateMissingPlanMappings_skipsIfMappingAlreadyExists() throws Exception {
         // If planRepository.findByCode already returns a plan, no duplicate should be saved.
-        User user = buildUser(14L, null);
-        Subscription sub = buildSubscription(14L, user, "sub_map", "ACTIVE", PREMIUM_PRICE_ID);
-        Plan existingMapping = buildPlan(5L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final User user = buildUser(14L, null);
+        final Subscription sub = buildSubscription(14L, user, "sub_map", "ACTIVE", PREMIUM_PRICE_ID);
+        final Plan existingMapping = buildPlan(5L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
 
         when(userRepository.findById(14L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
@@ -376,17 +376,17 @@ class SubscriptionEnrichmentServiceTest {
     void testCreateMissingPlanMappings_unknownPriceId_defaultsToPremium() throws Exception {
         // When a price ID doesn't match either the premium or standard set,
         // the service defaults to creating a mapping pointing at the Premium Plan.
-        String unknownPriceId = "price_unknown_xyz";
-        User user = buildUser(15L, null);
-        Subscription sub = buildSubscription(15L, user, "sub_unk", "ACTIVE", unknownPriceId);
-        Plan premiumPlan = buildPlan(1L, "premium_code", "Premium Plan", 3000);
+        final String unknownPriceId = "price_unknown_xyz";
+        final User user = buildUser(15L, null);
+        final Subscription sub = buildSubscription(15L, user, "sub_unk", "ACTIVE", unknownPriceId);
+        final Plan premiumPlan = buildPlan(1L, "premium_code", "Premium Plan", 3000);
 
         when(userRepository.findById(15L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
         when(planRepository.findAll()).thenReturn(List.of(premiumPlan));
         when(planRepository.findByCode(unknownPriceId)).thenReturn(null);
         when(planRepository.save(any(Plan.class))).thenAnswer(inv -> {
-            Plan p = inv.getArgument(0);
+            final Plan p = inv.getArgument(0);
             p.setId(101L);
             return p;
         });
@@ -417,14 +417,14 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedActiveUserSubscriptions_noStripeCustomer_returnsActiveOnly() throws Exception {
         // Without a Stripe customer ID the active list comes solely from local status.
         // CANCELLED subscriptions must not appear in the result.
-        User user = buildUser(20L, null);
-        Subscription activeSub    = buildSubscription(20L, user, null, "ACTIVE",    null);
-        Subscription cancelledSub = buildSubscription(21L, user, null, "CANCELLED", null);
+        final User user = buildUser(20L, null);
+        final Subscription activeSub    = buildSubscription(20L, user, null, "ACTIVE",    null);
+        final Subscription cancelledSub = buildSubscription(21L, user, null, "CANCELLED", null);
 
         when(userRepository.findById(20L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(activeSub, cancelledSub));
 
-        List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(20L);
+        final List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(20L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -436,9 +436,9 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedActiveUserSubscriptions_stripeActive_updatesSub() throws Exception {
         // A locally CANCELLED subscription that appears in Stripe's active list must
         // be promoted to ACTIVE, saved, and included in the returned results.
-        String activeSubId = "sub_stripe_active";
-        User user = buildUser(21L, "cus_upgrade");
-        Subscription sub = buildSubscription(22L, user, activeSubId, "CANCELLED", null);
+        final String activeSubId = "sub_stripe_active";
+        final User user = buildUser(21L, "cus_upgrade");
+        final Subscription sub = buildSubscription(22L, user, activeSubId, "CANCELLED", null);
 
         when(stripeService.getCustomerActiveSubscriptions("cus_upgrade"))
                 .thenReturn("{\"data\":[{\"id\":\"" + activeSubId + "\"}]}");
@@ -448,7 +448,7 @@ class SubscriptionEnrichmentServiceTest {
         when(userRepository.findById(21L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(sub));
 
-        List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(21L);
+        final List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(21L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -462,13 +462,13 @@ class SubscriptionEnrichmentServiceTest {
     void testGetEnrichedActiveUserSubscriptions_noneActive_returnsEmpty() throws Exception {
         // A user with only CANCELLED subscriptions and no Stripe customer ID must
         // receive an empty result — not null, not an exception.
-        User user = buildUser(22L, null);
-        Subscription cancelledSub = buildSubscription(23L, user, null, "CANCELLED", null);
+        final User user = buildUser(22L, null);
+        final Subscription cancelledSub = buildSubscription(23L, user, null, "CANCELLED", null);
 
         when(userRepository.findById(22L)).thenReturn(Optional.of(user));
         when(subscriptionRepository.findByUser(user)).thenReturn(List.of(cancelledSub));
 
-        List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(22L);
+        final List<SubscriptionResponseDTO> result = service.getEnrichedActiveUserSubscriptions(22L);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -482,7 +482,7 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("enrichSubscriptions: returns empty list when given an empty input list")
     void testEnrichSubscriptions_emptyList() throws Exception {
         // Feeding an empty list must produce an empty (not null) result list.
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(Collections.emptyList());
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(Collections.emptyList());
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -493,8 +493,8 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_subscriptionHasPlan() throws Exception {
         // When the subscription entity already holds a Plan reference, that plan's data
         // is used directly without any additional lookup by price ID.
-        Plan plan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
-        Subscription sub = new Subscription();
+        final Plan plan = buildPlan(1L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final Subscription sub = new Subscription();
         sub.setId(30L);
         sub.setStatus("ACTIVE");
         sub.setPlan(plan);
@@ -502,7 +502,7 @@ class SubscriptionEnrichmentServiceTest {
 
         when(planRepository.findAll()).thenReturn(List.of(plan));
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Premium Plan", result.get(0).getPlanName());
@@ -515,8 +515,8 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_resolvesPlanByCode() throws Exception {
         // When no plan is linked but the subscription's priceId exactly matches a
         // Plan's code, that plan is used to populate the DTO.
-        Plan plan = buildPlan(2L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
-        Subscription sub = new Subscription();
+        final Plan plan = buildPlan(2L, PREMIUM_PRICE_ID, "Premium Plan", 3000);
+        final Subscription sub = new Subscription();
         sub.setId(31L);
         sub.setStatus("ACTIVE");
         sub.setPriceId(PREMIUM_PRICE_ID);
@@ -524,7 +524,7 @@ class SubscriptionEnrichmentServiceTest {
 
         when(planRepository.findAll()).thenReturn(List.of(plan));
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals(2L, result.get(0).getPlanId());
@@ -537,8 +537,8 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_premiumPriceId_usesPremiumPlanFromDb() throws Exception {
         // The priceId is in the configured premium set but no plan has that exact code.
         // The "Premium Plan" found by name is used to fill the DTO.
-        Plan premiumPlan = buildPlan(5L, "different_code", "Premium Plan", 3000);
-        Subscription sub = new Subscription();
+        final Plan premiumPlan = buildPlan(5L, "different_code", "Premium Plan", 3000);
+        final Subscription sub = new Subscription();
         sub.setId(32L);
         sub.setStatus("ACTIVE");
         sub.setPriceId(PREMIUM_PRICE_ID);
@@ -546,7 +546,7 @@ class SubscriptionEnrichmentServiceTest {
         // findAll returns a plan with a different code, so plansByCode lookup misses
         when(planRepository.findAll()).thenReturn(List.of(premiumPlan));
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Premium Plan", result.get(0).getPlanName());
@@ -559,14 +559,14 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_premiumPriceId_noDbPlan_usesHardcodedDefaults() throws Exception {
         // When the priceId is in the premium set but no Premium Plan row exists in the
         // database, the DTO uses hardcoded defaults: name="Premium Plan", price=$30.00.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(33L);
         sub.setStatus("ACTIVE");
         sub.setPriceId(PREMIUM_PRICE_ID);
 
         when(planRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Premium Plan", result.get(0).getPlanName());
@@ -578,15 +578,15 @@ class SubscriptionEnrichmentServiceTest {
     @DisplayName("enrichSubscriptions: uses the DB Standard Plan when priceId is in the standard price ID set")
     void testEnrichSubscriptions_standardPriceId_usesStandardPlanFromDb() throws Exception {
         // The priceId is in the standard set and there is a matching "Standard Plan" by name.
-        Plan standardPlan = buildPlan(6L, "std_code", "Standard Plan", 2000);
-        Subscription sub = new Subscription();
+        final Plan standardPlan = buildPlan(6L, "std_code", "Standard Plan", 2000);
+        final Subscription sub = new Subscription();
         sub.setId(34L);
         sub.setStatus("ACTIVE");
         sub.setPriceId(STANDARD_PRICE_ID);
 
         when(planRepository.findAll()).thenReturn(List.of(standardPlan));
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Standard Plan", result.get(0).getPlanName());
@@ -599,14 +599,14 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_standardPriceId_noDbPlan_usesHardcodedDefaults() throws Exception {
         // Same as the premium fallback but for the standard tier:
         // hardcoded name="Standard Plan", price=$20.00.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(35L);
         sub.setStatus("ACTIVE");
         sub.setPriceId(STANDARD_PRICE_ID);
 
         when(planRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Standard Plan", result.get(0).getPlanName());
@@ -619,15 +619,15 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_unknownPriceId_defaultsToPremiumPlan() throws Exception {
         // An unrecognised price ID falls through to the final default branch, which
         // applies the Premium Plan details when one is present in the database.
-        Plan premiumPlan = buildPlan(7L, "premium_code", "Premium Plan", 3000);
-        Subscription sub = new Subscription();
+        final Plan premiumPlan = buildPlan(7L, "premium_code", "Premium Plan", 3000);
+        final Subscription sub = new Subscription();
         sub.setId(36L);
         sub.setStatus("ACTIVE");
         sub.setPriceId("price_unknown_xyz");
 
         when(planRepository.findAll()).thenReturn(List.of(premiumPlan));
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("Premium Plan", result.get(0).getPlanName());
@@ -639,7 +639,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_stripeActive_statusBecomesActive() throws Exception {
         // checkAndUpdateSubscriptionStatus is called for each subscription that has a
         // Stripe ID. A 'active' Stripe status must set the subscription to ACTIVE.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(37L);
         sub.setStripeSubscriptionId("sub_checking");
         sub.setStatus("ACTIVE");
@@ -657,7 +657,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_stripeTrialing_setsActive() throws Exception {
         // Stripe's 'trialing' status is treated as active — the subscription is in
         // good standing and should be accessible to the user.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(38L);
         sub.setStripeSubscriptionId("sub_trialing");
         sub.setStatus("TRIALING");
@@ -666,7 +666,7 @@ class SubscriptionEnrichmentServiceTest {
                 .thenReturn("{\"status\":\"trialing\"}");
         when(planRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
+        final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
         assertEquals("ACTIVE", sub.getStatus());
@@ -677,7 +677,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_stripeStatusMismatch_updatesStatus() throws Exception {
         // When Stripe reports 'past_due' but the DB has 'ACTIVE', the subscription
         // object must reflect the real billing state from Stripe.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(39L);
         sub.setStripeSubscriptionId("sub_past_due");
         sub.setStatus("ACTIVE");
@@ -696,7 +696,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_stripeNoStatusField_keepsLocalStatus() throws Exception {
         // If the Stripe response is missing the 'status' field the service must not
         // overwrite the local status — it just continues with what it has.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(40L);
         sub.setStripeSubscriptionId("sub_no_status");
         sub.setStatus("ACTIVE");
@@ -716,7 +716,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_noStripeId_skipsStatusCheck() throws Exception {
         // If stripeSubscriptionId is null, the service has nothing to query Stripe with
         // and must return early from the status check without making any API calls.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(41L);
         sub.setStripeSubscriptionId(null);
         sub.setStatus("ACTIVE");
@@ -734,7 +734,7 @@ class SubscriptionEnrichmentServiceTest {
     void testEnrichSubscriptions_stripeException_keepsLocalStatus() throws Exception {
         // If the Stripe API call throws an exception, the service must catch it and
         // continue with the existing local status rather than propagating the error.
-        Subscription sub = new Subscription();
+        final Subscription sub = new Subscription();
         sub.setId(42L);
         sub.setStripeSubscriptionId("sub_error");
         sub.setStatus("ACTIVE");

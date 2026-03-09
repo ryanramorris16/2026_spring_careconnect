@@ -10,7 +10,7 @@ class CheckInTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        CheckIn checkIn = new CheckIn();
+        final CheckIn checkIn = new CheckIn();
         assertThat(checkIn).isNotNull();
     }
 
@@ -18,8 +18,8 @@ class CheckInTest {
 
     @Test
     void templateConstructor_setsTemplate() throws Exception {
-        CheckInTemplate template = new CheckInTemplate();
-        CheckIn checkIn = new CheckIn(template);
+        final CheckInTemplate template = new CheckInTemplate();
+        final CheckIn checkIn = new CheckIn(template);
         assertThat(checkIn).isNotNull();
     }
 }

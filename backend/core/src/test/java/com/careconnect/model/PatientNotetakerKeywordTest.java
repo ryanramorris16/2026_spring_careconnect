@@ -10,7 +10,7 @@ class PatientNotetakerKeywordTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
+        final PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
 
         assertThat(keyword).isNotNull();
         assertThat(keyword.getKeyword()).isNull();
@@ -21,7 +21,7 @@ class PatientNotetakerKeywordTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        PatientNotetakerKeyword keyword = new PatientNotetakerKeyword(
+        final PatientNotetakerKeyword keyword = new PatientNotetakerKeyword(
                 "chest pain", PatientNotetakerKeyword.EventType.ALERT);
 
         assertThat(keyword.getKeyword()).isEqualTo("chest pain");
@@ -32,7 +32,7 @@ class PatientNotetakerKeywordTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        PatientNotetakerKeyword keyword = PatientNotetakerKeyword.builder()
+        final PatientNotetakerKeyword keyword = PatientNotetakerKeyword.builder()
                 .keyword("schedule follow-up")
                 .eventType(PatientNotetakerKeyword.EventType.TASK)
                 .build();
@@ -45,7 +45,7 @@ class PatientNotetakerKeywordTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
+        final PatientNotetakerKeyword keyword = new PatientNotetakerKeyword();
 
         keyword.setKeyword("shortness of breath");
         keyword.setEventType(PatientNotetakerKeyword.EventType.ALERT);

@@ -21,11 +21,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -68,22 +68,22 @@ class AllergyControllerTest {
     // Each bean below is replaced with a Mockito stub so the controller can be
     // instantiated without real allergy storage, user lookup, or caregiver logic.
 
-    @MockBean
+    @MockitoBean
     private AllergyService allergyService;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private PatientRepository patientRepository;
 
-    @MockBean
+    @MockitoBean
     private CaregiverService caregiverService;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     @Autowired
@@ -161,7 +161,7 @@ class AllergyControllerTest {
      * patient — the controller should deny access with a 403.
      */
     private void mockForbiddenSecurityContext() throws Exception {
-        User other = new User();
+        final User other = new User();
         other.setId(99L);
         other.setEmail("other@test.com");
         other.setRole(Role.PATIENT);
@@ -171,9 +171,9 @@ class AllergyControllerTest {
     }
 
     private void mockSecurityContext(String email, User user) {
-        Authentication auth = Mockito.mock(Authentication.class);
+        final Authentication auth = Mockito.mock(Authentication.class);
         when(auth.getName()).thenReturn(email);
-        SecurityContext secCtx = Mockito.mock(SecurityContext.class);
+        final SecurityContext secCtx = Mockito.mock(SecurityContext.class);
         when(secCtx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(secCtx);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
@@ -314,7 +314,7 @@ class AllergyControllerTest {
     void updateAllergy_success() throws Exception {
         mockAdminSecurityContext();
 
-        AllergyDTO updated = AllergyDTO.builder()
+        final AllergyDTO updated = AllergyDTO.builder()
                 .id(1L)
                 .patientId(10L)
                 .allergen("Penicillin")

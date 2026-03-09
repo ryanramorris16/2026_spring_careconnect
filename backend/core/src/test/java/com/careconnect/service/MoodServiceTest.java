@@ -33,14 +33,14 @@ class MoodServiceTest {
     @Test
     @DisplayName("saveMood - valid inputs - returns saved mood")
     void saveMood_validInputs_returnsSavedMood() throws Exception {
-        Long userId = 1L;
-        int score = 8;
-        String label = "Happy";
+        final Long userId = 1L;
+        final int score = 8;
+        final String label = "Happy";
 
-        Mood savedMood = new Mood(userId, score, label);
+        final Mood savedMood = new Mood(userId, score, label);
         when(moodRepository.save(any(Mood.class))).thenReturn(savedMood);
 
-        Mood result = moodService.saveMood(userId, score, label);
+        final Mood result = moodService.saveMood(userId, score, label);
 
         assertNotNull(result);
         assertEquals(userId, result.getUserId());
@@ -52,14 +52,14 @@ class MoodServiceTest {
     @Test
     @DisplayName("saveMood - zero score - returns saved mood with zero score")
     void saveMood_zeroScore_returnsSavedMoodWithZeroScore() throws Exception {
-        Long userId = 2L;
-        int score = 0;
-        String label = "Neutral";
+        final Long userId = 2L;
+        final int score = 0;
+        final String label = "Neutral";
 
-        Mood savedMood = new Mood(userId, score, label);
+        final Mood savedMood = new Mood(userId, score, label);
         when(moodRepository.save(any(Mood.class))).thenReturn(savedMood);
 
-        Mood result = moodService.saveMood(userId, score, label);
+        final Mood result = moodService.saveMood(userId, score, label);
 
         assertNotNull(result);
         assertEquals(0, result.getScore());
@@ -70,14 +70,14 @@ class MoodServiceTest {
     @Test
     @DisplayName("saveMood - negative score - returns saved mood with negative score")
     void saveMood_negativeScore_returnsSavedMoodWithNegativeScore() throws Exception {
-        Long userId = 3L;
-        int score = -1;
-        String label = "Sad";
+        final Long userId = 3L;
+        final int score = -1;
+        final String label = "Sad";
 
-        Mood savedMood = new Mood(userId, score, label);
+        final Mood savedMood = new Mood(userId, score, label);
         when(moodRepository.save(any(Mood.class))).thenReturn(savedMood);
 
-        Mood result = moodService.saveMood(userId, score, label);
+        final Mood result = moodService.saveMood(userId, score, label);
 
         assertNotNull(result);
         assertEquals(-1, result.getScore());
@@ -87,14 +87,14 @@ class MoodServiceTest {
     @Test
     @DisplayName("saveMood - verifies mood object is constructed and saved")
     void saveMood_verifiesMoodConstructionAndSave_savesCorrectly() throws Exception {
-        Long userId = 5L;
-        int score = 10;
-        String label = "Excellent";
+        final Long userId = 5L;
+        final int score = 10;
+        final String label = "Excellent";
 
-        Mood savedMood = new Mood(userId, score, label);
+        final Mood savedMood = new Mood(userId, score, label);
         when(moodRepository.save(any(Mood.class))).thenReturn(savedMood);
 
-        Mood result = moodService.saveMood(userId, score, label);
+        final Mood result = moodService.saveMood(userId, score, label);
 
         assertNotNull(result);
         assertEquals(userId, result.getUserId());
@@ -107,14 +107,14 @@ class MoodServiceTest {
     @Test
     @DisplayName("getMoods - moods exist for user - returns list of moods")
     void getMoods_moodsExistForUser_returnsListOfMoods() throws Exception {
-        Long userId = 1L;
-        Mood mood1 = new Mood(userId, 7, "Good");
-        Mood mood2 = new Mood(userId, 3, "Bad");
+        final Long userId = 1L;
+        final Mood mood1 = new Mood(userId, 7, "Good");
+        final Mood mood2 = new Mood(userId, 3, "Bad");
 
         when(moodRepository.findByUserIdOrderByCreatedAtDesc(userId))
                 .thenReturn(Arrays.asList(mood1, mood2));
 
-        List<Mood> result = moodService.getMoods(userId);
+        final List<Mood> result = moodService.getMoods(userId);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -126,11 +126,11 @@ class MoodServiceTest {
     @Test
     @DisplayName("getMoods - no moods for user - returns empty list")
     void getMoods_noMoodsForUser_returnsEmptyList() throws Exception {
-        Long userId = 99L;
+        final Long userId = 99L;
         when(moodRepository.findByUserIdOrderByCreatedAtDesc(userId))
                 .thenReturn(Collections.emptyList());
 
-        List<Mood> result = moodService.getMoods(userId);
+        final List<Mood> result = moodService.getMoods(userId);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -140,13 +140,13 @@ class MoodServiceTest {
     @Test
     @DisplayName("getMoods - single mood for user - returns single element list")
     void getMoods_singleMoodForUser_returnsSingleElementList() throws Exception {
-        Long userId = 42L;
-        Mood mood = new Mood(userId, 5, "Okay");
+        final Long userId = 42L;
+        final Mood mood = new Mood(userId, 5, "Okay");
 
         when(moodRepository.findByUserIdOrderByCreatedAtDesc(userId))
                 .thenReturn(Collections.singletonList(mood));
 
-        List<Mood> result = moodService.getMoods(userId);
+        final List<Mood> result = moodService.getMoods(userId);
 
         assertNotNull(result);
         assertEquals(1, result.size());

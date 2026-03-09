@@ -14,7 +14,7 @@ class LoginResponseTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        LoginResponse response = LoginResponse.builder()
+        final LoginResponse response = LoginResponse.builder()
                 .id(1L)
                 .email("user@example.com")
                 .role(Role.PATIENT)
@@ -39,7 +39,7 @@ class LoginResponseTest {
 
     @Test
     void builder_caregiverRole_setsCaregiversId() throws Exception {
-        LoginResponse response = LoginResponse.builder()
+        final LoginResponse response = LoginResponse.builder()
                 .id(2L)
                 .email("caregiver@example.com")
                 .role(Role.CAREGIVER)
@@ -62,7 +62,7 @@ class LoginResponseTest {
 
     @Test
     void builder_staticMethod_returnsBuilderInstance() throws Exception {
-        LoginResponse.LoginResponseBuilder builder = LoginResponse.builder();
+        final LoginResponse.LoginResponseBuilder builder = LoginResponse.builder();
         assertThat(builder).isNotNull();
     }
 
@@ -70,7 +70,7 @@ class LoginResponseTest {
 
     @Test
     void record_accessors_allFieldsAccessible() throws Exception {
-        LoginResponse response = new LoginResponse(
+        final LoginResponse response = new LoginResponse(
                 99L, "admin@example.com", Role.ADMIN, "admin-token",
                 null, null, "Super Admin", "ACTIVE", true
         );
@@ -90,7 +90,7 @@ class LoginResponseTest {
 
     @Test
     void builder_chainedSetters_buildsCorrectly() throws Exception {
-        LoginResponse response = LoginResponse.builder()
+        final LoginResponse response = LoginResponse.builder()
                 .id(5L)
                 .name("Family Member")
                 .email("family@example.com")

@@ -74,15 +74,15 @@ class QuestionInitializerTest {
         // ordinal (display order). This pins the first seed question's exact definition.
         when(questionRepository.count()).thenReturn(0L);
 
-        ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
+        final ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
         when(questionRepository.save(captor.capture()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         questionInitializer.initQuestions();
 
-        List<Question> saved = captor.getAllValues();
+        final List<Question> saved = captor.getAllValues();
 
-        Question first = saved.get(0);
+        final Question first = saved.get(0);
 
         assertEquals("Did you take all of your prescribed medications today?", first.getPrompt());
         assertEquals(QuestionType.YES_NO, first.getType());
@@ -97,13 +97,13 @@ class QuestionInitializerTest {
         // which controls the display order presented to the user in the health-check form.
         when(questionRepository.count()).thenReturn(0L);
 
-        ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
+        final ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
         when(questionRepository.save(captor.capture()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         questionInitializer.initQuestions();
 
-        List<Question> saved = captor.getAllValues();
+        final List<Question> saved = captor.getAllValues();
 
         assertEquals(15, saved.size());
 
@@ -148,27 +148,27 @@ class QuestionInitializerTest {
         // covers all answer formats used by the health-check questionnaire.
         when(questionRepository.count()).thenReturn(0L);
 
-        ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
+        final ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
         when(questionRepository.save(captor.capture()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         questionInitializer.initQuestions();
 
-        List<Question> saved = captor.getAllValues();
+        final List<Question> saved = captor.getAllValues();
 
-        long yesNoCount = saved.stream()
+        final long yesNoCount = saved.stream()
                 .filter(q -> q.getType() == QuestionType.YES_NO)
                 .count();
 
-        long trueFalseCount = saved.stream()
+        final long trueFalseCount = saved.stream()
                 .filter(q -> q.getType() == QuestionType.TRUE_FALSE)
                 .count();
 
-        long numberCount = saved.stream()
+        final long numberCount = saved.stream()
                 .filter(q -> q.getType() == QuestionType.NUMBER)
                 .count();
 
-        long textCount = saved.stream()
+        final long textCount = saved.stream()
                 .filter(q -> q.getType() == QuestionType.TEXT)
                 .count();
 

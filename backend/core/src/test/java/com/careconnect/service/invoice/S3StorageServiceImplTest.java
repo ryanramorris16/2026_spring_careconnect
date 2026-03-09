@@ -31,7 +31,7 @@ class S3StorageServiceImplTest {
     @BeforeEach
     void setUp() throws Exception {
         // @Value field is not injected by MockitoExtension — set via reflection
-        Field bucketField = S3StorageServiceImpl.class.getDeclaredField("bucket");
+        final Field bucketField = S3StorageServiceImpl.class.getDeclaredField("bucket");
         bucketField.setAccessible(true);
         bucketField.set(s3StorageServiceImpl, "test-bucket");
 
@@ -41,7 +41,7 @@ class S3StorageServiceImplTest {
 
     @Test
     void upload_twoArgs_delegatesToThreeArgVersion() throws Exception {
-        byte[] data = "pdf-data".getBytes();
+        final byte[] data = "pdf-data".getBytes();
 
         s3StorageServiceImpl.upload(data, "invoices/test.pdf");
 
@@ -50,8 +50,8 @@ class S3StorageServiceImplTest {
 
     @Test
     void upload_threeArgs_withContentType_setsContentType() throws Exception {
-        byte[] data = "pdf-data".getBytes();
-        ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        final byte[] data = "pdf-data".getBytes();
+        final ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
         s3StorageServiceImpl.upload(data, "invoices/test.pdf", "application/pdf");
 
@@ -63,8 +63,8 @@ class S3StorageServiceImplTest {
 
     @Test
     void upload_threeArgs_nullContentType_doesNotSetContentType() throws Exception {
-        byte[] data = "pdf-data".getBytes();
-        ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        final byte[] data = "pdf-data".getBytes();
+        final ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
         s3StorageServiceImpl.upload(data, "invoices/test.pdf", null);
 
@@ -74,8 +74,8 @@ class S3StorageServiceImplTest {
 
     @Test
     void upload_threeArgs_blankContentType_doesNotSetContentType() throws Exception {
-        byte[] data = "pdf-data".getBytes();
-        ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        final byte[] data = "pdf-data".getBytes();
+        final ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
         s3StorageServiceImpl.upload(data, "invoices/test.pdf", "   ");
 
@@ -85,8 +85,8 @@ class S3StorageServiceImplTest {
 
     @Test
     void upload_setsAcl() throws Exception {
-        byte[] data = "data".getBytes();
-        ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        final byte[] data = "data".getBytes();
+        final ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
 
         s3StorageServiceImpl.upload(data, "invoices/file.pdf", "application/pdf");
 

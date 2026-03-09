@@ -1,6 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.dto.*;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.AuthorizationService;
@@ -14,18 +13,15 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -38,16 +34,16 @@ class CaregiverPatientLinkControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CaregiverPatientLinkService linkService;
 
-    @MockBean
+    @MockitoBean
     private UserRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private SecurityUtil securityUtil;
 
-    @MockBean
+    @MockitoBean
     private AuthorizationService authorizationService;
 
     @AfterEach
@@ -60,7 +56,7 @@ class CaregiverPatientLinkControllerTest {
     // WHY: Simulates authenticated CareConnect user in RBAC tests
     // ============================================================
     private User buildUser(Long id, Role role, String email) {
-        User u = new User();
+        final User u = new User();
         u.setId(id);
         u.setRole(role);
         u.setEmail(email);
@@ -68,9 +64,9 @@ class CaregiverPatientLinkControllerTest {
     }
 
     private void mockSecurityContext(String email, User user) {
-        Authentication auth = Mockito.mock(Authentication.class);
+        final Authentication auth = Mockito.mock(Authentication.class);
         when(auth.getName()).thenReturn(email);
-        SecurityContext secCtx = Mockito.mock(SecurityContext.class);
+        final SecurityContext secCtx = Mockito.mock(SecurityContext.class);
         when(secCtx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(secCtx);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
@@ -83,7 +79,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminShouldCreateLinkSuccessfully() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/caregivers/2/patients")
@@ -99,7 +95,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCanCreateLinkForSelf() throws Exception {
 
-        User caregiver = buildUser(5L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(5L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/caregivers/5/patients")
@@ -115,7 +111,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverShouldNotCreateLinkForOtherCaregiver() throws Exception {
 
-        User caregiver = buildUser(5L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(5L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/caregivers/2/patients")
@@ -131,7 +127,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanUpdateLink() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(put("/v1/api/caregiver-patient-links/1")
@@ -147,7 +143,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCannotUpdateLink() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(put("/v1/api/caregiver-patient-links/1")
@@ -163,7 +159,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanSuspendLink() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/suspend"))
@@ -177,7 +173,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCanSuspendLink() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/suspend"))
@@ -191,7 +187,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void patientCannotSuspendLink() throws Exception {
 
-        User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
+        final User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
         mockSecurityContext("patient@test.com", patient);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/suspend"))
@@ -205,7 +201,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanReactivateLink() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/reactivate"))
@@ -219,7 +215,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCanReactivateLink() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/reactivate"))
@@ -233,7 +229,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void patientCannotReactivateLink() throws Exception {
 
-        User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
+        final User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
         mockSecurityContext("patient@test.com", patient);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/1/reactivate"))
@@ -247,7 +243,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanRevokeLink() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(delete("/v1/api/caregiver-patient-links/1"))
@@ -261,7 +257,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCannotRevokeLink() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(delete("/v1/api/caregiver-patient-links/1"))
@@ -275,7 +271,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCanViewOwnPatients() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         when(linkService.getPatientsByCaregiver(2L))
@@ -292,7 +288,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanViewAnyCaregiversPatients() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         when(linkService.getPatientsByCaregiver(99L))
@@ -309,7 +305,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCannotViewOthersCaregiverPatients() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(get("/v1/api/caregiver-patient-links/caregivers/99/patients"))
@@ -323,7 +319,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void patientCanViewOwnCaregivers() throws Exception {
 
-        User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
+        final User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
         mockSecurityContext("patient@test.com", patient);
 
         when(linkService.getCaregiversByPatient(3L))
@@ -340,7 +336,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void patientCannotViewOthersCaregivers() throws Exception {
 
-        User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
+        final User patient = buildUser(3L, Role.PATIENT, "patient@test.com");
         mockSecurityContext("patient@test.com", patient);
 
         mockMvc.perform(get("/v1/api/caregiver-patient-links/patients/99/caregivers"))
@@ -354,7 +350,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanViewAnyPatientCaregivers() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         when(linkService.getCaregiversByPatient(99L))
@@ -371,7 +367,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void hasAccessToPatientReturnsResult() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         when(linkService.hasAccessToPatient(1L, 2L)).thenReturn(true);
@@ -388,7 +384,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanViewAllLinks() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         when(linkService.getAllLinks()).thenReturn(List.of());
@@ -404,7 +400,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCannotViewAllLinks() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(get("/v1/api/caregiver-patient-links"))
@@ -418,7 +414,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void adminCanCleanupLinks() throws Exception {
 
-        User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
+        final User admin = buildUser(1L, Role.ADMIN, "admin@test.com");
         mockSecurityContext("admin@test.com", admin);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/cleanup-expired"))
@@ -432,7 +428,7 @@ class CaregiverPatientLinkControllerTest {
     @Test
     void caregiverCannotCleanupLinks() throws Exception {
 
-        User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
+        final User caregiver = buildUser(2L, Role.CAREGIVER, "cg@test.com");
         mockSecurityContext("cg@test.com", caregiver);
 
         mockMvc.perform(post("/v1/api/caregiver-patient-links/cleanup-expired"))

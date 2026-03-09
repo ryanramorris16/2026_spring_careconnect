@@ -27,7 +27,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchLatestDigest_anyToken_returnsEmpty")
     void fetchLatestDigest_anyToken_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("some-access-token");
+        final Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("some-access-token");
 
         assertTrue(result.isEmpty(), "stub should return Optional.empty()");
     }
@@ -35,7 +35,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchLatestDigest_nullToken_returnsEmpty")
     void fetchLatestDigest_nullToken_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest(null);
+        final Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest(null);
 
         assertTrue(result.isEmpty());
     }
@@ -43,7 +43,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchLatestDigest_blankToken_returnsEmpty")
     void fetchLatestDigest_blankToken_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("");
+        final Optional<OutlookClient.OutlookRaw> result = client.fetchLatestDigest("");
 
         assertTrue(result.isEmpty());
     }
@@ -53,7 +53,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchDigestForDate_anyTokenAndDate_returnsEmpty")
     void fetchDigestForDate_anyTokenAndDate_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result =
+        final Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate("token-123", LocalDate.of(2026, 2, 27));
 
         assertTrue(result.isEmpty(), "stub should return Optional.empty()");
@@ -62,7 +62,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchDigestForDate_nullToken_returnsEmpty")
     void fetchDigestForDate_nullToken_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result =
+        final Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate(null, LocalDate.of(2026, 1, 15));
 
         assertTrue(result.isEmpty());
@@ -71,7 +71,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchDigestForDate_nullDate_returnsEmpty")
     void fetchDigestForDate_nullDate_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result =
+        final Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate("token", null);
 
         assertTrue(result.isEmpty());
@@ -80,7 +80,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("fetchDigestForDate_bothNull_returnsEmpty")
     void fetchDigestForDate_bothNull_returnsEmpty() throws Exception {
-        Optional<OutlookClient.OutlookRaw> result =
+        final Optional<OutlookClient.OutlookRaw> result =
                 client.fetchDigestForDate(null, null);
 
         assertTrue(result.isEmpty());
@@ -91,10 +91,10 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_constructor_storesAllFields")
     void outlookRaw_constructor_storesAllFields() throws Exception {
-        Instant now = Instant.now();
-        Map<String, String> cids = Map.of("cid1", "data:image/png;base64,abc");
+        final Instant now = Instant.now();
+        final Map<String, String> cids = Map.of("cid1", "data:image/png;base64,abc");
 
-        OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("<html></html>", cids, now);
+        final OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("<html></html>", cids, now);
 
         assertEquals("<html></html>", raw.html());
         assertEquals(cids, raw.cidDataUrls());
@@ -104,7 +104,7 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_nullFields_returnsNulls")
     void outlookRaw_nullFields_returnsNulls() throws Exception {
-        OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(null, null, null);
+        final OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw(null, null, null);
 
         assertNull(raw.html());
         assertNull(raw.cidDataUrls());
@@ -114,10 +114,10 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_emptyValues_returnsEmptyValues")
     void outlookRaw_emptyValues_returnsEmptyValues() throws Exception {
-        Instant now = Instant.parse("2026-02-27T12:00:00Z");
-        Map<String, String> emptyCids = Map.of();
+        final Instant now = Instant.parse("2026-02-27T12:00:00Z");
+        final Map<String, String> emptyCids = Map.of();
 
-        OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("", emptyCids, now);
+        final OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("", emptyCids, now);
 
         assertEquals("", raw.html());
         assertTrue(raw.cidDataUrls().isEmpty());
@@ -127,11 +127,11 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_identicalRecords_areEqual")
     void outlookRaw_identicalRecords_areEqual() throws Exception {
-        Instant now = Instant.parse("2026-01-01T00:00:00Z");
-        Map<String, String> cids = Map.of("k", "v");
+        final Instant now = Instant.parse("2026-01-01T00:00:00Z");
+        final Map<String, String> cids = Map.of("k", "v");
 
-        OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", cids, now);
-        OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", cids, now);
+        final OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", cids, now);
+        final OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", cids, now);
 
         assertEquals(raw1, raw2);
         assertEquals(raw1.hashCode(), raw2.hashCode());
@@ -140,10 +140,10 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_differentRecords_notEqual")
     void outlookRaw_differentRecords_notEqual() throws Exception {
-        Instant now = Instant.now();
+        final Instant now = Instant.now();
 
-        OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html1", Map.of(), now);
-        OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html2", Map.of(), now);
+        final OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html1", Map.of(), now);
+        final OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html2", Map.of(), now);
 
         assertNotEquals(raw1, raw2);
     }
@@ -151,10 +151,10 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_toString_containsFieldValues")
     void outlookRaw_toString_containsFieldValues() throws Exception {
-        Instant now = Instant.parse("2026-02-27T10:00:00Z");
-        OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("<b>test</b>", Map.of(), now);
+        final Instant now = Instant.parse("2026-02-27T10:00:00Z");
+        final OutlookClient.OutlookRaw raw = new OutlookClient.OutlookRaw("<b>test</b>", Map.of(), now);
 
-        String str = raw.toString();
+        final String str = raw.toString();
         assertNotNull(str);
         assertTrue(str.contains("test"));
     }
@@ -162,9 +162,9 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_differentCidMaps_notEqual")
     void outlookRaw_differentCidMaps_notEqual() throws Exception {
-        Instant now = Instant.now();
-        OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", Map.of("k", "v1"), now);
-        OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", Map.of("k", "v2"), now);
+        final Instant now = Instant.now();
+        final OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", Map.of("k", "v1"), now);
+        final OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", Map.of("k", "v2"), now);
 
         assertNotEquals(raw1, raw2);
     }
@@ -172,11 +172,11 @@ class OutlookClientTest {
     @Test
     @DisplayName("outlookRaw_differentReceivedInstant_notEqual")
     void outlookRaw_differentReceivedInstant_notEqual() throws Exception {
-        Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
-        Instant t2 = Instant.parse("2026-01-02T00:00:00Z");
+        final Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
+        final Instant t2 = Instant.parse("2026-01-02T00:00:00Z");
 
-        OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", Map.of(), t1);
-        OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", Map.of(), t2);
+        final OutlookClient.OutlookRaw raw1 = new OutlookClient.OutlookRaw("html", Map.of(), t1);
+        final OutlookClient.OutlookRaw raw2 = new OutlookClient.OutlookRaw("html", Map.of(), t2);
 
         assertNotEquals(raw1, raw2);
     }

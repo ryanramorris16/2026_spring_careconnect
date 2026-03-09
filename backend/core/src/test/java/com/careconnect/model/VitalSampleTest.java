@@ -13,7 +13,7 @@ class VitalSampleTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        VitalSample vs = new VitalSample();
+        final VitalSample vs = new VitalSample();
 
         assertThat(vs).isNotNull();
         assertThat(vs.getId()).isNull();
@@ -34,10 +34,10 @@ class VitalSampleTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        Instant now = Instant.now();
+        final Patient patient = new Patient();
+        final Instant now = Instant.now();
 
-        VitalSample vs = VitalSample.builder()
+        final VitalSample vs = VitalSample.builder()
                 .id(1L)
                 .patient(patient)
                 .timestamp(now)
@@ -70,8 +70,8 @@ class VitalSampleTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        VitalSample vs = new VitalSample();
-        Instant now = Instant.now();
+        final VitalSample vs = new VitalSample();
+        final Instant now = Instant.now();
 
         vs.setId(2L);
         vs.setHeartRate(80.0);
@@ -96,9 +96,9 @@ class VitalSampleTest {
 
     @Test
     void onCreate_setsCreatedAtAndUpdatedAt() throws Exception {
-        VitalSample vs = new VitalSample();
+        final VitalSample vs = new VitalSample();
 
-        Method m = VitalSample.class.getDeclaredMethod("onCreate");
+        final Method m = VitalSample.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(vs);
 
@@ -110,11 +110,11 @@ class VitalSampleTest {
 
     @Test
     void onUpdate_refreshesUpdatedAt() throws Exception {
-        VitalSample vs = new VitalSample();
+        final VitalSample vs = new VitalSample();
         vs.setUpdatedAt(Instant.now().minusSeconds(60));
-        Instant before = vs.getUpdatedAt();
+        final Instant before = vs.getUpdatedAt();
 
-        Method m = VitalSample.class.getDeclaredMethod("onUpdate");
+        final Method m = VitalSample.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(vs);
 
@@ -125,9 +125,9 @@ class VitalSampleTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Instant now = Instant.now();
-        VitalSample vs1 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();
-        VitalSample vs2 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();
+        final Instant now = Instant.now();
+        final VitalSample vs1 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();
+        final VitalSample vs2 = VitalSample.builder().id(1L).heartRate(72.0).timestamp(now).build();
 
         assertThat(vs1).isEqualTo(vs2);
         assertThat(vs1.hashCode()).isEqualTo(vs2.hashCode());

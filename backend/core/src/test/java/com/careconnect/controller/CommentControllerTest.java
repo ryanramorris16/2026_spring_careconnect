@@ -55,8 +55,8 @@ class CommentControllerTest {
     }
 
     private void mockAuthenticated() throws Exception {
-        Authentication authentication = mock(Authentication.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
+        final Authentication authentication = mock(Authentication.class);
+        final SecurityContext securityContext = mock(SecurityContext.class);
 
         when(authentication.isAuthenticated()).thenReturn(true);
         when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -68,8 +68,8 @@ class CommentControllerTest {
     }
 
     private void mockAuthenticatedUser(String email) {
-        Authentication authentication = mock(Authentication.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
+        final Authentication authentication = mock(Authentication.class);
+        final SecurityContext securityContext = mock(SecurityContext.class);
 
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn(email);
@@ -121,13 +121,13 @@ class CommentControllerTest {
 
         mockMvc.perform(post("/v1/api/comments/post/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "userId": 1,
-                                  "username": "test",
-                                  "content": "Hello"
-                                }
-                                """))
+                        .content(
+                                "{" +
+                                  "\"userId\": 1," +
+                                  "\"username\": \"test\"," +
+                                  "\"content\": \"Hello\"" +
+                                "}"
+                                ))
                 .andExpect(status().isForbidden());
 
         verify(userRepository).findByEmail("missing@example.com");
@@ -138,7 +138,7 @@ class CommentControllerTest {
 
         mockAuthenticatedUser("user@example.com");
 
-        User user = new User();
+        final User user = new User();
         user.setId(5L);
 
         when(userRepository.findByEmail("user@example.com"))
@@ -146,13 +146,13 @@ class CommentControllerTest {
 
         mockMvc.perform(post("/v1/api/comments/post/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "userId": 1,
-                                  "username": "wrong",
-                                  "content": "Invalid"
-                                }
-                                """))
+                        .content(
+                                "{" +
+                                  "\"userId\": 1," +
+                                  "\"username\": \"wrong\"," +
+                                  "\"content\": \"Invalid\"" +
+                                "}"
+                                ))
                 .andExpect(status().isForbidden());
 
         verify(userRepository).findByEmail("user@example.com");
@@ -163,10 +163,10 @@ class CommentControllerTest {
 
         mockAuthenticatedUser("user@example.com");
 
-        User user = new User();
+        final User user = new User();
         user.setId(1L);
 
-        Comment saved = new Comment();
+        final Comment saved = new Comment();
         saved.setId(100L);
 
         when(userRepository.findByEmail("user@example.com"))
@@ -177,13 +177,13 @@ class CommentControllerTest {
 
         mockMvc.perform(post("/v1/api/comments/post/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "userId": 1,
-                                  "username": "john",
-                                  "content": "Nice post"
-                                }
-                                """))
+                        .content(
+                                "{" +
+                                  "\"userId\": 1," +
+                                  "\"username\": \"john\"," +
+                                  "\"content\": \"Nice post\"" +
+                                "}"
+                                ))
                 .andExpect(status().isCreated());
 
         verify(commentService)

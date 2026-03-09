@@ -198,7 +198,7 @@ class TaskControllerTest {
         @DisplayName("Returns updated task when id exists")
         void returnsUpdatedTaskWhenFound() throws Exception {
             // Arrange
-            Task updatedTask = Task.builder()
+            final Task updatedTask = Task.builder()
                     .id(1L)
                     .name("Updated Task Name")
                     .description("Updated Description")

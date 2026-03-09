@@ -61,13 +61,13 @@ class AIChatCacheServiceTest {
      * Creates a CacheEntry via reflection and sets its timestamp to the past so it appears expired.
      */
     private <T> Object createExpiredCacheEntry(T value) throws Exception {
-        Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-        Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+        final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+        final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
         ctor.setAccessible(true);
-        Object entry = ctor.newInstance(value);
+        final Object entry = ctor.newInstance(value);
 
         // Set timestamp to 20 minutes ago so isExpired() returns true
-        Field timestampField = cacheEntryClass.getDeclaredField("timestamp");
+        final Field timestampField = cacheEntryClass.getDeclaredField("timestamp");
         timestampField.setAccessible(true);
         timestampField.set(entry, LocalDateTime.now().minusMinutes(20));
 
@@ -78,8 +78,8 @@ class AIChatCacheServiceTest {
      * Creates a fresh (non-expired) CacheEntry via reflection.
      */
     private <T> Object createFreshCacheEntry(T value) throws Exception {
-        Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-        Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+        final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+        final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
         ctor.setAccessible(true);
         return ctor.newInstance(value);
     }
@@ -95,16 +95,16 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findPatient_cacheMiss_dbReturnsPatient_cachesAndReturns")
         void findPatient_cacheMiss_dbReturnsPatient_cachesAndReturns() throws Exception {
-            Patient patient = new Patient();
+            final Patient patient = new Patient();
             when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
 
-            Optional<Patient> result = service.findPatient(1L);
+            final Optional<Patient> result = service.findPatient(1L);
 
             assertThat(result).isPresent().contains(patient);
             verify(patientRepository).findById(1L);
 
             // Second call should hit cache
-            Optional<Patient> cached = service.findPatient(1L);
+            final Optional<Patient> cached = service.findPatient(1L);
             assertThat(cached).isPresent().contains(patient);
             verifyNoMoreInteractions(patientRepository);
         }
@@ -114,7 +114,7 @@ class AIChatCacheServiceTest {
         void findPatient_cacheMiss_dbReturnsEmpty_returnsEmptyAndDoesNotCache() throws Exception {
             when(patientRepository.findById(99L)).thenReturn(Optional.empty());
 
-            Optional<Patient> result = service.findPatient(99L);
+            final Optional<Patient> result = service.findPatient(99L);
 
             assertThat(result).isEmpty();
             verify(patientRepository).findById(99L);
@@ -127,11 +127,11 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findPatient_cacheHit_returnsFromCacheWithoutDbQuery")
         void findPatient_cacheHit_returnsFromCacheWithoutDbQuery() throws Exception {
-            Patient patient = new Patient();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
+            final Patient patient = new Patient();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
             cache.put("patient_1", createFreshCacheEntry(patient));
 
-            Optional<Patient> result = service.findPatient(1L);
+            final Optional<Patient> result = service.findPatient(1L);
 
             assertThat(result).isPresent().contains(patient);
             verifyNoInteractions(patientRepository);
@@ -140,15 +140,15 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findPatient_cacheExpired_queriesDbAgain")
         void findPatient_cacheExpired_queriesDbAgain() throws Exception {
-            Patient oldPatient = new Patient();
-            Patient newPatient = new Patient();
+            final Patient oldPatient = new Patient();
+            final Patient newPatient = new Patient();
 
-            ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
             cache.put("patient_1", createExpiredCacheEntry(oldPatient));
 
             when(patientRepository.findById(1L)).thenReturn(Optional.of(newPatient));
 
-            Optional<Patient> result = service.findPatient(1L);
+            final Optional<Patient> result = service.findPatient(1L);
 
             assertThat(result).isPresent().contains(newPatient);
             verify(patientRepository).findById(1L);
@@ -157,13 +157,13 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findPatient_cacheExpired_dbReturnsEmpty_returnsEmpty")
         void findPatient_cacheExpired_dbReturnsEmpty_returnsEmpty() throws Exception {
-            Patient oldPatient = new Patient();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
+            final Patient oldPatient = new Patient();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
             cache.put("patient_1", createExpiredCacheEntry(oldPatient));
 
             when(patientRepository.findById(1L)).thenReturn(Optional.empty());
 
-            Optional<Patient> result = service.findPatient(1L);
+            final Optional<Patient> result = service.findPatient(1L);
 
             assertThat(result).isEmpty();
             verify(patientRepository).findById(1L);
@@ -181,17 +181,17 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findUserAIConfig_cacheMiss_dbReturnsConfig_cachesAndReturns")
         void findUserAIConfig_cacheMiss_dbReturnsConfig_cachesAndReturns() throws Exception {
-            UserAIConfig config = new UserAIConfig();
+            final UserAIConfig config = new UserAIConfig();
             when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L))
                     .thenReturn(Optional.of(config));
 
-            Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
 
             assertThat(result).isPresent().contains(config);
             verify(userAIConfigRepository).findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L);
 
             // Second call should hit cache
-            Optional<UserAIConfig> cached = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> cached = service.findUserAIConfig(10L, 20L);
             assertThat(cached).isPresent().contains(config);
             verifyNoMoreInteractions(userAIConfigRepository);
         }
@@ -202,7 +202,7 @@ class AIChatCacheServiceTest {
             when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L))
                     .thenReturn(Optional.empty());
 
-            Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
 
             assertThat(result).isEmpty();
             verify(userAIConfigRepository).findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L);
@@ -215,11 +215,11 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findUserAIConfig_cacheHit_returnsFromCacheWithoutDbQuery")
         void findUserAIConfig_cacheHit_returnsFromCacheWithoutDbQuery() throws Exception {
-            UserAIConfig config = new UserAIConfig();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
+            final UserAIConfig config = new UserAIConfig();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
             cache.put("config_10_20", createFreshCacheEntry(config));
 
-            Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
 
             assertThat(result).isPresent().contains(config);
             verifyNoInteractions(userAIConfigRepository);
@@ -228,16 +228,16 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findUserAIConfig_cacheExpired_queriesDbAgain")
         void findUserAIConfig_cacheExpired_queriesDbAgain() throws Exception {
-            UserAIConfig oldConfig = new UserAIConfig();
-            UserAIConfig newConfig = new UserAIConfig();
+            final UserAIConfig oldConfig = new UserAIConfig();
+            final UserAIConfig newConfig = new UserAIConfig();
 
-            ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
             cache.put("config_10_20", createExpiredCacheEntry(oldConfig));
 
             when(userAIConfigRepository.findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L))
                     .thenReturn(Optional.of(newConfig));
 
-            Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> result = service.findUserAIConfig(10L, 20L);
 
             assertThat(result).isPresent().contains(newConfig);
             verify(userAIConfigRepository).findByUserIdAndPatientIdAndIsActiveTrue(10L, 20L);
@@ -255,23 +255,23 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("saveUserAIConfig_savesToDbAndUpdatesCache")
         void saveUserAIConfig_savesToDbAndUpdatesCache() throws Exception {
-            UserAIConfig config = new UserAIConfig();
+            final UserAIConfig config = new UserAIConfig();
             config.setUserId(10L);
             config.setPatientId(20L);
 
-            UserAIConfig saved = new UserAIConfig();
+            final UserAIConfig saved = new UserAIConfig();
             saved.setUserId(10L);
             saved.setPatientId(20L);
 
             when(userAIConfigRepository.save(config)).thenReturn(saved);
 
-            UserAIConfig result = service.saveUserAIConfig(config);
+            final UserAIConfig result = service.saveUserAIConfig(config);
 
             assertThat(result).isEqualTo(saved);
             verify(userAIConfigRepository).save(config);
 
             // Verify cache was updated — next find should hit cache
-            Optional<UserAIConfig> cached = service.findUserAIConfig(10L, 20L);
+            final Optional<UserAIConfig> cached = service.findUserAIConfig(10L, 20L);
             assertThat(cached).isPresent().contains(saved);
             verifyNoMoreInteractions(userAIConfigRepository);
         }
@@ -288,17 +288,17 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findConversation_cacheMiss_dbReturnsConversation_cachesAndReturns")
         void findConversation_cacheMiss_dbReturnsConversation_cachesAndReturns() throws Exception {
-            ChatConversation conversation = new ChatConversation();
+            final ChatConversation conversation = new ChatConversation();
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-1"))
                     .thenReturn(Optional.of(conversation));
 
-            Optional<ChatConversation> result = service.findConversation("conv-1");
+            final Optional<ChatConversation> result = service.findConversation("conv-1");
 
             assertThat(result).isPresent().contains(conversation);
             verify(chatConversationRepository).findByConversationIdAndIsActiveTrue("conv-1");
 
             // Second call should hit cache
-            Optional<ChatConversation> cached = service.findConversation("conv-1");
+            final Optional<ChatConversation> cached = service.findConversation("conv-1");
             assertThat(cached).isPresent().contains(conversation);
             verifyNoMoreInteractions(chatConversationRepository);
         }
@@ -309,7 +309,7 @@ class AIChatCacheServiceTest {
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-99"))
                     .thenReturn(Optional.empty());
 
-            Optional<ChatConversation> result = service.findConversation("conv-99");
+            final Optional<ChatConversation> result = service.findConversation("conv-99");
 
             assertThat(result).isEmpty();
             verify(chatConversationRepository).findByConversationIdAndIsActiveTrue("conv-99");
@@ -322,11 +322,11 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findConversation_cacheHit_returnsFromCacheWithoutDbQuery")
         void findConversation_cacheHit_returnsFromCacheWithoutDbQuery() throws Exception {
-            ChatConversation conversation = new ChatConversation();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
+            final ChatConversation conversation = new ChatConversation();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
             cache.put("conversation_conv-1", createFreshCacheEntry(conversation));
 
-            Optional<ChatConversation> result = service.findConversation("conv-1");
+            final Optional<ChatConversation> result = service.findConversation("conv-1");
 
             assertThat(result).isPresent().contains(conversation);
             verifyNoInteractions(chatConversationRepository);
@@ -335,16 +335,16 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("findConversation_cacheExpired_queriesDbAgain")
         void findConversation_cacheExpired_queriesDbAgain() throws Exception {
-            ChatConversation oldConv = new ChatConversation();
-            ChatConversation newConv = new ChatConversation();
+            final ChatConversation oldConv = new ChatConversation();
+            final ChatConversation newConv = new ChatConversation();
 
-            ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
             cache.put("conversation_conv-1", createExpiredCacheEntry(oldConv));
 
             when(chatConversationRepository.findByConversationIdAndIsActiveTrue("conv-1"))
                     .thenReturn(Optional.of(newConv));
 
-            Optional<ChatConversation> result = service.findConversation("conv-1");
+            final Optional<ChatConversation> result = service.findConversation("conv-1");
 
             assertThat(result).isPresent().contains(newConv);
             verify(chatConversationRepository).findByConversationIdAndIsActiveTrue("conv-1");
@@ -362,19 +362,19 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("saveConversation_savesToDbAndUpdatesCache")
         void saveConversation_savesToDbAndUpdatesCache() throws Exception {
-            ChatConversation conversation = new ChatConversation();
-            ChatConversation saved = new ChatConversation();
+            final ChatConversation conversation = new ChatConversation();
+            final ChatConversation saved = new ChatConversation();
             saved.setConversationId("conv-1");
 
             when(chatConversationRepository.save(conversation)).thenReturn(saved);
 
-            ChatConversation result = service.saveConversation(conversation);
+            final ChatConversation result = service.saveConversation(conversation);
 
             assertThat(result).isEqualTo(saved);
             verify(chatConversationRepository).save(conversation);
 
             // Verify cache was updated — next find should hit cache
-            Optional<ChatConversation> cached = service.findConversation("conv-1");
+            final Optional<ChatConversation> cached = service.findConversation("conv-1");
             assertThat(cached).isPresent().contains(saved);
             verifyNoMoreInteractions(chatConversationRepository);
         }
@@ -391,8 +391,8 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("evictPatient_removesEntryFromCache")
         void evictPatient_removesEntryFromCache() throws Exception {
-            Patient patient = new Patient();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
+            final Patient patient = new Patient();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
             cache.put("patient_1", createFreshCacheEntry(patient));
             assertThat(cache).containsKey("patient_1");
 
@@ -420,8 +420,8 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("evictUserAIConfig_removesEntryFromCache")
         void evictUserAIConfig_removesEntryFromCache() throws Exception {
-            UserAIConfig config = new UserAIConfig();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
+            final UserAIConfig config = new UserAIConfig();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("configCache");
             cache.put("config_10_20", createFreshCacheEntry(config));
             assertThat(cache).containsKey("config_10_20");
 
@@ -449,8 +449,8 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("evictConversation_removesEntryFromCache")
         void evictConversation_removesEntryFromCache() throws Exception {
-            ChatConversation conversation = new ChatConversation();
-            ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
+            final ChatConversation conversation = new ChatConversation();
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("conversationCache");
             cache.put("conversation_conv-1", createFreshCacheEntry(conversation));
             assertThat(cache).containsKey("conversation_conv-1");
 
@@ -478,9 +478,9 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cleanupExpiredEntries_removesExpiredEntriesFromAllCaches")
         void cleanupExpiredEntries_removesExpiredEntriesFromAllCaches() throws Exception {
-            Patient patient = new Patient();
-            UserAIConfig config = new UserAIConfig();
-            ChatConversation conversation = new ChatConversation();
+            final Patient patient = new Patient();
+            final UserAIConfig config = new UserAIConfig();
+            final ChatConversation conversation = new ChatConversation();
 
             getCacheMap("patientCache").put("patient_1", createExpiredCacheEntry(patient));
             getCacheMap("configCache").put("config_10_20", createExpiredCacheEntry(config));
@@ -496,15 +496,15 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cleanupExpiredEntries_keepsNonExpiredEntries")
         void cleanupExpiredEntries_keepsNonExpiredEntries() throws Exception {
-            Patient freshPatient = new Patient();
-            Patient expiredPatient = new Patient();
+            final Patient freshPatient = new Patient();
+            final Patient expiredPatient = new Patient();
 
             getCacheMap("patientCache").put("patient_1", createFreshCacheEntry(freshPatient));
             getCacheMap("patientCache").put("patient_2", createExpiredCacheEntry(expiredPatient));
 
             service.cleanupExpiredEntries();
 
-            ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
+            final ConcurrentHashMap<String, Object> cache = getCacheMap("patientCache");
             assertThat(cache).hasSize(1);
             assertThat(cache).containsKey("patient_1");
             assertThat(cache).doesNotContainKey("patient_2");
@@ -529,9 +529,9 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("clearAllCaches_clearsAllThreeCaches")
         void clearAllCaches_clearsAllThreeCaches() throws Exception {
-            Patient patient = new Patient();
-            UserAIConfig config = new UserAIConfig();
-            ChatConversation conversation = new ChatConversation();
+            final Patient patient = new Patient();
+            final UserAIConfig config = new UserAIConfig();
+            final ChatConversation conversation = new ChatConversation();
 
             getCacheMap("patientCache").put("patient_1", createFreshCacheEntry(patient));
             getCacheMap("configCache").put("config_10_20", createFreshCacheEntry(config));
@@ -563,15 +563,15 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cacheEntry_getValue_returnsStoredValue")
         void cacheEntry_getValue_returnsStoredValue() throws Exception {
-            String testValue = "test-value";
-            Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-            Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+            final String testValue = "test-value";
+            final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+            final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
-            Object entry = ctor.newInstance(testValue);
+            final Object entry = ctor.newInstance(testValue);
 
             java.lang.reflect.Method getValueMethod = cacheEntryClass.getDeclaredMethod("getValue");
             getValueMethod.setAccessible(true);
-            Object result = getValueMethod.invoke(entry);
+            final Object result = getValueMethod.invoke(entry);
 
             assertThat(result).isEqualTo("test-value");
         }
@@ -579,14 +579,14 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cacheEntry_isExpired_freshEntry_returnsFalse")
         void cacheEntry_isExpired_freshEntry_returnsFalse() throws Exception {
-            Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-            Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+            final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+            final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
-            Object entry = ctor.newInstance("value");
+            final Object entry = ctor.newInstance("value");
 
             java.lang.reflect.Method isExpiredMethod = cacheEntryClass.getDeclaredMethod("isExpired");
             isExpiredMethod.setAccessible(true);
-            boolean expired = (boolean) isExpiredMethod.invoke(entry);
+            final boolean expired = (boolean) isExpiredMethod.invoke(entry);
 
             assertThat(expired).isFalse();
         }
@@ -594,19 +594,19 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cacheEntry_isExpired_oldEntry_returnsTrue")
         void cacheEntry_isExpired_oldEntry_returnsTrue() throws Exception {
-            Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-            Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+            final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+            final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
-            Object entry = ctor.newInstance("value");
+            final Object entry = ctor.newInstance("value");
 
             // Set timestamp to 20 minutes ago
-            Field timestampField = cacheEntryClass.getDeclaredField("timestamp");
+            final Field timestampField = cacheEntryClass.getDeclaredField("timestamp");
             timestampField.setAccessible(true);
             timestampField.set(entry, LocalDateTime.now().minusMinutes(20));
 
             java.lang.reflect.Method isExpiredMethod = cacheEntryClass.getDeclaredMethod("isExpired");
             isExpiredMethod.setAccessible(true);
-            boolean expired = (boolean) isExpiredMethod.invoke(entry);
+            final boolean expired = (boolean) isExpiredMethod.invoke(entry);
 
             assertThat(expired).isTrue();
         }
@@ -614,14 +614,14 @@ class AIChatCacheServiceTest {
         @Test
         @DisplayName("cacheEntry_getValue_nullValue_returnsNull")
         void cacheEntry_getValue_nullValue_returnsNull() throws Exception {
-            Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
-            Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
+            final Class<?> cacheEntryClass = Class.forName("com.careconnect.service.cache.AIChatCacheService$CacheEntry");
+            final Constructor<?> ctor = cacheEntryClass.getDeclaredConstructor(Object.class);
             ctor.setAccessible(true);
-            Object entry = ctor.newInstance((Object) null);
+            final Object entry = ctor.newInstance((Object) null);
 
             java.lang.reflect.Method getValueMethod = cacheEntryClass.getDeclaredMethod("getValue");
             getValueMethod.setAccessible(true);
-            Object result = getValueMethod.invoke(entry);
+            final Object result = getValueMethod.invoke(entry);
 
             assertThat(result).isNull();
         }

@@ -14,8 +14,8 @@ class InvoiceResultTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        Map<String, String> extra = Map.of("poNumber", "PO-001");
-        List<InvoiceResult.InvoiceItem> items = List.of(
+        final Map<String, String> extra = Map.of("poNumber", "PO-001");
+        final List<InvoiceResult.InvoiceItem> items = List.of(
                 InvoiceResult.InvoiceItem.builder()
                         .description("Office Visit")
                         .productCode("99213")
@@ -26,7 +26,7 @@ class InvoiceResultTest {
                         .build()
         );
 
-        InvoiceResult result = InvoiceResult.builder()
+        final InvoiceResult result = InvoiceResult.builder()
                 .vendorName("ABC Clinic")
                 .invoiceId("INV-001")
                 .invoiceDate("2025-01-15")
@@ -55,7 +55,7 @@ class InvoiceResultTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        InvoiceResult result = InvoiceResult.builder().build();
+        final InvoiceResult result = InvoiceResult.builder().build();
 
         assertThat(result.getVendorName()).isNull();
         assertThat(result.getInvoiceId()).isNull();
@@ -66,7 +66,7 @@ class InvoiceResultTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        InvoiceResult result = InvoiceResult.builder().build();
+        final InvoiceResult result = InvoiceResult.builder().build();
 
         result.setVendorName("XYZ Medical");
         result.setInvoiceId("INV-999");
@@ -81,8 +81,8 @@ class InvoiceResultTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
-        InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
+        final InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
+        final InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-001").vendorName("Clinic A").build();
 
         assertThat(r1).isEqualTo(r2);
         assertThat(r1.hashCode()).isEqualTo(r2.hashCode());
@@ -90,8 +90,8 @@ class InvoiceResultTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").build();
-        InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-002").build();
+        final InvoiceResult r1 = InvoiceResult.builder().invoiceId("INV-001").build();
+        final InvoiceResult r2 = InvoiceResult.builder().invoiceId("INV-002").build();
 
         assertThat(r1).isNotEqualTo(r2);
     }
@@ -100,7 +100,7 @@ class InvoiceResultTest {
 
     @Test
     void invoiceItem_builder_setsAllFields() throws Exception {
-        InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder()
+        final InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder()
                 .description("Blood Panel")
                 .productCode("85025")
                 .unit("each")
@@ -119,9 +119,9 @@ class InvoiceResultTest {
 
     @Test
     void invoiceItem_equals_sameFields_returnsTrue() throws Exception {
-        InvoiceResult.InvoiceItem i1 = InvoiceResult.InvoiceItem.builder()
+        final InvoiceResult.InvoiceItem i1 = InvoiceResult.InvoiceItem.builder()
                 .description("Visit").productCode("99213").amount(new BigDecimal("200.00")).build();
-        InvoiceResult.InvoiceItem i2 = InvoiceResult.InvoiceItem.builder()
+        final InvoiceResult.InvoiceItem i2 = InvoiceResult.InvoiceItem.builder()
                 .description("Visit").productCode("99213").amount(new BigDecimal("200.00")).build();
 
         assertThat(i1).isEqualTo(i2);
@@ -130,7 +130,7 @@ class InvoiceResultTest {
 
     @Test
     void invoiceItem_setters_updateFields() throws Exception {
-        InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder().build();
+        final InvoiceResult.InvoiceItem item = InvoiceResult.InvoiceItem.builder().build();
 
         item.setDescription("Updated Desc");
         item.setProductCode("99214");

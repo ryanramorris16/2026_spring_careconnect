@@ -12,7 +12,7 @@ class PatientTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
 
         assertThat(patient).isNotNull();
         assertThat(patient.getId()).isNull();
@@ -24,10 +24,10 @@ class PatientTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        Address address = new Address("1 Main St", null, "Baltimore", "MD", "21201");
-        User user = new User();
+        final Address address = new Address("1 Main St", null, "Baltimore", "MD", "21201");
+        final User user = new User();
 
-        Patient patient = Patient.builder()
+        final Patient patient = Patient.builder()
                 .id(1L)
                 .firstName("John")
                 .lastName("Doe")
@@ -60,21 +60,21 @@ class PatientTest {
 
     @Test
     void isAlexaLinked_nullAlexaLinked_returnsFalse() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaLinked(null);
         assertThat(patient.isAlexaLinked()).isFalse();
     }
 
     @Test
     void isAlexaLinked_trueAlexaLinked_returnsTrue() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaLinked(true);
         assertThat(patient.isAlexaLinked()).isTrue();
     }
 
     @Test
     void isAlexaLinked_falseAlexaLinked_returnsFalse() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaLinked(false);
         assertThat(patient.isAlexaLinked()).isFalse();
     }
@@ -83,21 +83,21 @@ class PatientTest {
 
     @Test
     void isAlexaRefreshTokenExpired_nullExpiresAt_returnsTrue() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaRefreshTokenExpiresAt(null);
         assertThat(patient.isAlexaRefreshTokenExpired()).isTrue();
     }
 
     @Test
     void isAlexaRefreshTokenExpired_pastExpiresAt_returnsTrue() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaRefreshTokenExpiresAt(LocalDateTime.now().minusDays(1));
         assertThat(patient.isAlexaRefreshTokenExpired()).isTrue();
     }
 
     @Test
     void isAlexaRefreshTokenExpired_futureExpiresAt_returnsFalse() throws Exception {
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setAlexaRefreshTokenExpiresAt(LocalDateTime.now().plusDays(1));
         assertThat(patient.isAlexaRefreshTokenExpired()).isFalse();
     }
@@ -106,8 +106,8 @@ class PatientTest {
 
     @Test
     void alexaTokenFields_setAndGet() throws Exception {
-        Patient patient = new Patient();
-        LocalDateTime now = LocalDateTime.now();
+        final Patient patient = new Patient();
+        final LocalDateTime now = LocalDateTime.now();
 
         patient.setAlexaRefreshToken("refresh-token-abc");
         patient.setAlexaRefreshTokenExpiresAt(now.plusDays(30));
@@ -122,8 +122,8 @@ class PatientTest {
 
     @Test
     void setPrimaryCareProvider_updatesField() throws Exception {
-        Patient patient = new Patient();
-        Provider provider = new Provider();
+        final Patient patient = new Patient();
+        final Provider provider = new Provider();
 
         patient.setPrimaryCareProvider(provider);
         assertThat(patient.getPrimaryCareProvider()).isSameAs(provider);

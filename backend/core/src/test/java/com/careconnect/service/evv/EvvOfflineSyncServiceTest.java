@@ -83,8 +83,8 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncOfflineRecords_itemSyncSucceeds_savesRecord() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
-        EvvRecord record = buildRecord(1L);
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.findPendingSyncItems(3)).thenReturn(List.of(item));
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
@@ -99,7 +99,7 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncOfflineRecords_itemSyncFails_marksFailedAndSaves() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 999L, 10L, 0);
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 999L, 10L, 0);
 
         when(offlineQueueRepository.findPendingSyncItems(3)).thenReturn(List.of(item));
         // First save call (markSyncing), then the inner failure path save
@@ -126,8 +126,8 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_createOperation_marksSyncedAndSavesAsPendingReview() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("CREATE", 1L, 10L, 0);
-        EvvRecord record = buildRecord(1L);
+        final EvvOfflineQueue item = buildQueueItem("CREATE", 1L, 10L, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
@@ -142,10 +142,10 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_createOperation_confirmedStatus_queuesForSubmission() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("CREATE", 1L, 10L, 0);
+        final EvvOfflineQueue item = buildQueueItem("CREATE", 1L, 10L, 0);
 
         // Use a spy so we can override getStatus() after setStatus is called
-        EvvRecord record = spy(buildRecord(1L));
+        final EvvRecord record = spy(buildRecord(1L));
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
@@ -164,8 +164,8 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_updateOperation_marksSynced() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
-        EvvRecord record = buildRecord(1L);
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
@@ -180,8 +180,8 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_deleteOperation_doesNothing() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("DELETE", 1L, 10L, 0);
-        EvvRecord record = buildRecord(1L);
+        final EvvOfflineQueue item = buildQueueItem("DELETE", 1L, 10L, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
@@ -196,7 +196,7 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_recordNotFound_marksFailedAndRethrows() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 999L, 10L, 0);
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 999L, 10L, 0);
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(999L)).thenReturn(Optional.empty());
@@ -210,8 +210,8 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncQueueItem_exception_marksFailedAndRethrows() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
-        EvvRecord record = buildRecord(1L);
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
         when(recordRepository.findById(1L)).thenReturn(Optional.of(record));
@@ -228,7 +228,7 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void retryFailedSyncs_itemBelowMaxAttempts_resetsToPending() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 1); // attempts = 1 < 3
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 1); // attempts = 1 < 3
         item.setSyncStatus("FAILED");
 
         when(offlineQueueRepository.findFailedItemsForRetry(any(OffsetDateTime.class)))
@@ -243,7 +243,7 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void retryFailedSyncs_itemAtMaxAttempts_skips() throws Exception {
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 3); // attempts = 3 >= 3
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, 10L, 3); // attempts = 3 >= 3
         item.setSyncStatus("FAILED");
 
         when(offlineQueueRepository.findFailedItemsForRetry(any(OffsetDateTime.class)))
@@ -260,9 +260,9 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncCaregiverOfflineData_syncsAllItems() throws Exception {
-        Long caregiverId = 10L;
-        EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, caregiverId, 0);
-        EvvRecord record = buildRecord(1L);
+        final Long caregiverId = 10L;
+        final EvvOfflineQueue item = buildQueueItem("UPDATE", 1L, caregiverId, 0);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.findPendingItemsByCaregiver(caregiverId)).thenReturn(List.of(item));
         when(offlineQueueRepository.save(any(EvvOfflineQueue.class))).thenReturn(item);
@@ -277,12 +277,12 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void syncCaregiverOfflineData_itemFails_continuesWithNext() throws Exception {
-        Long caregiverId = 10L;
-        EvvOfflineQueue failingItem = buildQueueItem("UPDATE", 999L, caregiverId, 0);
-        EvvOfflineQueue successItem = buildQueueItem("UPDATE", 1L, caregiverId, 0);
+        final Long caregiverId = 10L;
+        final EvvOfflineQueue failingItem = buildQueueItem("UPDATE", 999L, caregiverId, 0);
+        final EvvOfflineQueue successItem = buildQueueItem("UPDATE", 1L, caregiverId, 0);
         successItem.setId(2L);
 
-        EvvRecord record = buildRecord(1L);
+        final EvvRecord record = buildRecord(1L);
 
         when(offlineQueueRepository.findPendingItemsByCaregiver(caregiverId))
                 .thenReturn(List.of(failingItem, successItem));
@@ -304,13 +304,13 @@ class EvvOfflineSyncServiceTest {
 
     @Test
     void getOfflineQueueStatus_returnsRepositoryResult() throws Exception {
-        Long caregiverId = 10L;
-        EvvOfflineQueue item = buildQueueItem("CREATE", 1L, caregiverId, 0);
+        final Long caregiverId = 10L;
+        final EvvOfflineQueue item = buildQueueItem("CREATE", 1L, caregiverId, 0);
 
         when(offlineQueueRepository.findByCaregiverIdAndSyncStatus(caregiverId, "PENDING"))
                 .thenReturn(List.of(item));
 
-        List<EvvOfflineQueue> result = evvOfflineSyncService.getOfflineQueueStatus(caregiverId);
+        final List<EvvOfflineQueue> result = evvOfflineSyncService.getOfflineQueueStatus(caregiverId);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getCaregiverId()).isEqualTo(caregiverId);
