@@ -12,7 +12,6 @@ import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/pr
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/recent_checkin_widget.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/api_service.dart';
-import 'package:care_connect_app/services/call_notification_service.dart';
 import 'package:care_connect_app/services/communication_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -54,6 +53,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
   List<CheckIn> recentCheckIns = [];
   List<MedicationReminderItem> medicationReminders = [];
   Map<String, dynamic>? primaryCareProvider;
+  Map<String, dynamic>? _callableCaregiver;
+  List<Map<String, dynamic>> _linkedCaregiverLinks = [];
+  bool _providerVideoCallsEnabled = true;
+  String? _providerCallPolicyMessage;
 
   // Mood tracking
   int currentMoodScore = 0;
@@ -81,9 +84,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
   void initState() {
     super.initState();
     _loadDashboardData();
-    _initializeCallNotifications();
+    _callNotificationInitialized = true;
     _checkConnectivity();
     _loadRecentMoodData();
+    _loadMedicationReminders();
+    _loadLinkedCaregiversForCalling();
     _loadPrimaryCareProvider();
     _loadEvvSections();
   }
@@ -427,22 +432,153 @@ class _PatientDashboardState extends State<PatientDashboard> {
   /// Load primary care provider
   Future<void> _loadPrimaryCareProvider() async {
     try {
-      // This would be an API call to get provider data
-      // For now, using sample data
-      setState(() {
-        primaryCareProvider = {
-          'name': 'Dr. Sarah Mitchell, MD',
-          'specialty': 'Internal Medicine',
-          'organization': 'CareConnect Medical Group',
-          'phone': '(555) 123-4567',
-          'email': 'sarah.mitchell@careconnect.com',
-          'nextAppointment': DateTime.now().add(const Duration(days: 30)),
-          'appointmentType': 'Annual Checkup',
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final patientId = user?.patientId;
+      Map<String, dynamic>? provider;
+      if (patientId != null) {
+        final headers = await ApiService.getAuthHeaders();
+        final providerRes = await http.get(
+          Uri.parse('${ApiConstants.baseUrl}patients/$patientId/provider'),
+          headers: headers,
+        );
+
+        if (providerRes.statusCode == 200) {
+          final decoded = jsonDecode(providerRes.body);
+          if (decoded is Map<String, dynamic> && decoded.isNotEmpty) {
+            provider = decoded;
+          }
+        }
+      }
+
+      final fallback = _buildDefaultProvider();
+      if (provider == null || provider.isEmpty) {
+        provider = {
+          ...fallback,
+          'caregiverUserId':
+              _toInt(_callableCaregiver?['caregiverUserId']) ??
+              _toInt(fallback['caregiverUserId']),
         };
-      });
+      } else {
+        provider['caregiverUserId'] ??=
+            _toInt(_callableCaregiver?['caregiverUserId']) ??
+            _toInt(fallback['caregiverUserId']);
+      }
+      provider = _normalizeProvider(provider);
+
+      if (mounted) {
+        setState(() {
+          primaryCareProvider = provider;
+          _syncProviderCallingPolicy();
+        });
+      }
     } catch (e) {
       print('Error loading primary care provider: $e');
+      if (mounted) {
+        setState(() {
+          primaryCareProvider = _normalizeProvider(_buildDefaultProvider());
+          _syncProviderCallingPolicy();
+        });
+      }
     }
+  }
+
+  Future<void> _loadLinkedCaregiversForCalling() async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final patientUserId = user?.id;
+      if (patientUserId == null) {
+        return;
+      }
+
+      final links = await ApiService.getPatientLinkedCaregiverLinks(
+        patientUserId,
+      );
+      if (mounted) {
+        setState(() {
+          _linkedCaregiverLinks = links;
+          _syncProviderCallingPolicy();
+        });
+      }
+    } catch (e) {
+      print('Error loading caregiver call policy: $e');
+    }
+  }
+
+  Map<String, dynamic> _buildDefaultProvider() {
+    return <String, dynamic>{
+      'name': 'Dr. Sarah Mitchell, MD',
+      'specialty': 'Internal Medicine',
+      'organization': 'CareConnect Medical Group',
+      'phone': '(555) 123-4567',
+      'email': 'sarah.mitchell@careconnect.com',
+      'nextAppointment': DateTime(2026, 4, 7, 20, 50),
+      'appointmentType': '8:50 PM - Annual Checkup',
+    };
+  }
+
+  Map<String, dynamic> _normalizeProvider(Map<String, dynamic> provider) {
+    final normalized = Map<String, dynamic>.from(provider);
+    final rawNextAppointment = normalized['nextAppointment'];
+    if (rawNextAppointment != null && rawNextAppointment is! DateTime) {
+      final parsed = DateTime.tryParse('$rawNextAppointment');
+      normalized['nextAppointment'] = parsed ?? DateTime.now();
+    }
+    return normalized;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse('$value');
+  }
+
+  bool _toBool(dynamic value, {bool defaultValue = true}) {
+    if (value is bool) return value;
+    final raw = '$value'.trim().toLowerCase();
+    if (raw == 'true') return true;
+    if (raw == 'false') return false;
+    return defaultValue;
+  }
+
+  void _syncProviderCallingPolicy() {
+    if (_linkedCaregiverLinks.isEmpty) {
+      _callableCaregiver = null;
+      _providerVideoCallsEnabled = false;
+      _providerCallPolicyMessage =
+          'Video calling is unavailable until a caregiver is linked.';
+      return;
+    }
+
+    final providerCaregiverUserId = _toInt(
+      primaryCareProvider?['caregiverUserId'],
+    );
+
+    Map<String, dynamic>? selectedLink;
+    if (providerCaregiverUserId != null) {
+      for (final link in _linkedCaregiverLinks) {
+        if (_toInt(link['caregiverUserId']) == providerCaregiverUserId) {
+          selectedLink = link;
+          break;
+        }
+      }
+    }
+
+    selectedLink ??= _linkedCaregiverLinks.first;
+
+    final normalizedCaregiverUserId = _toInt(selectedLink['caregiverUserId']);
+    final enabled = _toBool(selectedLink['patientVideoCallsEnabled']);
+
+    _callableCaregiver = {
+      ...selectedLink,
+      'caregiverUserId': normalizedCaregiverUserId,
+    };
+    if (primaryCareProvider != null && normalizedCaregiverUserId != null) {
+      primaryCareProvider!['caregiverUserId'] = normalizedCaregiverUserId;
+    }
+
+    _providerVideoCallsEnabled = enabled;
+    _providerCallPolicyMessage = enabled
+        ? null
+        : 'Your provider has disabled patient-initiated video calls.';
   }
 
   int? _parseMoodScore(dynamic value) {
@@ -634,34 +770,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
     }
   }
 
-  /// Initialize call notifications
-  Future<void> _initializeCallNotifications() async {
-    try {
-      final user = Provider.of<UserProvider>(context, listen: false).user;
-      final id = user?.id;
-
-      if (id == null) {
-        print('❌ Cannot initialize call notifications - no patient ID');
-        return;
-      }
-
-      print('🔔 Initializing call notification service for patient: $id');
-
-      await CallNotificationService.initialize(
-        userId: id.toString(),
-        userRole: 'PATIENT',
-        userDisplayName: user?.name,
-        context: context,
-      );
-
-      _callNotificationInitialized = true;
-      setState(() {});
-      print('✅ Patient call notification service initialized successfully');
-    } catch (e) {
-      print('❌ Error initializing patient call notification service: $e');
-      _callNotificationInitialized = false;
-    }
-  }
 
   /// Handle medication action
   Future<void> _handleMedicationAction(int medicationId, bool taken) async {
@@ -805,8 +913,15 @@ class _PatientDashboardState extends State<PatientDashboard> {
             ListTile(
               leading: const Icon(Icons.video_call),
               title: const Text('Video Call'),
-              subtitle: const Text('Start a video call with your provider'),
-              onTap: () async {
+              subtitle: Text(
+                _providerVideoCallsEnabled
+                    ? 'Start a video call with your provider'
+                    : (_providerCallPolicyMessage ??
+                          'Video call disabled by caregiver'),
+              ),
+              enabled: _providerVideoCallsEnabled,
+              onTap: _providerVideoCallsEnabled
+                  ? () async {
                 Navigator.pop(context);
 
                 if (primaryCareProvider == null) {
@@ -834,13 +949,48 @@ class _PatientDashboardState extends State<PatientDashboard> {
                   return;
                 }
 
+                final targetCaregiver = <String, dynamic>{
+                  ...?primaryCareProvider,
+                  ...?_callableCaregiver,
+                  'id': _callableCaregiver?['caregiverUserId'] ??
+                      primaryCareProvider?['caregiverUserId'],
+                  'firstName': ((primaryCareProvider?['name'] ?? '')
+                          .toString()
+                          .split(' ')
+                          .isNotEmpty)
+                      ? (primaryCareProvider?['name'] ?? '').toString().split(' ').first
+                      : '',
+                  'lastName': ((primaryCareProvider?['name'] ?? '')
+                          .toString()
+                          .split(' ')
+                          .length >
+                      1)
+                      ? (primaryCareProvider?['name'] ?? '')
+                          .toString()
+                          .split(' ')
+                          .skip(1)
+                          .join(' ')
+                      : '',
+                };
+
                 await CallIntegrationHelper.startVideoCallToCaregiver(
                   context: this.context,
                   currentUser: user,
-                  targetCaregiver: primaryCareProvider,
+                  targetCaregiver: targetCaregiver,
                   isVideoCall: true,
                 );
-              },
+              }
+                  : () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _providerCallPolicyMessage ??
+                                'Video calling is currently disabled.',
+                          ),
+                        ),
+                      );
+                    },
             ),
           ],
         ),
@@ -850,7 +1000,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   @override
   void dispose() {
-    CallNotificationService.dispose();
     super.dispose();
   }
 
@@ -1401,3 +1550,5 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 }
+
+

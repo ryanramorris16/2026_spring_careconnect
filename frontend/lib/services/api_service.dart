@@ -347,6 +347,22 @@ class ApiService {
   static Future<List<int>> getPatientLinkedCaregiverUserIds(
     int patientUserId,
   ) async {
+    final links = await getPatientLinkedCaregiverLinks(patientUserId);
+    return links
+        .map((item) {
+          final caregiverUserId = item['caregiverUserId'];
+          if (caregiverUserId is int) return caregiverUserId;
+          if (caregiverUserId is String) return int.tryParse(caregiverUserId);
+          return null;
+        })
+        .whereType<int>()
+        .toSet()
+        .toList();
+  }
+
+  static Future<List<Map<String, dynamic>>> getPatientLinkedCaregiverLinks(
+    int patientUserId,
+  ) async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
@@ -368,15 +384,8 @@ class ApiService {
       }
 
       return decoded
-          .map<int?>((item) {
-            if (item is! Map<String, dynamic>) return null;
-            final caregiverUserId = item['caregiverUserId'];
-            if (caregiverUserId is int) return caregiverUserId;
-            if (caregiverUserId is String) return int.tryParse(caregiverUserId);
-            return null;
-          })
-          .whereType<int>()
-          .toSet()
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
           .toList();
     } catch (_) {
       return [];
@@ -394,10 +403,20 @@ class ApiService {
     }
 
     if (currentUserRole == 'PATIENT') {
-      final linkedCaregiverIds = await getPatientLinkedCaregiverUserIds(
+      final linkedCaregiverLinks = await getPatientLinkedCaregiverLinks(
         currentUserId,
       );
-      return linkedCaregiverIds.contains(targetUserId);
+      return linkedCaregiverLinks.any((link) {
+        final caregiverRaw = link['caregiverUserId'];
+        final caregiverUserId = caregiverRaw is int
+            ? caregiverRaw
+            : int.tryParse('$caregiverRaw');
+        final enabledRaw = link['patientVideoCallsEnabled'];
+        final isEnabled = enabledRaw is bool
+            ? enabledRaw
+            : '$enabledRaw'.toLowerCase() != 'false';
+        return caregiverUserId == targetUserId && isEnabled;
+      });
     }
 
     if (currentUserRole == 'CAREGIVER') {
@@ -425,6 +444,28 @@ class ApiService {
     }
 
     return false;
+  }
+
+  static Future<bool> setPatientVideoCallsEnabledForLink({
+    required int linkId,
+    required bool enabled,
+  }) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await _httpClient
+          .post(
+            Uri.parse(
+              '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/patient-video-calls',
+            ),
+            headers: headers,
+            body: jsonEncode({'enabled': enabled}),
+          )
+          .timeout(const Duration(seconds: 20));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Check if a user with the given email exists
@@ -2018,11 +2059,93 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>?> getCallSummary(String callId) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final response = await _httpClient
+          .get(Uri.parse('${ApiConstants.callsV3}/$callId/summary'), headers: headers)
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) {
+        return null;
+      }
+
+      return Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getCallTranscriptSegments(
+    String callId,
+  ) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final response = await _httpClient
+          .get(
+            Uri.parse('${ApiConstants.callsV3}/$callId/transcript/segments'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        return [];
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        return [];
+      }
+
+      return decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getMyCallTelemetry() async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
           .get(Uri.parse('${ApiConstants.callsV3}/telemetry/my'), headers: headers)
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        return [];
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        return [];
+      }
+
+      return decoded
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getSentimentHistory(
+    int userId,
+  ) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final uri = Uri.parse(
+        '${ApiConstants.callsV3}/sentiment-history?userId=$userId',
+      );
+      final response = await _httpClient
+          .get(uri, headers: headers)
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
