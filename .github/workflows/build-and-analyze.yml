@@ -711,6 +711,10 @@ jobs:
       # Output: quality/analysis/raw/trivy.json
       # Format: {"Results": [{Target, Type, Vulnerabilities: [...]}]}
       # ------------------------------------------------------
+
+
+
+        
       - name: Run Trivy (Filesystem SCA)
         shell: bash
         run: |
@@ -718,12 +722,17 @@ jobs:
           OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/trivy.json"
           echo '{"Results":[]}' > "${OUT}"
 
-          curl -sSL \
-            -o trivy.tar.gz \
-            https://github.com/aquasecurity/trivy/releases/download/v0.51.1/trivy_0.51.1_Linux-64bit.tar.gz
-          tar -xzf trivy.tar.gz trivy
+          # Install Trivy via apt — most reliable method on ubuntu-latest
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb \
+            $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
 
-          ./trivy fs \
+          trivy fs \
             "${RESOLVED_ROOT}" \
             --format json \
             --output "${OUT}" \
@@ -733,6 +742,7 @@ jobs:
             || true
 
           test -s "${OUT}" || echo '{"Results":[]}' > "${OUT}"
+
 
       # ------------------------------------------------------
       # Cache: OWASP Dependency-Check NVD database
@@ -786,11 +796,6 @@ jobs:
 
           [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
             echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
-
-    
-            
-
-
 
       # ======================================================
       # GATE ENGINE + REPORTING
