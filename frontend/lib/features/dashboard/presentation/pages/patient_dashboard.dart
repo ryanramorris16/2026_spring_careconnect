@@ -14,7 +14,6 @@ import '../../../../widgets/family_member_card.dart';
 import '../../../../widgets/add_family_member_dialog.dart';
 import '../../../../widgets/responsive_container.dart';
 import 'package:care_connect_app/services/communication_service.dart';
-import 'package:care_connect_app/services/call_notification_service.dart';
 import '../../../../widgets/call_notification_status_indicator.dart';
 import '../../../../utils/call_integration_helper.dart';
 
@@ -46,45 +45,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
     super.initState();
     fetchPatientAndCaregivers();
     _loadFamilyMembers();
-    _initializeCallNotifications();
+    _callNotificationInitialized = true;
   }
 
-  /// Initialize real-time call notification service for patient
-  Future<void> _initializeCallNotifications() async {
-    try {
-      final user = Provider.of<UserProvider>(context, listen: false).user;
-      final patientId = user?.patientId;
-
-      if (patientId == null) {
-        print('❌ Cannot initialize call notifications - no patient ID');
-        return;
-      }
-
-      print(
-        '🔔 Initializing call notification service for patient: $patientId',
-      );
-
-      // Initialize call notification service
-      try {
-        await CallNotificationService.initialize(
-          userId: patientId.toString(),
-          userRole: 'PATIENT',
-          userDisplayName: user?.name,
-          context: context,
-        );
-        _callNotificationInitialized = true;
-        setState(() {
-          // Update state with initialization status
-        });
-        print('✅ Patient call notification service initialized successfully');
-      } catch (e) {
-        print('❌ Error initializing patient call notification service: $e');
-        _callNotificationInitialized = false;
-      }
-    } catch (e) {
-      print('❌ Error initializing patient dashboard services: $e');
-    }
-  }
 
   Future<void> fetchPatientAndCaregivers() async {
     setState(() {
@@ -283,7 +246,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
   @override
   void dispose() {
     // Clean up services
-    CallNotificationService.dispose();
     super.dispose();
   }
 
