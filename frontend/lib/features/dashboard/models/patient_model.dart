@@ -56,6 +56,7 @@ class Patient {
   final String? habits;
   final String? phobias;
   final String? preferredCommunicationMethod;
+  final bool patientVideoCallsEnabled;
 
   Patient({
     required this.id,
@@ -78,6 +79,7 @@ class Patient {
     this.habits,
     this.phobias,
     this.preferredCommunicationMethod,
+    this.patientVideoCallsEnabled = true,
   });
 
   factory Patient.fromJson(Map<String, dynamic> json) {
@@ -106,6 +108,7 @@ class Patient {
     // Extract link ID and status if available
     int? linkId;
     String linkStatus = 'ACTIVE';
+    bool patientVideoCallsEnabled = true;
 
     // First check if linkId and status are directly provided
     if (json.containsKey('linkId')) {
@@ -118,6 +121,12 @@ class Patient {
 
     if (json.containsKey('linkStatus')) {
       linkStatus = json['linkStatus']?.toString() ?? 'ACTIVE';
+    }
+    if (json.containsKey('patientVideoCallsEnabled')) {
+      final raw = json['patientVideoCallsEnabled'];
+      patientVideoCallsEnabled = raw is bool
+          ? raw
+          : raw?.toString().toLowerCase() != 'false';
     }
 
     // If linkId is still null, try to extract from link object
@@ -134,6 +143,12 @@ class Patient {
           linkId = int.tryParse(linkData['id'].toString());
           print('🔍 Parsed link.id string to linkId: $linkId');
         }
+      }
+      if (linkData.containsKey('patientVideoCallsEnabled')) {
+        final raw = linkData['patientVideoCallsEnabled'];
+        patientVideoCallsEnabled = raw is bool
+            ? raw
+            : raw?.toString().toLowerCase() != 'false';
       }
 
       // Extract status if available
@@ -185,6 +200,7 @@ class Patient {
           (patientData['preferredCommunicationMethod'] ??
                   patientData['preferred_communication_method'])
               ?.toString(),
+      patientVideoCallsEnabled: patientVideoCallsEnabled,
     );
   }
 
@@ -209,6 +225,7 @@ class Patient {
     String? habits,
     String? phobias,
     String? preferredCommunicationMethod,
+    bool? patientVideoCallsEnabled,
   }) {
     return Patient(
       id: id ?? this.id,
@@ -232,6 +249,8 @@ class Patient {
       phobias: phobias ?? this.phobias,
       preferredCommunicationMethod:
           preferredCommunicationMethod ?? this.preferredCommunicationMethod,
+      patientVideoCallsEnabled:
+          patientVideoCallsEnabled ?? this.patientVideoCallsEnabled,
     );
   }
 
@@ -341,6 +360,8 @@ class Patient {
 
   @override
   String toString() {
-    return 'Patient{id: $id, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, dob: $dob, relationship: $relationship, maNumber: $maNumber, linkId: $linkId, linkStatus: $linkStatus, gender: $gender, allergies: $allergies, vitalConditions: $vitalConditions}';
+    return 'Patient{id: $id, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, dob: $dob, relationship: $relationship, maNumber: $maNumber, linkId: $linkId, linkStatus: $linkStatus, gender: $gender, allergies: $allergies, vitalConditions: $vitalConditions, patientVideoCallsEnabled: $patientVideoCallsEnabled}';
   }
 }
+
+
