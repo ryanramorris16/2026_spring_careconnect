@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:care_connect_app/services/session_manager.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -379,4 +382,65 @@ void main() {
     expect(captured!.headers['cookie'], 'SESSION=forPut');
   });
 
+  // --------------- timeouts ---------------
+
+  test('get returns 408 when server does not respond within timeout', () {
+    fakeAsync((async) {
+      final manager = SessionManager();
+      http.Response? result;
+
+      http.runWithClient(
+        () {
+          manager.get('https://example.com/slow').then((r) => result = r);
+        },
+        () => MockClient((req) => Completer<http.Response>().future),
+      );
+
+      async.elapse(const Duration(seconds: 181));
+
+      expect(result, isNotNull);
+      expect(result!.statusCode, 408);
+      expect(result!.body, '{"error": "Request timeout"}');
+    });
+  });
+
+  test('post returns 408 when server does not respond within timeout', () {
+    fakeAsync((async) {
+      final manager = SessionManager();
+      http.Response? result;
+
+      http.runWithClient(
+        () {
+          manager.post('https://example.com/slow').then((r) => result = r);
+        },
+        () => MockClient((req) => Completer<http.Response>().future),
+      );
+
+      async.elapse(const Duration(seconds: 181));
+
+      expect(result, isNotNull);
+      expect(result!.statusCode, 408);
+      expect(result!.body, '{"error": "Request timeout"}');
+    });
+  });
+
+  test('put returns 408 when server does not respond within timeout', () {
+    fakeAsync((async) {
+      final manager = SessionManager();
+      http.Response? result;
+
+      http.runWithClient(
+        () {
+          manager.put('https://example.com/slow').then((r) => result = r);
+        },
+        () => MockClient((req) => Completer<http.Response>().future),
+      );
+
+      async.elapse(const Duration(seconds: 181));
+
+      expect(result, isNotNull);
+      expect(result!.statusCode, 408);
+      expect(result!.body, '{"error": "Request timeout"}');
+    });
+  });
 }
