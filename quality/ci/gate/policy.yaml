@@ -126,7 +126,7 @@ tools:
   # ----------------------------------------------------------
   # Pylint (Python Static Analysis)
   # ----------------------------------------------------------
-  # Intent: Block on errors and fatal issues.
+  # Intent: Block on errors and fatal issues only.
   # ----------------------------------------------------------
   pylint:
     blocking: true
@@ -170,22 +170,23 @@ tools:
   # ----------------------------------------------------------
   # OWASP Dependency-Check (SCA)
   # ----------------------------------------------------------
-  # Intent: Detect vulnerabilities but do not block merges yet.
+  # Intent: Block on any known vulnerability.
   # ----------------------------------------------------------
   dependency_check:
-    blocking: false
+    blocking: true
     description: "OWASP Dependency-Check (SCA)"
     fail_on:
       any_vulnerability: true
 
   # ----------------------------------------------------------
-  # Sonar (Quality Gate)
+  # Trivy (Container + Filesystem SCA)
   # ----------------------------------------------------------
-  # Intent: Advisory until SonarCloud integration is completed.
+  # Intent: Block on medium severity and above.
+  # Scans filesystem for CVEs across all ecosystems
+  # (Java, Python, Flutter/Dart, Node, OS packages).
   # ----------------------------------------------------------
-  sonar:
-    blocking: false
-    description: "Sonar Quality Gate"
+  trivy:
+    blocking: true
+    description: "Trivy container and filesystem vulnerability scan"
     fail_on:
-      quality_gate: "fail"
-      
+      severity: "medium_and_above"

@@ -702,6 +702,44 @@ jobs:
           fi
 
       # ------------------------------------------------------
+      # Tool: Trivy (Container + Filesystem SCA)
+      # ----------------------------------------------------------
+      # Scans the filesystem for known CVEs across all ecosystems:
+      # Java (pom.xml), Python (requirements.txt), Flutter (pubspec.yaml),
+      # Node (package.json), and OS packages.
+      #
+      # Output: quality/analysis/raw/trivy.json
+      # Format: {"Results": [{Target, Type, Vulnerabilities: [...]}]}
+      # ------------------------------------------------------
+      - name: Run Trivy (Filesystem SCA)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/trivy.json"
+          echo '{"Results":[]}' > "${OUT}"
+
+          # Install Trivy via apt — most reliable method on ubuntu-latest
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb \
+            $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update -qq
+          sudo apt-get install -y trivy
+
+          trivy fs \
+            "${RESOLVED_ROOT}" \
+            --format json \
+            --output "${OUT}" \
+            --exit-code 0 \
+            --scanners vuln \
+            --ignore-unfixed \
+            || true
+
+          test -s "${OUT}" || echo '{"Results":[]}' > "${OUT}"
+
+      # ------------------------------------------------------
       # Diagnostic — Check NVD API Key presence
       # ------------------------------------------------------
       - name: Diagnostic — NVD API Key presence
@@ -767,18 +805,6 @@ jobs:
 
           [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
             echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
-
-      # ------------------------------------------------------
-      # Tool: Sonar (placeholder — currently disabled)
-      # ----------------------------------------------------------
-      # Output: quality/analysis/raw/sonar.json
-      # ------------------------------------------------------
-      - name: Create Sonar placeholder artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="${GITHUB_WORKSPACE}/quality/analysis/raw/sonar.json"
-          echo '{"projectStatus":{"status":"OK"},"issues":[]}' > "${OUT}"
 
       # ======================================================
       # GATE ENGINE + REPORTING
@@ -850,8 +876,8 @@ jobs:
             bandit.json \
             htmlhint.json \
             stylelint.json \
-            dependency-check-report.json \
-            sonar.json; do
+            trivy.json \
+            dependency-check-report.json; do
             echo "---- ${f} ----"
             if test -f "quality/analysis/raw/${f}"; then
               head -n 3 "quality/analysis/raw/${f}" || true
@@ -861,13 +887,22 @@ jobs:
           done
 
       # ------------------------------------------------------
-      # Step 11: Upload Analysis Artifacts
+      # Step 11: Set SHORT_SHA
+      # ------------------------------------------------------
+      - name: Set SHORT_SHA
+        if: always()
+        id: sha
+        shell: bash
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------
+      # Step 12: Upload Analysis Artifacts
       # ------------------------------------------------------
       - name: Upload Analysis Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.run_number }}_${{ env.SHORT_SHA }}_quality_analysis_report
+          name: ${{ github.run_number }}_${{ steps.sha.outputs.short_sha }}_quality_analysis_report
           path: |
             quality/analysis/
             !quality/analysis/dc-data/**
