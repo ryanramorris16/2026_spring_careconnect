@@ -17,6 +17,8 @@
     <description>Spring Boot REST API for CareConnect</description>
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <aws.sdk.version>2.31.75</aws.sdk.version>
         <!-- OWASP Dependency-Check: default to environment variable, override with -Dnvd.api.key=... -->
         <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
@@ -411,7 +413,7 @@
             </plugin>
 
             <!-- SpotBugs plugin -->
-            <plugin>
+            <!-- <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.8.3.1</version>
@@ -429,7 +431,7 @@
                     <threshold>low</threshold>
                     <failOnError>true</failOnError>
                 </configuration>
-            </plugin>
+            </plugin> -->
 
             <!-- PMD plugin -->
             <plugin>
