@@ -9,6 +9,9 @@ import '../../../dashboard/models/patient_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../widgets/evv_month_calendar_view.dart';
+import '../widgets/evv_week_calendar_view.dart';
+import '../widgets/evv_day_schedule_view.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -21,6 +24,8 @@ class _SchedulePageState extends State<SchedulePage> {
   List<ScheduledVisit> _scheduledVisits = [];
   List<ScheduledVisit> _upcomingVisits = [];
   bool _isLoading = false;
+  String _viewMode = 'list'; // 'list', 'month', 'week', 'day'
+  DateTime _selectedDate = DateTime.now();
   Map<String, int> _summaryData = {
     'overdue': 0,
     'ready': 0,
@@ -221,12 +226,12 @@ class _SchedulePageState extends State<SchedulePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('EVV Visit Schedules'),
- 
+
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _refreshAllData,
-            tooltip: 'Refresh', 
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -235,25 +240,186 @@ class _SchedulePageState extends State<SchedulePage> {
           : Column(
               children: [
                 _buildHeader(context),
-                const SizedBox(
-                  height: 12,
-                ), // add this to avoid touching the border
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        _buildSummaryCards(context),
-                        const SizedBox(height: 24),
-                        _buildTodaysVisitsSection(),
-                        const SizedBox(height: 32),
-                        _buildUpcomingVisitsSection(),
-                        const SizedBox(height: 24),
-                      ],
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 12),
+                _buildViewModeSelector(context),
+                Expanded(child: _buildViewContent(context)),
               ],
             ),
+    );
+  }
+
+  Widget _buildViewModeSelector(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildViewModeButton('List', 'list', Icons.list, context),
+            const SizedBox(width: 8),
+            _buildViewModeButton(
+              'Month',
+              'month',
+              Icons.calendar_month,
+              context,
+            ),
+            const SizedBox(width: 8),
+            _buildViewModeButton('Week', 'week', Icons.view_week, context),
+            const SizedBox(width: 8),
+            _buildViewModeButton('Day', 'day', Icons.view_day, context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewModeButton(
+    String label,
+    String mode,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isSelected = _viewMode == mode;
+
+    return FilterChip(
+      selected: isSelected,
+      onSelected: (_) {
+        setState(() {
+          _viewMode = mode;
+          _selectedDate = DateTime.now();
+        });
+      },
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [Icon(icon, size: 18), const SizedBox(width: 4), Text(label)],
+      ),
+      backgroundColor: Colors.transparent,
+      selectedColor: cs.primaryContainer,
+      side: BorderSide(color: isSelected ? cs.primary : theme.dividerColor),
+    );
+  }
+
+  Widget _buildViewContent(BuildContext context) {
+    // Combine all visits for calendar views
+    final allVisits = [..._scheduledVisits, ..._upcomingVisits];
+
+    switch (_viewMode) {
+      case 'month':
+        return SingleChildScrollView(
+          child: EVVMonthCalendarView(
+            visits: allVisits,
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() => _selectedDate = date);
+            },
+            onVisitTap: _handleVisitTap,
+            onScheduleNew: _scheduleNewVisit,
+          ),
+        );
+      case 'week':
+        return SingleChildScrollView(
+          child: EVVWeekCalendarView(
+            visits: allVisits,
+            selectedDate: _selectedDate,
+            onDateSelected: (date) {
+              setState(() => _selectedDate = date);
+            },
+            onVisitTap: _handleVisitTap,
+          ),
+        );
+      case 'day':
+        return EVVDayScheduleView(
+          visits: allVisits,
+          selectedDate: _selectedDate,
+          onDateSelected: (date) {
+            setState(() => _selectedDate = date);
+          },
+          onVisitTap: _handleVisitTap,
+        );
+      case 'list':
+      default:
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildSummaryCards(context),
+              const SizedBox(height: 24),
+              _buildTodaysVisitsSection(),
+              const SizedBox(height: 32),
+              _buildUpcomingVisitsSection(),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+    }
+  }
+
+  void _handleVisitTap(ScheduledVisit visit) {
+    // Open visit details or edit dialog
+    showDialog(
+      context: context,
+      builder: (context) => _buildVisitDetailsDialog(visit),
+    );
+  }
+
+  Widget _buildVisitDetailsDialog(ScheduledVisit visit) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return AlertDialog(
+      title: Text(visit.patientName),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailRow('Service Type:', visit.serviceType, theme),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            'Date & Time:',
+            '${DateFormat('MMM d, yyyy').format(visit.scheduledTime)} at ${visit.scheduledTime.hour.toString().padLeft(2, '0')}:${visit.scheduledTime.minute.toString().padLeft(2, '0')}',
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            'Duration:',
+            '${visit.duration.inMinutes} minutes',
+            theme,
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow('Priority:', visit.priority, theme),
+          const SizedBox(height: 12),
+          _buildDetailRow('Status:', visit.status, theme),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, ThemeData theme) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(value, style: theme.textTheme.bodyMedium),
+      ],
     );
   }
 
@@ -297,135 +463,136 @@ class _SchedulePageState extends State<SchedulePage> {
       ),
     );
   }
-Widget _buildSummaryCards(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
 
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 600;
-        // Give tiles more vertical room on narrow screens
-        final crossAxisCount = isNarrow ? 2 : 4;
-        final aspect = isNarrow ? 2.0 : 2.6;
+  Widget _buildSummaryCards(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
 
-        return GridView.count(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: aspect,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+          // Give tiles more vertical room on narrow screens
+          final crossAxisCount = isNarrow ? 2 : 4;
+          final aspect = isNarrow ? 2.0 : 2.6;
+
+          return GridView.count(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: aspect,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildSummaryCard(
+                context: context,
+                title: 'Overdue',
+                count: _summaryData['overdue'].toString(),
+                icon: Icons.error_outline,
+                iconColor: cs.error,
+                iconBackgroundColor: cs.errorContainer.withOpacity(0.6),
+              ),
+              _buildSummaryCard(
+                context: context,
+                title: 'Ready',
+                count: _summaryData['ready'].toString(),
+                icon: Icons.play_arrow,
+                iconColor: cs.tertiary,
+                iconBackgroundColor: cs.tertiaryContainer.withOpacity(0.6),
+              ),
+              _buildSummaryCard(
+                context: context,
+                title: 'Upcoming',
+                count: _summaryData['upcoming'].toString(),
+                icon: Icons.access_time,
+                iconColor: cs.primary,
+                iconBackgroundColor: cs.primaryContainer.withOpacity(0.6),
+              ),
+              _buildSummaryCard(
+                context: context,
+                title: 'Total Today',
+                count: _summaryData['totalToday'].toString(),
+                icon: Icons.calendar_today,
+                iconColor: cs.secondary,
+                iconBackgroundColor: cs.secondaryContainer.withOpacity(0.6),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required BuildContext context,
+    required String title,
+    required String count,
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBackgroundColor,
+  }) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    // Cap text scale so accessibility settings do not overflow these compact tiles
+    final cappedScale = MediaQuery.of(context).textScaleFactor.clamp(1.0, 1.2);
+
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaleFactor: cappedScale),
+      child: Container(
+        // Allow it to grow if needed, but ensure a comfortable minimum
+        constraints: const BoxConstraints(minHeight: 98),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
           children: [
-            _buildSummaryCard(
-              context: context,
-              title: 'Overdue',
-              count: _summaryData['overdue'].toString(),
-              icon: Icons.error_outline,
-              iconColor: cs.error,
-              iconBackgroundColor: cs.errorContainer.withOpacity(0.6),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: iconBackgroundColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: iconColor, size: 18),
             ),
-            _buildSummaryCard(
-              context: context,
-              title: 'Ready',
-              count: _summaryData['ready'].toString(),
-              icon: Icons.play_arrow,
-              iconColor: cs.tertiary,
-              iconBackgroundColor: cs.tertiaryContainer.withOpacity(0.6),
-            ),
-            _buildSummaryCard(
-              context: context,
-              title: 'Upcoming',
-              count: _summaryData['upcoming'].toString(),
-              icon: Icons.access_time,
-              iconColor: cs.primary,
-              iconBackgroundColor: cs.primaryContainer.withOpacity(0.6),
-            ),
-            _buildSummaryCard(
-              context: context,
-              title: 'Total Today',
-              count: _summaryData['totalToday'].toString(),
-              icon: Icons.calendar_today,
-              iconColor: cs.secondary,
-              iconBackgroundColor: cs.secondaryContainer.withOpacity(0.6),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    count,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    // Slightly smaller than headlineSmall to avoid overflow on dense UIs
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        );
-      },
-    ),
-  );
-}
-
-Widget _buildSummaryCard({
-  required BuildContext context,
-  required String title,
-  required String count,
-  required IconData icon,
-  required Color iconColor,
-  required Color iconBackgroundColor,
-}) {
-  final theme = Theme.of(context);
-  final cs = theme.colorScheme;
-
-  // Cap text scale so accessibility settings do not overflow these compact tiles
-  final cappedScale = MediaQuery.of(context).textScaleFactor.clamp(1.0, 1.2);
-
-  return MediaQuery(
-    data: MediaQuery.of(context).copyWith(textScaleFactor: cappedScale),
-    child: Container(
-      // Allow it to grow if needed, but ensure a comfortable minimum
-      constraints: const BoxConstraints(minHeight: 98),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: Icon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  count,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  // Slightly smaller than headlineSmall to avoid overflow on dense UIs
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildTodaysVisitsSection() {
     final theme = Theme.of(context);
@@ -937,16 +1104,22 @@ Widget _buildSummaryCard({
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Service Type', visit.serviceType),
+            _buildDetailRow(
+              'Service Type',
+              visit.serviceType,
+              Theme.of(context),
+            ),
             _buildDetailRow(
               'Time',
               '${visit.scheduledTime.hour}:${visit.scheduledTime.minute.toString().padLeft(2, '0')}',
+              Theme.of(context),
             ),
             _buildDetailRow(
               'Duration',
               '${visit.duration.inHours}h ${visit.duration.inMinutes.remainder(60)}m',
+              Theme.of(context),
             ),
-            _buildDetailRow('Status', visit.status),
+            _buildDetailRow('Status', visit.status, Theme.of(context)),
           ],
         ),
         actions: [
@@ -961,25 +1134,6 @@ Widget _buildSummaryCard({
             },
             child: const Text('Start Visit'),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -1162,20 +1316,27 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
           Navigator.pop(context);
           widget.onScheduled();
         }
+      } else if (response.statusCode == 400) {
+        // Handle conflict errors
+        String errorMessage = 'Unable to schedule this visit';
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map && errorData.containsKey('error')) {
+            errorMessage = errorData['error'];
+          }
+        } catch (e) {
+          // If JSON parsing fails, use the response body
+          errorMessage = response.body;
+        }
+        throw Exception(errorMessage);
       } else {
-        throw Exception(
-          'Failed to schedule visit: ${response.statusCode} - ${response.body}',
-        );
+        throw Exception('Unable to schedule this visit. Please try again.');
       }
     } catch (e) {
       print('Error scheduling visit: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error scheduling visit: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _showConflictDialog(errorMessage);
       }
     } finally {
       if (mounted) {
@@ -1184,6 +1345,121 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
         });
       }
     }
+  }
+
+  void _showConflictDialog(String errorMessage) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: cs.surface,
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: cs.error, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Scheduling Conflict',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: cs.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.errorContainer.withOpacity(0.3),
+                  border: Border.all(color: cs.error.withOpacity(0.5)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  errorMessage,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurface,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withOpacity(0.3),
+                  border: Border.all(color: cs.primary.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: cs.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'What to do:',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: cs.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Choose a different time\n'
+                      '• Select a different date\n'
+                      '• Assign to a different caregiver',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Try Different Time',
+              style: TextStyle(color: cs.primary),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              // Reset the form to allow user to try again
+              setState(() {
+                _selectedTime = null;
+              });
+            },
+            icon: const Icon(Icons.edit_calendar),
+            label: const Text('Modify Details'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: cs.primary,
+              foregroundColor: cs.onPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
