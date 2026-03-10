@@ -1,80 +1,100 @@
 # CareConnect CI Quality & Security Gate
 
-> **Cohort:** 2026 Spring
-> **Branch:** `team_d`
-> **Proving Ground:** `team_d-james-cicd-gating`
+> **Cohort:** 2026 Spring  
+> **Branch:** `team_d`  
+> **Proving Ground:** `team_d-james-cicd-gating`  
 > **Target:** `main`
 
 ---
 
-## Overview
+# Overview
 
-This directory contains the production-grade Quality & Security Enforcement subsystem for CareConnect.
+This directory contains the **CareConnect CI Quality & Security Enforcement subsystem**.
 
-This subsystem:
- 1. Normalizes raw analysis tool outputs.
- 2. Applies governance policy rules.
- 3. Determines merge approval or block status.
- 4. Generates machine-readable and human-readable reports.
+The subsystem performs four primary responsibilities:
 
-This is NOT a simple script.
-It is a structured, policy-driven CI governance engine.
+1. Normalize raw analysis tool outputs  
+2. Apply governance policy rules  
+3. Determine merge approval or block status  
+4. Generate machine-readable and human-readable reports  
+
+This is **not a simple script**.  
+It is a **policy-driven CI governance engine** designed to enforce secure and consistent software delivery.
 
 ---
 
----
-
-## Migration Checklist (team_d → main)
+# Migration Checklist (team_d → main)
 
 Before promoting this gate from `team_d` to `main`, complete the following:
 
-### Workflow Changes
+### Workflow Changes  
 File:
+
 `.github/workflows/build-and-analyze.yml`
 
- - Scope `pull_request` to `main`
- - Scope `push` to `main`
- - Remove temporary Job Guard (branch ownership isolation)
- - Delete any Dummy Artifact steps
- - Ensure all tools generate real raw artifacts
- - Confirm tool versions are pinned (no `:latest` tags)
- 
-### Policy Changes
-File:
-`quality/ci/gate/policy.yaml`
+Required changes:
 
- - Ensure `gate.mode: enforce`
- - Confirm intended `blocking` configuration for all tools
- - Remove temporary testing thresholds
- - Validate severity enforcement rules
-
-### GitHub Configuration
-
- - Enable branch protection on `main`
- - Require the quality gate workflow status check
- - Require branches to be up to date before merging
+- Scope `pull_request` trigger to `main`
+- Scope `push` trigger to `main`
+- Remove temporary **Job Guard (branch ownership isolation)**
+- Delete any **Dummy Artifact** steps
+- Ensure **all tools generate real raw artifacts**
+- Confirm **tool versions are pinned** (no `:latest` tags)
 
 ---
 
-## 1. Workflow Definition
+### Policy Changes  
+File:
+
+`quality/ci/gate/policy.yaml`
+
+Required changes:
+
+- Confirm `gate.mode: enforce`
+- Verify intended `blocking` configuration for each tool
+- Remove temporary testing thresholds
+- Validate severity enforcement rules
+
+---
+
+### GitHub Configuration
+
+Configure repository protections for production enforcement:
+
+- Enable **branch protection** on `main`
+- Require the **quality gate workflow status check**
+- Require branches to be **up to date before merging**
+
+Branch protection is what ultimately **prevents merges** when the gate fails.
+
+---
+
+# 1. Workflow Definition
 
 File:
 ```
 .github/workflows/build-and-analyze.yml
 
 ```
-
 Required changes:
- - Update triggers from team_d to main
- - Scope pull_request to main
- - Remove the temporary Job Guard (branch ownership isolation)
- - Delete the “Create Dummy Artifacts (Temporary)” step
- - Ensure all real tools write raw artifacts to quality/analysis/raw/
- - Verify pinned tool versions (no floating :latest tags)
+
+- Update triggers from `team_d` to `main`
+- Scope `pull_request` events to `main`
+- Remove the temporary **Job Guard**
+- Remove the **Create Dummy Artifacts** step
+- Ensure tools write artifacts to:
+
+```
+quality/analysis/raw/
+
+```
+- Verify **pinned versions** for all tools.
+
+Floating tags (`:latest`) must not be used in production CI.
 
 ---
 
-## 2. Policy Configuration
+# 2. Policy Configuration
 
 File:
 ```
@@ -82,30 +102,46 @@ quality/ci/gate/policy.yaml
 
 ```
 
-Required changes:
- - Ensure gate.mode: enforce
- - Confirm intended blocking settings (especially SonarQube)
- - Remove any temporary testing thresholds
- - Validate that all integrated tools are represented in the policy
+Key requirements:
+
+- `gate.mode` must be **enforce**
+- All enforcement thresholds defined here
+- All integrated tools must appear in the policy
+
+Policy is **the governance layer**.
+
+Do **not** hardcode enforcement rules in Python files.
 
 ---
 
-## 3. Tool Version Pinning
+# 3. Tool Version Pinning
 
 File:
 ```
 .github/workflows/build-and-analyze.yml
 
 ```
-
 Required change:
- - Replace floating tags (e.g., :latest) with pinned versions to ensure deterministic production enforcement.
+
+Replace floating versions with pinned versions to ensure **deterministic builds**.
+
+Example:
+```
+trufflesecurity/trufflehog:v3.63.2
+
+```
+not:
+
+```
+trufflesecurity/trufflehog:latest
+
+```
 
 ---
 
-## Architecture
+# Architecture
 
-### Pipeline Flow:
+### Pipeline Flow
 
 ```
 Tools → Raw Artifacts → Normalization → Policy Engine → Gate → Reports
@@ -128,181 +164,192 @@ quality/
 
 ```
 
-### Integrated Tooling Overview
+---
+
+# Integrated Tooling Overview
 
 | Layer | Tool | Category | Purpose |
-|-------|------|----------|---------|
+|------|------|------|------|
 | Local | flutter analyze | SAST (Dart) | Developer linting before commit |
 | CI | TruffleHog | Secrets | Detect committed credentials |
-| CI | Checkstyle | SAST (Java) | Style enforcement |
+| CI | Gitleaks | Secrets | Detect working-tree secrets |
+| CI | Checkstyle | SAST (Java) | Java style enforcement |
 | CI | SpotBugs | SAST (Java) | Bytecode bug detection |
-| CI | PMD | SAST (Java) | Source complexity & misuse |
-| CI | Semgrep | SAST (Multi-language) | OWASP & pattern detection |
-| CI | OWASP Dependency-Check | SCA | CVE detection in dependencies |
+| CI | PMD | SAST (Java) | Source misuse detection |
+| CI | Semgrep | SAST (Multi-language) | Security pattern detection |
+| CI | Pylint | SAST (Python) | Python correctness and style |
+| CI | Bandit | Security SAST (Python) | Python vulnerability detection |
+| CI | HTMLHint | Web SAST | HTML static analysis |
+| CI | Stylelint | Web SAST | CSS static analysis |
+| CI | OWASP Dependency-Check | SCA | Dependency CVE detection |
 | CI | Sonar | Quality Gate | Centralized quality scoring |
 | Post-Deploy | OWASP ZAP | DAST | Runtime vulnerability scanning |
 
+---
 
-Raw artifacts must be placed in:
+# Raw Artifact Requirements
+
+Raw artifacts must be written to:
 
 ```
 quality/analysis/raw/
 
 ```
 
-Expected raw artifact filenames:
+Expected filenames:
  - trufflehog.jsonl
+ - gitleaks.json
  - flutter_analyze.json
  - checkstyle.xml
  - pmd.xml
  - spotbugs.xml
  - semgrep.json
+ - pylint.json
+ - bandit.json
+ - htmlhint.json
+ - stylelint.json
  - dependency_check.json
  - sonar.json
 
-Generated outputs are written to:
+---
+
+# Generated Outputs
+
+The gate generates reports in:
 
 ```
 quality/analysis/
 
 ```
 
---- 
+Primary outputs:
+- report.md
+- report.html
+- normalized/normalized.json
+- evaluated/evaluated.json
 
-## Enforcement Rules
- - Any tool marked blocking: true in policy.yaml that violates its rule will BLOCK the merge.
- - Any runtime error, skipped execution, missing artifact, or misconfiguration will BLOCK the merge (fail-safe design).
- - All tools run even if one fails.
- - Individual tool exit codes do NOT control the workflow.
- - Only `gate.py` exit code determines merge approval.
- - The final decision authority is `gate.py`.
- - Secrets findings (TruffleHog) are treated as high severity by default.
-Any finding blocks the merge unless explicitly configured as advisory. 
-Branch protection enforces the gate at the repository level; the workflow alone does not prevent merging.
+The entire directory is uploaded as a CI artifact.
 
 ---
 
-### Enabling Branch Protection (GitHub)
+# Enforcement Rules
 
-To enforce merge blocking based on the quality gate:
+The enforcement model is **fail-safe by design**.
 
-1. Go to **Settings → Branches** in your GitHub repository.
-2. Add a branch protection rule for:
-   - `main`  
-   Optionally also for `team_d` in testing phases.
-3. Enable **“Require status checks to pass before merging.”**
-4. Add the gate workflow’s check (e.g., the relevant GitHub Actions job name) as a required check.
-5. Enable **“Require branches to be up to date before merging.”**
+Rules:
+
+- Any tool with `blocking: true` that violates policy will **fail the gate**
+- Runtime errors are treated as violations
+- Missing artifacts are treated as violations
+- Tools run **independently**
+- Tool exit codes do **not** control CI
+- Only **gate.py** determines final approval
+
+Important:
+
+The gate exits with a **non-zero exit code** in `enforce` mode.
+
+GitHub **branch protection rules** determine whether that failed check prevents merging.
 
 ---
 
-## Severity Policy
+# Enabling Branch Protection
 
-The following severity model applies to CVE-based and security findings:
+To enforce merge blocking:
+
+1. Go to **Settings → Branches**
+2. Create a rule for `main`
+3. Enable:
+
+ **“Require branches to be up to date before merging.”**
+
+4. Add the CI gate workflow check
+5. Enable:
+
+**"Require branches to be up to date before merging."**
+
+---
+
+# Severity Policy
+
+Security findings follow the CVSS model.
 
 | Severity | CVSS Score | Action |
-|----------|------------|--------|
-| Critical | 9.0 – 10.0 | ❌ Hard block — merge prevented |
-| High     | 7.0 – 8.9  | ❌ Hard block — merge prevented |
-| Medium   | 4.0 – 6.9  | ⚠️ Reported — merge allowed unless overridden |
-| Low      | 0.0 – 3.9  | ⚠️ Reported — merge allowed |
+|------|------|------|
+| Critical | 9.0–10.0 | Merge blocked |
+| High | 7.0–8.9 | Merge blocked |
+| Medium | 4.0–6.9 | Reported |
+| Low | 0.0–3.9 | Reported |
 
-Severity enforcement is ultimately governed by `policy.yaml`.
+Final enforcement is controlled by `policy.yaml`.
 
 ---
 
-## Exclusion Documentation
+# Exclusion Documentation
 
-When a Critical or High finding cannot be remediated immediately, document it below.
+When a vulnerability cannot be remediated immediately, document it here.
 
-| Finding ID | Tool | Severity | File / Dependency | Rule / CVE | Rationale | Potential Impact | Remediation Plan | Date | Approved By |
-|------------|------|----------|------------------|------------|-----------|------------------|------------------|------|-------------|
+| Finding ID | Tool | Severity | File / Dependency | Rule / CVE | Rationale | Impact | Remediation Plan | Date | Approved By |
+|------|------|------|------|------|------|------|------|------|------|
 | _(none yet)_ | — | — | — | — | — | — | — | — | — |
 
-
-Exclusions require pull request review and team lead approval.
-
----
-
-## Policy Configuration
-
-All enforcement thresholds are defined in:
-
-```
-quality/ci/gate/policy.yaml
-
-```
-
-Do NOT hardcode policy rules inside Python files.
-
-Example rule:
-
-```
-checkstyle:
-  blocking: true
-  fail_on:
-    violation_count: ">0"
-
-```
-
-Modify thresholds via pull request only.
-Policy changes are governance changes and must be reviewed.
+All exclusions require PR review and team lead approval.
 
 ---
 
-## How to Add a New Tool
+# How to Add a New Tool
 
-To add a new analysis tool:
+### Step 1 — Create a Parser
 
-### 1. Create a New Parser
-
-Create a parser file in:
+Create:
 
 ```
-quality/ci/gate/parsers/<tool_name>.py
+quality/ci/gate/parsers/.py
 
 ```
 
-The parser must:
- - Read the raw artifact from quality/analysis/raw/
- - Return the standardized structure defined in schemas.py
- - Never apply policy logic
- - Never determine blocking status
+Parser requirements:
 
-⸻
-
-### 2. Register the Parser
-
-In `normalize.py`, register the parser:
-
-
-```
-("tool_name", parse_tool_name),
-
-```
-
-This connects the raw artifact to the normalization pipeline.
+- Read artifact from `quality/analysis/raw`
+- Return standardized schema
+- Do not apply policy logic
 
 ---
 
-### 3. Add the Tool to Policy
+### Step 2 — Register Parser
+
+In:
+
+```
+normalize.py
+
+```
+
+Add:
+
+```
+(“tool_name”, parse_tool_name)
+
+```
+
+---
+
+### Step 3 — Add Policy Entry
 
 In `policy.yaml`:
 
 ```
 tool_name:
-  blocking: true
-  description: "Tool description"
-  fail_on:
-    ...
+blocking: true
+description: “Tool description”
+fail_on:
+…
 
 ```
 
-Policy determines enforcement — not the parser.
-
 ---
 
-### 4. Update the CI Workflow
+### Step 4 — Update Workflow
 
 Modify:
 
@@ -311,128 +358,76 @@ Modify:
 
 ```
 
-Ensure the tool writes its raw artifact to:
+Ensure the tool writes artifacts to:
 
 ```
 quality/analysis/raw/
 
 ```
 
-Tools must not terminate the workflow directly.
-Use || true if necessary to allow the gate engine to decide.
+Tools must not terminate CI directly.
 
+Use:
 
-### 5. Test Locally
+```
+|| true
+
+```
+
+when necessary.
+
+---
+
+# Temporarily Disabling a Tool
+
+### Option 1 (Recommended)
+
+Make it advisory:
+
+```
+sonar:
+blocking: false
+
+```
+
+---
+
+### Option 2
+
+Remove the workflow step temporarily.
+
+Never modify enforcement logic in code.
+
+---
+
+# Runtime Errors
+
+The following are treated as violations:
+
+- Missing artifact
+- Parser crash
+- Malformed report
+- Tool execution failure
+- Schema mismatch
+
+This is intentional **fail-safe governance behavior**.
+
+---
+
+# Local Execution
+
+Run locally:
 
 ```
 python quality/ci/gate/gate.py
 
 ```
 
-Verify:
+Review outputs:
 
 ```
-quality/analysis/summary.md
-quality/analysis/report.json
-
-```
-
----
-
-## How to Temporarily Disable a Tool
-
-There are two safe methods.
-
-### Option 1 (Recommended): Make It Advisory
-
-In `policy.yaml`:
-
-```
-sonar:
-  blocking: false
-
-```
-
-This keeps the tool running but prevents it from blocking the merge.
-
-Use this when:
- - Access is pending
- - Configuration is incomplete
- - Infrastructure dependency is unavailable
-
-To re-enable Sonar as blocking:
- 1. Ensure the workflow generates quality/analysis/raw/sonar.json.
- 2. Confirm the JSON contains:
-  
-```
-{
-  "projectStatus": { "status": "OK" | "ERROR" }
-}
-
-```
-
-3. Update policy.yaml:
-
-```
-sonar:
-  blocking: true
-
-```
-
-
-### Option 2: Remove From Workflow
-
-If a tool cannot run at all, remove it from the GitHub workflow temporarily.
-
-If a parser executes but no artifact is produced, it will be treated as a runtime error and block the merge.
-
-Do NOT:
- - Comment out parser logic
- - Hardcode exceptions in policy_engine.py
- - Bypass enforcement rules in gate.py
- - Modify exit codes to force approval
-
-All changes must remain visible in policy.yaml or workflow YAML.
-
----
-
-## Runtime Errors
-
-The system treats the following as violations:
- - Missing artifact
- - Parser crash
- - Malformed report
- - Tool execution failure
- - Unexpected schema mismatch
-
-These are considered governance failures and block the merge.
-
-This is intentional fail-safe behavior.
-
----
-
-## Local Execution
-
-### To run locally:
- 1. Place tool reports into:
-
-```
-quality/analysis/raw/
-
-```
-
- 2. Run:
-
-```
-python quality/ci/gate/gate.py
-
-```
-
- 3. Review:
-
-```
-quality/analysis/summary.md
-quality/analysis/report.json
+quality/analysis/report.md
+quality/analysis/report.html
 quality/analysis/normalized/normalized.json
 quality/analysis/evaluated/evaluated.json
 
@@ -440,231 +435,34 @@ quality/analysis/evaluated/evaluated.json
 
 ---
 
-### Report Outputs
+# Required GitHub Secrets
 
-The gate engine produces:
- - `quality/analysis/summary.md`      (Human-readable summary)
- - `quality/analysis/report.json`     (Machine-readable evaluation)
- - `quality/analysis/report.md`       (Rich CI report)
- - `quality/analysis/normalized/`     (Layer 1 output)
- - `quality/analysis/evaluated/`      (Layer 2 output)
+Repository → **Settings → Secrets and Variables → Actions**
 
-The entire quality/analysis/ directory is uploaded as a CI artifact.
-
----
-
-## Required GitHub Secrets
-
-Go to: **Settings → Secrets and Variables → Actions**
-
-| Secret         | Required        | Purpose |
-|----------------|-----------------|---------|
-| `NVD_API_KEY`  | Recommended     | Speeds up OWASP Dependency-Check CVE downloads. Without it, scanning is rate-limited and significantly slower. |
-| `SONAR_TOKEN`  | Optional (to enable Sonar) | Authentication token for SonarCloud/Sonar. |
-| `SONAR_HOST_URL` | Optional (self-hosted only) | Sonar server URL (not required for SonarCloud). |
-| `STAGING_URL` | DAST only      | AWS staging ALB DNS name used by OWASP ZAP. |
-
-**Notes:**
- - If `SONAR_TOKEN` is missing, Sonar runs in advisory mode or is skipped, but the gate engine still runs.
- - If `NVD_API_KEY` is missing, OWASP Dependency-Check still runs but will be very slow due to NVD rate limiting.
- - `STAGING_URL` is only used by the DAST job and not required for pull request gating.
+| Secret | Required | Purpose |
+|------|------|------|
+| NVD_API_KEY | Recommended | Faster Dependency-Check CVE downloads |
+| SONAR_TOKEN | Optional | Sonar authentication |
+| SONAR_HOST_URL | Optional | Self-hosted Sonar server |
+| STAGING_URL | DAST only | Target for OWASP ZAP |
 
 ---
 
----
-
-## SonarQube / SonarCloud Integration Notes
-
-Sonar is currently configured as advisory because no active server or authentication token is configured.
-
-Sonar integration is executed through:
-
-```
-.github/workflows/build-and-analyze.yml
-
-```
-
-The workflow must invoke Sonar analysis and generate a normalized status artifact for the gate engine.
-
-To enable Sonar as a blocking quality gate, complete the following steps.
-
-
-### Step 1 — Choose SonarCloud or Self-Hosted SonarQube
-
-Sonar must be reachable from GitHub Actions and capable of returning a quality gate status.
-
-
-### Step 2 — Configure Sonar Project
-
-#### SonarCloud Setup
-1. Sign in to https://sonarcloud.io using GitHub.
-2. Import the CareConnect repository.
-3. Generate a ***SONAR_TOKEN***.
-4. Add the token in GitHub:
-	• Settings → Secrets and Variables → Actions → New Repository Secret
-	• Name: SONAR_TOKEN
-
-No SONAR_HOST_URL is required for SonarCloud.
-
-⸻
-
-#### Self-Hosted SonarQube Setup
-1. Deploy a SonarQube server.
-2. Create a project in SonarQube.
-3. Generate a user token.
-4. Add the following GitHub secrets:
-	• SONAR_TOKEN
-	• SONAR_HOST_URL (example: https://sonar.company.com)
-
-### Step 3 — Configure Maven Project
-
-In:
-
-```
-backend/core/pom.xml
-
-```
-
-Ensure the following exists:
-
-```
-<properties>
-  <sonar.projectKey>careconnect</sonar.projectKey>
-</properties>
-
-```
-
-Ensure the Sonar Maven plugin is executed in:
-
-```
-.github/workflows/build-and-analyze.yml
-
-```
-
-The workflow must call Sonar during the CI build phase.
-
-
-### Step 4 — Ensure CI Generates Required Artifact
-
-The workflow must write the Sonar quality gate result to:
-
-```
-quality/analysis/raw/sonar.json
-
-```
-
-Expected structure:
-
-```
-{
-  "projectStatus": {
-    "status": "OK" | "ERROR"
-  }
-}
-
-```
-
-This file is consumed by the normalization layer:
-
-```
-quality/ci/gate/normalize.py
-
-```
-
-and evaluated by:
-
-```
-quality/ci/gate/policy_engine.py
-
-```
-
-### Step 5 — Enable Blocking Enforcement
-
-In:
-
-```
-quality/ci/gate/policy.yaml
-
-```
-
-Set:
-
-```
-sonar:
-  blocking: true
-
-```
-
-Commit via pull request.
-
-### Step 6 — Validate Integration
-1. Open a test PR.
-2. Confirm Sonar analysis runs in:
-`.github/workflows/build-and-analyze.yml`
-3. Confirm `sonar.json` is generated in:
-`quality/analysis/raw/`
-4. Confirm the gate blocks the merge if Sonar returns ERROR.
-
-Once validated, Sonar becomes a fully enforced quality gate within the CI governance engine.
-
----
-
-## Production Philosophy
+# Production Philosophy
 
 This subsystem exists to:
- - Enforce consistent quality standards
- - Prevent insecure merges
- - Provide auditability
- - Support structured scalability
- - Separate governance from implementation logic
 
-All policy changes must go through pull request review.
+- Enforce consistent quality standards
+- Prevent insecure merges
+- Provide traceability
+- Maintain policy-driven governance
 
-Do not bypass this system by:
- - Editing workflow exit codes
- - Removing the gate step from CI
- - Hardcoding exceptions in enforcement logic
+Do not bypass enforcement by:
 
-All enforcement changes must be performed via policy.yaml or documented workflow modifications.
+- Editing workflow exit codes
+- Removing gate steps
+- Hardcoding exceptions
 
-This is governance, not convenience.
-
-
----
-
----
-
-## Appendix A — Local Tool Execution Reference
-
-### Java (backend/core)
-
-```
-./mvnw checkstyle:check  
-./mvnw spotbugs:check  
-./mvnw pmd:check  
-./mvnw org.owasp:dependency-check-maven:check -Dformat=ALL -Dnvd.api.key=YOUR_NVD_API_KEY  
-
-```
-
----
-
-### Flutter (frontend)
-
-```
-flutter pub get  
-flutter analyze  
-dart format --set-exit-if-changed .
-
-```
-
----
-
-### Semgrep (repository root)
-
-```
-pip install semgrep  
-semgrep --config p/default --config p/owasp-top-ten --config p/secrets .
-
-```
+All governance changes must occur through **policy.yaml** and **PR review**.
 
 ---

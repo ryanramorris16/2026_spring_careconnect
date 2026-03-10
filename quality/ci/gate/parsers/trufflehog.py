@@ -1,217 +1,280 @@
-# File: quality/ci/gate/parsers/trufflehog.py
-# ==========================================================
-# trufflehog.py
-# ----------------------------------------------------------
-# TruffleHog Parser (Secrets Detection)
-#
-# Purpose:
-#   Parse TruffleHog JSONL output and normalize findings into
-#   the standard schema defined in schemas.py.
-#
-# Expected raw artifact:
-#   quality/analysis/raw/trufflehog.jsonl
-#
-# Native TruffleHog Severity Model:
-#   TruffleHog does not use a traditional severity scale.
-#   Instead, each finding carries a "Verified" boolean that
-#   indicates whether the secret was confirmed active against
-#   its target service.
-#
-#   Verified=true  → Secret is confirmed active (live credential).
-#   Verified=false → Secret pattern matched but not confirmed active.
-#
-# Severity Mapping (TruffleHog → Normalized):
-#   Verified=true  → critical  (confirmed active credential)
-#   Verified=false → high      (unverified but flagged secret)
-#
-# Behavior:
-#   - Reads JSONL artifact (one JSON object per line).
-#   - Skips blank lines and self-referential findings
-#     (TruffleHog scanning its own output file).
-#   - Maps verified status to normalized severity per the table above.
-#   - Populates findings[] with per-secret detail.
-#   - NEVER writes raw secret values to findings or metadata.
-#   - Counts violations per normalized severity level.
-#   - Sets max_severity to the highest normalized severity found.
-#   - Malformed JSONL lines are counted and recorded in metadata.
-#   - Does NOT apply policy thresholds (policy.yaml controls that).
-#
-# TruffleHog JSONL Record Structure:
-#   {
-#     "DetectorName": "Github",
-#     "Verified": false,
-#     "Raw": "<secret>",          ← NEVER output this field
-#     "SourceMetadata": {
-#       "Data": {
-#         "Filesystem": {
-#           "file": "/repo/path/to/file.py",
-#           "line": 42
-#         }
-#       }
-#     },
-#     "ExtraData": {
-#       "rotation_guide": "https://..."
-#     }
-#   }
-#
-# SECURITY NOTE:
-#   The "Raw" field contains the actual secret value.
-#   It MUST NOT appear in findings, metadata, or any output artifact.
-# ==========================================================
+"""
+TruffleHog Parser (Secrets Detection)
+
+Purpose
+-------
+Parse TruffleHog JSONL output and normalize findings into the
+standard schema defined in schemas.py.
+
+Expected Raw Artifact
+---------------------
+quality/analysis/raw/trufflehog.jsonl
+
+Native TruffleHog Severity Model
+--------------------------------
+TruffleHog does not use a traditional severity scale.
+Instead, each finding carries a Verified boolean indicating whether
+the secret was confirmed active against its target service.
+
+Verified = true
+    Secret is confirmed active and represents a live credential.
+Verified = false
+    Secret pattern matched but was not confirmed active.
+
+Severity Mapping
+----------------
+TruffleHog -> Normalized
+
+- Verified = true -> critical
+- Verified = false -> high
+
+Behavior
+--------
+- Reads a JSONL artifact with one JSON object per line.
+- Skips blank lines and self-referential findings.
+- Maps verified status to normalized severity.
+- Populates findings with per-secret detail.
+- Never writes raw secret values to findings or metadata.
+- Counts violations per normalized severity level.
+- Sets max_severity to the highest normalized severity found.
+- Counts malformed JSONL lines and records them in metadata.
+- Does not apply policy thresholds.
+
+TruffleHog JSONL Record Structure
+---------------------------------
+{
+  "DetectorName": "Github",
+  "Verified": false,
+  "Raw": "<secret>",
+  "SourceMetadata": {
+    "Data": {
+      "Filesystem": {
+        "file": "/repo/path/to/file.py",
+        "line": 42
+      }
+    }
+  },
+  "ExtraData": {
+    "rotation_guide": "https://..."
+  }
+}
+
+Security Note
+-------------
+The Raw field contains the actual secret value.
+It must never appear in findings, metadata, or any output artifact.
+"""
 
 import json
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
+
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _read_trufflehog_lines(artifact: Path, result: dict) -> list[str] | None:
+    """
+    Read the TruffleHog JSONL artifact safely.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to the JSONL artifact.
+    result : dict
+        Output result dictionary updated on read failure.
+
+    Returns
+    -------
+    list[str] | None
+        File lines on success, otherwise None.
+    """
+    try:
+        return artifact.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {error}"
+        return None
+
+
+def _parse_record(raw_line: str) -> dict | None:
+    """
+    Parse one JSONL line into a dictionary.
+
+    Parameters
+    ----------
+    raw_line : str
+        One stripped JSONL line.
+
+    Returns
+    -------
+    dict | None
+        Parsed record or None if the line is invalid JSON.
+    """
+    try:
+        parsed = json.loads(raw_line)
+    except json.JSONDecodeError:
+        return None
+
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _extract_filesystem_data(record: dict) -> dict:
+    """
+    Extract filesystem metadata from a TruffleHog record.
+
+    Parameters
+    ----------
+    record : dict
+        Parsed TruffleHog record.
+
+    Returns
+    -------
+    dict
+        Filesystem sub-dictionary if present, otherwise empty dict.
+    """
+    source_metadata = record.get("SourceMetadata") or {}
+    source_data = source_metadata.get("Data") or {}
+    filesystem_data = source_data.get("Filesystem") or {}
+    return filesystem_data if isinstance(filesystem_data, dict) else {}
+
+
+def _is_self_referential(file_path: str | None) -> bool:
+    """
+    Detect whether TruffleHog scanned its own output artifact.
+
+    Parameters
+    ----------
+    file_path : str | None
+        Repository-relative file path.
+
+    Returns
+    -------
+    bool
+        True when the finding points to trufflehog.jsonl itself.
+    """
+    return bool(file_path and file_path.endswith("quality/analysis/raw/trufflehog.jsonl"))
+
+
+def _build_finding(record: dict) -> tuple[dict, str]:
+    """
+    Convert one TruffleHog record into a normalized finding.
+
+    Parameters
+    ----------
+    record : dict
+        Parsed TruffleHog record.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    filesystem_data = _extract_filesystem_data(record)
+    file_path = _repo_relpath(filesystem_data.get("file"))
+    line_number = filesystem_data.get("line")
+
+    detector = record.get("DetectorName") or "TruffleHog"
+    verified = bool(record.get("Verified", False))
+    normalized_severity = "critical" if verified else "high"
+
+    extra_data = record.get("ExtraData") or {}
+    rotation_guide = (
+        extra_data.get("rotation_guide")
+        if isinstance(extra_data, dict)
+        else None
+    )
+
+    message = (
+        f"{detector} secret detected "
+        f"({'VERIFIED' if verified else 'unverified'})"
+    )
+
+    finding = {
+        "severity": normalized_severity,
+        "native_severity": "verified" if verified else "unverified",
+        "rule": detector,
+        "message": message,
+        "file": file_path or "unknown",
+        "line": line_number if line_number is not None else 0,
+        "rule_url": rotation_guide or "",
+    }
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
 
 def parse_trufflehog(raw_dir: Path) -> dict:
     """
     Parse TruffleHog JSONL and return a standardized result dictionary.
 
-    Args:
-        raw_dir: Path to the directory containing raw tool outputs.
+    Parameters
+    ----------
+    raw_dir : Path
+        Directory containing raw tool output artifacts.
 
-    Returns:
-        A dict conforming to the base_tool_result schema, populated
-        with findings, severity counts, and max_severity.
+    Returns
+    -------
+    dict
+        Result dictionary conforming to the base_tool_result schema,
+        including findings, severity counts, and max_severity.
 
-    Contract:
-        - Always returns a base_tool_result structure.
-        - Never raises exceptions outward.
-        - Never writes raw secret values to any output field.
-        - Missing artifact → artifact_present=False, runtime_error=True.
-        - Malformed lines  → counted in metadata, parsing continues.
-        - Empty file       → valid result with zero violations.
+    Contract
+    --------
+    - Always returns a base_tool_result structure.
+    - Never raises exceptions outward.
+    - Never writes raw secret values to any output field.
+    - Missing artifact sets artifact_present=False and runtime_error=True.
+    - Malformed lines are counted in metadata and parsing continues.
+    - Empty file is treated as a valid execution with zero violations.
     """
-    tool_name = "trufflehog"
-
-    # Initialize the standardized result structure
-    result = base_tool_result(tool_name)
-
-    # Build the expected artifact path
+    result = base_tool_result("trufflehog")
     artifact = raw_dir / "trufflehog.jsonl"
 
-    # ----------------------------------------------------------
-    # Artifact presence check
-    # ----------------------------------------------------------
-    # If the file does not exist, mark as runtime error and return
-    # early. The policy engine will decide whether a missing artifact
-    # constitutes a blocking violation.
-    # ----------------------------------------------------------
     if not artifact.exists():
         result["artifact_present"] = False
         result["runtime_error"] = True
         result["metadata"]["error"] = "Missing artifact: trufflehog.jsonl"
         return result
 
-    # Artifact is present; mark accordingly
     result["artifact_present"] = True
 
-    try:
-        # Read all lines from the JSONL artifact
-        lines = artifact.read_text(encoding="utf-8", errors="replace").splitlines()
-    except Exception as e:
-        # Could not read the file at all — treat as runtime error
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Failed to read trufflehog.jsonl: {e}"
+    lines = _read_trufflehog_lines(artifact, result)
+    if lines is None:
         return result
 
-    # Mark as executed — artifact was present and readable
     result["executed"] = True
-
-    # Accumulate findings and track malformed lines
-    findings       = []
+    findings: list[dict] = []
     malformed_count = 0
 
     for raw_line in lines:
-        raw_line = raw_line.strip()
-
-        # Skip blank lines (common in JSONL files)
-        if not raw_line:
+        stripped_line = raw_line.strip()
+        if not stripped_line:
             continue
 
-        try:
-            rec = json.loads(raw_line)
-        except json.JSONDecodeError:
-            # Malformed line — count it and continue processing remaining lines.
-            # We do not abort on a single bad line; partial results are better
-            # than no results.
+        record = _parse_record(stripped_line)
+        if record is None:
             malformed_count += 1
             continue
 
-        # ----------------------------------------------------------
-        # Extract source location from SourceMetadata
-        # ----------------------------------------------------------
-        # TruffleHog filesystem scans nest file/line under:
-        #   SourceMetadata → Data → Filesystem
-        # ----------------------------------------------------------
-        fs        = (rec.get("SourceMetadata") or {}).get("Data", {}).get("Filesystem", {})
-        file_path = _repo_relpath(fs.get("file"))
-        line_no   = fs.get("line")
-
-        # ----------------------------------------------------------
-        # Skip self-referential findings
-        # ----------------------------------------------------------
-        # TruffleHog may scan its own JSONL output and detect patterns
-        # within previously written findings. These are false positives
-        # and must be excluded.
-        # ----------------------------------------------------------
-        if file_path and file_path.endswith("quality/analysis/raw/trufflehog.jsonl"):
+        filesystem_data = _extract_filesystem_data(record)
+        file_path = _repo_relpath(filesystem_data.get("file"))
+        if _is_self_referential(file_path):
             continue
 
-        # Extract detector name — used as the rule identifier
-        detector = rec.get("DetectorName") or "TruffleHog"
-
-        # Verified=true means the secret was confirmed active against its service
-        verified = bool(rec.get("Verified", False))
-
-        # ----------------------------------------------------------
-        # Severity mapping
-        # ----------------------------------------------------------
-        # Verified secrets are confirmed live credentials → critical.
-        # Unverified secrets are pattern matches only → high.
-        # ----------------------------------------------------------
-        normalized_severity = "critical" if verified else "high"
-
-        # Increment the appropriate severity bucket directly on the
-        # result dict — base_tool_result already owns the structure.
+        finding, normalized_severity = _build_finding(record)
         result["severity_counts"][normalized_severity] += 1
-
-        # Extract rotation guide URL from ExtraData if present
-        extra          = rec.get("ExtraData") or {}
-        rotation_guide = extra.get("rotation_guide") if isinstance(extra, dict) else None
-
-        # Build human-readable message — verified status is explicit
-        message = f"{detector} secret detected ({'VERIFIED' if verified else 'unverified'})"
-
-        # ----------------------------------------------------------
-        # Build the standardized finding record.
-        # SECURITY: The "Raw" field from the TruffleHog record
-        # is intentionally excluded — it contains the actual secret.
-        # ----------------------------------------------------------
-        finding = {
-            "severity":        normalized_severity,
-            "native_severity": "verified" if verified else "unverified",
-            "rule":            detector,
-            "message":         message,
-            "file":            file_path or "unknown",
-            "line":            line_no if line_no is not None else 0,
-            "rule_url":        rotation_guide or "",
-        }
         findings.append(finding)
 
-    # Store all individual findings
     result["findings"] = findings
-
-    # Total number of secrets found
     result["violation_count"] = len(findings)
-
-    # Determine max_severity using the shared utility function
     result["max_severity"] = determine_max_severity(result["severity_counts"])
 
-    # Record malformed line count in metadata if any were encountered
     if malformed_count:
         result["metadata"]["malformed_lines"] = malformed_count
 
@@ -220,24 +283,26 @@ def parse_trufflehog(raw_dir: Path) -> dict:
 
 def _repo_relpath(path: str | None) -> str | None:
     """
-    Convert an absolute TruffleHog container path to a repo-relative path.
+    Convert an absolute TruffleHog container path to a repository-relative path.
 
-    TruffleHog runs inside Docker with the repository mounted at /repo.
-    All file paths in the output are prefixed with /repo/ and must be
-    stripped to produce paths that are meaningful in the repository context.
+    TruffleHog commonly runs inside Docker with the repository mounted at /repo.
+    Paths in the output are therefore often prefixed with /repo/ and should be
+    converted to repository-relative paths for downstream reporting.
 
-    Args:
-        path: Absolute path string from TruffleHog output, or None.
+    Parameters
+    ----------
+    path : str | None
+        Absolute path from TruffleHog output, or None.
 
-    Returns:
-        Repo-relative path string, or None if input was None/empty.
+    Returns
+    -------
+    str | None
+        Repository-relative path, or None if the input is empty.
     """
     if not path:
         return None
 
-    # Strip the Docker bind mount prefix used in the CI workflow
     if path.startswith("/repo/"):
         return path[len("/repo/"):]
 
-    # Return as-is if the prefix is not present (local run or different mount)
     return path

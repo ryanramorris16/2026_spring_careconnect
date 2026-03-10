@@ -1,202 +1,254 @@
-# File: quality/ci/gate/parsers/semgrep.py
-# ==========================================================
-# semgrep.py
-# ----------------------------------------------------------
-# Semgrep Parser (Multi-language SAST)
-#
-# Purpose:
-#   Parse Semgrep JSON output and normalize findings into the
-#   standard schema defined in schemas.py.
-#
-# Expected raw artifact:
-#   quality/analysis/raw/semgrep.json
-#
-# Native Semgrep Severities:
-#   ERROR     → Rule matched a high-confidence security issue.
-#   WARNING   → Rule matched a potential issue; lower confidence.
-#   INFO      → Informational match; lowest enforcement level.
-#   INVENTORY → Inventory/audit finding; not a direct vulnerability.
-#
-# Severity Mapping (Semgrep → Normalized):
-#   ERROR     → high
-#   WARNING   → medium
-#   INFO      → low
-#   INVENTORY → info
-#   <unknown> → info
-#
-# Note:
-#   Semgrep does not emit a native "critical" severity. High is the ceiling.
-#
-# Behavior:
-#   - Reads the "results" array from the Semgrep JSON artifact.
-#   - Maps native severity to normalized severity per the table above.
-#   - Populates findings[] with per-finding detail including CWE and OWASP.
-#   - Counts violations per normalized severity level.
-#   - Sets max_severity to the highest normalized severity found.
-#   - Does NOT apply policy thresholds (policy.yaml controls that).
-#
-# Semgrep JSON Structure:
-#   {
-#     "results": [
-#       {
-#         "check_id": "python.flask.security.injection.tainted-sql-string",
-#         "path":     "src/main/app.py",
-#         "start":    { "line": 42, "col": 5 },
-#         "end":      { "line": 42, "col": 30 },
-#         "extra": {
-#           "severity": "ERROR",
-#           "message":  "Possible SQL injection...",
-#           "metadata": {
-#             "cwe":   ["CWE-89: Improper Neutralization..."],
-#             "owasp": ["A1:2017 - Injection"]
-#           }
-#         }
-#       }
-#     ]
-#   }
-# ==========================================================
+"""
+Semgrep Parser (Multi-language SAST)
+
+Purpose
+-------
+Parse Semgrep JSON output and normalize findings into the
+standard schema defined in schemas.py.
+
+Expected Raw Artifact
+---------------------
+quality/analysis/raw/semgrep.json
+
+Native Semgrep Severities
+-------------------------
+ERROR
+    Rule matched a high-confidence security issue.
+WARNING
+    Rule matched a potential issue with lower confidence.
+INFO
+    Informational match at the lowest enforcement level.
+INVENTORY
+    Inventory or audit finding rather than a direct vulnerability.
+
+Severity Mapping
+----------------
+Semgrep -> Normalized
+
+- ERROR -> high
+- WARNING -> medium
+- INFO -> low
+- INVENTORY -> info
+- unknown -> info
+
+Note
+----
+Semgrep does not emit a native critical severity. High is the
+maximum mapped level.
+
+Behavior
+--------
+- Reads the "results" array from the Semgrep JSON artifact.
+- Maps native severity to normalized severity.
+- Populates findings with per-finding detail including CWE and OWASP.
+- Counts violations per normalized severity level.
+- Sets max_severity to the highest normalized severity found.
+- Does not apply policy thresholds.
+
+Semgrep JSON Structure
+----------------------
+{
+  "results": [
+    {
+      "check_id": "python.flask.security.injection.tainted-sql-string",
+      "path": "src/main/app.py",
+      "start": { "line": 42, "col": 5 },
+      "end": { "line": 42, "col": 30 },
+      "extra": {
+        "severity": "ERROR",
+        "message": "Possible SQL injection...",
+        "metadata": {
+          "cwe": ["CWE-89: Improper Neutralization..."],
+          "owasp": ["A1:2017 - Injection"]
+        }
+      }
+    }
+  ]
+}
+"""
 
 import json
 from pathlib import Path
 
-from ..schemas import base_tool_result
-from ..utils import determine_max_severity
+from quality.ci.gate.schemas import base_tool_result
+from quality.ci.gate.utils import determine_max_severity
 
 
-# ----------------------------------------------------------
-# Severity mapping: Semgrep native → normalized
-# ----------------------------------------------------------
 SEVERITY_MAP = {
-    "error":     "high",
-    "warning":   "medium",
-    "info":      "low",
+    "error": "high",
+    "warning": "medium",
+    "info": "low",
     "inventory": "info",
 }
 
+
+# ----------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------
+
+def _load_semgrep_data(artifact: Path, result: dict) -> dict | None:
+    """
+    Load the Semgrep JSON artifact safely.
+
+    Parameters
+    ----------
+    artifact : Path
+        Path to semgrep.json.
+    result : dict
+        Result dictionary updated on load failure.
+
+    Returns
+    -------
+    dict | None
+        Parsed JSON document or None on failure.
+    """
+    try:
+        with open(artifact, "r", encoding="utf-8") as file_handle:
+            return json.load(file_handle)
+    except (OSError, TypeError, ValueError, KeyError) as error:
+        result["runtime_error"] = True
+        result["metadata"]["error"] = f"Semgrep parse error: {error}"
+        return None
+
+
+def _normalize_to_list(value: list | str | None) -> list:
+    """
+    Normalize a Semgrep metadata field to a list.
+
+    Parameters
+    ----------
+    value : list | str | None
+        Metadata field value.
+
+    Returns
+    -------
+    list
+        Normalized list value.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def _extract_semgrep_details(raw_finding: dict) -> tuple[dict, dict, dict]:
+    """
+    Extract nested Semgrep dictionaries safely.
+
+    Parameters
+    ----------
+    raw_finding : dict
+        Raw Semgrep result record.
+
+    Returns
+    -------
+    tuple[dict, dict, dict]
+        Extra data, metadata, and start position dictionaries.
+    """
+    extra_data = raw_finding.get("extra", {})
+    if not isinstance(extra_data, dict):
+        extra_data = {}
+
+    metadata = extra_data.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    start_data = raw_finding.get("start", {})
+    if not isinstance(start_data, dict):
+        start_data = {}
+
+    return extra_data, metadata, start_data
+
+
+def _build_semgrep_finding(raw_finding: dict) -> tuple[dict, str]:
+    """
+    Convert one Semgrep result into a normalized finding.
+
+    Parameters
+    ----------
+    raw_finding : dict
+        Raw Semgrep result record.
+
+    Returns
+    -------
+    tuple[dict, str]
+        Normalized finding and its normalized severity.
+    """
+    extra_data, metadata, start_data = _extract_semgrep_details(raw_finding)
+
+    native_severity = extra_data.get("severity", "INFO").lower()
+    normalized_severity = SEVERITY_MAP.get(native_severity, "info")
+
+    finding = {
+        "file": raw_finding.get("path", "unknown"),
+        "line": start_data.get("line", 0),
+        "column": start_data.get("col", 0),
+        "severity": normalized_severity,
+        "native_severity": native_severity.upper(),
+        "rule": raw_finding.get("check_id", "unknown"),
+        "message": extra_data.get("message", ""),
+        "cwe": _normalize_to_list(metadata.get("cwe", [])),
+        "owasp": _normalize_to_list(metadata.get("owasp", [])),
+    }
+
+    return finding, normalized_severity
+
+
+# ----------------------------------------------------------
+# Main parser
+# ----------------------------------------------------------
 
 def parse_semgrep(raw_dir: Path) -> dict:
     """
     Parse Semgrep JSON and return a standardized result dictionary.
 
-    Args:
-        raw_dir: Path to the directory containing raw tool outputs.
+    Parameters
+    ----------
+    raw_dir : Path
+        Directory containing raw tool output artifacts.
 
-    Returns:
-        A dict conforming to the base_tool_result schema, populated
-        with findings, severity counts, and max_severity.
+    Returns
+    -------
+    dict
+        Result dictionary conforming to the base_tool_result schema,
+        including findings, severity counts, and max_severity.
 
-    Contract:
-        - Always returns a base_tool_result structure.
-        - Never raises exceptions outward.
-        - Missing artifact → artifact_present=False, runtime_error=True.
-        - Malformed JSON   → runtime_error=True, error captured in metadata.
-        - Empty results [] → valid result with zero violations.
+    Contract
+    --------
+    - Always returns a base_tool_result structure.
+    - Never raises exceptions outward.
+    - Missing artifact sets artifact_present=False and runtime_error=True.
+    - Malformed JSON sets runtime_error=True and records the error in metadata.
+    - Empty results are treated as a valid execution with zero violations.
     """
-    tool_name = "semgrep"
-
-    # Initialize the standardized result structure
-    result = base_tool_result(tool_name)
-
-    # Build the expected artifact path
+    result = base_tool_result("semgrep")
     artifact = raw_dir / "semgrep.json"
 
-    # ----------------------------------------------------------
-    # Artifact presence check
-    # ----------------------------------------------------------
-    # If the file does not exist, mark as runtime error and return
-    # early. The policy engine will decide whether a missing artifact
-    # constitutes a blocking violation.
-    # ----------------------------------------------------------
     if not artifact.exists():
         result["artifact_present"] = False
         result["runtime_error"] = True
         return result
 
-    # Artifact is present; mark accordingly
     result["artifact_present"] = True
     result["executed"] = True
 
-    try:
-        # Load and parse the JSON artifact
-        with open(artifact) as f:
-            data = json.load(f)
+    data = _load_semgrep_data(artifact, result)
+    if data is None:
+        return result
 
-        # Semgrep stores all findings in the top-level "results" array.
-        # An empty array is a valid result (no findings).
-        raw_findings = data.get("results", [])
+    raw_findings = data.get("results", [])
+    findings: list[dict] = []
 
-        # Accumulate findings as we walk the results list
-        findings = []
+    for raw_finding in raw_findings:
+        finding, normalized_severity = _build_semgrep_finding(raw_finding)
+        result["severity_counts"][normalized_severity] += 1
+        findings.append(finding)
 
-        for raw in raw_findings:
-            # Pull the "extra" block which contains severity, message, metadata
-            extra    = raw.get("extra", {})
-            metadata = extra.get("metadata", {})
-
-            # Extract native severity; default to "INFO" if absent
-            native_severity = extra.get("severity", "INFO").lower()
-
-            # Map native severity to normalized severity.
-            # Default to "info" for any unrecognized value.
-            normalized_severity = SEVERITY_MAP.get(native_severity, "info")
-
-            # Increment the appropriate severity bucket directly on the
-            # result dict — base_tool_result already owns the structure.
-            result["severity_counts"][normalized_severity] += 1
-
-            # Extract location — Semgrep uses "start" block for line/col
-            start = raw.get("start", {})
-
-            # CWE and OWASP are lists in Semgrep metadata; default to empty
-            cwe   = metadata.get("cwe", [])
-            owasp = metadata.get("owasp", [])
-
-            # Normalize to lists in case a single string was provided
-            if isinstance(cwe, str):
-                cwe = [cwe]
-            if isinstance(owasp, str):
-                owasp = [owasp]
-
-            # Build the standardized finding record
-            finding = {
-                "file":            raw.get("path", "unknown"),
-                "line":            start.get("line", 0),
-                "column":          start.get("col", 0),
-                "severity":        normalized_severity,
-                "native_severity": native_severity.upper(),
-                "rule":            raw.get("check_id", "unknown"),
-                "message":         extra.get("message", ""),
-                "cwe":             cwe,
-                "owasp":           owasp,
-            }
-            findings.append(finding)
-
-        # Store all individual findings
-        result["findings"] = findings
-
-        # Total number of findings
-        result["violation_count"] = len(findings)
-
-        # Determine max_severity using the shared utility function
-        result["max_severity"] = determine_max_severity(result["severity_counts"])
-
-    except json.JSONDecodeError as e:
-        # ----------------------------------------------------------
-        # Malformed or unparseable JSON.
-        # Captured separately from generic exceptions so the error
-        # type is explicit in the metadata.
-        # ----------------------------------------------------------
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"JSON parse error: {e}"
-
-    except Exception as e:
-        # ----------------------------------------------------------
-        # Catch-all for unexpected failures (I/O errors, schema
-        # changes, etc.) to ensure the pipeline never crashes on a
-        # single parser. Surfaced as a runtime_error so the policy
-        # engine can flag it as a governance concern.
-        # ----------------------------------------------------------
-        result["runtime_error"] = True
-        result["metadata"]["error"] = f"Unexpected error: {e}"
+    result["findings"] = findings
+    result["violation_count"] = len(findings)
+    result["max_severity"] = determine_max_severity(result["severity_counts"])
 
     return result
