@@ -2015,6 +2015,42 @@ class ApiService {
     }
   }
 
+  /// Returns the latest recording record for [callId], or null if none exists.
+  static Future<Map<String, dynamic>?> getCallRecording(String callId) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final response = await _httpClient
+          .get(
+            Uri.parse('${ApiConstants.callsV3}/$callId/recording'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Returns a presigned playback URL for the recording of [callId], or null.
+  static Future<String?> getCallRecordingPlaybackUrl(String callId) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final response = await _httpClient
+          .get(
+            Uri.parse('${ApiConstants.callsV3}/$callId/recording/playback-url'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) return decoded['playbackUrl'] as String?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   static Future<List<Map<String, dynamic>>> getMyCallTelemetry() async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
@@ -2070,7 +2106,7 @@ class ApiService {
     }
   }
 
-  static Future<int> deleteCallTelemetryDev(String callId) async {
+  static Future<Map<String, dynamic>> deleteCallTelemetryDev(String callId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await _httpClient
         .delete(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'), headers: headers)
@@ -2095,10 +2131,68 @@ class ApiService {
     }
 
     final decoded = jsonDecode(response.body);
-    if (decoded is Map && decoded['deletedEvents'] is num) {
-      return (decoded['deletedEvents'] as num).toInt();
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
     }
-    return 0;
+    return {};
+  }
+
+  /// DEV ONLY — purges all recordings from S3 and the call_recordings table.
+  /// Returns a summary map with deletedS3Objects and deletedDbRows.
+  static Future<Map<String, dynamic>> deletePatientCallHistoryDev(
+    int patientUserId,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient
+        .delete(
+          Uri.parse('${ApiConstants.callsV3}/patients/$patientUserId/telemetry'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode != 200) {
+      String details = '';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          final message =
+              (decoded['message'] ?? decoded['error'] ?? '').toString().trim();
+          if (message.isNotEmpty) {
+            details = ' - $message';
+          }
+        }
+      } catch (_) {
+        // keep default message
+      }
+      throw HttpException(
+        'Failed to delete patient call history (${response.statusCode})$details',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    return {};
+  }
+
+  static Future<Map<String, dynamic>> purgeAllRecordingsDev() async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient
+        .delete(
+          Uri.parse('${ApiConstants.callsV3}/recordings'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 60));
+
+    if (response.statusCode != 200) {
+      throw HttpException(
+        'Failed to purge recordings (${response.statusCode}): ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    return {};
   }
 }
 
