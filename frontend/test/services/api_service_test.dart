@@ -210,7 +210,7 @@ Future<T> _withSpec<T>(_FakeSpec spec, Future<T> Function() fn) {
 }
 
 /// Returns the body string that the fake HTTP layer will return.
-String _okJson(Map<String, dynamic> map) => jsonEncode(map);
+String _okJson(dynamic map) => jsonEncode(map);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
@@ -1449,8 +1449,6 @@ void main() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — creates an in-memory http.Response for pure-function tests.
 // ─────────────────────────────────────────────────────────────────────────────
-
-import 'package:http/http.dart' as http;
 
 /// Creates a minimal [http.Response] for testing pure helper functions that
 /// only read [response.statusCode] and [response.body].
