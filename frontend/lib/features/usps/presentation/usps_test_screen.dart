@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
@@ -245,8 +246,8 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
 
     final base = getBackendBaseUrl();
 
-    // Uri.base works across web/mobile/desktop without importing dart:html.
-    final currentUrl = Uri.base.toString();
+    // Use a platform-safe return URL; Uri.base works on web and mobile.
+    final currentUrl = kIsWeb ? Uri.base.toString() : getWebBaseUrl();
     final authUrl = '$base/oauth/google/start?userId=${Uri.encodeComponent(user.id.toString())}&returnUrl=${Uri.encodeComponent(currentUrl)}';
 
     final uri = Uri.parse(authUrl);

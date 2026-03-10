@@ -16,8 +16,25 @@
     <name>CareConnect Backend</name>
     <description>Spring Boot REST API for CareConnect</description>
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <aws.sdk.version>2.31.75</aws.sdk.version>
+        <!-- Static Analysis Reports Directory -->
+        <analysis.reports.dir>${project.basedir}/../../quality/Local_Scans/Static_Analysis_Reports</analysis.reports.dir>
+        <!-- OWASP Dependency-Check: default to environment variable, override with -Dnvd.api.key=... -->
+        <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+        <!-- OWASP Dependency-Check runtime toggles -->
+        <dependency-check.autoUpdate>true</dependency-check.autoUpdate>
+        <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
+        <dependency-check.failBuild>false</dependency-check.failBuild>
+        <!-- Sonar Configuration -->
+        <sonar.projectKey>careconnect-backend</sonar.projectKey>
+        <sonar.projectName>CareConnect Backend</sonar.projectName>
+        <sonar.language>java</sonar.language>
+        <sonar.sources>src/main</sonar.sources>
+        <sonar.tests>src/test</sonar.tests>
+        <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
     </properties>
 
     <dependencyManagement>
@@ -323,18 +340,31 @@
             <version>2.9.1</version>
         </dependency>
 
-        <!-- JSoup for HTML parsing (USPS email content) -->
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
-        </dependency>
-
         <!-- Spring Boot Actuator for monitoring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
+        <!-- Mock data framework -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.21.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <!-- Always-on build plugins -->
@@ -350,7 +380,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -361,6 +391,202 @@
                             <version>1.18.34</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- Checkstyle plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <configLocation>google_checks.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <linkXRef>false</linkXRef>
+                    <outputFile>${analysis.reports.dir}/checkstyle-result.xml</outputFile>
+                    <cacheFile>${analysis.reports.dir}/checkstyle-cachefile</cacheFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>10.14.2</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <!-- Move checkstyle-checker.xml from target to Static_Analysis_Reports -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>move-checkstyle-checker</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- SpotBugs plugin -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.8.3.1</version>
+                <executions>
+                    <execution>
+                        <id>spotbugs-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>spotbugs</goal>
+                        </goals>
+                        <configuration>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>spotbugs-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <effort>max</effort>
+                    <threshold>low</threshold>
+                    <failOnError>true</failOnError>
+                    <xmlOutput>true</xmlOutput>
+                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
+                </configuration>
+            </plugin>
+
+            <!-- Ensure spotbugs-result.xml report exists -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>move-checkstyle-checker</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>ensure-spotbugs-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${analysis.reports.dir}"/>
+                                <touch file="${analysis.reports.dir}/spotbugs-result.xml" mkdirs="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>move-spotbugs-files</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <move todir="${analysis.reports.dir}" failonerror="false" verbose="true">
+                                    <fileset dir="${project.basedir}/target">
+                                        <include name="spotbugs*.xml"/>
+                                    </fileset>
+                                </move>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- PMD plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.23.0</version>
+                <executions>
+                    <execution>
+                        <id>pmd-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>cpd-check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnViolation>true</failOnViolation>
+                    <targetJdk>21</targetJdk>
+                    <rulesets>
+                        <ruleset>category/java/bestpractices.xml</ruleset>
+                    </rulesets>
+                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
+                </configuration>
+            </plugin>
+
+            <!-- Sonar Scanner Maven Plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.10.0.2594</version>
+                <configuration>
+                    <skip>false</skip>
+                    <skipDesign>false</skipDesign>
+                </configuration>
+            </plugin>
+
+            <!-- OWASP Dependency-Check plugin -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.10</version>
+                <configuration>
+                    <format>ALL</format>
+                    <prettyPrint>true</prettyPrint>
+                    <excludeFromPurge>org.springframework.boot,org.springframework.security</excludeFromPurge>
+                    <!-- Use local NVD API key (env or Maven property) -->
+                    <nvdApiKey>${nvd.api.key}</nvdApiKey>
+                    <!-- Enable NVD updates when key is provided -->
+                    <autoUpdate>${dependency-check.autoUpdate}</autoUpdate>
+                    <skipUpdate>${dependency-check.skipUpdate}</skipUpdate>
+                    <!-- Fail build only when CVSS threshold is set on command line -->
+                    <failBuildOnCVSS>${owasp.cvss.threshold}</failBuildOnCVSS>
+                    <failBuild>${dependency-check.failBuild}</failBuild>
+                    <nvdApiDelay>12000</nvdApiDelay>
+                    <nvdApiMaxRetries>10</nvdApiMaxRetries>
+                    <nvdApiRetryDelay>12000</nvdApiRetryDelay>
                 </configuration>
             </plugin>
         </plugins>
