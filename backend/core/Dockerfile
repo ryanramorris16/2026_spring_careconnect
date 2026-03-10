@@ -28,22 +28,12 @@ RUN groupadd --system appuser && \
 # Copy the jar from the build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Create uploads directory (in case local file storage is used)
-RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
 
-# Switch to non-root user
-USER appuser
+RUN apt-get update && apt-get install -y curl
 
-# Spring Boot default port
-EXPOSE 8081
-
-# Health check using Spring Actuator
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8081/v1/api/test/health || exit 1
-
-# JVM tuning for containers — respects Fargate memory/CPU limits
-ENTRYPOINT ["java", \
-    "-XX:+UseContainerSupport", \
-    "-XX:MaxRAMPercentage=75.0", \
-    "-Djava.security.egd=file:/dev/./urandom", \
-    "-jar", "app.jar"]
+COPY env-entry.sh /app/env-entry.sh
+RUN chmod +x /app/env-entry.sh
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 CMD curl -fsS http://localhost:8080/v1/api/test/health || exit 1
+RUN chmod +x /app/env-entry.sh && sed -i 's/\r$//' /app/env-entry.sh
+ENTRYPOINT ["/app/env-entry.sh"]

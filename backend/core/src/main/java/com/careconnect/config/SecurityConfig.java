@@ -5,6 +5,7 @@ import com.careconnect.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -52,6 +53,7 @@ public class SecurityConfig {
                                                                 "/configuration/security")
                                                 .permitAll()
 
+<<<<<<< HEAD
                                                 /* ---------- public API endpoints ------------------------ */
                                                 .requestMatchers(
                                                                 "/v1/api/auth/**",
@@ -82,6 +84,29 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/api/websocket")
                                                 .permitAll()
+=======
+                        /* ---------- public API endpoints ------------------------ */
+                        .requestMatchers(
+                                "/v1/api/auth/**",
+                                "/api/v1/auth/**",  // Support both URL patterns
+                                "/api/auth/**",     // Support auth endpoints under /api/auth/
+                                "/v1/api/users/reset-password",  // Allow password reset (current)
+                                "/v1/api/users/setup-password",
+                                "/v1/api/test/health", // Keep a single public health endpoint for ALB/ECS checks
+                                "/oauth/**" // Permit OAuth paths
+                        ).permitAll()
+
+                        /* ---------- public static assets ------------------------ */
+                        .requestMatchers(
+                                "/", "/index.html", "/favicon.ico", "/static/**"
+                        ).permitAll()
+
+                        /* ---------- CORS preflight ------------------------------ */
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        /* ---------- Require JWT for versioned APIs ------------- */
+                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
+>>>>>>> 700e6998585b2266ff0057963f15bd897ceacb66
 
                                                 /* ---------- Require JWT for these APIs ------------------------ */
                                                 .requestMatchers("/v1/api/patients/**").authenticated()
