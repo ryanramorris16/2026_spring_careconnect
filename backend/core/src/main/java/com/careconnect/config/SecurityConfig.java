@@ -53,7 +53,6 @@ public class SecurityConfig {
                                                                 "/configuration/security")
                                                 .permitAll()
 
-<<<<<<< HEAD
                                                 /* ---------- public API endpoints ------------------------ */
                                                 .requestMatchers(
                                                                 "/v1/api/auth/**",
@@ -63,11 +62,9 @@ public class SecurityConfig {
                                                                 "/v1/api/users/reset-password", // Allow password reset
                                                                                                 // (current)
                                                                 "/v1/api/users/setup-password",
-                                                                "/v1/api/email-test/**", // Allow email testing
-                                                                                         // endpoints
-                                                                "/v1/api/test/**", // Allow test endpoints (health
-                                                                                   // check, swagger info)
-                                                                "/oauth/**"// Permit OAuth paths
+                                                                "/v1/api/test/health", // Keep a single public health
+                                                                                       // endpoint for ALB/ECS checks
+                                                                "/oauth/**" // Permit OAuth paths
                                                 ).permitAll()
 
                                                 /* ---------- public static assets ------------------------ */
@@ -75,38 +72,12 @@ public class SecurityConfig {
                                                                 "/", "/index.html", "/favicon.ico", "/static/**")
                                                 .permitAll()
 
-                                                /* ---------- Static assets ------------------------------------- */
-                                                .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**")
-                                                .permitAll()
+                                                /* ---------- CORS preflight ------------------------------ */
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                                                /* ---------- WebSocket endpoints (allow upgrade without auth) --- */
-                                                .requestMatchers("/ws/**")
-                                                .permitAll()
-                                                .requestMatchers("/api/websocket")
-                                                .permitAll()
-=======
-                        /* ---------- public API endpoints ------------------------ */
-                        .requestMatchers(
-                                "/v1/api/auth/**",
-                                "/api/v1/auth/**",  // Support both URL patterns
-                                "/api/auth/**",     // Support auth endpoints under /api/auth/
-                                "/v1/api/users/reset-password",  // Allow password reset (current)
-                                "/v1/api/users/setup-password",
-                                "/v1/api/test/health", // Keep a single public health endpoint for ALB/ECS checks
-                                "/oauth/**" // Permit OAuth paths
-                        ).permitAll()
-
-                        /* ---------- public static assets ------------------------ */
-                        .requestMatchers(
-                                "/", "/index.html", "/favicon.ico", "/static/**"
-                        ).permitAll()
-
-                        /* ---------- CORS preflight ------------------------------ */
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        /* ---------- Require JWT for versioned APIs ------------- */
-                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
->>>>>>> 700e6998585b2266ff0057963f15bd897ceacb66
+                                                /* ---------- Require JWT for versioned APIs ------------- */
+                                                .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**")
+                                                .authenticated()
 
                                                 /* ---------- Require JWT for these APIs ------------------------ */
                                                 .requestMatchers("/v1/api/patients/**").authenticated()

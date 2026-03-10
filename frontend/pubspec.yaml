@@ -120,6 +120,7 @@ dependencies:
   # Flutter SDK
   flutter:
     sdk: flutter
+  table_calendar: ^3.0.0  # Team A Dependency for calendar based scheduling of EVV visits
   flutter_web_plugins:
     sdk: flutter
   flutter_svg: ^2.0.9  # Add this line
