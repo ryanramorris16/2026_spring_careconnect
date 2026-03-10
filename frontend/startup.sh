@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash.  
 
 # --- 1. Load environment variables from .env and .env.local ---
 ENV_FILES=(".env" ".env.local")
