@@ -2,6 +2,8 @@ package com.careconnect.controller;
 
 import com.careconnect.dto.QuestionDTO;
 import com.careconnect.service.QuestionService;
+import com.careconnect.util.SecurityUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,9 @@ public class CheckInQuestionController {
 
     private final QuestionService questionService;
 
+    @Autowired
+    private SecurityUtil securityUtil;
+
     public CheckInQuestionController(QuestionService questionService) {
         this.questionService = questionService;
     }
@@ -23,6 +28,10 @@ public class CheckInQuestionController {
      */
     @GetMapping("/{checkInId}/questions")
     public ResponseEntity<List<QuestionDTO>> getQuestions(@PathVariable("checkInId") Long checkInId) {
+        // RBAC: Defense-in-depth — verify caller is a real user in the database
+        if (securityUtil != null) {
+            securityUtil.resolveCurrentUser();
+        }
         // Temporary: return active, ordered questions until per-check-in mapping is ready
         List<QuestionDTO> questions = questionService.findActiveOrdered();
         return ResponseEntity.ok(questions);

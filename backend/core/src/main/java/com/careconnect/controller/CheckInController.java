@@ -46,7 +46,9 @@ public class CheckInController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CheckIn> getCheckIn(@PathVariable Long id) throws UnauthorizedException {
+        // RBAC: Only admins and caregivers can view individual check-ins
         User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
 
         // Retrieve a specific check-in by ID
         CheckIn target = checkInService.getCheckInByID(id);

@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http,
@@ -58,10 +58,9 @@ public class SecurityConfig {
                         "/api/auth/**",     // Support auth endpoints under /api/auth/
                         "/v1/api/users/reset-password",  // Allow password reset (current)
                         "/v1/api/users/setup-password",
-                        "/v1/api/email-test/**",  // Allow email testing endpoints
+                        // "/v1/api/email-test/**" removed from permitAll — now requires ADMIN role (see below)
                         "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
                         "/v1/api/subscriptions/webhook/**", // Stripe webhook callbacks (no JWT)
-                        "/v1/api/test/health",
                         "/oauth/**"// Permit OAuth paths
                 ).permitAll()
 
@@ -70,9 +69,12 @@ public class SecurityConfig {
                         "/", "/index.html", "/favicon.ico", "/static/**"
                 ).permitAll()
 
+                        /* ---------- Static assets ------------------------------------- */
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
 
                         /* ---------- Admin-only endpoints ------------------------------- */
                         .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
+                        .requestMatchers("/v1/api/email-test/**").hasRole("ADMIN")
 
                         /* ---------- Require JWT for these APIs ------------------------ */
                         .requestMatchers("/v1/api/patients/**").authenticated()
@@ -112,8 +114,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/gamification/**").authenticated()
                         .requestMatchers("/api/websocket/**").authenticated()
                         .requestMatchers("/api/email-credentials/**").authenticated()
-                        /* ---------- Require JWT for versioned APIs ------------- */
-                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()

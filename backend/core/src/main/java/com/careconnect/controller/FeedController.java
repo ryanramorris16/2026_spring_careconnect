@@ -88,6 +88,8 @@ public class FeedController {
         )
     })
     public ResponseEntity<?> getGlobalFeed() {
+        // RBAC: Defense-in-depth - ensure caller is authenticated
+        securityUtil.resolveCurrentUser();
         List<PostWithCommentCountDto> posts = feedService.getAllPostsWithCommentCount();
         return ResponseEntity.ok(posts);
     }

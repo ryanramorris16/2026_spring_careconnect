@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("v1/api/websocket")
+@RequestMapping("/api/websocket")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "WebSocket Management", description = "WebSocket notifications and real-time communication management")
@@ -34,7 +34,9 @@ public class WebSocketController {
         description = "Initialize or handshake with the WebSocket service via HTTP"
     )
     public ResponseEntity<Map<String, Object>> initializeWebSocketService(@RequestBody(required = false) Map<String, Object> request) {
-        // You can add any initialization logic here if needed
+        // RBAC: Verify the caller is an authenticated user (any role).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
         return ResponseEntity.ok(Map.of(
             "success", true,
             "message", "WebSocket service initialized",
@@ -51,6 +53,9 @@ public class WebSocketController {
         description = "Register a user for WebSocket notifications via HTTP"
     )
     public ResponseEntity<Map<String, Object>> registerUserForWebSocket(@RequestBody Map<String, Object> request) {
+        // RBAC: Verify the caller is an authenticated user (any role).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
         try {
             String userId = (String) request.get("userId");
             String userName = (String) request.get("userName");
@@ -94,7 +99,10 @@ public class WebSocketController {
     })
     public ResponseEntity<Map<String, Object>> sendCallInvitation(
             @RequestBody Map<String, Object> request) {
-        
+        // RBAC: Verify the caller is an authenticated user (any role may initiate calls).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
+
         try {
             String recipientId = (String) request.get("recipientId");
             String senderId = (String) request.get("senderId");
@@ -135,7 +143,10 @@ public class WebSocketController {
     })
     public ResponseEntity<Map<String, Object>> sendSMSNotification(
             @RequestBody Map<String, Object> request) {
-        
+        // RBAC: Verify the caller is an authenticated user (any role may send notifications).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
+
         try {
             String recipientId = (String) request.get("recipientId");
             String senderId = (String) request.get("senderId");
