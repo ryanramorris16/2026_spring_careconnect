@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.repository.EmailCredentialRepository;
 import com.careconnect.model.EmailCredential;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 public class EmailCredentialController {
 
     private final EmailCredentialRepository credRepo;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/email-credentials/status")
     public ResponseEntity<Boolean> getConnectionStatus(@RequestParam String userId) {

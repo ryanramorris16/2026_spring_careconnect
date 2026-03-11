@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.SymptomEntryDTO;
 import com.careconnect.service.SymptomEntryService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +21,8 @@ public class SymptomEntryController {
     private final SymptomEntryService symptomEntryService;
 
     /** Create a new symptom entry */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping
     public ResponseEntity<?> createSymptom(@RequestBody SymptomEntryDTO dto) {
         try {
@@ -33,6 +38,8 @@ public class SymptomEntryController {
     }
 
     /** Get all symptoms for a patient */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<?> getSymptoms(@PathVariable Long patientId) {
         try {
@@ -45,6 +52,8 @@ public class SymptomEntryController {
     }
 
     /** Delete a symptom by ID */
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSymptom(@PathVariable Long id) {
         try {

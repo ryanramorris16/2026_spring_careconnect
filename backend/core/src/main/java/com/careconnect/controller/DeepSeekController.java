@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.service.DeepSeekService;
 import com.careconnect.service.DeepSeekService.DeepSeekChatRequest;
 import com.careconnect.service.DeepSeekService.DeepSeekResponse;
@@ -29,6 +32,8 @@ public class DeepSeekController {
     private final DeepSeekService deepSeekService;
 
     // Full JSON in/out (Option B)
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/chat")
     public ResponseEntity<?> chat(@Valid @RequestBody ChatBody body) {
         try {

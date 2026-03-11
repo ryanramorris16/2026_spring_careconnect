@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +25,10 @@ import java.util.Map;
 @RequestMapping("/v1/api/test")
 @Tag(name = "Testing", description = "Public testing endpoints for verifying API functionality")
 public class TestController {
+
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
 
     @GetMapping("/health")
@@ -66,6 +73,9 @@ public class TestController {
             "documentation", "Available at /swagger-ui.html"
         ));
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/swagger-info")
     @Operation(

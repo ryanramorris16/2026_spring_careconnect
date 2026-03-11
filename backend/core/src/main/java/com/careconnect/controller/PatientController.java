@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.*;
 import com.careconnect.exception.AppException;
 import com.careconnect.model.Caregiver;
@@ -117,6 +120,8 @@ public class PatientController {
     }
 
     // 1. List caregivers associated with a patient
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}/caregivers")
     public ResponseEntity<List<Caregiver>> getCaregiversByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -130,6 +135,8 @@ public class PatientController {
     }
 
     // 2. Get patient details
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}")
     public ResponseEntity<Patient> getPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -141,10 +148,12 @@ public class PatientController {
         return ResponseEntity.ok(patient);
     }
 
+    @RequirePermission(Permission.UPDATE_TASKS)
+
+
     @PutMapping("/{patientId}")
     public ResponseEntity<Patient> updatePatient(@PathVariable Long patientId, @RequestBody Patient updatedPatient) {
-        User currentUser = getCurrentUser();
-        
+        User currentUser = getCurrentUser();  
         // Family members have read-only access, cannot update
         if (currentUser.getRole() == Role.FAMILY_MEMBER) {
             throw new AppException(HttpStatus.FORBIDDEN, "Family members have read-only access");
@@ -159,6 +168,8 @@ public class PatientController {
     }
 
     // 3. Get all family members for a patient
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}/family-members")
     public ResponseEntity<List<FamilyMemberLinkResponse>> getFamilyMembersByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -177,6 +188,8 @@ public class PatientController {
     }
 
     // 4. Register a new family member for a patient
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/{patientId}/family-members")
     public ResponseEntity<FamilyMemberLinkResponse> registerFamilyMember(
             @PathVariable Long patientId,
@@ -212,6 +225,8 @@ public class PatientController {
     }
 
     // 5. Revoke family member access to a patient
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/family-members/{linkId}")
     public ResponseEntity<Void> revokeFamilyMemberAccess(@PathVariable Long linkId) {
         User currentUser = getCurrentUser();
@@ -226,6 +241,8 @@ public class PatientController {
     }
 
     // 6. Get family members for the current patient (convenience endpoint)
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/family-members")
     @Operation(
         summary = "👨‍👩‍👧‍👦 Get my family members",
@@ -253,6 +270,8 @@ public class PatientController {
     }
 
     // 7. Get current patient's profile
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/me")
     @Operation(
         summary = "👤 Get my patient profile",
@@ -283,6 +302,8 @@ public class PatientController {
     // === MOOD & PAIN LOG ENDPOINTS ===
 
     // 6. Create a new mood pain log entry
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/mood-pain-log")
     @Operation(
         summary = "📊 Create mood & pain log entry",
@@ -334,6 +355,8 @@ public class PatientController {
     }
 
     // 7. Get all mood pain logs for the current patient
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/mood-pain-log")
     @Operation(
         summary = "📋 Get all mood & pain logs",
@@ -358,6 +381,8 @@ public class PatientController {
     }
 
     // 8. Get mood pain logs with pagination
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/mood-pain-log/paginated")
     public ResponseEntity<Page<MoodPainLogResponse>> getMoodPainLogsWithPagination(
             @RequestParam(defaultValue = "0") int page,
@@ -374,6 +399,8 @@ public class PatientController {
     }
 
     // 9. Get mood pain logs within a date range
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/mood-pain-log/range")
     public ResponseEntity<List<MoodPainLogResponse>> getMoodPainLogsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -390,6 +417,8 @@ public class PatientController {
     }
 
     // 10. Get the latest mood pain log
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/mood-pain-log/latest")
     public ResponseEntity<MoodPainLogResponse> getLatestMoodPainLog() {
         User currentUser = getCurrentUser();
@@ -404,6 +433,8 @@ public class PatientController {
     }
 
     // 11. Update an existing mood pain log
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/mood-pain-log/{logId}")
     public ResponseEntity<MoodPainLogResponse> updateMoodPainLog(
             @PathVariable Long logId,
@@ -420,6 +451,8 @@ public class PatientController {
     }
 
     // 12. Delete a mood pain log
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/mood-pain-log/{logId}")
     public ResponseEntity<Void> deleteMoodPainLog(@PathVariable Long logId) {
         User currentUser = getCurrentUser();
@@ -434,6 +467,8 @@ public class PatientController {
     }
 
     // 13. Get mood pain logs for a specific patient (for caregivers to view)
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}/mood-pain-log")
     public ResponseEntity<List<MoodPainLogResponse>> getMoodPainLogsForPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -447,6 +482,8 @@ public class PatientController {
     }
 
     // 14. Get advanced mood and pain analytics
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/mood-pain-log/analytics")
     @Operation(
         summary = "📈 Get mood & pain analytics",
@@ -479,6 +516,8 @@ public class PatientController {
     /**
      * Get complete patient profile including allergies
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}/profile")
     @Operation(summary = "Get patient profile", description = "Get complete patient profile including allergies")
     @ApiResponses(value = {
@@ -515,6 +554,8 @@ public class PatientController {
     /**
      * Update patient profile information
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{patientId}/profile")
     @Operation(summary = "Update patient profile", description = "Update patient profile information (allergies managed separately)")
     @ApiResponses(value = {
@@ -602,6 +643,8 @@ public class PatientController {
      * Get enhanced patient profile with comprehensive medical information
      * This includes medications, latest vitals, mood/pain data, and medical summary
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{patientId}/profile/enhanced")
     @Operation(summary = "Get enhanced patient profile", 
                description = "Get comprehensive patient profile including medications, latest vitals, mood/pain data, and medical summary")
@@ -636,10 +679,16 @@ public class PatientController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/{patientId}/provider")
     public ResponseEntity<Map<String, Object>> getPrimaryCareProvider(@PathVariable Long patientId) {
         return ResponseEntity.ok(patientService.getPrimaryProvider(patientId));
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/{patientID}/medications")
     @Operation(summary = "Get all medications for patient",
@@ -659,6 +708,9 @@ public class PatientController {
         List<MedicationDTO> allMeds = medicationService.getAllMedicationsForPatient(patientID);
         return ResponseEntity.ok(allMeds);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/{patientID}/medications")
     @Operation(summary = "Add medication for patient",
@@ -703,6 +755,9 @@ public class PatientController {
         MedicationDTO createdMedication = medicationService.createMedication(medicationWithPatientId);
         return ResponseEntity.ok(createdMedication);
     }
+
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
 
     @DeleteMapping("/{patientID}/medications/{medicationId}")
     @Operation(summary = "Remove medication for patient",

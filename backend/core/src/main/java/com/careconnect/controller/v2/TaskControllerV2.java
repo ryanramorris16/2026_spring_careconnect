@@ -68,6 +68,8 @@ public class TaskControllerV2 {
      *
      * @return list of all {@link TaskDtoV2} objects
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping
     public ResponseEntity<List<TaskDtoV2>> getAllTasks() {
         return ResponseEntity.ok(taskService.getAllTasks());
@@ -84,6 +86,8 @@ public class TaskControllerV2 {
      * @return the matching {@link TaskDtoV2}, or {@code 404 Not Found} if none
      *         exists
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{id}")
     public ResponseEntity<TaskDtoV2> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskDtoById(id));
@@ -99,6 +103,8 @@ public class TaskControllerV2 {
      * @param patientId the patient’s ID
      * @return list of {@link TaskDtoV2} objects for the patient
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<TaskDtoV2>> getTasksByPatient(@PathVariable Long patientId) {
         return ResponseEntity.ok(taskService.getTasksByPatient(patientId));
@@ -115,6 +121,8 @@ public class TaskControllerV2 {
      * @param task      the task details (DTO)
      * @return the created {@link TaskDtoV2}
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/patient/{patientId}")
     public ResponseEntity<TaskDtoV2> createTask(
             @PathVariable Long patientId,
@@ -133,6 +141,8 @@ public class TaskControllerV2 {
      * @param task updated task details (DTO)
      * @return the updated {@link TaskDtoV2}
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{id}")
     public ResponseEntity<TaskDtoV2> updateTask(
             @PathVariable Long id,
@@ -174,6 +184,8 @@ public class TaskControllerV2 {
      * @return the updated {@link TaskDtoV2} with the new completion state
      * @throws TaskNotFoundException if no task exists with the specified ID
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{id}/complete")
     public ResponseEntity<TaskDtoV2> updateTaskCompletion(
             @PathVariable Long id,
@@ -200,6 +212,8 @@ public class TaskControllerV2 {
      *                     if {@code false}, deletes only the specified task
      * @return {@code 204 No Content} on success
      */
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(
             @PathVariable Long id,

@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.*;
 import com.careconnect.service.GamificationService;
 import org.springframework.security.core.Authentication;
@@ -21,6 +24,8 @@ public class GamificationController {
     }
 
     // 1. Award XP to user
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/award-xp")
     public ResponseEntity<?> awardXp(@RequestBody Map<String, Object> body) {
         Long userId = Long.valueOf(body.get("userId").toString());
@@ -29,6 +34,9 @@ public class GamificationController {
         XPProgress updatedProgress = gamificationService.awardXp(userId, amount);
         return ResponseEntity.ok(updatedProgress);
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/progress/{userId}")
     public ResponseEntity<?> getXpProgress(@PathVariable Long userId, Authentication authentication) {
@@ -47,12 +55,16 @@ public class GamificationController {
     }
 
     // 3. Get earned achievements for a user
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/achievements/{userId}")
     public ResponseEntity<List<UserAchievement>> getUserAchievements(@PathVariable Long userId) {
         return ResponseEntity.ok(gamificationService.getUserAchievements(userId));
     }
 
     // 4. Get full list of all achievements (earned + unearned)
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/all-achievements")
     public ResponseEntity<List<Achievement>> getAllAchievements() {
         return ResponseEntity.ok(gamificationService.getAllAchievements());

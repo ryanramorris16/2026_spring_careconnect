@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.stripe.model.SubscriptionCollection;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.Map;
@@ -83,17 +86,26 @@ public class SubscriptionController {
         // this.stripeWebhookSecret = stripeWebhookSecret; 
     }
 	
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+	
     @GetMapping("/products")
     public ResponseEntity<String> listProducts() {
         String products = stripeService.listProducts();
         return ResponseEntity.ok(products);
     }
  
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+ 
     @GetMapping("/plans")
     public ResponseEntity<List<PlanDTO>> listPlans() {
     List<PlanDTO> plans = stripeService.listPlans();
     return ResponseEntity.ok(plans);
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/plans")
     public ResponseEntity<?> createPlan(
@@ -107,11 +119,17 @@ public class SubscriptionController {
         return ResponseEntity.ok(plan);
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/plans/{planId}")
     public ResponseEntity<?> getPlan(@PathVariable String planId) {
         Plan plan = subscriptionService.getPlan(Long.parseLong(planId));
         return ResponseEntity.ok(plan);
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/plans/{planId}/sync-with-stripe")
     public ResponseEntity<?> syncPlanWithStripe(
@@ -125,6 +143,9 @@ public class SubscriptionController {
         }
     }
     
+    @RequirePermission(Permission.CREATE_TASKS)
+
+    
     @PostMapping("/sync-from-stripe/{stripeSubscriptionId}")
     public ResponseEntity<?> syncSubscriptionFromStripe(@PathVariable String stripeSubscriptionId) {
         try {
@@ -135,11 +156,17 @@ public class SubscriptionController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/stripe/{customerId}/subscriptions")
     public ResponseEntity<String> getStripeCustomerSubscriptions(@PathVariable String customerId) {
         String subs = stripeService.listSubscriptions(customerId);
         return ResponseEntity.ok(subs);
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/sync-all-from-stripe/{customerId}")
     public ResponseEntity<?> syncAllCustomerSubscriptions(@PathVariable String customerId) {
@@ -151,17 +178,26 @@ public class SubscriptionController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/stripe/subscription/{subscriptionId}")
     public ResponseEntity<String> getSubscription(@PathVariable String subscriptionId) {
         String sub = stripeService.getSubscription(subscriptionId);
         return ResponseEntity.ok(sub);
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/stripe/subscriptions/search")
     public ResponseEntity<String> searchSubscriptions(@RequestParam String query) {
         String result = stripeService.searchSubscriptions(query);
         return ResponseEntity.ok(result);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/create")
     public ResponseEntity<?> createCheckoutSession(
@@ -174,8 +210,11 @@ public class SubscriptionController {
         return subscriptionService.createCheckoutSession(request, plan, userId, amount, stripeCustomerId, portal);
     }
 
-    // @PutMapping("/{id}/payment-method")
+    // @RequirePermission(Permission.UPDATE_TASKS)
+ @PutMapping("/{id}/payment-method")
     // public ResponseEntity<String> updatePayment(@PathVariable String id) { return ResponseEntity.ok("Payment updated: " + id); }
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/{id}/cancel")
     public ResponseEntity<?> cancelSubscription(@PathVariable String id) {
         try {
@@ -205,6 +244,8 @@ public class SubscriptionController {
     /**
      * Cancel subscription by database subscription ID
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/database/{subscriptionId}/cancel")
     public ResponseEntity<?> cancelSubscriptionById(@PathVariable Long subscriptionId) {
         try {
@@ -221,6 +262,8 @@ public class SubscriptionController {
     /**
      * Cancel subscription by Stripe subscription ID
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/stripe/{stripeSubscriptionId}/cancel")
     public ResponseEntity<?> cancelSubscriptionByStripeId(@PathVariable String stripeSubscriptionId) {
         try {
@@ -241,6 +284,8 @@ public class SubscriptionController {
      * @param priceId Either a Stripe price ID (starts with "price_") or a Stripe plan ID (starts with "plan_")
      * @return The created subscription
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/create-direct")
     public ResponseEntity<?> createSubscriptionDirect(
             @RequestParam(required = false) String customerId,
@@ -283,6 +328,8 @@ public class SubscriptionController {
      * @param priceId Either a Stripe price ID (starts with "price_") or a Stripe plan ID (starts with "plan_")
      * @return The created subscription
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/create-direct-for-user")
     public ResponseEntity<?> createSubscriptionDirectForUser(
             @RequestParam Long userId,
@@ -298,6 +345,9 @@ public class SubscriptionController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/webhook/stripe")
     public ResponseEntity<String> handleStripeWebhook(HttpServletRequest request) {
     try {
@@ -312,6 +362,9 @@ public class SubscriptionController {
     }
 }
 
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
 @GetMapping("/user/{userId}")
 public ResponseEntity<?> getUserSubscriptions(@PathVariable Long userId) {
     try {
@@ -321,6 +374,9 @@ public ResponseEntity<?> getUserSubscriptions(@PathVariable Long userId) {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 }
+
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
 @GetMapping("/user/{userId}/refresh")
 public ResponseEntity<?> refreshAndGetUserSubscriptions(@PathVariable Long userId) {
@@ -334,6 +390,9 @@ public ResponseEntity<?> refreshAndGetUserSubscriptions(@PathVariable Long userI
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 }
+
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
 @GetMapping("/user/{userId}/force-import/{subscriptionId}")
 public ResponseEntity<?> forceImportSubscription(
@@ -406,6 +465,9 @@ public ResponseEntity<?> forceImportSubscription(
     }
 }
 
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
 @GetMapping("/user/{userId}/refresh-with-stripe")
 public ResponseEntity<?> refreshUserSubscriptionsWithStripe(@PathVariable Long userId) {
     try {
@@ -420,6 +482,9 @@ public ResponseEntity<?> refreshUserSubscriptionsWithStripe(@PathVariable Long u
     }
 }
 
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
 @GetMapping("/user/{userId}/active")
 public ResponseEntity<?> getUserActiveSubscriptions(@PathVariable Long userId) {
     try {
@@ -429,6 +494,9 @@ public ResponseEntity<?> getUserActiveSubscriptions(@PathVariable Long userId) {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 }
+
+@RequirePermission(Permission.CREATE_TASKS)
+
 
 @PostMapping("/user/{userId}/sync-from-stripe")
 public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long userId) {
@@ -445,6 +513,9 @@ public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long user
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/upgrade-or-downgrade")
     public ResponseEntity<?> upgradeOrDowngradeSubscription(
@@ -463,6 +534,8 @@ public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long user
      * If portal=update is present, the user will be redirected to the subscription management page
      * Otherwise, they will be redirected to the dashboard
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/payment-redirect")
     public ResponseEntity<?> getPaymentRedirectUrl(
             @RequestParam(required = false) Boolean portal) {

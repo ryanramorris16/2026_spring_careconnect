@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.repository.evv.EvvRecordRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +12,9 @@ import java.util.List;
 @RestController @RequestMapping("/v1/api/evv/records") @RequiredArgsConstructor
 public class EvvQueryController {
     private final EvvRecordRepository evvRecordRepository;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping
     public List<EvvRecord> list(@RequestParam(required = false) String status, @RequestParam(required = false) Long caregiverId) {

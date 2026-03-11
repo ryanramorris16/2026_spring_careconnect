@@ -80,6 +80,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!--Spring AOP for RBAC annotation-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

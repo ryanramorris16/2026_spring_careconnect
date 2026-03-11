@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -32,6 +35,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class PatientNotetakerController {
     private final PatientNotetakerService patientNotetakerService;
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/{patientId}/config")
     @Operation(
         summary = "Get Patient Notetaker Configuration",
@@ -50,6 +56,9 @@ public class PatientNotetakerController {
         }
         return ResponseEntity.ok(patientNotetakerConfig);
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{patientId}/config")
     @Operation(
@@ -72,6 +81,9 @@ public class PatientNotetakerController {
         return ResponseEntity.ok(updatedConfig);
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/{patientId}/notes")
     public ResponseEntity<PatientNoteDTO> createPatientNote(@PathVariable Long patientId, 
         @RequestBody PatientNoteDTO noteDTO) {
@@ -84,6 +96,9 @@ public class PatientNotetakerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{patientId}/notes/{id}") 
     public ResponseEntity<PatientNoteDTO> updatePatientNote(@PathVariable Long patientId, 
@@ -99,6 +114,9 @@ public class PatientNotetakerController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/{patientId}/notes/{id}")
     public ResponseEntity<PatientNoteDTO> getPatientNote(@PathVariable Long patientId, 
         @PathVariable Long id) {
@@ -112,6 +130,9 @@ public class PatientNotetakerController {
             }
     } 
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+ 
+
     @GetMapping("/{patientId}/notes")
     public ResponseEntity<List<PatientNoteDTO>> getAllNotesForPatient(@PathVariable Long patientId) {
         try {
@@ -122,6 +143,9 @@ public class PatientNotetakerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
 
     @DeleteMapping("/{patientId}/notes/{id}")
     public ResponseEntity<Void> deletePatientNote(@PathVariable Long patientId, 

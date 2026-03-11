@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.FriendRequest;
 import com.careconnect.model.Friendship;
 import com.careconnect.model.User;
@@ -31,6 +34,8 @@ public class FriendController {
     private FriendshipRepository friendshipRepository;
 
     // ✅ 1. Send friend request
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/request")
     public ResponseEntity<?> sendFriendRequest(@RequestBody Map<String, Long> payload) {
         Long fromUserId = payload.get("fromUserId");
@@ -52,6 +57,8 @@ public class FriendController {
     }
 
     // ✅ 2. Get all pending friend requests TO a user
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/requests/{userId}")
     public ResponseEntity<List<Map<String, Object>>> getPendingRequests(@PathVariable Long userId) {
         List<FriendRequest> requests = friendRequestRepo.findByToUserIdAndStatus(userId, "pending");
@@ -77,6 +84,8 @@ public class FriendController {
     }
 
     // ✅ 3. Accept a friend request
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/accept")
     public ResponseEntity<?> acceptFriendRequest(@RequestBody Map<String, Long> body) {
         Long requestId = body.get("requestId");
@@ -122,6 +131,8 @@ public class FriendController {
     }
 
     // ✅ 4. Reject a friend request
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/reject")
     public ResponseEntity<?> rejectFriendRequest(@RequestBody Map<String, Long> body) {
         Long requestId = body.get("requestId");
@@ -139,6 +150,9 @@ public class FriendController {
 
         return ResponseEntity.ok("Friend request rejected");
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/list/{userId}")
     public ResponseEntity<List<Map<String, Object>>> getFriends(@PathVariable Long userId) {

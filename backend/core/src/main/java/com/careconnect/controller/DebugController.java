@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.Plan;
 import com.careconnect.repository.PlanRepository;
 import com.careconnect.service.SubscriptionEnrichmentService;
@@ -30,6 +33,9 @@ public class DebugController {
     @Value("${subscription.standard-price-ids:price_standard}")
     private String standardPriceIds;
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/plans")
     public ResponseEntity<?> getAllPlans() {
         List<Plan> plans = planRepository.findAll();
@@ -38,6 +44,9 @@ public class DebugController {
             "count", plans.size()
         ));
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/plans/match")
     public ResponseEntity<?> matchPlanToPrice() {
@@ -79,6 +88,9 @@ public class DebugController {
             "configuredStandardPriceIds", standardPriceIds
         ));
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/plans/create-mapping")
     public ResponseEntity<?> createPriceMapping() {
@@ -132,6 +144,9 @@ public class DebugController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/config")
     public ResponseEntity<?> getConfiguration() {
         return ResponseEntity.ok(Map.of(
@@ -145,6 +160,8 @@ public class DebugController {
     /**
      * Debug endpoint to check subscription data for a user
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/subscriptions/user/{userId}")
     public ResponseEntity<?> getEnrichedUserSubscriptions(@PathVariable Long userId) {
         try {
@@ -161,6 +178,8 @@ public class DebugController {
      * This endpoint is separate from the normal subscription retrieval to avoid
      * read-only transaction errors.
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/subscriptions/user/{userId}/create-mappings")
     public ResponseEntity<?> createMissingSubscriptionPlanMappings(@PathVariable Long userId) {
         try {

@@ -165,6 +165,8 @@ class UserProvider extends ChangeNotifier {
   /// Detailed caregiver model (populated only for caregiver users)
   CaregiverModel? _caregiverModel;
 
+  var userSession;
+
   /// Public getter for base user model
   UserModel? get userModel => _userModel;
 
@@ -539,4 +541,6 @@ class UserProvider extends ChangeNotifier {
   }
 
   bool get isPatient => _user?.role.toUpperCase() == 'PATIENT';
+
+  Future<void> logout() async {}
 }

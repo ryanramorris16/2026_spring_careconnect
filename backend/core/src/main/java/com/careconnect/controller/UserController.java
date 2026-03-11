@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.UserResponse;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
@@ -34,6 +37,8 @@ public class UserController {
     /**
      * Reset password for user (caregiver or patient) using username (email) and reset token
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/reset-password")
     @Operation(
         summary = "Reset user password",
@@ -92,6 +97,8 @@ public class UserController {
     /**
      * Set up password for new users using verification token (from patient registration)
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/setup-password")
     @Operation(
         summary = "Set up password for new user",
@@ -146,6 +153,9 @@ public class UserController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/search")
     public ResponseEntity<List<UserResponse>> searchUsers(
             @RequestParam String query,
@@ -180,6 +190,8 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{userId}/leaderboard-opt-in")
     public ResponseEntity<?> toggleLeaderboardOptIn(
             @PathVariable Long userId,
@@ -202,11 +214,17 @@ public class UserController {
         return ResponseEntity.ok(Collections.singletonMap("message", "Leaderboard opt-in status updated."));
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/leaderboard")
     public ResponseEntity<List<com.careconnect.dto.LeaderboardEntry>> getLeaderboard() {
         List<com.careconnect.dto.LeaderboardEntry> leaderboard = userRepo.findLeaderboard();
         return ResponseEntity.ok(leaderboard);
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/check-email")
     @Operation(

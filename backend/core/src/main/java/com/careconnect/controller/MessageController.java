@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.Message;
 import com.careconnect.model.User;
 import com.careconnect.dto.InboxMessageDto;
@@ -24,6 +27,8 @@ public class MessageController {
     private UserRepository userRepo;
 
     // ✅ Send a new message
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/send")
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
         message.setTimestamp(LocalDateTime.now());
@@ -33,6 +38,8 @@ public class MessageController {
     }
 
     // ✅ Fetch full conversation between two users
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/conversation")
     public ResponseEntity<List<Message>> getConversation(
             @RequestParam Long user1,
@@ -43,6 +50,8 @@ public class MessageController {
     }
 
     // ✅ Inbox view: list all recent conversations with peer info
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/inbox/{userId}")
     public ResponseEntity<List<InboxMessageDto>> getInbox(@PathVariable Long userId) {
         List<Message> messages = messageRepo.findAllUserMessages(userId);

@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.FirebaseNotificationRequest;
 import com.careconnect.dto.NotificationResponse;
 import com.careconnect.model.DeviceToken;
@@ -34,6 +37,8 @@ public class NotificationController {
     /**
      * Send a WebSocket notification to a specific user
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/ws/send-to-user/{userId}")
     @Operation(
         summary = "Send WebSocket notification to user",
@@ -50,6 +55,9 @@ public class NotificationController {
             return ResponseEntity.status(404).body(Map.of("error", "No active WebSocket session for user " + userId));
         }
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/send")
     @Operation(
@@ -69,6 +77,9 @@ public class NotificationController {
         return ResponseEntity.ok(response);
     }
     
+    @RequirePermission(Permission.CREATE_TASKS)
+
+    
     @PostMapping("/send-bulk")
     @Operation(
         summary = "Send bulk push notifications",
@@ -81,6 +92,9 @@ public class NotificationController {
         List<NotificationResponse> responses = notificationService.sendBulkNotifications(requests);
         return ResponseEntity.ok(responses);
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/send-to-user/{userId}")
     @Operation(
@@ -100,6 +114,9 @@ public class NotificationController {
         return ResponseEntity.ok(responses);
     }
     
+    @RequirePermission(Permission.CREATE_TASKS)
+
+    
     @PostMapping("/vital-alert/{patientId}")
     @Operation(
         summary = "Send vital signs alert",
@@ -115,6 +132,9 @@ public class NotificationController {
         return notificationService.sendVitalAlert(patientId, vitalType, vitalValue, alertLevel)
                 .thenApply(ResponseEntity::ok);
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/medication-reminder/{patientId}")
     @Operation(
@@ -132,6 +152,9 @@ public class NotificationController {
                 .thenApply(ResponseEntity::ok);
     }
     
+    @RequirePermission(Permission.CREATE_TASKS)
+
+    
     @PostMapping("/emergency-alert/{patientId}")
     @Operation(
         summary = "Send emergency alert",
@@ -146,6 +169,9 @@ public class NotificationController {
         return notificationService.sendEmergencyAlert(patientId, emergencyType, location)
                 .thenApply(ResponseEntity::ok);
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/register-token")
     @Operation(
@@ -171,6 +197,9 @@ public class NotificationController {
                     .body(Map.of("error", "Failed to register device token: " + e.getMessage()));
         }
     }
+    
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     
     @DeleteMapping("/unregister-token")
     @Operation(

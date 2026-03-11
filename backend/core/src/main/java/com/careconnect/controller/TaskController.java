@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.TaskDto;
 import com.careconnect.model.Task;
 import com.careconnect.service.TaskService;
@@ -16,10 +19,16 @@ public class TaskController {
     @Autowired
     private TaskService taskService;
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping
     public ResponseEntity<List<Task>> getAllTasks() {
         return ResponseEntity.ok(taskService.getAllTasks());
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
@@ -31,17 +40,26 @@ public class TaskController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<Task>> getTasksByPatient(@PathVariable Long patientId) {
         List<Task> tasks = taskService.getTasksByPatient(patientId);
         return ResponseEntity.ok(tasks);
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/patient/{patientId}")
     public ResponseEntity<Task> createTask(@PathVariable Long patientId, @RequestBody TaskDto task) {
         Task created = taskService.createTask(patientId, task);
         return ResponseEntity.ok(created);
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody TaskDto task) {
@@ -52,6 +70,9 @@ public class TaskController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {

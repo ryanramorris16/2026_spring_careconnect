@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
@@ -25,6 +28,8 @@ public class ScheduledVisitController {
     /**
      * Create a new scheduled visit
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/caregiver/{caregiverId}")
     public ResponseEntity<ScheduledVisitResponse> createScheduledVisit(
         @PathVariable Long caregiverId,
@@ -37,6 +42,8 @@ public class ScheduledVisitController {
     /**
      * Get all scheduled visits for a caregiver
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisits(
         @PathVariable Long caregiverId
@@ -48,6 +55,8 @@ public class ScheduledVisitController {
     /**
      * Get scheduled visits for a specific date
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/date/{date}")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisitsByDate(
         @PathVariable Long caregiverId,
@@ -60,6 +69,8 @@ public class ScheduledVisitController {
     /**
      * Get scheduled visits between dates
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/range")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisitsBetweenDates(
         @PathVariable Long caregiverId,
@@ -74,6 +85,8 @@ public class ScheduledVisitController {
     /**
      * Get visit summary statistics
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/summary")
     public ResponseEntity<ScheduledVisitSummary> getVisitSummary(
         @PathVariable Long caregiverId
@@ -85,6 +98,8 @@ public class ScheduledVisitController {
     /**
      * Get overdue visits
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/overdue")
     public ResponseEntity<List<ScheduledVisitResponse>> getOverdueVisits(
         @PathVariable Long caregiverId
@@ -96,6 +111,8 @@ public class ScheduledVisitController {
     /**
      * Get ready visits
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/ready")
     public ResponseEntity<List<ScheduledVisitResponse>> getReadyVisits(
         @PathVariable Long caregiverId
@@ -107,6 +124,8 @@ public class ScheduledVisitController {
     /**
      * Get upcoming visits
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/caregiver/{caregiverId}/upcoming")
     public ResponseEntity<List<ScheduledVisitResponse>> getUpcomingVisits(
         @PathVariable Long caregiverId
@@ -118,6 +137,8 @@ public class ScheduledVisitController {
     /**
      * Get a specific scheduled visit
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{visitId}")
     public ResponseEntity<ScheduledVisitResponse> getScheduledVisit(
         @PathVariable Long visitId
@@ -129,6 +150,8 @@ public class ScheduledVisitController {
     /**
      * Update a scheduled visit
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{visitId}")
     public ResponseEntity<ScheduledVisitResponse> updateScheduledVisit(
         @PathVariable Long visitId,
@@ -141,6 +164,8 @@ public class ScheduledVisitController {
     /**
      * Cancel a scheduled visit
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{visitId}/cancel")
     public ResponseEntity<Void> cancelScheduledVisit(
         @PathVariable Long visitId
@@ -152,6 +177,8 @@ public class ScheduledVisitController {
     /**
      * Update visit status
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{visitId}/status")
     public ResponseEntity<ScheduledVisitResponse> updateVisitStatus(
         @PathVariable Long visitId,
@@ -164,6 +191,8 @@ public class ScheduledVisitController {
     /**
      * Delete a scheduled visit
      */
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/{visitId}")
     public ResponseEntity<Void> deleteScheduledVisit(
         @PathVariable Long visitId

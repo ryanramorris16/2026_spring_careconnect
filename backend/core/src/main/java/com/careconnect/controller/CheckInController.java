@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.CheckIn;
 import com.careconnect.service.CheckInService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,11 +20,17 @@ public class CheckInController {
     @Autowired
     private CheckInService checkInService;
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping()
     public ResponseEntity<CheckIn> patientCheckIn() {
         // TODO: Replace with actual patient check-in logic later
         return ResponseEntity.ok(new CheckIn());
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping()
     public ResponseEntity<List<CheckIn>> getCheckIns() {
@@ -29,12 +38,18 @@ public class CheckInController {
         return ResponseEntity.ok(checkInService.getAllCheckIns());
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/{id}")
     public ResponseEntity<CheckIn> getCheckIn(@PathVariable Long id) {
         // Retrieve a specific check-in by ID
         CheckIn target = checkInService.getCheckInByID(id);
         return ResponseEntity.ok(target);
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{id}")
     public ResponseEntity<CheckIn> updateCheckIn(@PathVariable Long id) {

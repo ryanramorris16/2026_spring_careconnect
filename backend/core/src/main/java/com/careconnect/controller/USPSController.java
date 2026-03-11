@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.USPSDigest;
 import com.careconnect.service.USPSDigestService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,9 @@ import java.time.LocalDate;
 public class USPSController {
 
     private final USPSDigestService service;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/mail")
     public ResponseEntity<USPSDigest> getDigest(
