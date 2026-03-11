@@ -6,11 +6,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-<<<<<<< HEAD
-=======
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
->>>>>>> 32896c8127380dd5cb742aa0e0e6f992b9097e1a
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -113,9 +110,6 @@ public class SecurityConfig {
                         "/", "/index.html", "/favicon.ico", "/static/**"
                 ).permitAll()
 
-                        /* ---------- Static assets ------------------------------------- */
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
-
                         /* ---------- Admin-only endpoints ------------------------------- */
                         .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
                         .requestMatchers("/v1/api/email-test/**").hasRole("ADMIN")
@@ -158,24 +152,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/gamification/**").authenticated()
                         .requestMatchers("/api/websocket/**").authenticated()
                         .requestMatchers("/api/email-credentials/**").authenticated()
-<<<<<<< HEAD
 
                         /* ---------- Everything else: deny (safer default) ------------- */
-=======
-                        /* ---------- Require JWT for versioned APIs ------------- */
-                        .requestMatchers(
-                                "/v1/api/auth/**",
-                                "/api/v1/auth/**",
-                                "/api/auth/**",
-                                "/v1/api/users/reset-password",
-                                "/v1/api/users/setup-password",
-                                "/v1/api/test/health",
-                                "/oauth/**"
-                        ).permitAll()
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
->>>>>>> 32896c8127380dd5cb742aa0e0e6f992b9097e1a
                         .anyRequest().denyAll()
                 )
                 .build();
