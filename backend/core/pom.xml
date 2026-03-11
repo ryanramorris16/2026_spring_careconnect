@@ -20,15 +20,13 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <aws.sdk.version>2.31.75</aws.sdk.version>
-        <!-- Static Analysis Reports Directory -->
-        <analysis.reports.dir>${project.basedir}/../../quality/Local_Scans/Static_Analysis_Reports</analysis.reports.dir>
         <!-- OWASP Dependency-Check: default to environment variable, override with -Dnvd.api.key=... -->
         <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
         <!-- OWASP Dependency-Check runtime toggles -->
         <dependency-check.autoUpdate>true</dependency-check.autoUpdate>
         <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
         <dependency-check.failBuild>false</dependency-check.failBuild>
-        <!-- Sonar Configuration -->
+        <!-- SonarQube Configuration -->
         <sonar.projectKey>careconnect-backend</sonar.projectKey>
         <sonar.projectName>CareConnect Backend</sonar.projectName>
         <sonar.language>java</sonar.language>
@@ -356,11 +354,10 @@
         </dependency>
         
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.21.0</version>
         </dependency>
-
     </dependencies>
 
     <!-- Always-on build plugins -->
@@ -440,8 +437,6 @@
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>
-                    <outputFile>${analysis.reports.dir}/checkstyle-result.xml</outputFile>
-                    <cacheFile>${analysis.reports.dir}/checkstyle-cachefile</cacheFile>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -452,44 +447,12 @@
                 </dependencies>
             </plugin>
 
-            <!-- Move checkstyle-checker.xml from target to Static_Analysis_Reports -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>move-checkstyle-checker</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${analysis.reports.dir}"/>
-                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <!-- SpotBugs plugin -->
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.8.3.1</version>
                 <executions>
-                    <execution>
-                        <id>spotbugs-report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>spotbugs</goal>
-                        </goals>
-                        <configuration>
-                            <failOnError>false</failOnError>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>spotbugs-check</id>
                         <phase>verify</phase>
@@ -502,67 +465,14 @@
                     <effort>max</effort>
                     <threshold>low</threshold>
                     <failOnError>true</failOnError>
-                    <xmlOutput>true</xmlOutput>
-                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
                 </configuration>
-            </plugin>
-
-            <!-- Ensure spotbugs-result.xml report exists -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>move-checkstyle-checker</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${analysis.reports.dir}"/>
-                                <move file="${project.basedir}/target/checkstyle-checker.xml" todir="${analysis.reports.dir}" failonerror="false" verbose="true"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>ensure-spotbugs-report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${analysis.reports.dir}"/>
-                                <touch file="${analysis.reports.dir}/spotbugs-result.xml" mkdirs="true"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>move-spotbugs-files</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <move todir="${analysis.reports.dir}" failonerror="false" verbose="true">
-                                    <fileset dir="${project.basedir}/target">
-                                        <include name="spotbugs*.xml"/>
-                                    </fileset>
-                                </move>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- PMD plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.23.0</version>
+                <version>3.21.2</version>
                 <executions>
                     <execution>
                         <id>pmd-check</id>
@@ -575,15 +485,13 @@
                 </executions>
                 <configuration>
                     <failOnViolation>true</failOnViolation>
-                    <targetJdk>21</targetJdk>
                     <rulesets>
-                        <ruleset>category/java/bestpractices.xml</ruleset>
+                        <ruleset>rulesets/java/quickstart.xml</ruleset>
                     </rulesets>
-                    <outputDirectory>${analysis.reports.dir}</outputDirectory>
                 </configuration>
             </plugin>
 
-            <!-- Sonar Scanner Maven Plugin -->
+            <!-- SonarQube Scanner Maven Plugin -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
