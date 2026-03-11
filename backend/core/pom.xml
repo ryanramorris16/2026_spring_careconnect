@@ -16,9 +16,7 @@
     <name>CareConnect Backend</name>
     <description>Spring Boot REST API for CareConnect</description>
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>17</java.version>
         <aws.sdk.version>2.31.75</aws.sdk.version>
         <!-- Static Analysis Reports Directory -->
         <analysis.reports.dir>${project.basedir}/../../quality/Local_Scans/Static_Analysis_Reports</analysis.reports.dir>
