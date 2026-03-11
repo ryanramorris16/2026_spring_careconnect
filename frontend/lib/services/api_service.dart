@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 
 import '../config/env_constant.dart';
 import 'auth_token_manager.dart';
+import 'chat_outbox_service.dart';
 
 class ApiConstants {
   //V1 endpoints
@@ -1477,24 +1478,148 @@ class ApiService {
       '${ApiConstants.baseUrl}messages/conversation?user1=$user1&user2=$user2',
     );
 
-    final response = await _httpClient.get(url, headers: headers);
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
+    List<dynamic> remoteMessages = [];
+
+    try {
+      final response = await _httpClient.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        remoteMessages = jsonDecode(response.body) as List<dynamic>;
+      }
+    } catch (_) {
+      // Allow offline fallback to queued messages.
+    }
+
+    final queued = await ChatOutboxService.getQueuedMessagesBetween(
+      senderId: user1,
+      receiverId: user2,
+    );
+
+    final queuedAsMessages = queued.map((item) {
+      final timestamp =
+          DateTime.tryParse(item['queuedAt']?.toString() ?? '') ??
+          DateTime.now();
+      final attachmentRaw = item['attachment'];
+      final attachment = attachmentRaw is Map
+          ? Map<String, dynamic>.from(attachmentRaw)
+          : <String, dynamic>{};
+
+      return {
+        'id': -(timestamp.millisecondsSinceEpoch),
+        'senderId': user1,
+        'receiverId': user2,
+        'content': item['content']?.toString() ?? '',
+        'timestamp': timestamp.toIso8601String(),
+        'isRead': false,
+        if (attachment.isNotEmpty) 'attachment': attachment,
+      };
+    }).toList();
+
+    final merged = <Map<String, dynamic>>[
+      ...remoteMessages.whereType<Map>().map(
+        (m) => Map<String, dynamic>.from(m),
+      ),
+      ...queuedAsMessages,
+    ];
+
+    merged.sort((a, b) {
+      final aTime = DateTime.tryParse(a['timestamp']?.toString() ?? '');
+      final bTime = DateTime.tryParse(b['timestamp']?.toString() ?? '');
+      return (aTime ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+        bTime ?? DateTime.fromMillisecondsSinceEpoch(0),
+      );
+    });
+
+    if (merged.isEmpty) {
       throw Exception('Failed to load conversation');
     }
+
+    return merged;
   }
 
   static Future<List<dynamic>> getInbox(int userId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final url = Uri.parse('${ApiConstants.baseUrl}messages/inbox/$userId');
 
-    final response = await _httpClient.get(url, headers: headers);
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
+    final serverInbox = <Map<String, dynamic>>[];
+
+    try {
+      final response = await _httpClient.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body) as List<dynamic>;
+        serverInbox.addAll(
+          decoded.whereType<Map>().map((e) => Map<String, dynamic>.from(e)),
+        );
+      }
+    } catch (_) {
+      // Allow offline fallback to queued messages.
+    }
+
+    final queued = await ChatOutboxService.getQueuedMessagesForSender(userId);
+
+    final mapByPeer = <int, Map<String, dynamic>>{};
+
+    for (final row in serverInbox) {
+      final peerId = row['peerId'] is int
+          ? row['peerId'] as int
+          : int.tryParse(row['peerId']?.toString() ?? '');
+      if (peerId != null) {
+        mapByPeer[peerId] = row;
+        mapByPeer[peerId]!['isPending'] = false;
+      }
+    }
+
+    for (final pending in queued) {
+      final peerId = pending['receiverId'] is int
+          ? pending['receiverId'] as int
+          : int.tryParse(pending['receiverId']?.toString() ?? '');
+      if (peerId == null) continue;
+
+      final queuedAt =
+          DateTime.tryParse(pending['queuedAt']?.toString() ?? '') ??
+          DateTime.now();
+      final queuedContent = pending['content']?.toString() ?? '';
+      final queuedPreview = queuedContent.trim().isNotEmpty
+          ? queuedContent
+          : 'Attachment';
+
+      final existing = mapByPeer[peerId];
+      final existingTs = DateTime.tryParse(
+        existing?['timestamp']?.toString() ?? '',
+      );
+      if (existing != null &&
+          existingTs != null &&
+          existingTs.isAfter(queuedAt)) {
+        continue;
+      }
+
+      mapByPeer[peerId] = {
+        'id': existing?['id'] ?? -(queuedAt.millisecondsSinceEpoch),
+        'peerId': peerId,
+        'peerName':
+            existing?['peerName']?.toString() ??
+            pending['receiverName']?.toString() ??
+            'Unknown',
+        'peerEmail': existing?['peerEmail']?.toString() ?? '',
+        'content': queuedPreview,
+        'timestamp': queuedAt.toIso8601String(),
+        'isPending': true,
+      };
+    }
+
+    final merged = mapByPeer.values.toList()
+      ..sort((a, b) {
+        final aTime = DateTime.tryParse(a['timestamp']?.toString() ?? '');
+        final bTime = DateTime.tryParse(b['timestamp']?.toString() ?? '');
+        return (bTime ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          aTime ?? DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      });
+
+    if (merged.isEmpty) {
       throw Exception('Failed to load inbox');
     }
+
+    return merged;
   }
 
   // ========================
