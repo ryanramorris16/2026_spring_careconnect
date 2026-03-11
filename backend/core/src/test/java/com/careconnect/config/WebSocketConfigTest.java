@@ -132,9 +132,9 @@ class WebSocketConfigTest {
         // Uses separate mocks per handler registration (rather than the shared stub)
         // to individually verify that withSockJS() is called for calls and careconnect
         // but never for notifications, confirming the per-handler SockJS decision.
-        WebSocketHandlerRegistration callsReg = mock(WebSocketHandlerRegistration.class);
-        WebSocketHandlerRegistration careConnectReg = mock(WebSocketHandlerRegistration.class);
-        WebSocketHandlerRegistration notificationsReg = mock(WebSocketHandlerRegistration.class);
+        final WebSocketHandlerRegistration callsReg = mock(WebSocketHandlerRegistration.class);
+        final WebSocketHandlerRegistration careConnectReg = mock(WebSocketHandlerRegistration.class);
+        final WebSocketHandlerRegistration notificationsReg = mock(WebSocketHandlerRegistration.class);
 
         when(registry.addHandler(callNotificationHandler, "/ws/calls")).thenReturn(callsReg);
         when(registry.addHandler(careConnectWebSocketHandler, "/ws/careconnect")).thenReturn(careConnectReg);

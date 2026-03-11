@@ -47,7 +47,7 @@ class NotificationControllerTest {
         when(notificationWebSocketHandler.sendNotificationToUser("user-123", "Hello"))
                 .thenReturn(true);
 
-        ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
+        final ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
                 "user-123", Map.of("message", "Hello"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -59,7 +59,7 @@ class NotificationControllerTest {
         when(notificationWebSocketHandler.sendNotificationToUser("user-123", "Hello"))
                 .thenReturn(false);
 
-        ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
+        final ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
                 "user-123", Map.of("message", "Hello"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -70,7 +70,7 @@ class NotificationControllerTest {
     void sendWebSocketNotification_noMessageKey_usesEmptyString() throws Exception {
         when(notificationWebSocketHandler.sendNotificationToUser("u1", "")).thenReturn(true);
 
-        ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
+        final ResponseEntity<Map<String, String>> response = controller.sendWebSocketNotificationToUser(
                 "u1", Map.of());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -80,11 +80,11 @@ class NotificationControllerTest {
 
     @Test
     void sendNotification_returns200() throws Exception {
-        FirebaseNotificationRequest request = mock(FirebaseNotificationRequest.class);
-        NotificationResponse notifResponse = NotificationResponse.success("msg-id");
+        final FirebaseNotificationRequest request = mock(FirebaseNotificationRequest.class);
+        final NotificationResponse notifResponse = NotificationResponse.success("msg-id");
         when(notificationService.sendNotification(request)).thenReturn(notifResponse);
 
-        ResponseEntity<NotificationResponse> response = controller.sendNotification(request);
+        final ResponseEntity<NotificationResponse> response = controller.sendNotification(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(notifResponse);
@@ -94,11 +94,11 @@ class NotificationControllerTest {
 
     @Test
     void sendBulkNotifications_returns200() throws Exception {
-        FirebaseNotificationRequest req = mock(FirebaseNotificationRequest.class);
-        List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
+        final FirebaseNotificationRequest req = mock(FirebaseNotificationRequest.class);
+        final List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
         when(notificationService.sendBulkNotifications(anyList())).thenReturn(responses);
 
-        ResponseEntity<List<NotificationResponse>> response =
+        final ResponseEntity<List<NotificationResponse>> response =
                 controller.sendBulkNotifications(List.of(req));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -109,11 +109,11 @@ class NotificationControllerTest {
 
     @Test
     void sendNotificationToUser_returns200() throws Exception {
-        List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
+        final List<NotificationResponse> responses = List.of(NotificationResponse.success("id-1"));
         when(notificationService.sendNotificationToUser(USER_ID, "Title", "Body", "GENERAL", null))
                 .thenReturn(responses);
 
-        ResponseEntity<List<NotificationResponse>> response =
+        final ResponseEntity<List<NotificationResponse>> response =
                 controller.sendNotificationToUser(USER_ID, "Title", "Body", "GENERAL", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -124,15 +124,15 @@ class NotificationControllerTest {
 
     @Test
     void sendVitalAlert_returns200_async() throws Exception {
-        User currentUser = User.builder().id(USER_ID).email("caregiver@test.com").role(Role.CAREGIVER).password("p").status("ACTIVE").build();
+        final User currentUser = User.builder().id(USER_ID).email("caregiver@test.com").role(Role.CAREGIVER).password("p").status("ACTIVE").build();
         when(securityUtil.resolveCurrentUser()).thenReturn(currentUser);
-        List<NotificationResponse> responses = List.of(NotificationResponse.success("alert-1"));
+        final List<NotificationResponse> responses = List.of(NotificationResponse.success("alert-1"));
         when(notificationService.sendVitalAlert(PATIENT_ID, "HR", "120bpm", "HIGH"))
                 .thenReturn(CompletableFuture.completedFuture(responses));
 
-        CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
+        final CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
                 controller.sendVitalAlert(PATIENT_ID, "HR", "120bpm", "HIGH");
-        ResponseEntity<List<NotificationResponse>> response = future.get();
+        final ResponseEntity<List<NotificationResponse>> response = future.get();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(responses);
@@ -142,13 +142,13 @@ class NotificationControllerTest {
 
     @Test
     void sendMedicationReminder_returns200_async() throws Exception {
-        List<NotificationResponse> responses = List.of(NotificationResponse.success("rem-1"));
+        final List<NotificationResponse> responses = List.of(NotificationResponse.success("rem-1"));
         when(notificationService.sendMedicationReminder(PATIENT_ID, "Aspirin", "100mg", "08:00"))
                 .thenReturn(CompletableFuture.completedFuture(responses));
 
-        CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
+        final CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
                 controller.sendMedicationReminder(PATIENT_ID, "Aspirin", "100mg", "08:00");
-        ResponseEntity<List<NotificationResponse>> response = future.get();
+        final ResponseEntity<List<NotificationResponse>> response = future.get();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(responses);
@@ -158,13 +158,13 @@ class NotificationControllerTest {
 
     @Test
     void sendEmergencyAlert_returns200_async() throws Exception {
-        List<NotificationResponse> responses = List.of(NotificationResponse.success("emg-1"));
+        final List<NotificationResponse> responses = List.of(NotificationResponse.success("emg-1"));
         when(notificationService.sendEmergencyAlert(PATIENT_ID, "FALL", "Room 101"))
                 .thenReturn(CompletableFuture.completedFuture(responses));
 
-        CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
+        final CompletableFuture<ResponseEntity<List<NotificationResponse>>> future =
                 controller.sendEmergencyAlert(PATIENT_ID, "FALL", "Room 101");
-        ResponseEntity<List<NotificationResponse>> response = future.get();
+        final ResponseEntity<List<NotificationResponse>> response = future.get();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(responses);
@@ -177,7 +177,7 @@ class NotificationControllerTest {
         doNothing().when(notificationService).registerDeviceToken(
                 USER_ID, "fcm-token-abc", "device-001", DeviceToken.DeviceType.ANDROID);
 
-        ResponseEntity<Map<String, String>> response = controller.registerDeviceToken(
+        final ResponseEntity<Map<String, String>> response = controller.registerDeviceToken(
                 USER_ID, "fcm-token-abc", "device-001", DeviceToken.DeviceType.ANDROID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -189,7 +189,7 @@ class NotificationControllerTest {
         doThrow(new RuntimeException("DB error")).when(notificationService).registerDeviceToken(
                 any(), anyString(), anyString(), any());
 
-        ResponseEntity<Map<String, String>> response = controller.registerDeviceToken(
+        final ResponseEntity<Map<String, String>> response = controller.registerDeviceToken(
                 USER_ID, "bad-token", "device-001", DeviceToken.DeviceType.IOS);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -202,7 +202,7 @@ class NotificationControllerTest {
     void unregisterDeviceToken_success_returns200() throws Exception {
         doNothing().when(notificationService).unregisterDeviceToken("fcm-token-xyz");
 
-        ResponseEntity<Map<String, String>> response = controller.unregisterDeviceToken("fcm-token-xyz");
+        final ResponseEntity<Map<String, String>> response = controller.unregisterDeviceToken("fcm-token-xyz");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().get("message")).isEqualTo("Device token unregistered successfully");
@@ -213,7 +213,7 @@ class NotificationControllerTest {
         doThrow(new RuntimeException("Token not found")).when(notificationService)
                 .unregisterDeviceToken(anyString());
 
-        ResponseEntity<Map<String, String>> response = controller.unregisterDeviceToken("bad-token");
+        final ResponseEntity<Map<String, String>> response = controller.unregisterDeviceToken("bad-token");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().get("error")).contains("Token not found");

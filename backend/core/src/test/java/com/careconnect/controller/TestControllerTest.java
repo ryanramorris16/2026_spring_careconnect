@@ -19,7 +19,7 @@ class TestControllerTest {
 
     @Test
     void healthCheck_returnsOkWithHealthyStatus() throws Exception {
-        ResponseEntity<Map<String, Object>> response = controller.healthCheck();
+        final ResponseEntity<Map<String, Object>> response = controller.healthCheck();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -30,7 +30,7 @@ class TestControllerTest {
 
     @Test
     void swaggerInfo_returnsOkWithGuideContent() throws Exception {
-        ResponseEntity<Map<String, Object>> response = controller.swaggerInfo();
+        final ResponseEntity<Map<String, Object>> response = controller.swaggerInfo();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

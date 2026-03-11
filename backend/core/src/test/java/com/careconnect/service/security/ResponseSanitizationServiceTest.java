@@ -22,7 +22,7 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_null_returnsEmpty() throws Exception {
-        ResponseSanitizationService.SanitizationResult result =
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(null, 1L, "conv-1", null);
         assertThat(result.getSanitizedContent()).isEmpty();
         assertThat(result.getSanitizedItems()).isEmpty();
@@ -30,7 +30,7 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_blank_returnsEmpty() throws Exception {
-        ResponseSanitizationService.SanitizationResult result =
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse("  ", 1L, "conv-1", null);
         assertThat(result.getSanitizedContent()).isEmpty();
         assertThat(result.getSanitizedItems()).isEmpty();
@@ -38,8 +38,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_cleanResponse_returnsUnmodified() throws Exception {
-        String response = "Your appointment is scheduled for tomorrow at 10 AM.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "Your appointment is scheduled for tomorrow at 10 AM.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 1L, "conv-1", null);
         assertThat(result.getSanitizedContent()).isEqualTo(response.trim());
         assertThat(result.getSanitizedItems()).isEmpty();
@@ -47,8 +47,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withSystemInfo_sanitizesAndLogs() throws Exception {
-        String response = "The api key: abc123 is in the configuration.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "The api key: abc123 is in the configuration.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 2L, "conv-2", null);
         assertThat(result.getSanitizedItems()).contains("System information");
         assertThat(result.getSanitizedContent()).contains("[Sensitive information removed]");
@@ -58,8 +58,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withLocalhostRef_sanitizes() throws Exception {
-        String response = "The server is running at localhost for development.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "The server is running at localhost for development.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 3L, "conv-3", null);
         assertThat(result.getSanitizedItems()).contains("System information");
         assertThat(result.getSanitizedContent()).contains("[Server reference removed]");
@@ -67,8 +67,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withSensitiveData_sanitizesAndLogs() throws Exception {
-        String response = "Your password: secretXYZ is here.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "Your password: secretXYZ is here.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 4L, "conv-4", null);
         assertThat(result.getSanitizedItems()).contains("Sensitive personal data");
         assertThat(result.getSanitizedContent()).contains("[Sensitive data removed]");
@@ -78,8 +78,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withSsn_replacesNumber() throws Exception {
-        String response = "The patient SSN is 123-45-6789 on file.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "The patient SSN is 123-45-6789 on file.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 5L, "conv-5", null);
         assertThat(result.getSanitizedItems()).contains("Sensitive personal data");
         assertThat(result.getSanitizedContent()).contains("[SSN removed]");
@@ -87,8 +87,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withCreditCard_replacesNumber() throws Exception {
-        String response = "Credit card 4111111111111111 was processed.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "Credit card 4111111111111111 was processed.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 6L, "conv-6", null);
         assertThat(result.getSanitizedItems()).contains("Sensitive personal data");
         assertThat(result.getSanitizedContent()).contains("[Credit card number removed]");
@@ -96,8 +96,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withPatientId_allowsMedicalContext() throws Exception {
-        String response = "Patient has been prescribed medication for hypertension.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "Patient has been prescribed medication for hypertension.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 7L, "conv-7", 100L);
         // Medical info allowed when patientId is present
         assertThat(result.getSanitizedContent()).isEqualTo(response.trim());
@@ -106,8 +106,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_withoutPatientId_restrictsMedicalInfo() throws Exception {
-        String response = "The diagnosis: hypertension is confirmed.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "The diagnosis: hypertension is confirmed.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 8L, "conv-8", null);
         assertThat(result.getSanitizedContent()).contains("[Medical information restricted]");
         assertThat(result.getSanitizedItems()).contains("Medical information without patient context");
@@ -115,8 +115,8 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizeAIResponse_scriptContent_removed() throws Exception {
-        String response = "Click here <script>alert('xss')</script> to proceed.";
-        ResponseSanitizationService.SanitizationResult result =
+        final String response = "Click here <script>alert('xss')</script> to proceed.";
+        final ResponseSanitizationService.SanitizationResult result =
                 responseSanitizationService.sanitizeAIResponse(response, 9L, "conv-9", null);
         assertThat(result.getSanitizedContent()).contains("[Script content removed]");
     }
@@ -125,7 +125,7 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizationResult_getters() throws Exception {
-        ResponseSanitizationService.SanitizationResult result =
+        final ResponseSanitizationService.SanitizationResult result =
                 new ResponseSanitizationService.SanitizationResult("content", List.of("item1"));
         assertThat(result.getSanitizedContent()).isEqualTo("content");
         assertThat(result.getSanitizedItems()).containsExactly("item1");
@@ -133,7 +133,7 @@ class ResponseSanitizationServiceTest {
 
     @Test
     void sanitizationResult_emptyItems() throws Exception {
-        ResponseSanitizationService.SanitizationResult result =
+        final ResponseSanitizationService.SanitizationResult result =
                 new ResponseSanitizationService.SanitizationResult("clean response", List.of());
         assertThat(result.getSanitizedItems()).isEmpty();
     }

@@ -10,7 +10,7 @@ class CaregiverTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Caregiver caregiver = new Caregiver();
+        final Caregiver caregiver = new Caregiver();
 
         assertThat(caregiver).isNotNull();
         assertThat(caregiver.getId()).isNull();
@@ -30,11 +30,11 @@ class CaregiverTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        Address address = new Address("1 Main St", null, "Annapolis", "MD", "21401");
-        ProfessionalInfo pro = new ProfessionalInfo("LIC-001", "MD", 5);
-        User user = new User();
+        final Address address = new Address("1 Main St", null, "Annapolis", "MD", "21401");
+        final ProfessionalInfo pro = new ProfessionalInfo("LIC-001", "MD", 5);
+        final User user = new User();
 
-        Caregiver caregiver = Caregiver.builder()
+        final Caregiver caregiver = Caregiver.builder()
                 .id(1L)
                 .firstName("Jane")
                 .lastName("Nurse")
@@ -65,7 +65,7 @@ class CaregiverTest {
 
     @Test
     void setCaregiverType_updatesField() throws Exception {
-        Caregiver caregiver = new Caregiver();
+        final Caregiver caregiver = new Caregiver();
         caregiver.setCaregiverType("CNA");
         assertThat(caregiver.getCaregiverType()).isEqualTo("CNA");
     }

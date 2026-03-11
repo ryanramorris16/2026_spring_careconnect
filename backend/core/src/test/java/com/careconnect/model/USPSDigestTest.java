@@ -12,11 +12,11 @@ class USPSDigestTest {
 
     @Test
     void constructor_setsAllFields() throws Exception {
-        OffsetDateTime digestDate = OffsetDateTime.of(2025, 1, 15, 8, 0, 0, 0, ZoneOffset.UTC);
-        List<MailPiece> mailpieces = List.of(new MailPiece());
-        List<PackageItem> packages = List.of(new PackageItem());
+        final OffsetDateTime digestDate = OffsetDateTime.of(2025, 1, 15, 8, 0, 0, 0, ZoneOffset.UTC);
+        final List<MailPiece> mailpieces = List.of(new MailPiece());
+        final List<PackageItem> packages = List.of(new PackageItem());
 
-        USPSDigest digest = new USPSDigest(digestDate, mailpieces, packages);
+        final USPSDigest digest = new USPSDigest(digestDate, mailpieces, packages);
 
         assertThat(digest.digestDate()).isEqualTo(digestDate);
         assertThat(digest.mailpieces()).hasSize(1);
@@ -25,9 +25,9 @@ class USPSDigestTest {
 
     @Test
     void constructor_emptyLists() throws Exception {
-        OffsetDateTime digestDate = OffsetDateTime.now(ZoneOffset.UTC);
+        final OffsetDateTime digestDate = OffsetDateTime.now(ZoneOffset.UTC);
 
-        USPSDigest digest = new USPSDigest(digestDate, List.of(), List.of());
+        final USPSDigest digest = new USPSDigest(digestDate, List.of(), List.of());
 
         assertThat(digest.digestDate()).isEqualTo(digestDate);
         assertThat(digest.mailpieces()).isEmpty();
@@ -36,9 +36,9 @@ class USPSDigestTest {
 
     @Test
     void recordEquality_sameValues_equal() throws Exception {
-        OffsetDateTime digestDate = OffsetDateTime.of(2025, 3, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-        USPSDigest d1 = new USPSDigest(digestDate, List.of(), List.of());
-        USPSDigest d2 = new USPSDigest(digestDate, List.of(), List.of());
+        final OffsetDateTime digestDate = OffsetDateTime.of(2025, 3, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        final USPSDigest d1 = new USPSDigest(digestDate, List.of(), List.of());
+        final USPSDigest d2 = new USPSDigest(digestDate, List.of(), List.of());
 
         assertThat(d1).isEqualTo(d2);
         assertThat(d1.hashCode()).isEqualTo(d2.hashCode());

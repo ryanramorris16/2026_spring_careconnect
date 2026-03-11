@@ -85,14 +85,14 @@ class MailpieceOcrServiceTest {
     @Test
     @DisplayName("extractTopLeftLabel - null imageBytes - returns empty")
     void extractTopLeftLabel_nullImageBytes_returnsEmpty() throws Exception {
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(null, "meta");
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(null, "meta");
         assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("extractTopLeftLabel - empty imageBytes - returns empty")
     void extractTopLeftLabel_emptyImageBytes_returnsEmpty() throws Exception {
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(new byte[0], "meta");
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(new byte[0], "meta");
         assertThat(result).isEmpty();
     }
 
@@ -106,7 +106,7 @@ class MailpieceOcrServiceTest {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenReturn(responseWithBlocks(wordBlock("Some word")));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "image/png");
         assertThat(result).isEmpty();
     }
@@ -119,7 +119,7 @@ class MailpieceOcrServiceTest {
                         lineBlockNoGeometry("No geometry"),
                         lineBlockNullBoundingBox("Null bounding box")));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "image/png");
         assertThat(result).isEmpty();
     }
@@ -134,7 +134,7 @@ class MailpieceOcrServiceTest {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenThrow(new RuntimeException("AWS error"));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "image/jpeg;base64");
         assertThat(result).isEmpty();
     }
@@ -151,7 +151,7 @@ class MailpieceOcrServiceTest {
                         lineBlock("USPS Headquarters", 0.05, 0.05),
                         lineBlock("Some lower text", 0.80, 0.50)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "image/png");
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo("USPS Headquarters");
@@ -166,7 +166,7 @@ class MailpieceOcrServiceTest {
                         lineBlock("123 Main Street", 0.10, 0.10),
                         lineBlock("Some far away text", 0.90, 0.50)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, null);
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo("ABC Corporation");
@@ -184,7 +184,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("AB", 0.05, 0.05)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -200,7 +200,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("   ", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -212,7 +212,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("AB", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -224,7 +224,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("Learn More about us", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -236,7 +236,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("Click here for details", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -248,7 +248,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("Visit our website today", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -260,7 +260,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("Special ridealong offer", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -272,7 +272,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("Some ride along text here", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -284,7 +284,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("campaign", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -296,7 +296,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("mail", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -308,7 +308,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("image", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -320,7 +320,7 @@ class MailpieceOcrServiceTest {
                 .thenReturn(responseWithBlocks(
                         lineBlock("123456789", 0.02, 0.02)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -338,7 +338,7 @@ class MailpieceOcrServiceTest {
                         lineBlock("Left Sender", 0.02, 0.01),
                         lineBlock("Below Threshold", 0.50, 0.01)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo("Left Sender");
@@ -352,7 +352,7 @@ class MailpieceOcrServiceTest {
                         lineBlock("123", 0.01, 0.01), // no letters
                         lineBlock("Valid Sender Inc", 0.05, 0.05)));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo("Valid Sender Inc");
@@ -364,7 +364,7 @@ class MailpieceOcrServiceTest {
         when(textractClient.detectDocumentText(any(DetectDocumentTextRequest.class)))
                 .thenThrow(new RuntimeException("error"));
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, null);
         assertThat(result).isEmpty();
     }
@@ -377,7 +377,7 @@ class MailpieceOcrServiceTest {
                         .blocks(Collections.emptyList())
                         .build());
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }
@@ -391,7 +391,7 @@ class MailpieceOcrServiceTest {
                         lineBlock("Learn More stuff", 0.02, 0.01), // starts with learn more
                         lineBlock("999888777", 0.03, 0.01))); // no letters
 
-        Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
+        final Optional<String> result = mailpieceOcrService.extractTopLeftLabel(
                 new byte[] { 1, 2, 3 }, "meta");
         assertThat(result).isEmpty();
     }

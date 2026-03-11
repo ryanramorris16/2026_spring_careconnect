@@ -46,9 +46,9 @@ class CheckInQuestionControllerTest {
 
     @Test
     void getQuestions_shouldReturnQuestions_fromPrimaryPath() throws Exception {
-        Long checkInId = 1L;
+        final Long checkInId = 1L;
 
-        List<QuestionDTO> mockQuestions = List.of(
+        final List<QuestionDTO> mockQuestions = List.of(
                 new QuestionDTO(1L, "Question 1", "TEXT", true, true, 1),
                 new QuestionDTO(2L, "Question 2", "TEXT", false, true, 2)
         );

@@ -30,9 +30,9 @@ class TaskMapperTest {
     @Test
     @DisplayName("parseDays should correctly parse valid JSON string into List<Boolean>")
     void testParseDays_validJson() throws Exception {
-        String json = "[true,false,true,false,false,true,false]";
+        final String json = "[true,false,true,false,false,true,false]";
 
-        List<Boolean> result = TaskMapper.parseDays(json);
+        final List<Boolean> result = TaskMapper.parseDays(json);
 
         assertNotNull(result);
         assertEquals(7, result.size());
@@ -48,9 +48,9 @@ class TaskMapperTest {
     @Test
     @DisplayName("parseDays should throw RuntimeException for malformed JSON")
     void testParseDays_malformedJson() throws Exception {
-        String badJson = "[true, false, invalid, false]";
+        final String badJson = "[true, false, invalid, false]";
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> TaskMapper.parseDays(badJson));
+        final RuntimeException ex = assertThrows(RuntimeException.class, () -> TaskMapper.parseDays(badJson));
         assertTrue(ex.getMessage().contains("Failed to parse daysOfWeek JSON"));
     }
 
@@ -61,9 +61,9 @@ class TaskMapperTest {
     @Test
     @DisplayName("serializeDays should correctly convert List<Boolean> to JSON string")
     void testSerializeDays_validList() throws Exception {
-        List<Boolean> days = List.of(true, false, true, false, false, true, false);
+        final List<Boolean> days = List.of(true, false, true, false, false, true, false);
 
-        String result = TaskMapper.serializeDays(days);
+        final String result = TaskMapper.serializeDays(days);
 
         assertEquals("[true,false,true,false,false,true,false]", result);
     }
@@ -78,11 +78,11 @@ class TaskMapperTest {
     @DisplayName("serializeDays should throw RuntimeException when serialization fails")
     @SuppressWarnings("unchecked")
     void testSerializeDays_serializationFailure() throws Exception {
-        List<Boolean> badList = mock(List.class);
+        final List<Boolean> badList = mock(List.class);
         when(badList.size()).thenReturn(1);
         when(badList.iterator()).thenThrow(new RuntimeException("mock error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> TaskMapper.serializeDays(badList));
         assertTrue(ex.getMessage().contains("Failed to serialize daysOfWeek JSON"));
     }
@@ -94,10 +94,10 @@ class TaskMapperTest {
     @Test
     @DisplayName("serializeDays and parseDays should be inverses (round-trip test)")
     void testRoundTrip_serializeAndParse() throws Exception {
-        List<Boolean> original = List.of(true, false, true, false, true, false, false);
+        final List<Boolean> original = List.of(true, false, true, false, true, false, false);
 
-        String json = TaskMapper.serializeDays(original);
-        List<Boolean> parsedBack = TaskMapper.parseDays(json);
+        final String json = TaskMapper.serializeDays(original);
+        final List<Boolean> parsedBack = TaskMapper.parseDays(json);
 
         assertEquals(original, parsedBack);
     }
@@ -105,7 +105,7 @@ class TaskMapperTest {
     @Test
     @DisplayName("TaskMapper default constructor should be instantiable")
     void testConstructor() throws Exception {
-        TaskMapper mapper = new TaskMapper();
+        final TaskMapper mapper = new TaskMapper();
         assertNotNull(mapper);
     }
 }

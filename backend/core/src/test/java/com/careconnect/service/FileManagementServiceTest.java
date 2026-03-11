@@ -80,7 +80,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(databaseStorageService.getFileUrl("db://files/10")).thenReturn("http://localhost/files/10");
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "Test description", 1L);
 
         assertNotNull(result);
@@ -102,7 +102,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "desc", 1L);
 
         assertNotNull(result);
@@ -123,7 +123,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(s3StorageService.getFileUrl("s3://bucket/files/report.pdf")).thenReturn("https://s3/report.pdf");
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "desc", 1L);
 
         assertNotNull(result);
@@ -133,7 +133,7 @@ class FileManagementServiceTest {
     @Test
     @DisplayName("uploadFile - S3 enabled but null s3Service - falls back to database")
     void uploadFile_s3EnabledNullService_fallsBackToDatabase() throws Exception {
-        FileManagementService serviceNoS3 = new FileManagementService(
+        final FileManagementService serviceNoS3 = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
                 databaseStorageService, null);
         ReflectionTestUtils.setField(serviceNoS3, "defaultStorageType", "database");
@@ -149,7 +149,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        FileUploadResponse result = serviceNoS3.uploadFile(
+        final FileUploadResponse result = serviceNoS3.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "desc", 1L);
 
         assertNotNull(result);
@@ -161,7 +161,7 @@ class FileManagementServiceTest {
     void uploadFile_emptyFile_throwsRuntimeException() throws Exception {
         when(multipartFile.isEmpty()).thenReturn(true);
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.uploadFile(multipartFile, 1L, "PATIENT", "MEDICAL", "desc", 1L));
         assertTrue(ex.getMessage().contains("File is empty"));
     }
@@ -172,7 +172,7 @@ class FileManagementServiceTest {
         when(multipartFile.isEmpty()).thenReturn(false);
         when(multipartFile.getSize()).thenReturn(20L * 1024 * 1024); // 20MB
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.uploadFile(multipartFile, 1L, "PATIENT", "MEDICAL", "desc", 1L));
         assertTrue(ex.getMessage().contains("File size exceeds"));
     }
@@ -184,7 +184,7 @@ class FileManagementServiceTest {
         when(multipartFile.getSize()).thenReturn(1024L);
         when(multipartFile.getContentType()).thenReturn(null);
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.uploadFile(multipartFile, 1L, "PATIENT", "MEDICAL", "desc", 1L));
         assertTrue(ex.getMessage().contains("content type"));
     }
@@ -250,7 +250,7 @@ class FileManagementServiceTest {
     @Test
     @DisplayName("uploadFile - null patientId with PATIENT userType - determines patientId from user")
     void uploadFile_nullPatientIdPatientUserType_determinesPatientId() throws Exception {
-        Patient patient = Patient.builder().id(5L).build();
+        final Patient patient = Patient.builder().id(5L).build();
         when(multipartFile.isEmpty()).thenReturn(false);
         when(multipartFile.getSize()).thenReturn(1024L);
         when(multipartFile.getContentType()).thenReturn("application/pdf");
@@ -263,7 +263,7 @@ class FileManagementServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(patientRepository.findByUser(user)).thenReturn(Optional.of(patient));
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "desc", null);
 
         assertNotNull(result);
@@ -282,7 +282,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "CAREGIVER", "MEDICAL_RECORD", "desc", null);
 
         assertNotNull(result);
@@ -301,7 +301,7 @@ class FileManagementServiceTest {
         when(userFileRepository.save(any(UserFile.class))).thenReturn(userFile);
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        FileUploadResponse result = fileManagementService.uploadFile(
+        final FileUploadResponse result = fileManagementService.uploadFile(
                 multipartFile, 1L, "PATIENT", "MEDICAL_RECORD", "desc", 1L);
 
         assertNotNull(result);
@@ -315,7 +315,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(databaseStorageService.getFileUrl("db://files/10")).thenReturn("http://localhost/files/10");
 
-        Optional<UserFileDTO> result = fileManagementService.getFile(10L);
+        final Optional<UserFileDTO> result = fileManagementService.getFile(10L);
 
         assertTrue(result.isPresent());
         assertEquals(10L, result.get().getId());
@@ -327,7 +327,7 @@ class FileManagementServiceTest {
     void getFile_fileNotFound_returnsEmpty() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<UserFileDTO> result = fileManagementService.getFile(99L);
+        final Optional<UserFileDTO> result = fileManagementService.getFile(99L);
 
         assertTrue(result.isEmpty());
     }
@@ -338,7 +338,7 @@ class FileManagementServiceTest {
         userFile.setIsActive(false);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
-        Optional<UserFileDTO> result = fileManagementService.getFile(10L);
+        final Optional<UserFileDTO> result = fileManagementService.getFile(10L);
 
         assertTrue(result.isEmpty());
     }
@@ -351,7 +351,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(s3StorageService.getFileUrl("s3://bucket/report.pdf")).thenReturn("https://s3/report.pdf");
 
-        Optional<UserFileDTO> result = fileManagementService.getFile(10L);
+        final Optional<UserFileDTO> result = fileManagementService.getFile(10L);
 
         assertTrue(result.isPresent());
         assertEquals("https://s3/report.pdf", result.get().getFileUrl());
@@ -360,7 +360,7 @@ class FileManagementServiceTest {
     @Test
     @DisplayName("getFile - S3 file with null s3Service - returns unavailable URL")
     void getFile_s3FileNullS3Service_returnsUnavailableUrl() throws Exception {
-        FileManagementService serviceNoS3 = new FileManagementService(
+        final FileManagementService serviceNoS3 = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
                 databaseStorageService, null);
         ReflectionTestUtils.setField(serviceNoS3, "defaultStorageType", "database");
@@ -369,7 +369,7 @@ class FileManagementServiceTest {
         userFile.setStorageType(UserFile.StorageType.S3);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
-        Optional<UserFileDTO> result = serviceNoS3.getFile(10L);
+        final Optional<UserFileDTO> result = serviceNoS3.getFile(10L);
 
         assertTrue(result.isPresent());
         assertEquals("unavailable://s3-service-not-configured", result.get().getFileUrl());
@@ -383,7 +383,7 @@ class FileManagementServiceTest {
         userFile.setFileData(new byte[]{1, 2, 3});
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
-        byte[] result = fileManagementService.downloadFile(10L);
+        final byte[] result = fileManagementService.downloadFile(10L);
 
         assertArrayEquals(new byte[]{1, 2, 3}, result);
     }
@@ -396,7 +396,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
         when(s3StorageService.download("s3://bucket/report.pdf")).thenReturn(new byte[]{4, 5, 6});
 
-        byte[] result = fileManagementService.downloadFile(10L);
+        final byte[] result = fileManagementService.downloadFile(10L);
 
         assertArrayEquals(new byte[]{4, 5, 6}, result);
     }
@@ -404,7 +404,7 @@ class FileManagementServiceTest {
     @Test
     @DisplayName("downloadFile - S3 file with null S3 service - throws RuntimeException")
     void downloadFile_s3FileNullS3Service_throwsRuntimeException() throws Exception {
-        FileManagementService serviceNoS3 = new FileManagementService(
+        final FileManagementService serviceNoS3 = new FileManagementService(
                 userFileRepository, userRepository, patientRepository,
                 databaseStorageService, null);
         ReflectionTestUtils.setField(serviceNoS3, "defaultStorageType", "database");
@@ -413,7 +413,7 @@ class FileManagementServiceTest {
         userFile.setStorageType(UserFile.StorageType.S3);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> serviceNoS3.downloadFile(10L));
         assertTrue(ex.getMessage().contains("S3 storage service not available"));
     }
@@ -423,7 +423,7 @@ class FileManagementServiceTest {
     void downloadFile_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.downloadFile(99L));
         assertTrue(ex.getMessage().contains("File not found"));
     }
@@ -434,7 +434,7 @@ class FileManagementServiceTest {
         userFile.setIsActive(false);
         when(userFileRepository.findById(10L)).thenReturn(Optional.of(userFile));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.downloadFile(10L));
         assertTrue(ex.getMessage().contains("File not found"));
     }
@@ -449,7 +449,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "MEDICAL_RECORD");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "MEDICAL_RECORD");
 
         assertEquals(1, result.size());
     }
@@ -461,7 +461,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", null);
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", null);
 
         assertEquals(1, result.size());
     }
@@ -473,7 +473,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "");
 
         assertEquals(1, result.size());
     }
@@ -487,7 +487,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, "MEDICAL_RECORD");
+        final List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, "MEDICAL_RECORD");
 
         assertEquals(1, result.size());
     }
@@ -498,7 +498,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findFilesAccessibleByPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, null);
+        final List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, null);
 
         assertEquals(1, result.size());
     }
@@ -509,7 +509,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findFilesAccessibleByPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, "");
+        final List<UserFileDTO> result = fileManagementService.listFilesForPatient(1L, "");
 
         assertEquals(1, result.size());
     }
@@ -523,7 +523,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listFilesForCaregiverPatient(1L, "PRESCRIPTION");
+        final List<UserFileDTO> result = fileManagementService.listFilesForCaregiverPatient(1L, "PRESCRIPTION");
 
         assertEquals(1, result.size());
     }
@@ -534,7 +534,7 @@ class FileManagementServiceTest {
         when(userFileRepository.findFilesAccessibleByCaregiverForPatient(1L)).thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listFilesForCaregiverPatient(1L, null);
+        final List<UserFileDTO> result = fileManagementService.listFilesForCaregiverPatient(1L, null);
 
         assertEquals(1, result.size());
     }
@@ -581,7 +581,7 @@ class FileManagementServiceTest {
     void deleteFile_fileNotFound_throwsRuntimeException() throws Exception {
         when(userFileRepository.findById(99L)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> fileManagementService.deleteFile(99L, 1L));
         assertTrue(ex.getMessage().contains("File not found"));
     }
@@ -596,7 +596,7 @@ class FileManagementServiceTest {
                 .thenReturn(Optional.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        Optional<UserFileDTO> result = fileManagementService.getUserProfileImage(1L, "PATIENT");
+        final Optional<UserFileDTO> result = fileManagementService.getUserProfileImage(1L, "PATIENT");
 
         assertTrue(result.isPresent());
     }
@@ -608,7 +608,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.PROFILE_IMAGE))
                 .thenReturn(Optional.empty());
 
-        Optional<UserFileDTO> result = fileManagementService.getUserProfileImage(1L, "PATIENT");
+        final Optional<UserFileDTO> result = fileManagementService.getUserProfileImage(1L, "PATIENT");
 
         assertTrue(result.isEmpty());
     }
@@ -623,7 +623,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of(userFile));
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "PROFILE");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "PROFILE");
 
         assertEquals(1, result.size());
     }
@@ -636,7 +636,7 @@ class FileManagementServiceTest {
                 .thenReturn(List.of());
         when(databaseStorageService.getFileUrl(anyString())).thenReturn("http://localhost/files/10");
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CLINICAL");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CLINICAL");
 
         assertTrue(result.isEmpty());
     }
@@ -648,7 +648,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.LAB_RESULT))
                 .thenReturn(List.of());
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "LAB");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "LAB");
 
         assertTrue(result.isEmpty());
     }
@@ -660,7 +660,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.INSURANCE_DOCUMENT))
                 .thenReturn(List.of());
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "INSURANCE");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "INSURANCE");
 
         assertTrue(result.isEmpty());
     }
@@ -672,7 +672,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.CONSENT_FORM))
                 .thenReturn(List.of());
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CONSENT");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CONSENT");
 
         assertTrue(result.isEmpty());
     }
@@ -684,7 +684,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.CARE_PLAN))
                 .thenReturn(List.of());
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CARE");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "CARE");
 
         assertTrue(result.isEmpty());
     }
@@ -696,7 +696,7 @@ class FileManagementServiceTest {
                 1L, UserFile.OwnerType.PATIENT, UserFile.FileCategory.OTHER_DOCUMENT))
                 .thenReturn(List.of());
 
-        List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "RANDOM");
+        final List<UserFileDTO> result = fileManagementService.listUserFiles(1L, "PATIENT", "RANDOM");
 
         assertTrue(result.isEmpty());
     }

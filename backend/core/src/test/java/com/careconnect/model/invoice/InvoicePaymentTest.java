@@ -14,7 +14,7 @@ class InvoicePaymentTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
 
         assertThat(payment).isNotNull();
         // id defaults to a UUID string
@@ -34,8 +34,8 @@ class InvoicePaymentTest {
 
     @Test
     void noArgConstructor_idIsUUID() throws Exception {
-        InvoicePayment p1 = new InvoicePayment();
-        InvoicePayment p2 = new InvoicePayment();
+        final InvoicePayment p1 = new InvoicePayment();
+        final InvoicePayment p2 = new InvoicePayment();
 
         // Each new instance gets a different UUID
         assertThat(p1.getId()).isNotEqualTo(p2.getId());
@@ -45,10 +45,10 @@ class InvoicePaymentTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
-        Invoice invoice = Invoice.builder().id("INV-500").build();
-        OffsetDateTime paymentDate = OffsetDateTime.of(2025, 4, 10, 12, 0, 0, 0, ZoneOffset.UTC);
-        OffsetDateTime createdAt   = OffsetDateTime.of(2025, 4, 10, 12, 0, 0, 0, ZoneOffset.UTC);
+        final InvoicePayment payment = new InvoicePayment();
+        final Invoice invoice = Invoice.builder().id("INV-500").build();
+        final OffsetDateTime paymentDate = OffsetDateTime.of(2025, 4, 10, 12, 0, 0, 0, ZoneOffset.UTC);
+        final OffsetDateTime createdAt   = OffsetDateTime.of(2025, 4, 10, 12, 0, 0, 0, ZoneOffset.UTC);
 
         payment.setId("custom-id-123");
         payment.setInvoice(invoice);
@@ -77,13 +77,13 @@ class InvoicePaymentTest {
 
     @Test
     void planEnabled_defaultsFalse() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         assertThat(payment.isPlanEnabled()).isFalse();
     }
 
     @Test
     void planEnabled_canBeSetTrue() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         payment.setPlanEnabled(true);
         assertThat(payment.isPlanEnabled()).isTrue();
     }
@@ -92,21 +92,21 @@ class InvoicePaymentTest {
 
     @Test
     void methodKey_check_setsCorrectly() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("check");
         assertThat(payment.getMethodKey()).isEqualTo("check");
     }
 
     @Test
     void methodKey_online_setsCorrectly() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("online");
         assertThat(payment.getMethodKey()).isEqualTo("online");
     }
 
     @Test
     void methodKey_telephone_setsCorrectly() throws Exception {
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("telephone");
         assertThat(payment.getMethodKey()).isEqualTo("telephone");
     }

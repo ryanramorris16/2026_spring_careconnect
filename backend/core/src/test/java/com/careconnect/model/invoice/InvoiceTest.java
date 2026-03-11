@@ -15,7 +15,7 @@ class InvoiceTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
 
         assertThat(invoice).isNotNull();
         assertThat(invoice.getId()).isNull();
@@ -34,9 +34,9 @@ class InvoiceTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
-        Invoice invoice = Invoice.builder()
+        final Invoice invoice = Invoice.builder()
                 .id("INV-001")
                 .invoiceNumber("2025-0001")
                 .providerName("Dr. Alice Brown")
@@ -91,7 +91,7 @@ class InvoiceTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
 
         invoice.setId("INV-002");
         invoice.setInvoiceNumber("2025-0002");
@@ -110,9 +110,9 @@ class InvoiceTest {
 
     @Test
     void addPayment_addsToList_andSetsInvoiceReference() throws Exception {
-        Invoice invoice = new Invoice();   // no-arg ctor initialises payments list
+        final Invoice invoice = new Invoice();   // no-arg ctor initialises payments list
         invoice.setId("INV-003");
-        InvoicePayment payment = new InvoicePayment();
+        final InvoicePayment payment = new InvoicePayment();
         payment.setMethodKey("check");
 
         invoice.addPayment(payment);
@@ -124,12 +124,12 @@ class InvoiceTest {
 
     @Test
     void addPayment_multiplePayments_allAdded() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         invoice.setId("INV-004");
 
-        InvoicePayment p1 = new InvoicePayment();
+        final InvoicePayment p1 = new InvoicePayment();
         p1.setMethodKey("check");
-        InvoicePayment p2 = new InvoicePayment();
+        final InvoicePayment p2 = new InvoicePayment();
         p2.setMethodKey("online");
 
         invoice.addPayment(p1);
@@ -142,12 +142,12 @@ class InvoiceTest {
 
     @Test
     void removePaymentById_removesCorrectPayment() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         invoice.setId("INV-005");
 
-        InvoicePayment p1 = new InvoicePayment();
+        final InvoicePayment p1 = new InvoicePayment();
         p1.setId("pay-aaa");
-        InvoicePayment p2 = new InvoicePayment();
+        final InvoicePayment p2 = new InvoicePayment();
         p2.setId("pay-bbb");
 
         invoice.addPayment(p1);
@@ -161,10 +161,10 @@ class InvoiceTest {
 
     @Test
     void removePaymentById_nonexistentId_doesNothing() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         invoice.setId("INV-006");
 
-        InvoicePayment p1 = new InvoicePayment();
+        final InvoicePayment p1 = new InvoicePayment();
         p1.setId("pay-ccc");
         invoice.addPayment(p1);
 
@@ -177,10 +177,10 @@ class InvoiceTest {
 
     @Test
     void setPayments_replacesCollection() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         invoice.setId("INV-007");
 
-        InvoicePayment p1 = new InvoicePayment();
+        final InvoicePayment p1 = new InvoicePayment();
         invoice.addPayment(p1);
 
         invoice.setPayments(List.of());
@@ -193,19 +193,19 @@ class InvoiceTest {
     @Test
     void builder_services_defaultsToEmptyList() throws Exception {
         // Lombok builder doesn't honour plain field initialisers; use no-arg ctor
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         assertThat(invoice.getServices()).isNotNull().isEmpty();
     }
 
     @Test
     void builder_history_defaultsToEmptyList() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         assertThat(invoice.getHistory()).isNotNull().isEmpty();
     }
 
     @Test
     void builder_recommendedActions_defaultsToEmptyList() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         assertThat(invoice.getRecommendedActions()).isNotNull().isEmpty();
     }
 
@@ -213,8 +213,8 @@ class InvoiceTest {
 
     @Test
     void equals_sameId_returnsTrue() throws Exception {
-        Invoice i1 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
-        Invoice i2 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
+        final Invoice i1 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
+        final Invoice i2 = Invoice.builder().id("INV-AAA").invoiceNumber("001").build();
 
         assertThat(i1).isEqualTo(i2);
         assertThat(i1.hashCode()).isEqualTo(i2.hashCode());
@@ -222,15 +222,15 @@ class InvoiceTest {
 
     @Test
     void equals_differentId_returnsFalse() throws Exception {
-        Invoice i1 = Invoice.builder().id("INV-AAA").build();
-        Invoice i2 = Invoice.builder().id("INV-BBB").build();
+        final Invoice i1 = Invoice.builder().id("INV-AAA").build();
+        final Invoice i2 = Invoice.builder().id("INV-BBB").build();
 
         assertThat(i1).isNotEqualTo(i2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        Invoice invoice = new Invoice();
+        final Invoice invoice = new Invoice();
         assertThat(invoice).isNotEqualTo(null);
     }
 }

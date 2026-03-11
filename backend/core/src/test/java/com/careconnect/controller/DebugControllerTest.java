@@ -96,7 +96,7 @@ class DebugControllerTest {
     @Test
     void matchPlanToPrice_shouldReturnMatchingInfo() throws Exception {
 
-        Plan premium = new Plan();
+        final Plan premium = new Plan();
         premium.setName("Premium Plan");
 
         when(planRepository.findByCode(any()))
@@ -121,7 +121,7 @@ class DebugControllerTest {
     @Test
     void createPriceMapping_shouldReturnExistingMapping() throws Exception {
 
-        Plan existing = new Plan();
+        final Plan existing = new Plan();
         existing.setCode("price_1RmqWxELoozGI1YxQql5rsvN");
 
         when(planRepository.findByCode(any()))
@@ -142,7 +142,7 @@ class DebugControllerTest {
         when(planRepository.findByCode(any()))
                 .thenReturn(null);
 
-        Plan premium = new Plan();
+        final Plan premium = new Plan();
         premium.setName("Premium Plan");
         premium.setPriceCents(3000);
         premium.setBillingPeriod("MONTH");

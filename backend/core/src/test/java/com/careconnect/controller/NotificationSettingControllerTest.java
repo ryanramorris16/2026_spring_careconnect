@@ -49,10 +49,10 @@ class NotificationSettingControllerTest {
 
     @Test
     void getSettings_returns200_withDto() throws Exception {
-        NotificationSettingDTO dto = makeDto(USER_ID);
+        final NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
-        ResponseEntity<NotificationSettingDTO> response = controller.getSettings(USER_ID);
+        final ResponseEntity<NotificationSettingDTO> response = controller.getSettings(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(dto);
@@ -60,12 +60,12 @@ class NotificationSettingControllerTest {
 
     @Test
     void getSettings_returns200_withAllFieldsIntact() throws Exception {
-        NotificationSettingDTO dto = makeDto(USER_ID);
+        final NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
-        ResponseEntity<NotificationSettingDTO> response = controller.getSettings(USER_ID);
+        final ResponseEntity<NotificationSettingDTO> response = controller.getSettings(USER_ID);
 
-        NotificationSettingDTO body = response.getBody();
+        final NotificationSettingDTO body = response.getBody();
         assertThat(body.userId()).isEqualTo(USER_ID);
         assertThat(body.gamification()).isTrue();
         assertThat(body.emergency()).isTrue();
@@ -75,7 +75,7 @@ class NotificationSettingControllerTest {
 
     @Test
     void getSettings_delegatesToServiceWithCorrectUserId() throws Exception {
-        NotificationSettingDTO dto = makeDto(USER_ID);
+        final NotificationSettingDTO dto = makeDto(USER_ID);
         when(notificationSettingService.getByUserId(USER_ID)).thenReturn(dto);
 
         controller.getSettings(USER_ID);
@@ -87,11 +87,11 @@ class NotificationSettingControllerTest {
 
     @Test
     void createOrUpdate_returns200_withSavedDto() throws Exception {
-        NotificationSettingDTO input = makeDto(USER_ID);
-        NotificationSettingDTO saved = makeDto(USER_ID);
+        final NotificationSettingDTO input = makeDto(USER_ID);
+        final NotificationSettingDTO saved = makeDto(USER_ID);
         when(notificationSettingService.createOrUpdate(input)).thenReturn(saved);
 
-        ResponseEntity<NotificationSettingDTO> response = controller.createOrUpdate(input);
+        final ResponseEntity<NotificationSettingDTO> response = controller.createOrUpdate(input);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(saved);
@@ -99,7 +99,7 @@ class NotificationSettingControllerTest {
 
     @Test
     void createOrUpdate_delegatesToServiceWithInput() throws Exception {
-        NotificationSettingDTO input = makeDto(USER_ID);
+        final NotificationSettingDTO input = makeDto(USER_ID);
         when(notificationSettingService.createOrUpdate(input)).thenReturn(input);
 
         controller.createOrUpdate(input);
@@ -109,7 +109,7 @@ class NotificationSettingControllerTest {
 
     @Test
     void createOrUpdate_withAllFalseSettings_returns200() throws Exception {
-        NotificationSettingDTO allFalse = NotificationSettingDTO.builder()
+        final NotificationSettingDTO allFalse = NotificationSettingDTO.builder()
                 .id(null)
                 .userId(USER_ID)
                 .gamification(false)
@@ -121,7 +121,7 @@ class NotificationSettingControllerTest {
                 .build();
         when(notificationSettingService.createOrUpdate(allFalse)).thenReturn(allFalse);
 
-        ResponseEntity<NotificationSettingDTO> response = controller.createOrUpdate(allFalse);
+        final ResponseEntity<NotificationSettingDTO> response = controller.createOrUpdate(allFalse);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().gamification()).isFalse();

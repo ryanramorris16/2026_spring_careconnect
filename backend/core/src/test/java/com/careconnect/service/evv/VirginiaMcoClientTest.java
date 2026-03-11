@@ -18,7 +18,7 @@ class VirginiaMcoClientTest {
 
     @Test
     void submit_doesNotThrow() throws Exception {
-        EvvRecord record = Mockito.mock(EvvRecord.class);
+        final EvvRecord record = Mockito.mock(EvvRecord.class);
         Mockito.when(record.getId()).thenReturn(2L);
 
         assertThatCode(() -> client.submit(record)).doesNotThrowAnyException();

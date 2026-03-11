@@ -12,7 +12,7 @@ class XPProgressTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        XPProgress progress = new XPProgress();
+        final XPProgress progress = new XPProgress();
 
         assertThat(progress).isNotNull();
         assertThat(progress.getId()).isNull();
@@ -26,8 +26,8 @@ class XPProgressTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        XPProgress progress = new XPProgress(1L, 500, 3, 42L, now);
+        final LocalDateTime now = LocalDateTime.now();
+        final XPProgress progress = new XPProgress(1L, 500, 3, 42L, now);
 
         assertThat(progress.getId()).isEqualTo(1L);
         assertThat(progress.getXp()).isEqualTo(500);
@@ -40,8 +40,8 @@ class XPProgressTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        XPProgress progress = new XPProgress();
-        LocalDateTime now = LocalDateTime.now();
+        final XPProgress progress = new XPProgress();
+        final LocalDateTime now = LocalDateTime.now();
 
         progress.setUserId(99L);
         progress.setXp(1000);

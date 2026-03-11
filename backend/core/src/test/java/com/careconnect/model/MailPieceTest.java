@@ -13,7 +13,7 @@ class MailPieceTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        MailPiece piece = new MailPiece();
+        final MailPiece piece = new MailPiece();
 
         assertThat(piece).isNotNull();
         assertThat(piece.getId()).isNull();
@@ -28,10 +28,10 @@ class MailPieceTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        ActionLinks links = ActionLinks.builder().build();
+        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        final ActionLinks links = ActionLinks.builder().build();
 
-        MailPiece piece = new MailPiece("MP-001", "USPS", "Your bill", "http://thumb.jpg", now, links);
+        final MailPiece piece = new MailPiece("MP-001", "USPS", "Your bill", "http://thumb.jpg", now, links);
 
         assertThat(piece.getId()).isEqualTo("MP-001");
         assertThat(piece.getSender()).isEqualTo("USPS");
@@ -45,9 +45,9 @@ class MailPieceTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
-        MailPiece piece = MailPiece.builder()
+        final MailPiece piece = MailPiece.builder()
                 .id("MP-002")
                 .sender("FedEx")
                 .subject("Package Notice")
@@ -66,9 +66,9 @@ class MailPieceTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        MailPiece piece = new MailPiece();
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        ActionLinks links = new ActionLinks();
+        final MailPiece piece = new MailPiece();
+        final OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        final ActionLinks links = new ActionLinks();
 
         piece.setId("MP-003");
         piece.setSender("UPS");

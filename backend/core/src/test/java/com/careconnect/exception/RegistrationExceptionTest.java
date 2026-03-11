@@ -11,7 +11,7 @@ class RegistrationExceptionTest {
     @Test
     @DisplayName("constructor sets message and extends RuntimeException")
     void messageConstructor_setsMessage() throws Exception {
-        RegistrationException ex = new RegistrationException("dup email");
+        final RegistrationException ex = new RegistrationException("dup email");
         assertEquals("dup email", ex.getMessage());
         assertInstanceOf(RuntimeException.class, ex);
     }

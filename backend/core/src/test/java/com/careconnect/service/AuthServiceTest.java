@@ -97,7 +97,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns valid token
         mockServer.createContext("/token/valid", exchange -> {
-            String body = "{\"access_token\":\"fake-access-token\"}";
+            final String body = "{\"access_token\":\"fake-access-token\"}";
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
@@ -114,7 +114,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 200 but no access_token in body
         mockServer.createContext("/token/no-access-token", exchange -> {
-            String body = "{\"token_type\":\"Bearer\"}";
+            final String body = "{\"token_type\":\"Bearer\"}";
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
@@ -124,7 +124,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 400 with invalid_grant
         mockServer.createContext("/token/400-invalid-grant", exchange -> {
-            String body = "{\"error\":\"invalid_grant\",\"error_description\":\"Code expired\"}";
+            final String body = "{\"error\":\"invalid_grant\",\"error_description\":\"Code expired\"}";
             exchange.sendResponseHeaders(400, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -133,7 +133,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 400 with invalid_client
         mockServer.createContext("/token/400-invalid-client", exchange -> {
-            String body = "{\"error\":\"invalid_client\"}";
+            final String body = "{\"error\":\"invalid_client\"}";
             exchange.sendResponseHeaders(400, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -142,7 +142,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 400 with invalid_request
         mockServer.createContext("/token/400-invalid-request", exchange -> {
-            String body = "{\"error\":\"invalid_request\"}";
+            final String body = "{\"error\":\"invalid_request\"}";
             exchange.sendResponseHeaders(400, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -151,7 +151,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 400 with generic error
         mockServer.createContext("/token/400-generic", exchange -> {
-            String body = "{\"error\":\"some_other_error\"}";
+            final String body = "{\"error\":\"some_other_error\"}";
             exchange.sendResponseHeaders(400, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -160,7 +160,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 401
         mockServer.createContext("/token/401", exchange -> {
-            String body = "{\"error\":\"unauthorized\"}";
+            final String body = "{\"error\":\"unauthorized\"}";
             exchange.sendResponseHeaders(401, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -169,7 +169,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 500
         mockServer.createContext("/token/500", exchange -> {
-            String body = "{\"error\":\"internal_server_error\"}";
+            final String body = "{\"error\":\"internal_server_error\"}";
             exchange.sendResponseHeaders(500, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -178,7 +178,7 @@ class AuthServiceTest {
 
         // Token endpoint: returns 403 (not 400, 401, or 500+)
         mockServer.createContext("/token/403", exchange -> {
-            String body = "{\"error\":\"forbidden\"}";
+            final String body = "{\"error\":\"forbidden\"}";
             exchange.sendResponseHeaders(403, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -187,7 +187,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns valid user info
         mockServer.createContext("/userinfo/valid", exchange -> {
-            String body = "{\"email\":\"oauth@test.com\",\"name\":\"OAuth User\"}";
+            final String body = "{\"email\":\"oauth@test.com\",\"name\":\"OAuth User\"}";
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
@@ -197,7 +197,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns null email
         mockServer.createContext("/userinfo/no-email", exchange -> {
-            String body = "{\"name\":\"No Email User\"}";
+            final String body = "{\"name\":\"No Email User\"}";
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
@@ -207,7 +207,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns empty email
         mockServer.createContext("/userinfo/empty-email", exchange -> {
-            String body = "{\"email\":\"  \",\"name\":\"Empty Email\"}";
+            final String body = "{\"email\":\"  \",\"name\":\"Empty Email\"}";
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
@@ -224,7 +224,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns 401
         mockServer.createContext("/userinfo/401", exchange -> {
-            String body = "{\"error\":\"unauthorized\"}";
+            final String body = "{\"error\":\"unauthorized\"}";
             exchange.sendResponseHeaders(401, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -233,7 +233,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns 403
         mockServer.createContext("/userinfo/403", exchange -> {
-            String body = "{\"error\":\"forbidden\"}";
+            final String body = "{\"error\":\"forbidden\"}";
             exchange.sendResponseHeaders(403, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -242,7 +242,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns 500
         mockServer.createContext("/userinfo/500", exchange -> {
-            String body = "{\"error\":\"internal_server_error\"}";
+            final String body = "{\"error\":\"internal_server_error\"}";
             exchange.sendResponseHeaders(500, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -251,7 +251,7 @@ class AuthServiceTest {
 
         // User info endpoint: returns 404 (not 401, 403, or 500+)
         mockServer.createContext("/userinfo/404", exchange -> {
-            String body = "{\"error\":\"not_found\"}";
+            final String body = "{\"error\":\"not_found\"}";
             exchange.sendResponseHeaders(404, body.length());
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(body.getBytes());
@@ -302,11 +302,11 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_invalidRole_shouldReturnBadRequest")
         void register_invalidRole_shouldReturnBadRequest() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("INVALID_ROLE");
             req.setEmail("test@test.com");
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
@@ -314,12 +314,12 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_existingUnverifiedUser_shouldResendVerification")
         void register_existingUnverifiedUser_shouldResendVerification() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("test@test.com");
             req.setPassword("password123");
 
-            User unverifiedUser = new User();
+            final User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setIsVerified(false);
             unverifiedUser.setRole(Role.PATIENT);
@@ -327,7 +327,7 @@ class AuthServiceTest {
             when(userRepository.findByEmailAndRole("test@test.com", Role.PATIENT))
                     .thenReturn(Optional.of(unverifiedUser));
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(emailService).sendVerificationEmail(eq("test@test.com"), anyString());
@@ -337,12 +337,12 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_existingVerifiedUser_shouldReturnConflict")
         void register_existingVerifiedUser_shouldReturnConflict() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("test@test.com");
             req.setPassword("password123");
 
-            User verifiedUser = new User();
+            final User verifiedUser = new User();
             verifiedUser.setEmail("test@test.com");
             verifiedUser.setIsVerified(true);
             verifiedUser.setRole(Role.PATIENT);
@@ -350,7 +350,7 @@ class AuthServiceTest {
             when(userRepository.findByEmailAndRole("test@test.com", Role.PATIENT))
                     .thenReturn(Optional.of(verifiedUser));
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         }
@@ -358,7 +358,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_newPatient_shouldCreateUserAndSendEmail")
         void register_newPatient_shouldCreateUserAndSendEmail() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new@test.com");
             req.setPassword("password123");
@@ -374,12 +374,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(2L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(patients).save(any(Patient.class));
@@ -389,7 +389,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_newPatientWithVerificationBaseUrl_shouldUseProvidedUrl")
         void register_newPatientWithVerificationBaseUrl_shouldUseProvidedUrl() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new@test.com");
             req.setPassword("password123");
@@ -405,12 +405,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(2L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(emailService).sendVerificationEmail(eq("new@test.com"), contains("https://custom-frontend.com"));
@@ -419,7 +419,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_newCaregiver_shouldCreateCaregiverAndSendEmail")
         void register_newCaregiver_shouldCreateCaregiverAndSendEmail() throws Exception {
-            CaregiverRegistration req = new CaregiverRegistration();
+            final CaregiverRegistration req = new CaregiverRegistration();
             req.setRole("CAREGIVER");
             req.setEmail("caregiver@test.com");
             req.setPassword("password123");
@@ -435,12 +435,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(3L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(caregivers).save(any(Caregiver.class));
@@ -450,7 +450,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_unsupportedRole_shouldThrowAppException")
         void register_unsupportedRole_shouldThrowAppException() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("ADMIN");
             req.setEmail("admin@test.com");
             req.setPassword("password123");
@@ -466,7 +466,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_patientRoleWithCaregiverRegistration_shouldSkipPatientCreation")
         void register_patientRoleWithCaregiverRegistration_shouldSkipPatientCreation() throws Exception {
-            CaregiverRegistration req = new CaregiverRegistration();
+            final CaregiverRegistration req = new CaregiverRegistration();
             req.setRole("PATIENT");
             req.setEmail("skip@test.com");
             req.setPassword("password123");
@@ -477,12 +477,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(10L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(patients, never()).save(any(Patient.class));
@@ -492,7 +492,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_caregiverRoleWithPatientRegistration_shouldSkipCaregiverCreation")
         void register_caregiverRoleWithPatientRegistration_shouldSkipCaregiverCreation() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("CAREGIVER");
             req.setEmail("skip2@test.com");
             req.setPassword("password123");
@@ -503,12 +503,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(11L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(caregivers, never()).save(any(Caregiver.class));
@@ -518,7 +518,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_newPatientWithEmptyVerificationBaseUrl_shouldUseBackendUrl")
         void register_newPatientWithEmptyVerificationBaseUrl_shouldUseBackendUrl() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("PATIENT");
             req.setEmail("new2@test.com");
             req.setPassword("password123");
@@ -534,12 +534,12 @@ class AuthServiceTest {
                     .thenReturn(Optional.empty());
             when(passwordEncoder.encode("password123")).thenReturn("encodedPwd");
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-                User u = inv.getArgument(0);
+                final User u = inv.getArgument(0);
                 u.setId(5L);
                 return u;
             });
 
-            ResponseEntity<?> response = authService.register(req);
+            final ResponseEntity<?> response = authService.register(req);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(emailService).sendVerificationEmail(eq("new2@test.com"), contains("http://localhost:8080"));
@@ -548,7 +548,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("register_familyMemberRole_shouldThrowAppException")
         void register_familyMemberRole_shouldThrowAppException() throws Exception {
-            PatientRegistration req = new PatientRegistration();
+            final PatientRegistration req = new PatientRegistration();
             req.setRole("FAMILY_MEMBER");
             req.setEmail("fm@test.com");
             req.setPassword("password123");
@@ -575,7 +575,7 @@ class AuthServiceTest {
                     .thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
 
-            Optional<User> result = authService.validateUser("test@test.com", "password", "PATIENT");
+            final Optional<User> result = authService.validateUser("test@test.com", "password", "PATIENT");
 
             assertTrue(result.isPresent());
             assertEquals(testUser.getEmail(), result.get().getEmail());
@@ -588,7 +588,7 @@ class AuthServiceTest {
                     .thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("wrongPassword", "encodedPassword")).thenReturn(false);
 
-            Optional<User> result = authService.validateUser("test@test.com", "wrongPassword", "PATIENT");
+            final Optional<User> result = authService.validateUser("test@test.com", "wrongPassword", "PATIENT");
 
             assertTrue(result.isEmpty());
         }
@@ -596,7 +596,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("validateUser_unverifiedUser_shouldThrowRuntimeException")
         void validateUser_unverifiedUser_shouldThrowRuntimeException() throws Exception {
-            User unverifiedUser = new User();
+            final User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setPasswordHash("encodedPassword");
             unverifiedUser.setIsVerified(false);
@@ -616,7 +616,7 @@ class AuthServiceTest {
             when(userRepository.findByEmailAndRole("unknown@test.com", Role.PATIENT))
                     .thenReturn(Optional.empty());
 
-            Optional<User> result = authService.validateUser("unknown@test.com", "password", "PATIENT");
+            final Optional<User> result = authService.validateUser("unknown@test.com", "password", "PATIENT");
 
             assertTrue(result.isEmpty());
         }
@@ -624,7 +624,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("validateUser_invalidRole_shouldReturnEmpty")
         void validateUser_invalidRole_shouldReturnEmpty() throws Exception {
-            Optional<User> result = authService.validateUser("test@test.com", "password", "INVALID");
+            final Optional<User> result = authService.validateUser("test@test.com", "password", "INVALID");
 
             assertTrue(result.isEmpty());
         }
@@ -639,14 +639,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("verifyToken_validToken_shouldVerifyUser")
         void verifyToken_validToken_shouldVerifyUser() throws Exception {
-            User user = new User();
+            final User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
             user.setVerificationToken("valid-token");
 
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
 
-            ResponseEntity<?> response = authService.verifyToken("valid-token");
+            final ResponseEntity<?> response = authService.verifyToken("valid-token");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertTrue(user.getIsVerified());
@@ -657,14 +657,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("verifyToken_validTokenWithWebSocket_shouldSendNotification")
         void verifyToken_validTokenWithWebSocket_shouldSendNotification() throws Exception {
-            User user = new User();
+            final User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
             user.setVerificationToken("valid-token");
 
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
 
-            ResponseEntity<?> response = authService.verifyToken("valid-token");
+            final ResponseEntity<?> response = authService.verifyToken("valid-token");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(webSocketHandler).sendEmailVerificationNotification("test@test.com");
@@ -673,7 +673,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("verifyToken_webSocketThrowsException_shouldStillVerify")
         void verifyToken_webSocketThrowsException_shouldStillVerify() throws Exception {
-            User user = new User();
+            final User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
             user.setVerificationToken("valid-token");
@@ -682,7 +682,7 @@ class AuthServiceTest {
             doThrow(new RuntimeException("WebSocket error"))
                     .when(webSocketHandler).sendEmailVerificationNotification("test@test.com");
 
-            ResponseEntity<?> response = authService.verifyToken("valid-token");
+            final ResponseEntity<?> response = authService.verifyToken("valid-token");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertTrue(user.getIsVerified());
@@ -693,14 +693,14 @@ class AuthServiceTest {
         void verifyToken_nullWebSocketHandler_shouldStillVerify() throws Exception {
             ReflectionTestUtils.setField(authService, "webSocketHandler", null);
 
-            User user = new User();
+            final User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
             user.setVerificationToken("valid-token");
 
             when(userRepository.findByVerificationToken("valid-token")).thenReturn(Optional.of(user));
 
-            ResponseEntity<?> response = authService.verifyToken("valid-token");
+            final ResponseEntity<?> response = authService.verifyToken("valid-token");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertTrue(user.getIsVerified());
@@ -711,7 +711,7 @@ class AuthServiceTest {
         void verifyToken_invalidToken_shouldReturnBadRequest() throws Exception {
             when(userRepository.findByVerificationToken("invalid-token")).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = authService.verifyToken("invalid-token");
+            final ResponseEntity<?> response = authService.verifyToken("invalid-token");
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
@@ -728,7 +728,7 @@ class AuthServiceTest {
         void resendVerificationEmail_userNotFound_shouldReturnOkForSecurity() throws Exception {
             when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = authService.resendVerificationEmail("unknown@test.com");
+            final ResponseEntity<?> response = authService.resendVerificationEmail("unknown@test.com");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(emailService, never()).sendVerificationEmail(anyString(), anyString());
@@ -737,13 +737,13 @@ class AuthServiceTest {
         @Test
         @DisplayName("resendVerificationEmail_alreadyVerified_shouldReturnBadRequest")
         void resendVerificationEmail_alreadyVerified_shouldReturnBadRequest() throws Exception {
-            User verifiedUser = new User();
+            final User verifiedUser = new User();
             verifiedUser.setEmail("test@test.com");
             verifiedUser.setIsVerified(true);
 
             when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(verifiedUser));
 
-            ResponseEntity<?> response = authService.resendVerificationEmail("test@test.com");
+            final ResponseEntity<?> response = authService.resendVerificationEmail("test@test.com");
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
@@ -751,13 +751,13 @@ class AuthServiceTest {
         @Test
         @DisplayName("resendVerificationEmail_unverifiedUser_shouldSendEmail")
         void resendVerificationEmail_unverifiedUser_shouldSendEmail() throws Exception {
-            User unverifiedUser = new User();
+            final User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setIsVerified(false);
 
             when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(unverifiedUser));
 
-            ResponseEntity<?> response = authService.resendVerificationEmail("test@test.com");
+            final ResponseEntity<?> response = authService.resendVerificationEmail("test@test.com");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(userRepository).save(unverifiedUser);
@@ -776,11 +776,11 @@ class AuthServiceTest {
         void checkEmailVerificationStatus_userNotFound_shouldReturnFalse() throws Exception {
             when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = authService.checkEmailVerificationStatus("unknown@test.com");
+            final ResponseEntity<?> response = authService.checkEmailVerificationStatus("unknown@test.com");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = (Map<String, Object>) response.getBody();
+            final Map<String, Object> body = (Map<String, Object>) response.getBody();
             assertNotNull(body);
             assertEquals(false, body.get("verified"));
         }
@@ -788,17 +788,17 @@ class AuthServiceTest {
         @Test
         @DisplayName("checkEmailVerificationStatus_verifiedUser_shouldReturnTrue")
         void checkEmailVerificationStatus_verifiedUser_shouldReturnTrue() throws Exception {
-            User verifiedUser = new User();
+            final User verifiedUser = new User();
             verifiedUser.setEmail("test@test.com");
             verifiedUser.setIsVerified(true);
 
             when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(verifiedUser));
 
-            ResponseEntity<?> response = authService.checkEmailVerificationStatus("test@test.com");
+            final ResponseEntity<?> response = authService.checkEmailVerificationStatus("test@test.com");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = (Map<String, Object>) response.getBody();
+            final Map<String, Object> body = (Map<String, Object>) response.getBody();
             assertNotNull(body);
             assertEquals(true, body.get("verified"));
         }
@@ -806,17 +806,17 @@ class AuthServiceTest {
         @Test
         @DisplayName("checkEmailVerificationStatus_unverifiedUser_shouldReturnFalse")
         void checkEmailVerificationStatus_unverifiedUser_shouldReturnFalse() throws Exception {
-            User unverifiedUser = new User();
+            final User unverifiedUser = new User();
             unverifiedUser.setEmail("test@test.com");
             unverifiedUser.setIsVerified(false);
 
             when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(unverifiedUser));
 
-            ResponseEntity<?> response = authService.checkEmailVerificationStatus("test@test.com");
+            final ResponseEntity<?> response = authService.checkEmailVerificationStatus("test@test.com");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = (Map<String, Object>) response.getBody();
+            final Map<String, Object> body = (Map<String, Object>) response.getBody();
             assertNotNull(body);
             assertEquals(false, body.get("verified"));
         }
@@ -831,12 +831,12 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_patientWithRole_shouldReturnLoginResponse")
         void loginV2_patientWithRole_shouldReturnLoginResponse() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
 
-            Patient patient = Patient.builder()
+            final Patient patient = Patient.builder()
                     .id(10L)
                     .firstName("John")
                     .lastName("Doe")
@@ -849,7 +849,7 @@ class AuthServiceTest {
             when(patients.findByUserId(1L)).thenReturn(Optional.of(patient));
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
             assertEquals(1L, response.id());
@@ -864,7 +864,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_caregiverWithRole_shouldReturnLoginResponse")
         void loginV2_caregiverWithRole_shouldReturnLoginResponse() throws Exception {
-            User caregiverUser = new User();
+            final User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
             caregiverUser.setPasswordHash("encodedPassword");
@@ -873,12 +873,12 @@ class AuthServiceTest {
             caregiverUser.setStatus("ACTIVE");
             caregiverUser.setLoginStreak(0);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("caregiver@test.com");
             req.setPassword("password");
             req.setRole("CAREGIVER");
 
-            Caregiver caregiver = Caregiver.builder()
+            final Caregiver caregiver = Caregiver.builder()
                     .id(20L)
                     .firstName("Jane")
                     .lastName("Smith")
@@ -891,7 +891,7 @@ class AuthServiceTest {
             when(caregivers.findByUserId(2L)).thenReturn(Optional.of(caregiver));
             when(jwt.createToken("caregiver@test.com", Role.CAREGIVER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
             assertEquals(20L, response.caregiverId());
@@ -901,7 +901,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_familyMember_shouldReturnLoginResponse")
         void loginV2_familyMember_shouldReturnLoginResponse() throws Exception {
-            User fmUser = new User();
+            final User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
             fmUser.setPasswordHash("encodedPassword");
@@ -910,12 +910,12 @@ class AuthServiceTest {
             fmUser.setStatus("ACTIVE");
             fmUser.setLoginStreak(0);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("family@test.com");
             req.setPassword("password");
             req.setRole("FAMILY_MEMBER");
 
-            FamilyMember fm = FamilyMember.builder()
+            final FamilyMember fm = FamilyMember.builder()
                     .id(30L)
                     .firstName("Bob")
                     .lastName("Family")
@@ -928,7 +928,7 @@ class AuthServiceTest {
             when(familyMembers.findByUser(fmUser)).thenReturn(Optional.of(fm));
             when(jwt.createToken("family@test.com", Role.FAMILY_MEMBER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
             assertEquals("Bob Family", response.name());
@@ -938,7 +938,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_admin_shouldReturnLoginResponse")
         void loginV2_admin_shouldReturnLoginResponse() throws Exception {
-            User adminUser = new User();
+            final User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setEmail("admin@test.com");
             adminUser.setPasswordHash("encodedPassword");
@@ -948,7 +948,7 @@ class AuthServiceTest {
             adminUser.setName("Admin User");
             adminUser.setLoginStreak(0);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("admin@test.com");
             req.setPassword("password");
             req.setRole("ADMIN");
@@ -958,7 +958,7 @@ class AuthServiceTest {
             when(passwordEncoder.matches("password", "encodedPassword")).thenReturn(true);
             when(jwt.createToken("admin@test.com", Role.ADMIN)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
             assertEquals("Admin User", response.name());
@@ -967,7 +967,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_noRoleProvided_shouldFallbackToFindByEmail")
         void loginV2_noRoleProvided_shouldFallbackToFindByEmail() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole(null);
@@ -977,7 +977,7 @@ class AuthServiceTest {
             when(patients.findByUserId(1L)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
             assertEquals("test@test.com", response.email());
@@ -986,7 +986,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_emptyRoleProvided_shouldFallbackToFindByEmail")
         void loginV2_emptyRoleProvided_shouldFallbackToFindByEmail() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("  ");
@@ -996,7 +996,7 @@ class AuthServiceTest {
             when(patients.findByUserId(1L)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNotNull(response);
         }
@@ -1004,7 +1004,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_invalidRole_shouldThrowAuthenticationException")
         void loginV2_invalidRole_shouldThrowAuthenticationException() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("INVALID_ROLE");
@@ -1015,7 +1015,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_wrongPassword_shouldThrowAuthenticationException")
         void loginV2_wrongPassword_shouldThrowAuthenticationException() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("wrongPassword");
             req.setRole("PATIENT");
@@ -1030,14 +1030,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_suspendedAccount_shouldThrowAuthenticationException")
         void loginV2_suspendedAccount_shouldThrowAuthenticationException() throws Exception {
-            User suspendedUser = new User();
+            final User suspendedUser = new User();
             suspendedUser.setId(1L);
             suspendedUser.setEmail("test@test.com");
             suspendedUser.setPasswordHash("encodedPassword");
             suspendedUser.setRole(Role.PATIENT);
             suspendedUser.setStatus("SUSPENDED");
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1052,7 +1052,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_userNotFound_shouldThrowAuthenticationException")
         void loginV2_userNotFound_shouldThrowAuthenticationException() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("unknown@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1069,7 +1069,7 @@ class AuthServiceTest {
             testUser.setLastLoginDate(LocalDate.now().minusDays(1));
             testUser.setLoginStreak(4);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1092,7 +1092,7 @@ class AuthServiceTest {
             testUser.setLastLoginDate(LocalDate.now().minusDays(3));
             testUser.setLoginStreak(4);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1114,7 +1114,7 @@ class AuthServiceTest {
             testUser.setLastLoginDate(null);
             testUser.setLoginStreak(null);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1133,7 +1133,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_patientNotFound_shouldReturnNullPatientId")
         void loginV2_patientNotFound_shouldReturnNullPatientId() throws Exception {
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");
@@ -1144,7 +1144,7 @@ class AuthServiceTest {
             when(patients.findByUserId(1L)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNull(response.patientId());
             assertNull(response.name());
@@ -1153,7 +1153,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_caregiverNotFound_shouldReturnNullCaregiverId")
         void loginV2_caregiverNotFound_shouldReturnNullCaregiverId() throws Exception {
-            User caregiverUser = new User();
+            final User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
             caregiverUser.setPasswordHash("encodedPassword");
@@ -1162,7 +1162,7 @@ class AuthServiceTest {
             caregiverUser.setStatus("ACTIVE");
             caregiverUser.setLoginStreak(0);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("caregiver@test.com");
             req.setPassword("password");
             req.setRole("CAREGIVER");
@@ -1173,7 +1173,7 @@ class AuthServiceTest {
             when(caregivers.findByUserId(2L)).thenReturn(Optional.empty());
             when(jwt.createToken("caregiver@test.com", Role.CAREGIVER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNull(response.caregiverId());
             assertNull(response.name());
@@ -1182,7 +1182,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginV2_familyMemberNotFound_shouldReturnNullName")
         void loginV2_familyMemberNotFound_shouldReturnNullName() throws Exception {
-            User fmUser = new User();
+            final User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
             fmUser.setPasswordHash("encodedPassword");
@@ -1191,7 +1191,7 @@ class AuthServiceTest {
             fmUser.setStatus("ACTIVE");
             fmUser.setLoginStreak(0);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("family@test.com");
             req.setPassword("password");
             req.setRole("FAMILY_MEMBER");
@@ -1202,7 +1202,7 @@ class AuthServiceTest {
             when(familyMembers.findByUser(fmUser)).thenReturn(Optional.empty());
             when(jwt.createToken("family@test.com", Role.FAMILY_MEMBER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginV2(req, httpServletResponse);
+            final LoginResponse response = authService.loginV2(req, httpServletResponse);
 
             assertNull(response.caregiverId());
             assertNull(response.name());
@@ -1218,7 +1218,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_patientUser_shouldReturnLoginResponse")
         void loginOAuth_patientUser_shouldReturnLoginResponse() throws Exception {
-            Patient patient = Patient.builder()
+            final Patient patient = Patient.builder()
                     .id(10L)
                     .firstName("John")
                     .lastName("Doe")
@@ -1229,7 +1229,7 @@ class AuthServiceTest {
             when(patients.findByUser(testUser)).thenReturn(Optional.of(patient));
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("oauth-jwt-token");
 
-            LoginResponse response = authService.loginOAuth("test@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("test@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertEquals(1L, response.id());
@@ -1241,14 +1241,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_caregiverUser_shouldReturnLoginResponse")
         void loginOAuth_caregiverUser_shouldReturnLoginResponse() throws Exception {
-            User caregiverUser = new User();
+            final User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
             caregiverUser.setRole(Role.CAREGIVER);
             caregiverUser.setStatus("ACTIVE");
             caregiverUser.setLoginStreak(0);
 
-            Caregiver caregiver = Caregiver.builder()
+            final Caregiver caregiver = Caregiver.builder()
                     .id(20L)
                     .firstName("Jane")
                     .lastName("Smith")
@@ -1259,7 +1259,7 @@ class AuthServiceTest {
             when(caregivers.findByUser(caregiverUser)).thenReturn(Optional.of(caregiver));
             when(jwt.createToken("caregiver@test.com", Role.CAREGIVER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginOAuth("caregiver@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("caregiver@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertEquals(20L, response.caregiverId());
@@ -1268,14 +1268,14 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_familyMemberUser_shouldReturnLoginResponse")
         void loginOAuth_familyMemberUser_shouldReturnLoginResponse() throws Exception {
-            User fmUser = new User();
+            final User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
             fmUser.setRole(Role.FAMILY_MEMBER);
             fmUser.setStatus("ACTIVE");
             fmUser.setLoginStreak(0);
 
-            FamilyMember fm = FamilyMember.builder()
+            final FamilyMember fm = FamilyMember.builder()
                     .id(30L)
                     .firstName("Bob")
                     .lastName("Family")
@@ -1286,7 +1286,7 @@ class AuthServiceTest {
             when(familyMembers.findByUser(fmUser)).thenReturn(Optional.of(fm));
             when(jwt.createToken("family@test.com", Role.FAMILY_MEMBER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginOAuth("family@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("family@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertEquals("Bob Family", response.name());
@@ -1296,7 +1296,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_adminUser_shouldReturnLoginResponse")
         void loginOAuth_adminUser_shouldReturnLoginResponse() throws Exception {
-            User adminUser = new User();
+            final User adminUser = new User();
             adminUser.setId(4L);
             adminUser.setEmail("admin@test.com");
             adminUser.setRole(Role.ADMIN);
@@ -1307,7 +1307,7 @@ class AuthServiceTest {
             when(users.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
             when(jwt.createToken("admin@test.com", Role.ADMIN)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginOAuth("admin@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("admin@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertEquals("Admin User", response.name());
@@ -1325,7 +1325,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_suspendedUser_shouldThrowAuthenticationException")
         void loginOAuth_suspendedUser_shouldThrowAuthenticationException() throws Exception {
-            User suspendedUser = new User();
+            final User suspendedUser = new User();
             suspendedUser.setId(1L);
             suspendedUser.setEmail("test@test.com");
             suspendedUser.setRole(Role.PATIENT);
@@ -1344,7 +1344,7 @@ class AuthServiceTest {
             when(patients.findByUser(testUser)).thenReturn(Optional.empty());
             when(jwt.createToken("test@test.com", Role.PATIENT)).thenReturn("oauth-jwt-token");
 
-            LoginResponse response = authService.loginOAuth("test@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("test@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertNull(response.patientId());
@@ -1354,7 +1354,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_caregiverNotFound_shouldReturnNullCaregiverIdAndName")
         void loginOAuth_caregiverNotFound_shouldReturnNullCaregiverIdAndName() throws Exception {
-            User caregiverUser = new User();
+            final User caregiverUser = new User();
             caregiverUser.setId(2L);
             caregiverUser.setEmail("caregiver@test.com");
             caregiverUser.setRole(Role.CAREGIVER);
@@ -1365,7 +1365,7 @@ class AuthServiceTest {
             when(caregivers.findByUser(caregiverUser)).thenReturn(Optional.empty());
             when(jwt.createToken("caregiver@test.com", Role.CAREGIVER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginOAuth("caregiver@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("caregiver@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertNull(response.caregiverId());
@@ -1375,7 +1375,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("loginOAuth_familyMemberNotFound_shouldReturnNullCaregiverIdAndName")
         void loginOAuth_familyMemberNotFound_shouldReturnNullCaregiverIdAndName() throws Exception {
-            User fmUser = new User();
+            final User fmUser = new User();
             fmUser.setId(3L);
             fmUser.setEmail("family@test.com");
             fmUser.setRole(Role.FAMILY_MEMBER);
@@ -1386,7 +1386,7 @@ class AuthServiceTest {
             when(familyMembers.findByUser(fmUser)).thenReturn(Optional.empty());
             when(jwt.createToken("family@test.com", Role.FAMILY_MEMBER)).thenReturn("jwt-token");
 
-            LoginResponse response = authService.loginOAuth("family@test.com", httpServletResponse);
+            final LoginResponse response = authService.loginOAuth("family@test.com", httpServletResponse);
 
             assertNotNull(response);
             assertNull(response.caregiverId());
@@ -1482,7 +1482,7 @@ class AuthServiceTest {
             when(passwordEncoder.matches("currentPwd", "encodedPassword")).thenReturn(true);
             when(passwordEncoder.encode("newPwd")).thenReturn("newEncodedPwd");
 
-            ResponseEntity<?> response = authService.changePassword("test@test.com", "currentPwd", "newPwd");
+            final ResponseEntity<?> response = authService.changePassword("test@test.com", "currentPwd", "newPwd");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             verify(userRepository).save(testUser);
@@ -1494,7 +1494,7 @@ class AuthServiceTest {
             when(users.findByEmail("test@test.com")).thenReturn(Optional.of(testUser));
             when(passwordEncoder.matches("wrongPwd", "encodedPassword")).thenReturn(false);
 
-            ResponseEntity<?> response = authService.changePassword("test@test.com", "wrongPwd", "newPwd");
+            final ResponseEntity<?> response = authService.changePassword("test@test.com", "wrongPwd", "newPwd");
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
@@ -1505,7 +1505,7 @@ class AuthServiceTest {
             when(users.findByEmail("unknown@test.com"))
                     .thenThrow(new AuthenticationException("User not found"));
 
-            ResponseEntity<?> response = authService.changePassword("unknown@test.com", "pwd", "newPwd");
+            final ResponseEntity<?> response = authService.changePassword("unknown@test.com", "pwd", "newPwd");
 
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         }
@@ -1534,7 +1534,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("setupPassword_validToken_shouldSetPasswordAndVerify")
         void setupPassword_validToken_shouldSetPasswordAndVerify() throws Exception {
-            User user = new User();
+            final User user = new User();
             user.setEmail("test@test.com");
             user.setIsVerified(false);
             user.setVerificationToken("setup-token");
@@ -1542,7 +1542,7 @@ class AuthServiceTest {
             when(userRepository.findByVerificationToken("setup-token")).thenReturn(Optional.of(user));
             when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
 
-            ResponseEntity<?> response = authService.setupPassword("setup-token", "newPassword");
+            final ResponseEntity<?> response = authService.setupPassword("setup-token", "newPassword");
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertTrue(user.getIsVerified());
@@ -1556,7 +1556,7 @@ class AuthServiceTest {
         void setupPassword_invalidToken_shouldReturnBadRequest() throws Exception {
             when(userRepository.findByVerificationToken("invalid-token")).thenReturn(Optional.empty());
 
-            ResponseEntity<?> response = authService.setupPassword("invalid-token", "newPassword");
+            final ResponseEntity<?> response = authService.setupPassword("invalid-token", "newPassword");
 
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         }
@@ -1571,7 +1571,7 @@ class AuthServiceTest {
         @Test
         @DisplayName("buildGoogleOAuthUrl_shouldReturnFormattedUrl")
         void buildGoogleOAuthUrl_shouldReturnFormattedUrl() throws Exception {
-            String url = authService.buildGoogleOAuthUrl();
+            final String url = authService.buildGoogleOAuthUrl();
 
             assertNotNull(url);
             assertTrue(url.startsWith("https://accounts.google.com/o/oauth2/v2/auth?"));
@@ -1596,7 +1596,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/valid");
 
-            User oauthUser = new User();
+            final User oauthUser = new User();
             oauthUser.setId(100L);
             oauthUser.setEmail("oauth@test.com");
             oauthUser.setRole(Role.PATIENT);
@@ -1607,7 +1607,7 @@ class AuthServiceTest {
             when(patients.findByUser(oauthUser)).thenReturn(Optional.empty());
             when(jwt.createToken("oauth@test.com", Role.PATIENT)).thenReturn("oauth-jwt");
 
-            LoginResponse response = authService.processGoogleOAuth("valid-code", httpServletResponse);
+            final LoginResponse response = authService.processGoogleOAuth("valid-code", httpServletResponse);
 
             assertNotNull(response);
             assertEquals("oauth@test.com", response.email());
@@ -1621,7 +1621,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/no-email");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> authService.processGoogleOAuth("code", httpServletResponse));
             assertEquals("invalid_response", ex.getErrorType());
             assertTrue(ex.getMessage().contains("Unable to retrieve email"));
@@ -1635,7 +1635,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/empty-email");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> authService.processGoogleOAuth("code", httpServletResponse));
             assertEquals("invalid_response", ex.getErrorType());
         }
@@ -1647,7 +1647,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-grant");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> authService.processGoogleOAuth("code", httpServletResponse));
             assertEquals("invalid_grant", ex.getErrorType());
         }
@@ -1664,7 +1664,7 @@ class AuthServiceTest {
             // oauth@test.com user not found triggers AuthenticationException from loginOAuth
             when(users.findByEmail("oauth@test.com")).thenReturn(Optional.empty());
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> authService.processGoogleOAuth("code", httpServletResponse));
             assertEquals("authentication_failed", ex.getErrorType());
         }
@@ -1676,7 +1676,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:1/nonexistent");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> authService.processGoogleOAuth("code", httpServletResponse));
             // The exchangeCodeForToken wraps the connection error as OAuthException("network_error")
             // Then processGoogleOAuth's catch(OAuthException) re-throws it
@@ -1696,7 +1696,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/valid");
 
-            String result = ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code");
+            final String result = ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code");
             assertEquals("fake-access-token", result);
         }
 
@@ -1708,7 +1708,7 @@ class AuthServiceTest {
 
             // The AuthenticationException from inside the try block is caught by catch(Exception e)
             // which wraps it as OAuthException with "network_error"
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("network_error", ex.getErrorType());
         }
@@ -1719,7 +1719,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-grant");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("invalid_grant", ex.getErrorType());
         }
@@ -1730,7 +1730,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-client");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("invalid_client", ex.getErrorType());
         }
@@ -1741,7 +1741,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-invalid-request");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("invalid_request", ex.getErrorType());
         }
@@ -1752,7 +1752,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/400-generic");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("invalid_request", ex.getErrorType());
             assertTrue(ex.getMessage().contains("Bad request"));
@@ -1764,7 +1764,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/401");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("invalid_client", ex.getErrorType());
         }
@@ -1775,7 +1775,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/500");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("network_error", ex.getErrorType());
         }
@@ -1786,7 +1786,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:" + mockServerPort + "/token/403");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("api_error", ex.getErrorType());
         }
@@ -1797,7 +1797,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleTokenUri",
                     "http://localhost:1/token");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "exchangeCodeForToken", "test-code"));
             assertEquals("network_error", ex.getErrorType());
         }
@@ -1815,7 +1815,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/valid");
 
-            Map<String, Object> result = ReflectionTestUtils.invokeMethod(
+            final Map<String, Object> result = ReflectionTestUtils.invokeMethod(
                     authService, "getUserInfoFromGoogle", "fake-token");
 
             assertNotNull(result);
@@ -1828,7 +1828,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/401");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "getUserInfoFromGoogle", "fake-token"));
             assertEquals("invalid_token", ex.getErrorType());
         }
@@ -1839,7 +1839,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/403");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "getUserInfoFromGoogle", "fake-token"));
             assertEquals("invalid_scope", ex.getErrorType());
         }
@@ -1850,7 +1850,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/500");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "getUserInfoFromGoogle", "fake-token"));
             assertEquals("network_error", ex.getErrorType());
         }
@@ -1861,7 +1861,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:" + mockServerPort + "/userinfo/404");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "getUserInfoFromGoogle", "fake-token"));
             assertEquals("api_error", ex.getErrorType());
         }
@@ -1872,7 +1872,7 @@ class AuthServiceTest {
             ReflectionTestUtils.setField(authService, "googleUserInfoUri",
                     "http://localhost:1/userinfo");
 
-            OAuthException ex = assertThrows(OAuthException.class,
+            final OAuthException ex = assertThrows(OAuthException.class,
                     () -> ReflectionTestUtils.invokeMethod(authService, "getUserInfoFromGoogle", "fake-token"));
             assertEquals("network_error", ex.getErrorType());
         }
@@ -1890,7 +1890,7 @@ class AuthServiceTest {
             testUser.setLastLoginDate(LocalDate.now());
             testUser.setLoginStreak(3);
 
-            LoginRequest req = new LoginRequest();
+            final LoginRequest req = new LoginRequest();
             req.setEmail("test@test.com");
             req.setPassword("password");
             req.setRole("PATIENT");

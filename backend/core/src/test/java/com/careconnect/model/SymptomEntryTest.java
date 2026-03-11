@@ -12,7 +12,7 @@ class SymptomEntryTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        SymptomEntry e = new SymptomEntry();
+        final SymptomEntry e = new SymptomEntry();
 
         assertThat(e).isNotNull();
         assertThat(e.getId()).isNull();
@@ -30,7 +30,7 @@ class SymptomEntryTest {
 
     @Test
     void builder_defaults() throws Exception {
-        SymptomEntry e = SymptomEntry.builder()
+        final SymptomEntry e = SymptomEntry.builder()
                 .takenAt(Instant.now())
                 .build();
 
@@ -41,11 +41,11 @@ class SymptomEntryTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        Caregiver caregiver = new Caregiver();
-        Instant now = Instant.now();
+        final Patient patient = new Patient();
+        final Caregiver caregiver = new Caregiver();
+        final Instant now = Instant.now();
 
-        SymptomEntry e = SymptomEntry.builder()
+        final SymptomEntry e = SymptomEntry.builder()
                 .id(1L)
                 .patient(patient)
                 .caregiver(caregiver)
@@ -72,8 +72,8 @@ class SymptomEntryTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        SymptomEntry e = new SymptomEntry();
-        Instant now = Instant.now();
+        final SymptomEntry e = new SymptomEntry();
+        final Instant now = Instant.now();
 
         e.setSymptomKey("cough");
         e.setSymptomValue("severe");

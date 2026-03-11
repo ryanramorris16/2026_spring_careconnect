@@ -15,7 +15,7 @@ class AppExceptionTest {
 
     @Test
     void constructor_setsStatusAndMessage() throws Exception {
-        AppException exception = new AppException(HttpStatus.NOT_FOUND, "Resource not found");
+        final AppException exception = new AppException(HttpStatus.NOT_FOUND, "Resource not found");
 
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(exception.getMessage()).isEqualTo("Resource not found");
@@ -23,7 +23,7 @@ class AppExceptionTest {
 
     @Test
     void constructor_internalServerError_setsCorrectly() throws Exception {
-        AppException exception = new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "Server error");
+        final AppException exception = new AppException(HttpStatus.INTERNAL_SERVER_ERROR, "Server error");
 
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(exception.getMessage()).isEqualTo("Server error");
@@ -31,7 +31,7 @@ class AppExceptionTest {
 
     @Test
     void constructor_unauthorized_setsCorrectly() throws Exception {
-        AppException exception = new AppException(HttpStatus.UNAUTHORIZED, "Access denied");
+        final AppException exception = new AppException(HttpStatus.UNAUTHORIZED, "Access denied");
 
         assertThat(exception.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(exception.getMessage()).isEqualTo("Access denied");
@@ -41,7 +41,7 @@ class AppExceptionTest {
 
     @Test
     void appException_isRuntimeException() throws Exception {
-        AppException exception = new AppException(HttpStatus.BAD_REQUEST, "Bad request");
+        final AppException exception = new AppException(HttpStatus.BAD_REQUEST, "Bad request");
 
         assertThat(exception).isInstanceOf(RuntimeException.class);
     }

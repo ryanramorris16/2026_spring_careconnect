@@ -12,7 +12,7 @@ class ConnectionRequestTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ConnectionRequest req = new ConnectionRequest();
+        final ConnectionRequest req = new ConnectionRequest();
 
         assertThat(req).isNotNull();
         assertThat(req.getId()).isNull();
@@ -30,11 +30,11 @@ class ConnectionRequestTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        User caregiver = new User();
-        User patient = new User();
-        Instant now = Instant.now();
+        final User caregiver = new User();
+        final User patient = new User();
+        final Instant now = Instant.now();
 
-        ConnectionRequest req = ConnectionRequest.builder()
+        final ConnectionRequest req = ConnectionRequest.builder()
                 .id(1L)
                 .caregiver(caregiver)
                 .patient(patient)
@@ -60,10 +60,10 @@ class ConnectionRequestTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ConnectionRequest req = new ConnectionRequest();
-        User caregiver = new User();
-        User patient = new User();
-        Instant now = Instant.now();
+        final ConnectionRequest req = new ConnectionRequest();
+        final User caregiver = new User();
+        final User patient = new User();
+        final Instant now = Instant.now();
 
         req.setId(2L);
         req.setCaregiver(caregiver);

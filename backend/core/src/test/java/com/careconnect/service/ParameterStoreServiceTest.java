@@ -34,14 +34,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("constructor_withSsmClient_createsValidInstance")
     void constructor_withSsmClient_createsValidInstance() throws Exception {
-        ParameterStoreService service = new ParameterStoreService(ssmClient);
+        final ParameterStoreService service = new ParameterStoreService(ssmClient);
         assertNotNull(service);
     }
 
     @Test
     @DisplayName("constructor_withNullSsmClient_createsInstance")
     void constructor_withNullSsmClient_createsInstance() throws Exception {
-        ParameterStoreService service = new ParameterStoreService(null);
+        final ParameterStoreService service = new ParameterStoreService(null);
         assertNotNull(service);
     }
 
@@ -50,14 +50,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_ssmCallSucceedsWithDecryptionTrue_returnsValue")
     void getParameter_ssmCallSucceedsWithDecryptionTrue_returnsValue() throws Exception {
-        String paramName = "/careconnect/db/password";
-        String expectedValue = "super-secret";
+        final String paramName = "/careconnect/db/password";
+        final String expectedValue = "super-secret";
 
-        Parameter parameter = Parameter.builder().value(expectedValue).build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value(expectedValue).build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getParameter(paramName, true);
+        final String result = parameterStoreService.getParameter(paramName, true);
 
         assertEquals(expectedValue, result);
         verify(ssmClient).getParameter(any(GetParameterRequest.class));
@@ -66,14 +66,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_ssmCallSucceedsWithDecryptionFalse_returnsValue")
     void getParameter_ssmCallSucceedsWithDecryptionFalse_returnsValue() throws Exception {
-        String paramName = "/careconnect/app/config";
-        String expectedValue = "plain-text-value";
+        final String paramName = "/careconnect/app/config";
+        final String expectedValue = "plain-text-value";
 
-        Parameter parameter = Parameter.builder().value(expectedValue).build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value(expectedValue).build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getParameter(paramName, false);
+        final String result = parameterStoreService.getParameter(paramName, false);
 
         assertEquals(expectedValue, result);
         verify(ssmClient).getParameter(any(GetParameterRequest.class));
@@ -82,14 +82,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_ssmExceptionThrown_returnsParameterName")
     void getParameter_ssmExceptionThrown_returnsParameterName() throws Exception {
-        String paramName = "/careconnect/missing/param";
+        final String paramName = "/careconnect/missing/param";
 
-        SsmException ssmException = (SsmException) SsmException.builder()
+        final SsmException ssmException = (SsmException) SsmException.builder()
                 .message("Parameter not found")
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenThrow(ssmException);
 
-        String result = parameterStoreService.getParameter(paramName, true);
+        final String result = parameterStoreService.getParameter(paramName, true);
 
         assertEquals(paramName, result);
         verify(ssmClient).getParameter(any(GetParameterRequest.class));
@@ -98,14 +98,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_ssmExceptionThrownWithDecryptionFalse_returnsParameterName")
     void getParameter_ssmExceptionThrownWithDecryptionFalse_returnsParameterName() throws Exception {
-        String paramName = "/careconnect/nonexistent";
+        final String paramName = "/careconnect/nonexistent";
 
-        SsmException ssmException = (SsmException) SsmException.builder()
+        final SsmException ssmException = (SsmException) SsmException.builder()
                 .message("Access denied")
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenThrow(ssmException);
 
-        String result = parameterStoreService.getParameter(paramName, false);
+        final String result = parameterStoreService.getParameter(paramName, false);
 
         assertEquals(paramName, result);
     }
@@ -113,13 +113,13 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_emptyParameterValue_returnsEmptyString")
     void getParameter_emptyParameterValue_returnsEmptyString() throws Exception {
-        String paramName = "/careconnect/empty/param";
+        final String paramName = "/careconnect/empty/param";
 
-        Parameter parameter = Parameter.builder().value("").build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value("").build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getParameter(paramName, false);
+        final String result = parameterStoreService.getParameter(paramName, false);
 
         assertEquals("", result);
     }
@@ -127,14 +127,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getParameter_longParameterValue_returnsFullValue")
     void getParameter_longParameterValue_returnsFullValue() throws Exception {
-        String paramName = "/careconnect/long/param";
-        String longValue = "a".repeat(4096);
+        final String paramName = "/careconnect/long/param";
+        final String longValue = "a".repeat(4096);
 
-        Parameter parameter = Parameter.builder().value(longValue).build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value(longValue).build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getParameter(paramName, true);
+        final String result = parameterStoreService.getParameter(paramName, true);
 
         assertEquals(longValue, result);
         assertEquals(4096, result.length());
@@ -145,14 +145,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getSecureParameter_validParameter_returnsDecryptedValue")
     void getSecureParameter_validParameter_returnsDecryptedValue() throws Exception {
-        String paramName = "/careconnect/secrets/api-key";
-        String expectedValue = "api-key-12345";
+        final String paramName = "/careconnect/secrets/api-key";
+        final String expectedValue = "api-key-12345";
 
-        Parameter parameter = Parameter.builder().value(expectedValue).build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value(expectedValue).build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getSecureParameter(paramName);
+        final String result = parameterStoreService.getSecureParameter(paramName);
 
         assertEquals(expectedValue, result);
         verify(ssmClient).getParameter(any(GetParameterRequest.class));
@@ -161,14 +161,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getSecureParameter_ssmExceptionThrown_returnsParameterName")
     void getSecureParameter_ssmExceptionThrown_returnsParameterName() throws Exception {
-        String paramName = "/careconnect/secrets/missing";
+        final String paramName = "/careconnect/secrets/missing";
 
-        SsmException ssmException = (SsmException) SsmException.builder()
+        final SsmException ssmException = (SsmException) SsmException.builder()
                 .message("Parameter not found")
                 .build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenThrow(ssmException);
 
-        String result = parameterStoreService.getSecureParameter(paramName);
+        final String result = parameterStoreService.getSecureParameter(paramName);
 
         assertEquals(paramName, result);
     }
@@ -176,14 +176,14 @@ class ParameterStoreServiceTest {
     @Test
     @DisplayName("getSecureParameter_delegatesToGetParameterWithDecryptionTrue_verifiedViaRequest")
     void getSecureParameter_delegatesToGetParameterWithDecryptionTrue_verifiedViaRequest() throws Exception {
-        String paramName = "/careconnect/secrets/key";
-        String expectedValue = "decrypted-value";
+        final String paramName = "/careconnect/secrets/key";
+        final String expectedValue = "decrypted-value";
 
-        Parameter parameter = Parameter.builder().value(expectedValue).build();
-        GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
+        final Parameter parameter = Parameter.builder().value(expectedValue).build();
+        final GetParameterResponse response = GetParameterResponse.builder().parameter(parameter).build();
         when(ssmClient.getParameter(any(GetParameterRequest.class))).thenReturn(response);
 
-        String result = parameterStoreService.getSecureParameter(paramName);
+        final String result = parameterStoreService.getSecureParameter(paramName);
 
         assertEquals(expectedValue, result);
         verify(ssmClient, times(1)).getParameter(any(GetParameterRequest.class));

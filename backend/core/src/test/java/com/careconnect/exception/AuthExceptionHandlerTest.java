@@ -21,26 +21,26 @@ class AuthExceptionHandlerTest {
 
     @Test
     void handleAuthenticationException_returns401WithErrorBody() throws Exception {
-        AuthenticationException ex = new AuthenticationException("Invalid credentials");
+        final AuthenticationException ex = new AuthenticationException("Invalid credentials");
 
-        ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
+        final ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody()).isInstanceOf(Map.class);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).containsEntry("error", "Invalid credentials");
     }
 
     @Test
     void handleAuthenticationException_differentMessage_returnsCorrectBody() throws Exception {
-        AuthenticationException ex = new AuthenticationException("Token expired");
+        final AuthenticationException ex = new AuthenticationException("Token expired");
 
-        ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
+        final ResponseEntity<Object> response = handler.handleAuthenticationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).containsEntry("error", "Token expired");
     }
 
@@ -48,26 +48,26 @@ class AuthExceptionHandlerTest {
 
     @Test
     void handleRegistrationException_returns409WithErrorBody() throws Exception {
-        RegistrationException ex = new RegistrationException("Email already in use");
+        final RegistrationException ex = new RegistrationException("Email already in use");
 
-        ResponseEntity<Object> response = handler.handleRegistrationException(ex);
+        final ResponseEntity<Object> response = handler.handleRegistrationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isInstanceOf(Map.class);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).containsEntry("error", "Email already in use");
     }
 
     @Test
     void handleRegistrationException_differentMessage_returnsCorrectBody() throws Exception {
-        RegistrationException ex = new RegistrationException("Username taken");
+        final RegistrationException ex = new RegistrationException("Username taken");
 
-        ResponseEntity<Object> response = handler.handleRegistrationException(ex);
+        final ResponseEntity<Object> response = handler.handleRegistrationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         @SuppressWarnings("unchecked")
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body).containsEntry("error", "Username taken");
     }
 }

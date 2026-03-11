@@ -18,7 +18,7 @@ class UserTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        User user = new User();
+        final User user = new User();
 
         assertThat(user).isNotNull();
         assertThat(user.getId()).isNull();
@@ -29,10 +29,10 @@ class UserTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        LocalDate today = LocalDate.now();
+        final Timestamp now = new Timestamp(System.currentTimeMillis());
+        final LocalDate today = LocalDate.now();
 
-        User user = User.builder()
+        final User user = User.builder()
                 .id(1L)
                 .name("Alice Smith")
                 .email("alice@example.com")
@@ -71,7 +71,7 @@ class UserTest {
 
     @Test
     void builder_defaults_areApplied() throws Exception {
-        User user = User.builder()
+        final User user = User.builder()
                 .email("test@example.com")
                 .password("pass")
                 .role(Role.CAREGIVER)
@@ -87,7 +87,7 @@ class UserTest {
 
     @Test
     void isActive_statusACTIVE_returnsTrue() throws Exception {
-        User user = User.builder()
+        final User user = User.builder()
                 .email("a@b.com")
                 .password("pass")
                 .role(Role.ADMIN)
@@ -99,7 +99,7 @@ class UserTest {
 
     @Test
     void isActive_statusActiveLowercase_returnsTrue() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setStatus("active");
 
         assertThat(user.isActive()).isTrue();
@@ -107,7 +107,7 @@ class UserTest {
 
     @Test
     void isActive_statusInactive_returnsFalse() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setStatus("INACTIVE");
 
         assertThat(user.isActive()).isFalse();
@@ -117,8 +117,8 @@ class UserTest {
 
     @Test
     void setters_updateAllFields() throws Exception {
-        LocalDate today = LocalDate.now();
-        User user = new User();
+        final LocalDate today = LocalDate.now();
+        final User user = new User();
 
         user.setId(99L);
         user.setName("Bob");
@@ -155,8 +155,8 @@ class UserTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
-        User u2 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
+        final User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
+        final User u2 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
 
         assertThat(u1).isEqualTo(u2);
         assertThat(u1.hashCode()).isEqualTo(u2.hashCode());
@@ -164,21 +164,21 @@ class UserTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
-        User u2 = User.builder().id(2L).email("c@d.com").password("pw").role(Role.ADMIN).build();
+        final User u1 = User.builder().id(1L).email("a@b.com").password("pw").role(Role.PATIENT).build();
+        final User u2 = User.builder().id(2L).email("c@d.com").password("pw").role(Role.ADMIN).build();
 
         assertThat(u1).isNotEqualTo(u2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        User user = new User();
+        final User user = new User();
         assertThat(user).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        User user = new User();
+        final User user = new User();
         assertThat(user).isNotEqualTo("a string");
     }
 
@@ -186,14 +186,14 @@ class UserTest {
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        User user = User.builder()
+        final User user = User.builder()
                 .id(42L)
                 .email("check@example.com")
                 .password("pw")
                 .role(Role.CAREGIVER)
                 .build();
 
-        String str = user.toString();
+        final String str = user.toString();
         assertThat(str).contains("42");
         assertThat(str).contains("check@example.com");
     }

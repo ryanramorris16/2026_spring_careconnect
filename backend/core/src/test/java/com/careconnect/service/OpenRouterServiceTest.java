@@ -170,7 +170,7 @@ class OpenRouterServiceTest {
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
                 (mock, ctx) -> when(mock.postForEntity(anyString(), any(), eq(String.class)))
                         .thenReturn(ResponseEntity.ok(VALID_JSON)))) {
-            OpenRouterService.OpenRouterResponse result = service.sendChatRequest(basicRequest());
+            final OpenRouterService.OpenRouterResponse result = service.sendChatRequest(basicRequest());
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("r1");
             assertThat(result.getObject()).isEqualTo("chat.completion");
@@ -227,7 +227,7 @@ class OpenRouterServiceTest {
     void sendChatRequest_nonSuccessStatus_throwsApiErrorOpenRouterException() throws Exception {
         setApiKey("test-key");
         setApiUrl("https://openrouter.ai/api/v1");
-        ResponseEntity<String> serverError =
+        final ResponseEntity<String> serverError =
                 ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Error");
         try (MockedConstruction<RestTemplate> mc = Mockito.mockConstruction(RestTemplate.class,
                 (mock, ctx) -> when(mock.postForEntity(anyString(), any(), eq(String.class)))
@@ -297,7 +297,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("No-arg constructor creates instance with defaults")
         void noArgConstructor_createsInstance() throws Exception {
-            OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
+            final OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
             assertThat(req.getModel()).isNull();
             assertThat(req.getMessages()).isNull();
             assertThat(req.getTemperature()).isNull();
@@ -308,8 +308,8 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Parameterized constructor sets all fields")
         void parameterizedConstructor_setsFields() throws Exception {
-            List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("user", "hi"));
-            OpenRouterService.OpenRouterChatRequest req =
+            final List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("user", "hi"));
+            final OpenRouterService.OpenRouterChatRequest req =
                     new OpenRouterService.OpenRouterChatRequest("model-x", msgs, 0.5, 200);
             assertThat(req.getModel()).isEqualTo("model-x");
             assertThat(req.getMessages()).isEqualTo(msgs);
@@ -321,8 +321,8 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Setters update all fields")
         void setters_updateAllFields() throws Exception {
-            OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
-            List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("system", "you are helpful"));
+            final OpenRouterService.OpenRouterChatRequest req = new OpenRouterService.OpenRouterChatRequest();
+            final List<OpenRouterService.Message> msgs = List.of(new OpenRouterService.Message("system", "you are helpful"));
 
             req.setModel("new-model");
             req.setMessages(msgs);
@@ -349,7 +349,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("No-arg constructor creates instance with null fields")
         void noArgConstructor_createsInstance() throws Exception {
-            OpenRouterService.Message msg = new OpenRouterService.Message();
+            final OpenRouterService.Message msg = new OpenRouterService.Message();
             assertThat(msg.getRole()).isNull();
             assertThat(msg.getContent()).isNull();
         }
@@ -357,7 +357,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Parameterized constructor sets role and content")
         void parameterizedConstructor_setsFields() throws Exception {
-            OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "Hello!");
+            final OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "Hello!");
             assertThat(msg.getRole()).isEqualTo("assistant");
             assertThat(msg.getContent()).isEqualTo("Hello!");
         }
@@ -365,7 +365,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Setters update role and content")
         void setters_updateFields() throws Exception {
-            OpenRouterService.Message msg = new OpenRouterService.Message();
+            final OpenRouterService.Message msg = new OpenRouterService.Message();
             msg.setRole("system");
             msg.setContent("You are a helpful assistant");
             assertThat(msg.getRole()).isEqualTo("system");
@@ -384,21 +384,21 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Getters and setters work for all fields")
         void gettersAndSetters_workForAllFields() throws Exception {
-            OpenRouterService.OpenRouterResponse response = new OpenRouterService.OpenRouterResponse();
+            final OpenRouterService.OpenRouterResponse response = new OpenRouterService.OpenRouterResponse();
 
             response.setId("resp-1");
             response.setObject("chat.completion");
             response.setCreated(123456789L);
             response.setModel("gpt-4");
 
-            OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "hi");
-            OpenRouterService.Choice choice = new OpenRouterService.Choice();
+            final OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "hi");
+            final OpenRouterService.Choice choice = new OpenRouterService.Choice();
             choice.setIndex(0);
             choice.setMessage(msg);
             choice.setFinishReason("stop");
             response.setChoices(List.of(choice));
 
-            OpenRouterService.Usage usage = new OpenRouterService.Usage();
+            final OpenRouterService.Usage usage = new OpenRouterService.Usage();
             usage.setPromptTokens(10);
             usage.setCompletionTokens(20);
             usage.setTotalTokens(30);
@@ -426,8 +426,8 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Getters and setters work for all fields")
         void gettersAndSetters_workForAllFields() throws Exception {
-            OpenRouterService.Choice choice = new OpenRouterService.Choice();
-            OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "response");
+            final OpenRouterService.Choice choice = new OpenRouterService.Choice();
+            final OpenRouterService.Message msg = new OpenRouterService.Message("assistant", "response");
 
             choice.setIndex(2);
             choice.setMessage(msg);
@@ -450,7 +450,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Getters and setters work for all fields")
         void gettersAndSetters_workForAllFields() throws Exception {
-            OpenRouterService.Usage usage = new OpenRouterService.Usage();
+            final OpenRouterService.Usage usage = new OpenRouterService.Usage();
 
             usage.setPromptTokens(100);
             usage.setCompletionTokens(200);
@@ -477,8 +477,8 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Constructor sets message and cause")
         void constructor_setsMessageAndCause() throws Exception {
-            RuntimeException cause = new RuntimeException("root cause");
-            OpenRouterService.OpenRouterException ex =
+            final RuntimeException cause = new RuntimeException("root cause");
+            final OpenRouterService.OpenRouterException ex =
                     new OpenRouterService.OpenRouterException("something failed", cause);
             assertThat(ex.getMessage()).isEqualTo("something failed");
             assertThat(ex.getCause()).isEqualTo(cause);
@@ -487,7 +487,7 @@ class OpenRouterServiceTest {
         @Test
         @DisplayName("Constructor accepts null cause")
         void constructor_acceptsNullCause() throws Exception {
-            OpenRouterService.OpenRouterException ex =
+            final OpenRouterService.OpenRouterException ex =
                     new OpenRouterService.OpenRouterException("no cause", null);
             assertThat(ex.getMessage()).isEqualTo("no cause");
             assertThat(ex.getCause()).isNull();

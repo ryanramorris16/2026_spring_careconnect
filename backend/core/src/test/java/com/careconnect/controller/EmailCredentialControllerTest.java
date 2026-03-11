@@ -38,7 +38,7 @@ class EmailCredentialControllerTest {
     // ── shared helpers ────────────────────────────────────────────────────────
 
     private EmailCredential credentialWithToken(String accessToken) {
-        EmailCredential cred = new EmailCredential();
+        final EmailCredential cred = new EmailCredential();
         cred.setUserId(USER_ID);
         cred.setProvider(EmailCredential.Provider.GMAIL);
         cred.setAccessTokenEnc(accessToken);
@@ -52,11 +52,11 @@ class EmailCredentialControllerTest {
 
         @Test
         void returnsTrue_whenCredentialExistsWithValidAccessToken() throws Exception {
-            EmailCredential cred = credentialWithToken("valid-token");
+            final EmailCredential cred = credentialWithToken("valid-token");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isTrue();
@@ -67,7 +67,7 @@ class EmailCredentialControllerTest {
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isFalse();
@@ -75,11 +75,11 @@ class EmailCredentialControllerTest {
 
         @Test
         void returnsFalse_whenAccessTokenIsNull() throws Exception {
-            EmailCredential cred = credentialWithToken(null);
+            final EmailCredential cred = credentialWithToken(null);
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isFalse();
@@ -87,11 +87,11 @@ class EmailCredentialControllerTest {
 
         @Test
         void returnsFalse_whenAccessTokenIsEmpty() throws Exception {
-            EmailCredential cred = credentialWithToken("");
+            final EmailCredential cred = credentialWithToken("");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isFalse();
@@ -112,7 +112,7 @@ class EmailCredentialControllerTest {
 
         @Test
         void passesUserIdToRepository() throws Exception {
-            String specificUserId = "specific-user-456";
+            final String specificUserId = "specific-user-456";
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(specificUserId, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 
@@ -124,11 +124,11 @@ class EmailCredentialControllerTest {
         @Test
         void returnsTrue_whenAccessTokenIsWhitespace() throws Exception {
             // Whitespace is non-empty, so the filter passes and result is true
-            EmailCredential cred = credentialWithToken("   ");
+            final EmailCredential cred = credentialWithToken("   ");
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.of(cred));
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isTrue();
@@ -139,7 +139,7 @@ class EmailCredentialControllerTest {
             when(credRepo.findFirstByUserIdAndProviderOrderByIdDesc(USER_ID, EmailCredential.Provider.GMAIL))
                     .thenReturn(Optional.empty());
 
-            ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
+            final ResponseEntity<Boolean> response = controller.getConnectionStatus(USER_ID);
 
             assertThat(response.getBody()).isNotNull();
         }

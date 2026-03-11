@@ -10,7 +10,7 @@ class PatientInfoTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        PatientInfo patient = PatientInfo.builder()
+        final PatientInfo patient = PatientInfo.builder()
                 .name("Jane Doe")
                 .address("789 Elm St, Boston, MA")
                 .accountNumber("ACC-001")
@@ -25,7 +25,7 @@ class PatientInfoTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        PatientInfo patient = PatientInfo.builder().build();
+        final PatientInfo patient = PatientInfo.builder().build();
 
         assertThat(patient.getName()).isNull();
         assertThat(patient.getAddress()).isNull();
@@ -37,7 +37,7 @@ class PatientInfoTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PatientInfo patient = PatientInfo.builder().build();
+        final PatientInfo patient = PatientInfo.builder().build();
 
         patient.setName("John Smith");
         patient.setAddress("100 Oak Rd");
@@ -54,8 +54,8 @@ class PatientInfoTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        PatientInfo p1 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
-        PatientInfo p2 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
+        final PatientInfo p1 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
+        final PatientInfo p2 = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
 
         assertThat(p1).isEqualTo(p2);
         assertThat(p1.hashCode()).isEqualTo(p2.hashCode());
@@ -63,15 +63,15 @@ class PatientInfoTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        PatientInfo p1 = PatientInfo.builder().name("Jane Doe").build();
-        PatientInfo p2 = PatientInfo.builder().name("John Smith").build();
+        final PatientInfo p1 = PatientInfo.builder().name("Jane Doe").build();
+        final PatientInfo p2 = PatientInfo.builder().name("John Smith").build();
 
         assertThat(p1).isNotEqualTo(p2);
     }
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        PatientInfo patient = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
+        final PatientInfo patient = PatientInfo.builder().name("Jane Doe").accountNumber("ACC-001").build();
 
         assertThat(patient.toString()).contains("Jane Doe");
         assertThat(patient.toString()).contains("ACC-001");

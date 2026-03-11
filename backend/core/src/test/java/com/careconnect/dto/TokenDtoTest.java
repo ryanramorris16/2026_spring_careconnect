@@ -13,14 +13,14 @@ class TokenDtoTest {
 
     @Test
     void constructor_setsToken() throws Exception {
-        TokenDto dto = new TokenDto("jwt-token-abc");
+        final TokenDto dto = new TokenDto("jwt-token-abc");
 
         assertThat(dto.getToken()).isEqualTo("jwt-token-abc");
     }
 
     @Test
     void constructor_nullToken_setsNullToken() throws Exception {
-        TokenDto dto = new TokenDto(null);
+        final TokenDto dto = new TokenDto(null);
 
         assertThat(dto.getToken()).isNull();
     }
@@ -29,14 +29,14 @@ class TokenDtoTest {
 
     @Test
     void setToken_getToken_roundTrips() throws Exception {
-        TokenDto dto = new TokenDto("initial-token");
+        final TokenDto dto = new TokenDto("initial-token");
         dto.setToken("updated-token");
         assertThat(dto.getToken()).isEqualTo("updated-token");
     }
 
     @Test
     void setToken_null_returnsNull() throws Exception {
-        TokenDto dto = new TokenDto("some-token");
+        final TokenDto dto = new TokenDto("some-token");
         dto.setToken(null);
         assertThat(dto.getToken()).isNull();
     }

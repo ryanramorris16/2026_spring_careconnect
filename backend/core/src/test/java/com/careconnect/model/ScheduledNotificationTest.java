@@ -12,7 +12,7 @@ class ScheduledNotificationTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ScheduledNotification n = new ScheduledNotification();
+        final ScheduledNotification n = new ScheduledNotification();
 
         assertThat(n).isNotNull();
         assertThat(n.getId()).isNull();
@@ -29,7 +29,7 @@ class ScheduledNotificationTest {
 
     @Test
     void builder_defaults() throws Exception {
-        ScheduledNotification n = ScheduledNotification.builder()
+        final ScheduledNotification n = ScheduledNotification.builder()
                 .receiverId(1L)
                 .title("Test")
                 .body("Body text")
@@ -46,10 +46,10 @@ class ScheduledNotificationTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        Task task = new Task();
+        final LocalDateTime now = LocalDateTime.now();
+        final Task task = new Task();
 
-        ScheduledNotification n = ScheduledNotification.builder()
+        final ScheduledNotification n = ScheduledNotification.builder()
                 .id(1L)
                 .receiverId(10L)
                 .title("Medication Reminder")
@@ -81,9 +81,9 @@ class ScheduledNotificationTest {
 
     @Test
     void setLastUpdate_refreshesUpdatedAt() throws Exception {
-        ScheduledNotification n = new ScheduledNotification();
+        final ScheduledNotification n = new ScheduledNotification();
         n.setUpdatedAt(LocalDateTime.now().minusDays(1));
-        LocalDateTime before = n.getUpdatedAt();
+        final LocalDateTime before = n.getUpdatedAt();
 
         n.setLastUpdate();
 
@@ -94,10 +94,10 @@ class ScheduledNotificationTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        ScheduledNotification n1 = ScheduledNotification.builder()
+        final LocalDateTime now = LocalDateTime.now();
+        final ScheduledNotification n1 = ScheduledNotification.builder()
                 .id(1L).title("Test").status("PENDING").createdAt(now).updatedAt(now).build();
-        ScheduledNotification n2 = ScheduledNotification.builder()
+        final ScheduledNotification n2 = ScheduledNotification.builder()
                 .id(1L).title("Test").status("PENDING").createdAt(now).updatedAt(now).build();
 
         assertThat(n1).isEqualTo(n2);

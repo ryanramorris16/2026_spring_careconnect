@@ -49,7 +49,7 @@ class ChatMemoryFactoryTest {
     void createChatMemory_useDatabaseTrueWithAiConfigLimit_shouldReturnDatabaseChatMemory() throws Exception {
         aiConfig.setConversationHistoryLimit(25);
 
-        ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, true);
+        final ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, true);
 
         assertNotNull(result);
         assertInstanceOf(DatabaseChatMemory.class, result);
@@ -61,7 +61,7 @@ class ChatMemoryFactoryTest {
     void createChatMemory_useDatabaseTrueWithNullAiConfig_shouldUseDefaultMaxMessages() throws Exception {
         when(chatMemoryConfig.getDefaultMaxMessages()).thenReturn(20);
 
-        ChatMemory result = chatMemoryFactory.createChatMemory(conversation, null, true);
+        final ChatMemory result = chatMemoryFactory.createChatMemory(conversation, null, true);
 
         assertNotNull(result);
         assertInstanceOf(DatabaseChatMemory.class, result);
@@ -74,7 +74,7 @@ class ChatMemoryFactoryTest {
         aiConfig.setConversationHistoryLimit(null);
         when(chatMemoryConfig.getDefaultMaxMessages()).thenReturn(20);
 
-        ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, true);
+        final ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, true);
 
         assertNotNull(result);
         assertInstanceOf(DatabaseChatMemory.class, result);
@@ -90,7 +90,7 @@ class ChatMemoryFactoryTest {
     void createChatMemory_useDatabaseFalseWithAiConfigLimit_shouldReturnMessageWindowChatMemory() throws Exception {
         aiConfig.setConversationHistoryLimit(10);
 
-        ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, false);
+        final ChatMemory result = chatMemoryFactory.createChatMemory(conversation, aiConfig, false);
 
         assertNotNull(result);
         assertInstanceOf(MessageWindowChatMemory.class, result);
@@ -101,7 +101,7 @@ class ChatMemoryFactoryTest {
     void createChatMemory_useDatabaseFalseWithNullAiConfig_shouldUseDefaultMaxMessages() throws Exception {
         when(chatMemoryConfig.getDefaultMaxMessages()).thenReturn(20);
 
-        ChatMemory result = chatMemoryFactory.createChatMemory(conversation, null, false);
+        final ChatMemory result = chatMemoryFactory.createChatMemory(conversation, null, false);
 
         assertNotNull(result);
         assertInstanceOf(MessageWindowChatMemory.class, result);
@@ -117,7 +117,7 @@ class ChatMemoryFactoryTest {
     void createDatabaseChatMemory_withValidConfig_shouldReturnDatabaseChatMemory() throws Exception {
         aiConfig.setConversationHistoryLimit(30);
 
-        ChatMemory result = chatMemoryFactory.createDatabaseChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createDatabaseChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         assertInstanceOf(DatabaseChatMemory.class, result);
@@ -132,7 +132,7 @@ class ChatMemoryFactoryTest {
     void createInMemoryChatMemory_withValidConfig_shouldReturnMessageWindowChatMemory() throws Exception {
         aiConfig.setConversationHistoryLimit(10);
 
-        ChatMemory result = chatMemoryFactory.createInMemoryChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createInMemoryChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         assertInstanceOf(MessageWindowChatMemory.class, result);
@@ -147,7 +147,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_defaultTimeoutWithLimitBelow15_shouldUseAiConfigLimit() throws Exception {
         aiConfig.setConversationHistoryLimit(10);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -159,7 +159,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_defaultTimeoutWithLimitAbove15_shouldCapAt15() throws Exception {
         aiConfig.setConversationHistoryLimit(50);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -170,7 +170,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_defaultTimeoutWithNullAiConfig_shouldUseDefaultCapped() throws Exception {
         when(chatMemoryConfig.getDefaultMaxMessages()).thenReturn(20);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, null);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, null);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -182,7 +182,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_defaultTimeoutWithLimitExactly15_shouldUse15() throws Exception {
         aiConfig.setConversationHistoryLimit(15);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -197,7 +197,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_customTimeoutWithAiConfigLimit_shouldReturnSessionBased() throws Exception {
         aiConfig.setConversationHistoryLimit(12);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig, 30L);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig, 30L);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -208,7 +208,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_customTimeoutWithLimitAbove15_shouldCapAt15() throws Exception {
         aiConfig.setConversationHistoryLimit(100);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig, 60L);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, aiConfig, 60L);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -219,7 +219,7 @@ class ChatMemoryFactoryTest {
     void createSessionBasedChatMemory_customTimeoutWithNullAiConfig_shouldUseDefaultCapped() throws Exception {
         when(chatMemoryConfig.getDefaultMaxMessages()).thenReturn(20);
 
-        ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, null, 45L);
+        final ChatMemory result = chatMemoryFactory.createSessionBasedChatMemory(conversation, null, 45L);
 
         assertNotNull(result);
         assertInstanceOf(SessionBasedChatMemory.class, result);
@@ -236,7 +236,7 @@ class ChatMemoryFactoryTest {
         aiConfig.setConversationHistoryLimit(42);
 
         // Use createInMemoryChatMemory to indirectly test getMaxMessages
-        ChatMemory result = chatMemoryFactory.createInMemoryChatMemory(conversation, aiConfig);
+        final ChatMemory result = chatMemoryFactory.createInMemoryChatMemory(conversation, aiConfig);
 
         assertNotNull(result);
         // Should NOT have called chatMemoryConfig.getDefaultMaxMessages()

@@ -10,7 +10,7 @@ class ProfessionalInfoTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        ProfessionalInfo info = new ProfessionalInfo();
+        final ProfessionalInfo info = new ProfessionalInfo();
 
         assertThat(info).isNotNull();
         assertThat(info.getLicenseNumber()).isNull();
@@ -22,7 +22,7 @@ class ProfessionalInfoTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        ProfessionalInfo info = new ProfessionalInfo("LIC-12345", "MD", 10);
+        final ProfessionalInfo info = new ProfessionalInfo("LIC-12345", "MD", 10);
 
         assertThat(info.getLicenseNumber()).isEqualTo("LIC-12345");
         assertThat(info.getIssuingState()).isEqualTo("MD");
@@ -33,7 +33,7 @@ class ProfessionalInfoTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        ProfessionalInfo info = ProfessionalInfo.builder()
+        final ProfessionalInfo info = ProfessionalInfo.builder()
                 .licenseNumber("RN-99999")
                 .issuingState("VA")
                 .yearsExperience(5)
@@ -48,7 +48,7 @@ class ProfessionalInfoTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ProfessionalInfo info = new ProfessionalInfo();
+        final ProfessionalInfo info = new ProfessionalInfo();
 
         info.setLicenseNumber("CNA-777");
         info.setIssuingState("DC");

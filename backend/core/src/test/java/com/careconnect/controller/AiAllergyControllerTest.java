@@ -54,7 +54,7 @@ class AiAllergyControllerTest {
     void analyze_familyMember_throwsUnauthorized() {
         when(securityUtil.resolveCurrentUser()).thenReturn(familyUser);
 
-        AiAllergyDTO.Request request = new AiAllergyDTO.Request();
+        final AiAllergyDTO.Request request = new AiAllergyDTO.Request();
         request.setPatientId(2L);
         request.setText("I'm allergic to peanuts");
 
@@ -68,20 +68,20 @@ class AiAllergyControllerTest {
     void analyze_withPatientId_checksAccess() throws Exception {
         when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
 
-        List<Allergy> allergies = List.of();
+        final List<Allergy> allergies = List.of();
         when(allergyRepository.findActiveAllergiesByPatientId(2L)).thenReturn(allergies);
 
-        AiAllergyDTO.Result result = new AiAllergyDTO.Result();
+        final AiAllergyDTO.Result result = new AiAllergyDTO.Result();
         result.setAllergen("Peanuts");
         result.setReaction("Hives");
         result.setSeverity("SEVERE");
         when(aiAllergyService.analyze(any(), eq(allergies))).thenReturn(result);
 
-        AiAllergyDTO.Request request = new AiAllergyDTO.Request();
+        final AiAllergyDTO.Request request = new AiAllergyDTO.Request();
         request.setPatientId(2L);
         request.setText("I'm allergic to peanuts");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         verify(authorizationService).requirePatientAccess(adminUser, 2L);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -92,17 +92,17 @@ class AiAllergyControllerTest {
     void analyze_withoutPatientId_skipsAccessCheck() throws Exception {
         when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
-        AiAllergyDTO.Result result = new AiAllergyDTO.Result();
+        final AiAllergyDTO.Result result = new AiAllergyDTO.Result();
         result.setAllergen("Dust");
         result.setReaction("Sneezing");
         result.setSeverity("MILD");
         when(aiAllergyService.analyze(any(), eq(List.of()))).thenReturn(result);
 
-        AiAllergyDTO.Request request = new AiAllergyDTO.Request();
+        final AiAllergyDTO.Request request = new AiAllergyDTO.Request();
         request.setPatientId(null);
         request.setText("I sneeze around dust");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         verify(authorizationService, never()).requirePatientAccess(any(), any());
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -114,24 +114,24 @@ class AiAllergyControllerTest {
     void analyze_success_returnsOkWithData() throws Exception {
         when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
 
-        List<Allergy> allergies = List.of();
+        final List<Allergy> allergies = List.of();
         when(allergyRepository.findActiveAllergiesByPatientId(10L)).thenReturn(allergies);
 
-        AiAllergyDTO.Result result = new AiAllergyDTO.Result();
+        final AiAllergyDTO.Result result = new AiAllergyDTO.Result();
         result.setAllergen("Penicillin");
         result.setReaction("Rash");
         result.setSeverity("MODERATE");
         when(aiAllergyService.analyze(any(), eq(allergies))).thenReturn(result);
 
-        AiAllergyDTO.Request request = new AiAllergyDTO.Request();
+        final AiAllergyDTO.Request request = new AiAllergyDTO.Request();
         request.setPatientId(10L);
         request.setText("penicillin gives me a rash");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
-        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> data = (Map<String, Object>) body.get("data");
         assertThat(data.get("allergen")).isEqualTo("Penicillin");
         assertThat(data.get("reaction")).isEqualTo("Rash");
         assertThat(data.get("severity")).isEqualTo("MODERATE");
@@ -144,14 +144,14 @@ class AiAllergyControllerTest {
         when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
         when(aiAllergyService.analyze(any(), eq(List.of()))).thenThrow(new RuntimeException("AI failed"));
 
-        AiAllergyDTO.Request request = new AiAllergyDTO.Request();
+        final AiAllergyDTO.Request request = new AiAllergyDTO.Request();
         request.setPatientId(null);
         request.setText("test");
 
-        ResponseEntity<?> response = controller.analyze(request);
+        final ResponseEntity<?> response = controller.analyze(request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        final Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertThat(body.get("error")).isEqualTo("AI_ANALYZE_FAILED");
         assertThat(body.get("message")).isEqualTo("AI failed");
     }

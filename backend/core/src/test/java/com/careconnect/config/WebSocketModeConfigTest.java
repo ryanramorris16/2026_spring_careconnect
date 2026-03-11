@@ -15,7 +15,8 @@ import static org.mockito.Mockito.when;
  *
  * WebSocketModeConfig produces a {@code "websocketMode"} String bean whose value is
  * either {@code "local"} or {@code "aws"}, determined by whether the environment
- * property {@code AWS_WEBSOCKET_API_ENDPOINT} is set to a non-blank value. This bean
+ * property {@code AWS_WEBSOCKET_API_GATEWAY_ENDPOINT} (or the legacy fallback
+ * {@code AWS_WEBSOCKET_API_ENDPOINT}) is set to a non-blank value. This bean
  * is consumed by other components that need to switch between a local WebSocket server
  * and an AWS API Gateway WebSocket endpoint at runtime.
  *
@@ -41,9 +42,10 @@ class WebSocketModeConfigTest {
     void returnsLocalWhenAwsEndpointPropertyIsNull() throws Exception {
         // Verifies that a null property value (property not set at all) triggers the
         // local mode, which is the expected default for local development environments.
+        when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn(null);
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn(null);
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -52,9 +54,10 @@ class WebSocketModeConfigTest {
     void returnsLocalWhenAwsEndpointPropertyIsEmpty() throws Exception {
         // Verifies that an empty string (property present but empty) also triggers
         // local mode, guarding against misconfigured environments.
+        when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("");
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -63,9 +66,10 @@ class WebSocketModeConfigTest {
     void returnsLocalWhenAwsEndpointPropertyIsBlank() throws Exception {
         // Verifies that a whitespace-only value is also treated as absent,
         // preventing accidental "aws" mode from a property set to spaces.
+        when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("   ");
         when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("   ");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("local", mode);
     }
@@ -75,9 +79,9 @@ class WebSocketModeConfigTest {
         // Verifies that a real AWS API Gateway endpoint URL triggers "aws" mode,
         // which causes the application to route WebSocket traffic to AWS rather than
         // the local server.
-        when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("https://abc123.execute-api.us-east-1.amazonaws.com/prod");
+        when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("https://abc123.execute-api.us-east-1.amazonaws.com/prod");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("aws", mode);
     }
@@ -86,9 +90,9 @@ class WebSocketModeConfigTest {
     void returnsAwsWhenAwsEndpointPropertyIsMinimalNonBlankString() throws Exception {
         // Verifies that any non-blank string (not just a valid AWS URL) triggers "aws"
         // mode, confirming the logic checks for presence/non-blankness only.
-        when(env.getProperty("AWS_WEBSOCKET_API_ENDPOINT")).thenReturn("wss://example.com");
+        when(env.getProperty("AWS_WEBSOCKET_API_GATEWAY_ENDPOINT")).thenReturn("wss://example.com");
 
-        String mode = config.websocketMode(env);
+        final String mode = config.websocketMode(env);
 
         assertEquals("aws", mode);
     }

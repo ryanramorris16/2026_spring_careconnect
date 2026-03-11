@@ -32,7 +32,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isNull();
@@ -47,7 +47,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void allArgsConstructor_setsAllFields() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(
                 1L, 2L, true, false, KEYWORDS, NOW);
 
         assertThat(dto.getId()).isEqualTo(1L);
@@ -69,7 +69,7 @@ class PatientNotetakerConfigDTOTest {
         when(mockConfig.getTriggerKeywords()).thenReturn(KEYWORDS);
         when(mockConfig.getUpdatedAt()).thenReturn(NOW);
 
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(mockConfig);
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(mockConfig);
 
         assertThat(dto.getId()).isEqualTo(10L);
         assertThat(dto.getPatientId()).isEqualTo(20L);
@@ -83,7 +83,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void configConstructor_null_setsAllFieldsToNull() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO((PatientNotetakerConfig) null);
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO((PatientNotetakerConfig) null);
 
         assertThat(dto.getId()).isNull();
         assertThat(dto.getPatientId()).isNull();
@@ -97,7 +97,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
+        final PatientNotetakerConfigDTO dto = PatientNotetakerConfigDTO.builder()
                 .id(5L)
                 .patientId(6L)
                 .isEnabled(false)
@@ -116,7 +116,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void builder_staticMethod_returnsBuilderInstance() throws Exception {
-        PatientNotetakerConfigDTO.PatientNotetakerConfigDTOBuilder builder = PatientNotetakerConfigDTO.builder();
+        final PatientNotetakerConfigDTO.PatientNotetakerConfigDTOBuilder builder = PatientNotetakerConfigDTO.builder();
         assertThat(builder).isNotNull();
     }
 
@@ -124,7 +124,7 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO();
 
         dto.setId(99L);
         dto.setPatientId(100L);
@@ -145,10 +145,10 @@ class PatientNotetakerConfigDTOTest {
 
     @Test
     void toEntity_mapsAllFieldsCorrectly() throws Exception {
-        PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(
+        final PatientNotetakerConfigDTO dto = new PatientNotetakerConfigDTO(
                 3L, 4L, true, false, KEYWORDS, NOW);
 
-        PatientNotetakerConfig entity = dto.toEntity();
+        final PatientNotetakerConfig entity = dto.toEntity();
 
         assertThat(entity.getId()).isEqualTo(3L);
         assertThat(entity.getPatientId()).isEqualTo(4L);

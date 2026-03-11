@@ -14,7 +14,7 @@ class EvvRecordTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
 
         assertThat(r).isNotNull();
         assertThat(r.getId()).isNull();
@@ -37,11 +37,11 @@ class EvvRecordTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Patient patient = new Patient();
-        OffsetDateTime now = OffsetDateTime.now();
-        LocalDate today = LocalDate.now();
+        final Patient patient = new Patient();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final LocalDate today = LocalDate.now();
 
-        EvvRecord r = EvvRecord.builder()
+        final EvvRecord r = EvvRecord.builder()
                 .id(1L)
                 .patient(patient)
                 .serviceType("PERSONAL_CARE")
@@ -83,7 +83,7 @@ class EvvRecordTest {
 
     @Test
     void markUnderReview_setsStatus() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markUnderReview();
@@ -94,7 +94,7 @@ class EvvRecordTest {
 
     @Test
     void markApproved_setsStatus() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markApproved();
@@ -104,7 +104,7 @@ class EvvRecordTest {
 
     @Test
     void markRejected_setsStatus() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markRejected();
@@ -116,7 +116,7 @@ class EvvRecordTest {
 
     @Test
     void markOffline_setsOfflineAndPendingSync() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markOffline();
@@ -127,7 +127,7 @@ class EvvRecordTest {
 
     @Test
     void markSynced_clearsOfflineFlag() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markSynced();
@@ -138,7 +138,7 @@ class EvvRecordTest {
 
     @Test
     void markSyncFailed_setsFailedStatus() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.markSyncFailed();
@@ -151,7 +151,7 @@ class EvvRecordTest {
 
     @Test
     void approveEor_setsApprovalFields() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.approveEor(10L, "Looks good");
@@ -165,7 +165,7 @@ class EvvRecordTest {
 
     @Test
     void correctRecord_setsCorrectionFields() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
         r.setUpdatedAt(OffsetDateTime.now().minusHours(1));
 
         r.correctRecord(5L, "LATE_ENTRY", "Entered late", 42L);
@@ -182,7 +182,7 @@ class EvvRecordTest {
 
     @Test
     void transientLocationFields_setAndGet() throws Exception {
-        EvvRecord r = new EvvRecord();
+        final EvvRecord r = new EvvRecord();
 
         r.setCheckinLocationLat(39.2904);
         r.setCheckinLocationLng(-76.6122);

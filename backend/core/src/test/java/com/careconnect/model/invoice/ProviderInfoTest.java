@@ -10,7 +10,7 @@ class ProviderInfoTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        ProviderInfo provider = ProviderInfo.builder()
+        final ProviderInfo provider = ProviderInfo.builder()
                 .name("Dr. Alice Brown")
                 .address("200 Health Ave, Chicago, IL")
                 .phone("312-555-0100")
@@ -25,7 +25,7 @@ class ProviderInfoTest {
 
     @Test
     void builder_defaults_nullFields() throws Exception {
-        ProviderInfo provider = ProviderInfo.builder().build();
+        final ProviderInfo provider = ProviderInfo.builder().build();
 
         assertThat(provider.getName()).isNull();
         assertThat(provider.getAddress()).isNull();
@@ -37,7 +37,7 @@ class ProviderInfoTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        ProviderInfo provider = new ProviderInfo("Dr. Bob White", "300 Clinic Rd", "800-555-0200", "bwhite@health.org");
+        final ProviderInfo provider = new ProviderInfo("Dr. Bob White", "300 Clinic Rd", "800-555-0200", "bwhite@health.org");
 
         assertThat(provider.getName()).isEqualTo("Dr. Bob White");
         assertThat(provider.getAddress()).isEqualTo("300 Clinic Rd");
@@ -49,7 +49,7 @@ class ProviderInfoTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        ProviderInfo provider = ProviderInfo.builder().build();
+        final ProviderInfo provider = ProviderInfo.builder().build();
 
         provider.setName("Dr. Carol Green");
         provider.setAddress("500 Wellness Blvd");
@@ -66,8 +66,8 @@ class ProviderInfoTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
-        ProviderInfo p2 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
+        final ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
+        final ProviderInfo p2 = ProviderInfo.builder().name("Dr. X").phone("555-0000").build();
 
         assertThat(p1).isEqualTo(p2);
         assertThat(p1.hashCode()).isEqualTo(p2.hashCode());
@@ -75,8 +75,8 @@ class ProviderInfoTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").build();
-        ProviderInfo p2 = ProviderInfo.builder().name("Dr. Y").build();
+        final ProviderInfo p1 = ProviderInfo.builder().name("Dr. X").build();
+        final ProviderInfo p2 = ProviderInfo.builder().name("Dr. Y").build();
 
         assertThat(p1).isNotEqualTo(p2);
     }

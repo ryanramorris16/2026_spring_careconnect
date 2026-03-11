@@ -20,7 +20,7 @@ class AllergyTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
 
         assertThat(allergy).isNotNull();
         assertThat(allergy.getId()).isNull();
@@ -36,8 +36,8 @@ class AllergyTest {
 
     @Test
     void allArgsConstructor_setsAllFields() throws Exception {
-        Instant now = Instant.now();
-        Allergy allergy = new Allergy(
+        final Instant now = Instant.now();
+        final Allergy allergy = new Allergy(
                 1L, patient, "Peanuts",
                 Allergy.AllergyType.FOOD, Allergy.AllergySeverity.MILD,
                 "Hives", "Avoid peanuts", "2020-01-01",
@@ -60,7 +60,7 @@ class AllergyTest {
 
     @Test
     void builder_defaults_isActiveTrue() throws Exception {
-        Allergy allergy = Allergy.builder()
+        final Allergy allergy = Allergy.builder()
                 .allergen("Peanuts")
                 .allergyType(Allergy.AllergyType.FOOD)
                 .build();
@@ -72,9 +72,9 @@ class AllergyTest {
 
     @Test
     void builder_allFields_setsCorrectly() throws Exception {
-        Instant now = Instant.now();
+        final Instant now = Instant.now();
 
-        Allergy allergy = Allergy.builder()
+        final Allergy allergy = Allergy.builder()
                 .id(1L)
                 .allergen("Penicillin")
                 .allergyType(Allergy.AllergyType.MEDICATION)
@@ -103,8 +103,8 @@ class AllergyTest {
 
     @Test
     void lombokSetters_idPatientTimestamps() throws Exception {
-        Instant now = Instant.now();
-        Allergy allergy = new Allergy();
+        final Instant now = Instant.now();
+        final Allergy allergy = new Allergy();
 
         allergy.setId(99L);
         allergy.setPatient(patient);
@@ -119,7 +119,7 @@ class AllergyTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
 
         allergy.setAllergen("Shellfish");
         allergy.setAllergyType(Allergy.AllergyType.FOOD);
@@ -142,7 +142,7 @@ class AllergyTest {
 
     @Test
     void toString_containsAllergenField() throws Exception {
-        Allergy allergy = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
+        final Allergy allergy = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
         assertThat(allergy.toString()).isNotNull().contains("Peanuts");
     }
 
@@ -150,9 +150,9 @@ class AllergyTest {
 
     @Test
     void onCreate_setsCreatedAtAndUpdatedAt() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
 
-        Method m = Allergy.class.getDeclaredMethod("onCreate");
+        final Method m = Allergy.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(allergy);
 
@@ -162,11 +162,11 @@ class AllergyTest {
 
     @Test
     void onCreate_isActiveNull_setsToTrue() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
         allergy.setIsActive(null);   // reset the @Builder.Default true so we can test the null→true branch
         assertThat(allergy.getIsActive()).isNull();
 
-        Method m = Allergy.class.getDeclaredMethod("onCreate");
+        final Method m = Allergy.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(allergy);
 
@@ -175,10 +175,10 @@ class AllergyTest {
 
     @Test
     void onCreate_isActiveNotNull_doesNotOverride() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
         allergy.setIsActive(false);
 
-        Method m = Allergy.class.getDeclaredMethod("onCreate");
+        final Method m = Allergy.class.getDeclaredMethod("onCreate");
         m.setAccessible(true);
         m.invoke(allergy);
 
@@ -189,9 +189,9 @@ class AllergyTest {
 
     @Test
     void onUpdate_setsUpdatedAt() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
 
-        Method m = Allergy.class.getDeclaredMethod("onUpdate");
+        final Method m = Allergy.class.getDeclaredMethod("onUpdate");
         m.setAccessible(true);
         m.invoke(allergy);
 
@@ -312,8 +312,8 @@ class AllergyTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
-        Allergy a2 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
+        final Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
+        final Allergy a2 = Allergy.builder().id(1L).allergen("Peanuts").allergyType(Allergy.AllergyType.FOOD).build();
 
         assertThat(a1).isEqualTo(a2);
         assertThat(a1.hashCode()).isEqualTo(a2.hashCode());
@@ -321,27 +321,27 @@ class AllergyTest {
 
     @Test
     void equals_sameReference_returnsTrue() throws Exception {
-        Allergy a = Allergy.builder().id(1L).build();
+        final Allergy a = Allergy.builder().id(1L).build();
         assertThat(a).isEqualTo(a);
     }
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").build();
-        Allergy a2 = Allergy.builder().id(2L).allergen("Shellfish").build();
+        final Allergy a1 = Allergy.builder().id(1L).allergen("Peanuts").build();
+        final Allergy a2 = Allergy.builder().id(2L).allergen("Shellfish").build();
 
         assertThat(a1).isNotEqualTo(a2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
         assertThat(allergy).isNotEqualTo(null);
     }
 
     @Test
     void equals_differentType_returnsFalse() throws Exception {
-        Allergy allergy = new Allergy();
+        final Allergy allergy = new Allergy();
         assertThat(allergy).isNotEqualTo("a string");
     }
 }

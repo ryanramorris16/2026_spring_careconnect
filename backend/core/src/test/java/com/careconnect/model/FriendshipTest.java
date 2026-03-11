@@ -10,7 +10,7 @@ class FriendshipTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        Friendship friendship = new Friendship();
+        final Friendship friendship = new Friendship();
 
         assertThat(friendship).isNotNull();
         assertThat(friendship.getId()).isNull();
@@ -23,10 +23,10 @@ class FriendshipTest {
 
     @Test
     void allArgConstructor_setsAllFields() throws Exception {
-        User user1 = User.builder().id(1L).name("Alice").build();
-        User user2 = User.builder().id(2L).name("Bob").build();
+        final User user1 = User.builder().id(1L).name("Alice").build();
+        final User user2 = User.builder().id(2L).name("Bob").build();
 
-        Friendship friendship = new Friendship(10L, user1, user2, "CONFIRMED");
+        final Friendship friendship = new Friendship(10L, user1, user2, "CONFIRMED");
 
         assertThat(friendship.getId()).isEqualTo(10L);
         assertThat(friendship.getUser1()).isSameAs(user1);
@@ -38,10 +38,10 @@ class FriendshipTest {
 
     @Test
     void builder_setsFields() throws Exception {
-        User user1 = User.builder().id(3L).build();
-        User user2 = User.builder().id(4L).build();
+        final User user1 = User.builder().id(3L).build();
+        final User user2 = User.builder().id(4L).build();
 
-        Friendship friendship = Friendship.builder()
+        final Friendship friendship = Friendship.builder()
                 .id(5L)
                 .user1(user1)
                 .user2(user2)
@@ -58,9 +58,9 @@ class FriendshipTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        Friendship friendship = new Friendship();
-        User user1 = new User();
-        User user2 = new User();
+        final Friendship friendship = new Friendship();
+        final User user1 = new User();
+        final User user2 = new User();
 
         friendship.setId(20L);
         friendship.setUser1(user1);
@@ -77,8 +77,8 @@ class FriendshipTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        Friendship f1 = Friendship.builder().id(1L).status("CONFIRMED").build();
-        Friendship f2 = Friendship.builder().id(1L).status("CONFIRMED").build();
+        final Friendship f1 = Friendship.builder().id(1L).status("CONFIRMED").build();
+        final Friendship f2 = Friendship.builder().id(1L).status("CONFIRMED").build();
 
         assertThat(f1).isEqualTo(f2);
         assertThat(f1.hashCode()).isEqualTo(f2.hashCode());
@@ -86,8 +86,8 @@ class FriendshipTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        Friendship f1 = Friendship.builder().id(1L).build();
-        Friendship f2 = Friendship.builder().id(2L).build();
+        final Friendship f1 = Friendship.builder().id(1L).build();
+        final Friendship f2 = Friendship.builder().id(2L).build();
 
         assertThat(f1).isNotEqualTo(f2);
     }

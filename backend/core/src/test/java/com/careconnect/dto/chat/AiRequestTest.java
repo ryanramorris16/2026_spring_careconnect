@@ -13,7 +13,7 @@ class AiRequestTest {
 
     @Test
     void constructor_allFields_setsCorrectly() throws Exception {
-        AiRequest request = new AiRequest("system context", "user prompt", "openai");
+        final AiRequest request = new AiRequest("system context", "user prompt", "openai");
 
         assertThat(request.context()).isEqualTo("system context");
         assertThat(request.prompt()).isEqualTo("user prompt");
@@ -22,7 +22,7 @@ class AiRequestTest {
 
     @Test
     void constructor_nullFields_setsNulls() throws Exception {
-        AiRequest request = new AiRequest(null, "prompt only", null);
+        final AiRequest request = new AiRequest(null, "prompt only", null);
 
         assertThat(request.context()).isNull();
         assertThat(request.prompt()).isEqualTo("prompt only");
@@ -33,8 +33,8 @@ class AiRequestTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        AiRequest r1 = new AiRequest("ctx", "ask something", "deepseek");
-        AiRequest r2 = new AiRequest("ctx", "ask something", "deepseek");
+        final AiRequest r1 = new AiRequest("ctx", "ask something", "deepseek");
+        final AiRequest r2 = new AiRequest("ctx", "ask something", "deepseek");
 
         assertThat(r1).isEqualTo(r2);
         assertThat(r1.hashCode()).isEqualTo(r2.hashCode());
@@ -42,15 +42,15 @@ class AiRequestTest {
 
     @Test
     void equals_differentFields_returnsFalse() throws Exception {
-        AiRequest r1 = new AiRequest("ctx1", "prompt1", "openai");
-        AiRequest r2 = new AiRequest("ctx2", "prompt2", "deepseek");
+        final AiRequest r1 = new AiRequest("ctx1", "prompt1", "openai");
+        final AiRequest r2 = new AiRequest("ctx2", "prompt2", "deepseek");
 
         assertThat(r1).isNotEqualTo(r2);
     }
 
     @Test
     void equals_null_returnsFalse() throws Exception {
-        AiRequest request = new AiRequest("ctx", "prompt", "openai");
+        final AiRequest request = new AiRequest("ctx", "prompt", "openai");
         assertThat(request).isNotEqualTo(null);
     }
 
@@ -58,8 +58,8 @@ class AiRequestTest {
 
     @Test
     void toString_containsFieldValues() throws Exception {
-        AiRequest request = new AiRequest("my context", "my prompt", "openai");
-        String str = request.toString();
+        final AiRequest request = new AiRequest("my context", "my prompt", "openai");
+        final String str = request.toString();
 
         assertThat(str).contains("my context");
         assertThat(str).contains("my prompt");
@@ -70,7 +70,7 @@ class AiRequestTest {
 
     @Test
     void analysisResult_constructor_setsFields() throws Exception {
-        AiRequest.AnalysisResult result = new AiRequest.AnalysisResult("raw text content", "s3/key/path");
+        final AiRequest.AnalysisResult result = new AiRequest.AnalysisResult("raw text content", "s3/key/path");
 
         assertThat(result.rawText).isEqualTo("raw text content");
         assertThat(result.s3Key).isEqualTo("s3/key/path");
@@ -78,7 +78,7 @@ class AiRequestTest {
 
     @Test
     void analysisResult_constructor_nullFields_setsNulls() throws Exception {
-        AiRequest.AnalysisResult result = new AiRequest.AnalysisResult(null, null);
+        final AiRequest.AnalysisResult result = new AiRequest.AnalysisResult(null, null);
 
         assertThat(result.rawText).isNull();
         assertThat(result.s3Key).isNull();

@@ -10,7 +10,7 @@ class PermissionTest {
 
     @Test
     void defaultConstructor_createsInstance() throws Exception {
-        Permission perm = new Permission();
+        final Permission perm = new Permission();
         assertThat(perm).isNotNull();
         assertThat(perm.getId()).isNull();
         assertThat(perm.getName()).isNull();
@@ -21,7 +21,7 @@ class PermissionTest {
 
     @Test
     void parameterizedConstructor_setsNameAndDescription() throws Exception {
-        Permission perm = new Permission("READ_VITALS", "Allows reading patient vitals");
+        final Permission perm = new Permission("READ_VITALS", "Allows reading patient vitals");
 
         assertThat(perm.getName()).isEqualTo("READ_VITALS");
         assertThat(perm.getDescription()).isEqualTo("Allows reading patient vitals");
@@ -31,7 +31,7 @@ class PermissionTest {
 
     @Test
     void settersAndGetters_updateFields() throws Exception {
-        Permission perm = new Permission();
+        final Permission perm = new Permission();
 
         perm.setId("perm-001");
         perm.setName("WRITE_NOTES");

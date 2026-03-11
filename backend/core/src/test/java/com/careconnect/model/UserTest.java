@@ -14,7 +14,7 @@ class UserTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        User user = new User();
+        final User user = new User();
 
         assertThat(user).isNotNull();
         assertThat(user.getId()).isNull();
@@ -31,7 +31,7 @@ class UserTest {
 
     @Test
     void builder_defaults() throws Exception {
-        User user = User.builder()
+        final User user = User.builder()
                 .email("test@example.com")
                 .password("pass")
                 .role(Role.PATIENT)
@@ -47,10 +47,10 @@ class UserTest {
 
     @Test
     void builder_allFields() throws Exception {
-        Timestamp now = new Timestamp(System.currentTimeMillis());
-        LocalDate today = LocalDate.now();
+        final Timestamp now = new Timestamp(System.currentTimeMillis());
+        final LocalDate today = LocalDate.now();
 
-        User user = User.builder()
+        final User user = User.builder()
                 .id(1L)
                 .name("John Doe")
                 .email("john@example.com")
@@ -88,7 +88,7 @@ class UserTest {
 
     @Test
     void isActive_activeStatus_returnsTrue() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setStatus("ACTIVE");
 
         assertThat(user.isActive()).isTrue();
@@ -96,7 +96,7 @@ class UserTest {
 
     @Test
     void isActive_inactiveStatus_returnsFalse() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setStatus("INACTIVE");
 
         assertThat(user.isActive()).isFalse();
@@ -104,7 +104,7 @@ class UserTest {
 
     @Test
     void isActive_caseInsensitive_returnsTrue() throws Exception {
-        User user = new User();
+        final User user = new User();
         user.setStatus("active");
 
         assertThat(user.isActive()).isTrue();
@@ -114,7 +114,7 @@ class UserTest {
 
     @Test
     void setters_updateFields() throws Exception {
-        User user = new User();
+        final User user = new User();
 
         user.setId(2L);
         user.setName("Jane");

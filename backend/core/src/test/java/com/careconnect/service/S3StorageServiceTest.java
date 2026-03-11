@@ -51,16 +51,16 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("upload_validContent_returnsUrlAndCallsS3")
     void upload_validContent_returnsUrlAndCallsS3() throws Exception {
-        PutObjectResponse response = PutObjectResponse.builder().eTag("etag123").build();
+        final PutObjectResponse response = PutObjectResponse.builder().eTag("etag123").build();
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenReturn(response);
 
-        String result = service.upload("docs/test.pdf", "hello".getBytes(), "application/pdf");
+        final String result = service.upload("docs/test.pdf", "hello".getBytes(), "application/pdf");
 
         assertEquals("https://s3.amazonaws.com/test-bucket/docs/test.pdf", result);
 
-        ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
+        final ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
         verify(s3).putObject(captor.capture(), any(RequestBody.class));
-        PutObjectRequest captured = captor.getValue();
+        final PutObjectRequest captured = captor.getValue();
         assertEquals("test-bucket", captured.bucket());
         assertEquals("docs/test.pdf", captured.key());
         assertEquals("application/pdf", captured.contentType());
@@ -73,7 +73,7 @@ class S3StorageServiceTest {
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenThrow(S3Exception.builder().message("S3 error").build());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.upload("path/file.txt", "data".getBytes(), "text/plain"));
         assertEquals("Failed to upload file to S3", ex.getMessage());
         assertNotNull(ex.getCause());
@@ -84,16 +84,16 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("uploadFile_validFile_returnsFullPath")
     void uploadFile_validFile_returnsFullPath() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
+        final MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("report.pdf");
         when(file.getSize()).thenReturn(1024L);
         when(file.getContentType()).thenReturn("application/pdf");
         when(file.getInputStream()).thenReturn(new ByteArrayInputStream("data".getBytes()));
 
-        PutObjectResponse response = PutObjectResponse.builder().eTag("etag").versionId("v1").build();
+        final PutObjectResponse response = PutObjectResponse.builder().eTag("etag").versionId("v1").build();
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenReturn(response);
 
-        String result = service.uploadFile(file, 42L, "Patient", "medical");
+        final String result = service.uploadFile(file, 42L, "Patient", "medical");
 
         assertEquals("patient_42/medical/report.pdf", result);
         verify(s3).putObject(any(PutObjectRequest.class), any(RequestBody.class));
@@ -102,13 +102,13 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("uploadFile_ioException_throwsRuntimeException")
     void uploadFile_ioException_throwsRuntimeException() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
+        final MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("file.txt");
         when(file.getSize()).thenReturn(100L);
         when(file.getContentType()).thenReturn("text/plain");
         when(file.getInputStream()).thenThrow(new IOException("IO failure"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.uploadFile(file, 1L, "Provider", "notes"));
         assertEquals("Failed to upload file - IO Error", ex.getMessage());
         assertInstanceOf(IOException.class, ex.getCause());
@@ -117,7 +117,7 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("uploadFile_genericException_throwsRuntimeExceptionWithMessage")
     void uploadFile_genericException_throwsRuntimeExceptionWithMessage() throws IOException {
-        MultipartFile file = mock(MultipartFile.class);
+        final MultipartFile file = mock(MultipartFile.class);
         when(file.getOriginalFilename()).thenReturn("file.txt");
         when(file.getSize()).thenReturn(100L);
         when(file.getContentType()).thenReturn("text/plain");
@@ -126,7 +126,7 @@ class S3StorageServiceTest {
         when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
                 .thenThrow(new RuntimeException("aws connection failed"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.uploadFile(file, 2L, "Caregiver", "documents"));
         assertTrue(ex.getMessage().contains("Failed to upload file:"));
         assertTrue(ex.getMessage().contains("aws connection failed"));
@@ -138,14 +138,14 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("download_fileExists_returnsByteArray")
     void download_fileExists_returnsByteArray() throws Exception {
-        byte[] expected = "file content".getBytes();
-        GetObjectResponse getObjectResponse = GetObjectResponse.builder().build();
-        ResponseBytes<GetObjectResponse> responseBytes = ResponseBytes.fromByteArray(getObjectResponse, expected);
+        final byte[] expected = "file content".getBytes();
+        final GetObjectResponse getObjectResponse = GetObjectResponse.builder().build();
+        final ResponseBytes<GetObjectResponse> responseBytes = ResponseBytes.fromByteArray(getObjectResponse, expected);
 
         when(s3.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenReturn(responseBytes);
 
-        byte[] result = service.download("docs/test.pdf");
+        final byte[] result = service.download("docs/test.pdf");
 
         assertArrayEquals(expected, result);
     }
@@ -157,7 +157,7 @@ class S3StorageServiceTest {
         when(s3.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(NoSuchKeyException.builder().message("not found").build());
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.download("missing/file.txt"));
         assertTrue(ex.getMessage().contains("File not found: missing/file.txt"));
         assertInstanceOf(NoSuchKeyException.class, ex.getCause());
@@ -170,7 +170,7 @@ class S3StorageServiceTest {
         when(s3.getObject(any(GetObjectRequest.class), any(ResponseTransformer.class)))
                 .thenThrow(new RuntimeException("network error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.download("some/path.txt"));
         assertEquals("Failed to download file", ex.getMessage());
     }
@@ -180,7 +180,7 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("getFileUrl_validPath_returnsBaseUrlPlusPath")
     void getFileUrl_validPath_returnsBaseUrlPlusPath() throws Exception {
-        String result = service.getFileUrl("user_1/docs/file.pdf");
+        final String result = service.getFileUrl("user_1/docs/file.pdf");
         assertEquals("https://s3.amazonaws.com/test-bucket/user_1/docs/file.pdf", result);
     }
 
@@ -189,12 +189,12 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("deleteFile_validPath_deletesFromS3")
     void deleteFile_validPath_deletesFromS3() throws Exception {
-        DeleteObjectResponse response = DeleteObjectResponse.builder().build();
+        final DeleteObjectResponse response = DeleteObjectResponse.builder().build();
         when(s3.deleteObject(any(DeleteObjectRequest.class))).thenReturn(response);
 
         assertDoesNotThrow(() -> service.deleteFile("user_1/docs/old.pdf"));
 
-        ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        final ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
         verify(s3).deleteObject(captor.capture());
         assertEquals("test-bucket", captor.getValue().bucket());
         assertEquals("user_1/docs/old.pdf", captor.getValue().key());
@@ -206,7 +206,7 @@ class S3StorageServiceTest {
         when(s3.deleteObject(any(DeleteObjectRequest.class)))
                 .thenThrow(new RuntimeException("delete error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.deleteFile("path/file.txt"));
         assertEquals("Failed to delete file", ex.getMessage());
     }
@@ -216,20 +216,20 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("listUserFiles_filesExist_returnsKeyList")
     void listUserFiles_filesExist_returnsKeyList() throws Exception {
-        S3Object obj1 = S3Object.builder().key("patient_1/docs/a.pdf").build();
-        S3Object obj2 = S3Object.builder().key("patient_1/docs/b.pdf").build();
-        ListObjectsV2Response response = ListObjectsV2Response.builder()
+        final S3Object obj1 = S3Object.builder().key("patient_1/docs/a.pdf").build();
+        final S3Object obj2 = S3Object.builder().key("patient_1/docs/b.pdf").build();
+        final ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(obj1, obj2).build();
 
         when(s3.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(response);
 
-        List<String> result = service.listUserFiles(1L, "Patient");
+        final List<String> result = service.listUserFiles(1L, "Patient");
 
         assertEquals(2, result.size());
         assertTrue(result.contains("patient_1/docs/a.pdf"));
         assertTrue(result.contains("patient_1/docs/b.pdf"));
 
-        ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
+        final ArgumentCaptor<ListObjectsV2Request> captor = ArgumentCaptor.forClass(ListObjectsV2Request.class);
         verify(s3).listObjectsV2(captor.capture());
         assertEquals("test-bucket", captor.getValue().bucket());
         assertEquals("patient_1/", captor.getValue().prefix());
@@ -238,12 +238,12 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("listUserFiles_noFiles_returnsEmptyList")
     void listUserFiles_noFiles_returnsEmptyList() throws Exception {
-        ListObjectsV2Response response = ListObjectsV2Response.builder()
+        final ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(Collections.emptyList()).build();
 
         when(s3.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(response);
 
-        List<String> result = service.listUserFiles(99L, "Caregiver");
+        final List<String> result = service.listUserFiles(99L, "Caregiver");
 
         assertTrue(result.isEmpty());
     }
@@ -254,7 +254,7 @@ class S3StorageServiceTest {
         when(s3.listObjectsV2(any(ListObjectsV2Request.class)))
                 .thenThrow(new RuntimeException("list error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.listUserFiles(1L, "Patient"));
         assertEquals("Failed to list user files", ex.getMessage());
     }
@@ -264,22 +264,22 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("listUserFilesDto_filesExist_returnsDtoList")
     void listUserFilesDto_filesExist_returnsDtoList() throws Exception {
-        Instant now = Instant.now();
-        S3Object obj = S3Object.builder()
+        final Instant now = Instant.now();
+        final S3Object obj = S3Object.builder()
                 .key("patient_5/medical/report.pdf")
                 .size(2048L)
                 .lastModified(now)
                 .build();
 
-        ListObjectsV2Response response = ListObjectsV2Response.builder()
+        final ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(obj).build();
 
         when(s3.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(response);
 
-        List<UserFileDTO> result = service.listUserFilesDto(5L, "Patient");
+        final List<UserFileDTO> result = service.listUserFilesDto(5L, "Patient");
 
         assertEquals(1, result.size());
-        UserFileDTO dto = result.get(0);
+        final UserFileDTO dto = result.get(0);
         assertEquals("patient_5/medical/report.pdf", dto.getS3FullKey());
         assertEquals("report.pdf", dto.getFilename());
         assertEquals("medical", dto.getFileCategory());
@@ -291,12 +291,12 @@ class S3StorageServiceTest {
     @Test
     @DisplayName("listUserFilesDto_noFiles_returnsEmptyList")
     void listUserFilesDto_noFiles_returnsEmptyList() throws Exception {
-        ListObjectsV2Response response = ListObjectsV2Response.builder()
+        final ListObjectsV2Response response = ListObjectsV2Response.builder()
                 .contents(Collections.emptyList()).build();
 
         when(s3.listObjectsV2(any(ListObjectsV2Request.class))).thenReturn(response);
 
-        List<UserFileDTO> result = service.listUserFilesDto(10L, "Provider");
+        final List<UserFileDTO> result = service.listUserFilesDto(10L, "Provider");
 
         assertTrue(result.isEmpty());
     }
@@ -307,7 +307,7 @@ class S3StorageServiceTest {
         when(s3.listObjectsV2(any(ListObjectsV2Request.class)))
                 .thenThrow(new RuntimeException("dto list error"));
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> service.listUserFilesDto(1L, "Patient"));
         assertEquals("Failed to list user files", ex.getMessage());
     }

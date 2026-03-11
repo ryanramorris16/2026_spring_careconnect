@@ -161,7 +161,7 @@ class AllergyControllerTest {
      * patient — the controller should deny access with a 403.
      */
     private void mockForbiddenSecurityContext() throws Exception {
-        User other = new User();
+        final User other = new User();
         other.setId(99L);
         other.setEmail("other@test.com");
         other.setRole(Role.PATIENT);
@@ -171,9 +171,9 @@ class AllergyControllerTest {
     }
 
     private void mockSecurityContext(String email, User user) {
-        Authentication auth = Mockito.mock(Authentication.class);
+        final Authentication auth = Mockito.mock(Authentication.class);
         when(auth.getName()).thenReturn(email);
-        SecurityContext secCtx = Mockito.mock(SecurityContext.class);
+        final SecurityContext secCtx = Mockito.mock(SecurityContext.class);
         when(secCtx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(secCtx);
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
@@ -314,7 +314,7 @@ class AllergyControllerTest {
     void updateAllergy_success() throws Exception {
         mockAdminSecurityContext();
 
-        AllergyDTO updated = AllergyDTO.builder()
+        final AllergyDTO updated = AllergyDTO.builder()
                 .id(1L)
                 .patientId(10L)
                 .allergen("Penicillin")

@@ -47,10 +47,10 @@ class DatabaseConnectionTest {
             assertTrue(conn.isValid(5), "Connection should be valid");
             assertFalse(conn.isClosed(), "Connection should not be closed");
 
-            DatabaseMetaData md = conn.getMetaData();
+            final DatabaseMetaData md = conn.getMetaData();
             assertNotNull(md, "Database metadata should not be null");
 
-            String productName = md.getDatabaseProductName().toLowerCase();
+            final String productName = md.getDatabaseProductName().toLowerCase();
             assertTrue(productName.contains("postgresql"),
                 "Should be connected to PostgreSQL in dev mode, but connected to: " + productName);
         }
@@ -59,15 +59,15 @@ class DatabaseConnectionTest {
     @Test
     @DisplayName("Database should support basic SQL operations")
     void testBasicDatabaseOperations() throws SQLException {
-        ResultSet testResult = mock(ResultSet.class);
+        final ResultSet testResult = mock(ResultSet.class);
         when(testResult.next()).thenReturn(true);
         when(testResult.getInt("test_value")).thenReturn(1);
 
-        ResultSet timeResult = mock(ResultSet.class);
+        final ResultSet timeResult = mock(ResultSet.class);
         when(timeResult.next()).thenReturn(true);
         when(timeResult.getTimestamp("current_time")).thenReturn(new java.sql.Timestamp(System.currentTimeMillis()));
 
-        ResultSet schemaResult = mock(ResultSet.class);
+        final ResultSet schemaResult = mock(ResultSet.class);
         when(schemaResult.next()).thenReturn(true);
         when(schemaResult.getString("schema_name")).thenReturn("public");
 
@@ -75,20 +75,20 @@ class DatabaseConnectionTest {
         when(statement.executeQuery("SELECT CURRENT_TIMESTAMP as current_time")).thenReturn(timeResult);
         when(statement.executeQuery("SELECT CURRENT_SCHEMA() as schema_name")).thenReturn(schemaResult);
 
-        try (Connection conn = dataSource.getConnection()) {
-            var stmt = conn.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             final Statement stmt = conn.createStatement()) {
 
-            ResultSet rs1 = stmt.executeQuery("SELECT 1 as test_value");
+            final ResultSet rs1 = stmt.executeQuery("SELECT 1 as test_value");
             assertTrue(rs1.next(), "Query should return at least one row");
             assertEquals(1, rs1.getInt("test_value"), "Test value should be 1");
 
-            ResultSet rs2 = stmt.executeQuery("SELECT CURRENT_TIMESTAMP as current_time");
+            final ResultSet rs2 = stmt.executeQuery("SELECT CURRENT_TIMESTAMP as current_time");
             assertTrue(rs2.next(), "Timestamp query should return a row");
             assertNotNull(rs2.getTimestamp("current_time"), "Current timestamp should not be null");
 
-            ResultSet rs3 = stmt.executeQuery("SELECT CURRENT_SCHEMA() as schema_name");
+            final ResultSet rs3 = stmt.executeQuery("SELECT CURRENT_SCHEMA() as schema_name");
             assertTrue(rs3.next(), "Schema query should return a row");
-            String schemaName = rs3.getString("schema_name");
+            final String schemaName = rs3.getString("schema_name");
             assertNotNull(schemaName, "Schema name should not be null");
         }
     }
@@ -96,7 +96,7 @@ class DatabaseConnectionTest {
     @Test
     @DisplayName("Connection pool should be working")
     void testConnectionPool() throws SQLException {
-        Connection conn2 = mock(Connection.class);
+        final Connection conn2 = mock(Connection.class);
         when(conn2.isValid(5)).thenReturn(true);
         when(dataSource.getConnection()).thenReturn(connection, conn2);
 
@@ -129,8 +129,8 @@ class DatabaseConnectionTest {
         when(metaData.getURL()).thenReturn("jdbc:postgresql://localhost:5432/careconnect");
 
         try (Connection conn = dataSource.getConnection()) {
-            DatabaseMetaData md = conn.getMetaData();
-            String url = md.getURL();
+            final DatabaseMetaData md = conn.getMetaData();
+            final String url = md.getURL();
 
             assertNotNull(url, "Database URL should not be null");
             assertTrue(url.contains("postgresql"), "URL should indicate PostgreSQL connection");

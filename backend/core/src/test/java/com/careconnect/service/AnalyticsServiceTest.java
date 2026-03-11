@@ -84,10 +84,10 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_withRecentSummaryMetric_shouldUseAggregatedValues")
         void getDashboard_withRecentSummaryMetric_shouldUseAggregatedValues() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
-            SummaryMetric agg = mock(SummaryMetric.class);
+            final SummaryMetric agg = mock(SummaryMetric.class);
             when(agg.getGeneratedAt()).thenReturn(Instant.now()); // recent
             when(agg.getAdherenceRate()).thenReturn(85.0);
             when(agg.getAvgHeartRate()).thenReturn(72.5);
@@ -106,7 +106,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.countMoodEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(5);
             when(moodPainLogRepo.countPainEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(4);
 
-            DashboardDTO result = analyticsService.getDashboard(patientId, period);
+            final DashboardDTO result = analyticsService.getDashboard(patientId, period);
 
             assertNotNull(result);
             assertEquals(85.0, result.adherenceRate());
@@ -126,8 +126,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_withNullSummaryMetric_shouldComputeFromRawData")
         void getDashboard_withNullSummaryMetric_shouldComputeFromRawData() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
                     eq(patientId), any(Instant.class), any(Instant.class))).thenReturn(null);
@@ -146,7 +146,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.countMoodEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(null);
             when(moodPainLogRepo.countPainEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(null);
 
-            DashboardDTO result = analyticsService.getDashboard(patientId, period);
+            final DashboardDTO result = analyticsService.getDashboard(patientId, period);
 
             assertNotNull(result);
             assertEquals(80.0, result.adherenceRate()); // (8*100)/10 = 80
@@ -160,8 +160,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_withZeroTotalSymptoms_shouldReturnZeroAdherence")
         void getDashboard_withZeroTotalSymptoms_shouldReturnZeroAdherence() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
                     eq(patientId), any(), any())).thenReturn(null);
@@ -180,7 +180,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.countMoodEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(0);
             when(moodPainLogRepo.countPainEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(0);
 
-            DashboardDTO result = analyticsService.getDashboard(patientId, period);
+            final DashboardDTO result = analyticsService.getDashboard(patientId, period);
 
             assertEquals(0.0, result.adherenceRate());
             assertEquals(0.0, result.avgHeartRate());
@@ -190,8 +190,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_patientNotFound_shouldThrowAppException")
         void getDashboard_patientNotFound_shouldThrowAppException() throws Exception {
-            Long patientId = 999L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 999L;
+            final Period period = Period.ofDays(7);
 
             when(summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
                     eq(patientId), any(), any())).thenReturn(null);
@@ -206,8 +206,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_withNullHeartRateAvg_shouldReturnZero")
         void getDashboard_withNullHeartRateAvg_shouldReturnZero() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
                     eq(patientId), any(), any())).thenReturn(null);
@@ -226,7 +226,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.countMoodEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(null);
             when(moodPainLogRepo.countPainEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(null);
 
-            DashboardDTO result = analyticsService.getDashboard(patientId, period);
+            final DashboardDTO result = analyticsService.getDashboard(patientId, period);
 
             assertEquals(0.0, result.avgHeartRate());
         }
@@ -234,8 +234,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getDashboard_avgOrZeroThrowsException_shouldReturnZero")
         void getDashboard_avgOrZeroThrowsException_shouldReturnZero() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
                     eq(patientId), any(), any())).thenReturn(null);
@@ -256,7 +256,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.countMoodEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(0);
             when(moodPainLogRepo.countPainEntriesByPatientAndTimestampBetween(eq(testPatient), any(), any())).thenReturn(0);
 
-            DashboardDTO result = analyticsService.getDashboard(patientId, period);
+            final DashboardDTO result = analyticsService.getDashboard(patientId, period);
 
             assertEquals(0.0, result.avgSpo2());
         }
@@ -271,18 +271,18 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withWearableAndMoodPainData_shouldMergeAndSort")
         void getVitals_withWearableAndMoodPainData_shouldMergeAndSort() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
-            Instant ts2 = Instant.parse("2025-01-02T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
+            final Instant ts2 = Instant.parse("2025-01-02T10:00:00Z");
 
-            WearableMetric hrMetric = WearableMetric.builder()
+            final WearableMetric hrMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(72.0)
                     .recordedAt(ts1)
                     .build();
 
-            WearableMetric spo2Metric = WearableMetric.builder()
+            final WearableMetric spo2Metric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.SPO2)
                     .metricValue(98.0)
                     .recordedAt(ts1)
@@ -293,7 +293,7 @@ class AnalyticsServiceTest {
 
             when(patientRepo.findById(patientId)).thenReturn(Optional.of(testPatient));
 
-            MoodPainLog moodLog = MoodPainLog.builder()
+            final MoodPainLog moodLog = MoodPainLog.builder()
                     .moodValue(7)
                     .painValue(3)
                     .timestamp(LocalDateTime.ofInstant(ts2, ZoneOffset.UTC))
@@ -302,7 +302,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(List.of(moodLog));
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertNotNull(result);
             assertEquals(2, result.size());
@@ -313,8 +313,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withNoData_shouldReturnEmptyList")
         void getVitals_withNoData_shouldReturnEmptyList() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(wearableRepo.findByPatient_IdAndRecordedAtBetween(eq(patientId), any(), any()))
                     .thenReturn(Collections.emptyList());
@@ -322,7 +322,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -331,8 +331,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_patientNotFound_shouldThrowAppException")
         void getVitals_patientNotFound_shouldThrowAppException() throws Exception {
-            Long patientId = 999L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 999L;
+            final Period period = Period.ofDays(7);
 
             when(wearableRepo.findByPatient_IdAndRecordedAtBetween(eq(patientId), any(), any()))
                     .thenReturn(Collections.emptyList());
@@ -344,17 +344,17 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withBloodPressure_shouldMapSystolicAndDiastolicAsIntegers")
         void getVitals_withBloodPressure_shouldMapSystolicAndDiastolicAsIntegers() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric sysMetric = WearableMetric.builder()
+            final WearableMetric sysMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.BLOOD_PRESSURE_SYS)
                     .metricValue(120.7)
                     .recordedAt(ts1)
                     .build();
 
-            WearableMetric diaMetric = WearableMetric.builder()
+            final WearableMetric diaMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.BLOOD_PRESSURE_DIA)
                     .metricValue(80.3)
                     .recordedAt(ts1)
@@ -366,7 +366,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertEquals(1, result.size());
             assertEquals(120, result.get(0).systolic()); // doubleToInt truncates
@@ -376,11 +376,11 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withEmptyMoodPainList_shouldHaveNullMoodAndPain")
         void getVitals_withEmptyMoodPainList_shouldHaveNullMoodAndPain() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric hrMetric = WearableMetric.builder()
+            final WearableMetric hrMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(72.0)
                     .recordedAt(ts1)
@@ -392,7 +392,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertEquals(1, result.size());
             assertNull(result.get(0).moodValue());
@@ -402,17 +402,17 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withDuplicateMetricTypes_shouldLastWin")
         void getVitals_withDuplicateMetricTypes_shouldLastWin() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts1 = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric hr1 = WearableMetric.builder()
+            final WearableMetric hr1 = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(70.0)
                     .recordedAt(ts1)
                     .build();
 
-            WearableMetric hr2 = WearableMetric.builder()
+            final WearableMetric hr2 = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(80.0)
                     .recordedAt(ts1)
@@ -424,7 +424,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertEquals(1, result.size());
             assertEquals(80.0, result.get(0).heartRate()); // last wins
@@ -440,13 +440,13 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("createSignedExportLink_validPath_shouldDelegateToExportSigner")
         void createSignedExportLink_validPath_shouldDelegateToExportSigner() throws Exception {
-            String path = "/exports/vitals.csv";
-            ExportLinkDTO expected = new ExportLinkDTO();
+            final String path = "/exports/vitals.csv";
+            final ExportLinkDTO expected = new ExportLinkDTO();
             expected.setUrl("https://files.careconnect.ai/exports/vitals.csv?sig=mock123");
 
             when(exportSigner.sign(path)).thenReturn(expected);
 
-            ExportLinkDTO result = analyticsService.createSignedExportLink(path);
+            final ExportLinkDTO result = analyticsService.createSignedExportLink(path);
 
             assertNotNull(result);
             assertEquals(expected.getUrl(), result.getUrl());
@@ -463,11 +463,11 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("exportVitalsCsv_withData_shouldReturnCsvBytes")
         void exportVitalsCsv_withData_shouldReturnCsvBytes() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric hrMetric = WearableMetric.builder()
+            final WearableMetric hrMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(72.0)
                     .recordedAt(ts)
@@ -479,10 +479,10 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            byte[] result = analyticsService.exportVitalsCsv(patientId, period);
+            final byte[] result = analyticsService.exportVitalsCsv(patientId, period);
 
             assertNotNull(result);
-            String csv = new String(result);
+            final String csv = new String(result);
             assertTrue(csv.startsWith("timestamp,heartRate,spo2,systolic,diastolic,weight,moodValue,painValue"));
             assertTrue(csv.contains("72.0"));
         }
@@ -490,8 +490,8 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("exportVitalsCsv_withNoData_shouldReturnHeaderOnly")
         void exportVitalsCsv_withNoData_shouldReturnHeaderOnly() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(wearableRepo.findByPatient_IdAndRecordedAtBetween(eq(patientId), any(), any()))
                     .thenReturn(Collections.emptyList());
@@ -499,9 +499,9 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            byte[] result = analyticsService.exportVitalsCsv(patientId, period);
+            final byte[] result = analyticsService.exportVitalsCsv(patientId, period);
 
-            String csv = new String(result);
+            final String csv = new String(result);
             assertEquals("timestamp,heartRate,spo2,systolic,diastolic,weight,moodValue,painValue\n", csv);
         }
     }
@@ -515,11 +515,11 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("exportVitalsPdf_withData_shouldReturnPdfBytes")
         void exportVitalsPdf_withData_shouldReturnPdfBytes() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric hrMetric = WearableMetric.builder()
+            final WearableMetric hrMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.HEART_RATE)
                     .metricValue(72.0)
                     .recordedAt(ts)
@@ -531,20 +531,20 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            byte[] result = analyticsService.exportVitalsPdf(patientId, period);
+            final byte[] result = analyticsService.exportVitalsPdf(patientId, period);
 
             assertNotNull(result);
             assertTrue(result.length > 0);
             // PDF files start with %PDF
-            String header = new String(result, 0, Math.min(5, result.length));
+            final String header = new String(result, 0, Math.min(5, result.length));
             assertTrue(header.startsWith("%PDF"));
         }
 
         @Test
         @DisplayName("exportVitalsPdf_withEmptyData_shouldReturnValidPdf")
         void exportVitalsPdf_withEmptyData_shouldReturnValidPdf() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
 
             when(wearableRepo.findByPatient_IdAndRecordedAtBetween(eq(patientId), any(), any()))
                     .thenReturn(Collections.emptyList());
@@ -552,7 +552,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            byte[] result = analyticsService.exportVitalsPdf(patientId, period);
+            final byte[] result = analyticsService.exportVitalsPdf(patientId, period);
 
             assertNotNull(result);
             assertTrue(result.length > 0);
@@ -568,21 +568,21 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withMoodPainLogsAtSameTimestamp_shouldPickLatest")
         void getVitals_withMoodPainLogsAtSameTimestamp_shouldPickLatest() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            LocalDateTime logTime = LocalDateTime.of(2025, 1, 1, 10, 0);
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final LocalDateTime logTime = LocalDateTime.of(2025, 1, 1, 10, 0);
 
             when(wearableRepo.findByPatient_IdAndRecordedAtBetween(eq(patientId), any(), any()))
                     .thenReturn(Collections.emptyList());
             when(patientRepo.findById(patientId)).thenReturn(Optional.of(testPatient));
 
-            MoodPainLog log1 = MoodPainLog.builder()
+            final MoodPainLog log1 = MoodPainLog.builder()
                     .moodValue(5)
                     .painValue(2)
                     .timestamp(logTime)
                     .build();
 
-            MoodPainLog log2 = MoodPainLog.builder()
+            final MoodPainLog log2 = MoodPainLog.builder()
                     .moodValue(8)
                     .painValue(4)
                     .timestamp(logTime.plusMinutes(1))
@@ -593,7 +593,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(List.of(log1, log2));
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertNotNull(result);
             assertFalse(result.isEmpty());
@@ -602,11 +602,11 @@ class AnalyticsServiceTest {
         @Test
         @DisplayName("getVitals_withWeightMetric_shouldMapWeightValue")
         void getVitals_withWeightMetric_shouldMapWeightValue() throws Exception {
-            Long patientId = 10L;
-            Period period = Period.ofDays(7);
-            Instant ts = Instant.parse("2025-01-01T10:00:00Z");
+            final Long patientId = 10L;
+            final Period period = Period.ofDays(7);
+            final Instant ts = Instant.parse("2025-01-01T10:00:00Z");
 
-            WearableMetric weightMetric = WearableMetric.builder()
+            final WearableMetric weightMetric = WearableMetric.builder()
                     .metric(WearableMetric.MetricType.WEIGHT)
                     .metricValue(175.5)
                     .recordedAt(ts)
@@ -618,7 +618,7 @@ class AnalyticsServiceTest {
             when(moodPainLogRepo.findByPatientAndTimestampBetween(eq(testPatient), any(), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
+            final List<VitalSampleDTO> result = analyticsService.getVitals(patientId, period);
 
             assertEquals(1, result.size());
             assertEquals(175.5, result.get(0).weight());

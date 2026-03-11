@@ -24,22 +24,22 @@ class GuardrailServiceTest {
 
     @Test
     void sanitizeRequest_noSsn_returnsUnchanged() throws Exception {
-        String input = "Hello, can you help me with my appointment?";
+        final String input = "Hello, can you help me with my appointment?";
         assertThat(guardrailService.sanitizeRequest(input)).isEqualTo(input);
     }
 
     @Test
     void sanitizeRequest_withSsn_redactsSsn() throws Exception {
-        String input = "My SSN is 123-45-6789.";
-        String result = guardrailService.sanitizeRequest(input);
+        final String input = "My SSN is 123-45-6789.";
+        final String result = guardrailService.sanitizeRequest(input);
         assertThat(result).doesNotContain("123-45-6789");
         assertThat(result).contains("[REDACTED_SSN]");
     }
 
     @Test
     void sanitizeRequest_withMultipleSsns_redactsAll() throws Exception {
-        String input = "SSN1: 123-45-6789 and SSN2: 987-65-4321";
-        String result = guardrailService.sanitizeRequest(input);
+        final String input = "SSN1: 123-45-6789 and SSN2: 987-65-4321";
+        final String result = guardrailService.sanitizeRequest(input);
         assertThat(result).doesNotContain("123-45-6789");
         assertThat(result).doesNotContain("987-65-4321");
         assertThat(result).contains("[REDACTED_SSN]");
@@ -48,8 +48,8 @@ class GuardrailServiceTest {
     @Test
     void sanitizeRequest_partialSsnPattern_notRedacted() throws Exception {
         // Wrong format (dd-dd-dddd) should not be redacted
-        String input = "Reference: 12-45-6789";
-        String result = guardrailService.sanitizeRequest(input);
+        final String input = "Reference: 12-45-6789";
+        final String result = guardrailService.sanitizeRequest(input);
         assertThat(result).isEqualTo(input);
     }
 
@@ -61,7 +61,7 @@ class GuardrailServiceTest {
 
     @Test
     void sanitizeRequest_ssnWithSurroundingText_redacted() throws Exception {
-        String input = "Patient SSN: 000-00-0001 on record.";
+        final String input = "Patient SSN: 000-00-0001 on record.";
         assertThat(guardrailService.sanitizeRequest(input)).contains("[REDACTED_SSN]");
     }
 
@@ -155,7 +155,7 @@ class GuardrailServiceTest {
 
     @Test
     void unsafeAiResponseException_isRuntimeException_withMessage() throws Exception {
-        GuardrailService.UnsafeAiResponseException ex =
+        final GuardrailService.UnsafeAiResponseException ex =
                 new GuardrailService.UnsafeAiResponseException("blocked content");
         assertThat(ex).isInstanceOf(RuntimeException.class);
         assertThat(ex.getMessage()).isEqualTo("blocked content");

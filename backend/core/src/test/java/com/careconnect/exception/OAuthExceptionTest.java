@@ -14,7 +14,7 @@ class OAuthExceptionTest {
 
     @Test
     void constructor_messageAndErrorType_setsCorrectly() throws Exception {
-        OAuthException exception = new OAuthException("OAuth failed", "INVALID_TOKEN");
+        final OAuthException exception = new OAuthException("OAuth failed", "INVALID_TOKEN");
 
         assertThat(exception.getMessage()).isEqualTo("OAuth failed");
         assertThat(exception.getErrorType()).isEqualTo("INVALID_TOKEN");
@@ -23,7 +23,7 @@ class OAuthExceptionTest {
 
     @Test
     void constructor_differentErrorType_setsCorrectly() throws Exception {
-        OAuthException exception = new OAuthException("Access denied", "ACCESS_DENIED");
+        final OAuthException exception = new OAuthException("Access denied", "ACCESS_DENIED");
 
         assertThat(exception.getMessage()).isEqualTo("Access denied");
         assertThat(exception.getErrorType()).isEqualTo("ACCESS_DENIED");
@@ -33,8 +33,8 @@ class OAuthExceptionTest {
 
     @Test
     void constructor_withCause_setsAllFields() throws Exception {
-        Throwable cause = new RuntimeException("underlying cause");
-        OAuthException exception = new OAuthException("OAuth error with cause", "SERVER_ERROR", cause);
+        final Throwable cause = new RuntimeException("underlying cause");
+        final OAuthException exception = new OAuthException("OAuth error with cause", "SERVER_ERROR", cause);
 
         assertThat(exception.getMessage()).isEqualTo("OAuth error with cause");
         assertThat(exception.getErrorType()).isEqualTo("SERVER_ERROR");
@@ -43,8 +43,8 @@ class OAuthExceptionTest {
 
     @Test
     void constructor_withCause_differentValues() throws Exception {
-        Throwable cause = new IllegalStateException("state error");
-        OAuthException exception = new OAuthException("Token refresh failed", "TOKEN_EXPIRED", cause);
+        final Throwable cause = new IllegalStateException("state error");
+        final OAuthException exception = new OAuthException("Token refresh failed", "TOKEN_EXPIRED", cause);
 
         assertThat(exception.getMessage()).isEqualTo("Token refresh failed");
         assertThat(exception.getErrorType()).isEqualTo("TOKEN_EXPIRED");
@@ -55,7 +55,7 @@ class OAuthExceptionTest {
 
     @Test
     void oAuthException_isRuntimeException() throws Exception {
-        OAuthException exception = new OAuthException("error", "TYPE");
+        final OAuthException exception = new OAuthException("error", "TYPE");
 
         assertThat(exception).isInstanceOf(RuntimeException.class);
     }

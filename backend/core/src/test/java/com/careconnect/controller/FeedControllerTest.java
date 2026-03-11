@@ -73,7 +73,7 @@ class FeedControllerTest {
     }
 
     private User makeUser(Long id, Role role) {
-        User u = new User();
+        final User u = new User();
         u.setId(id);
         u.setEmail(EMAIL);
         u.setRole(role);
@@ -81,7 +81,7 @@ class FeedControllerTest {
     }
 
     private Post makeSavedPost() throws Exception {
-        Post p = new Post();
+        final Post p = new Post();
         p.setId(1L);
         p.setUserId(USER_ID);
         p.setContent("Hello World");
@@ -97,10 +97,10 @@ class FeedControllerTest {
          * No authentication check — delegates directly to feedService.
          * No branches to cover.
          */
-        List<PostWithCommentCountDto> posts = List.of();
+        final List<PostWithCommentCountDto> posts = List.of();
         when(feedService.getAllPostsWithCommentCount()).thenReturn(posts);
 
-        ResponseEntity<?> response = controller.getGlobalFeed();
+        final ResponseEntity<?> response = controller.getGlobalFeed();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(posts);
@@ -115,7 +115,7 @@ class FeedControllerTest {
          */
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.getUserFeed(USER_ID);
+        final ResponseEntity<?> response = controller.getUserFeed(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -125,10 +125,10 @@ class FeedControllerTest {
         /*
          * Covers: user found, user.getId() != userId AND role != ADMIN → 403.
          */
-        User user = makeUser(99L, Role.PATIENT);  // different id, not admin
+        final User user = makeUser(99L, Role.PATIENT);  // different id, not admin
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
-        ResponseEntity<?> response = controller.getUserFeed(USER_ID);
+        final ResponseEntity<?> response = controller.getUserFeed(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -138,12 +138,12 @@ class FeedControllerTest {
         /*
          * Covers: user.getId().equals(userId) → condition false → proceeds to service.
          */
-        User user = makeUser(USER_ID, Role.PATIENT);
-        List<Post> posts = List.of();
+        final User user = makeUser(USER_ID, Role.PATIENT);
+        final List<Post> posts = List.of();
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.getPostsByUser(USER_ID)).thenReturn(posts);
 
-        ResponseEntity<?> response = controller.getUserFeed(USER_ID);
+        final ResponseEntity<?> response = controller.getUserFeed(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -154,12 +154,12 @@ class FeedControllerTest {
          * Covers: user.getId() != userId but role == ADMIN
          * → !user.getId().equals(userId) && !isAdmin → false → proceeds.
          */
-        User admin = makeUser(99L, Role.ADMIN);  // different id, but admin
-        List<Post> posts = List.of();
+        final User admin = makeUser(99L, Role.ADMIN);  // different id, but admin
+        final List<Post> posts = List.of();
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(admin));
         when(feedService.getPostsByUser(USER_ID)).thenReturn(posts);
 
-        ResponseEntity<?> response = controller.getUserFeed(USER_ID);
+        final ResponseEntity<?> response = controller.getUserFeed(USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -173,7 +173,7 @@ class FeedControllerTest {
          */
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.getFriendsFeed();
+        final ResponseEntity<?> response = controller.getFriendsFeed();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -183,12 +183,12 @@ class FeedControllerTest {
         /*
          * Covers: user found → delegates to feedService.getPostsByUserAndFriends().
          */
-        User user = makeUser(USER_ID, Role.PATIENT);
-        List<PostWithCommentCountDto> posts = List.of();
+        final User user = makeUser(USER_ID, Role.PATIENT);
+        final List<PostWithCommentCountDto> posts = List.of();
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.getPostsByUserAndFriends(USER_ID)).thenReturn(posts);
 
-        ResponseEntity<?> response = controller.getFriendsFeed();
+        final ResponseEntity<?> response = controller.getFriendsFeed();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
@@ -196,7 +196,7 @@ class FeedControllerTest {
     // ── createPost() + resolveDisplayName() ──────────────────────────────────
 
     private Post postDataFor(Long userId) {
-        Post p = new Post();
+        final Post p = new Post();
         p.setUserId(userId);
         p.setContent("Test content");
         return p;
@@ -209,7 +209,7 @@ class FeedControllerTest {
          */
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -219,12 +219,12 @@ class FeedControllerTest {
         /*
          * Covers: user.getId() != postData.getUserId() → 403.
          */
-        User user = makeUser(USER_ID, Role.PATIENT);
+        final User user = makeUser(USER_ID, Role.PATIENT);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
-        Post postData = postDataFor(999L);  // different userId
+        final Post postData = postDataFor(999L);  // different userId
 
-        ResponseEntity<?> response = controller.createPost(postData);
+        final ResponseEntity<?> response = controller.createPost(postData);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
@@ -235,19 +235,19 @@ class FeedControllerTest {
          * Covers: resolveDisplayName → PATIENT role → patientRepository found
          * → firstName + " " + lastName.
          */
-        User user = makeUser(USER_ID, Role.PATIENT);
+        final User user = makeUser(USER_ID, Role.PATIENT);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null)).thenReturn(makeSavedPost());
 
-        Patient patient = new Patient();
+        final Patient patient = new Patient();
         patient.setFirstName("Alice");
         patient.setLastName("Smith");
         when(patientRepository.findByUserId(USER_ID)).thenReturn(Optional.of(patient));
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
+        final PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
         assertThat(dto.getUsername()).isEqualTo("Alice Smith");
     }
 
@@ -257,15 +257,15 @@ class FeedControllerTest {
          * Covers: resolveDisplayName → PATIENT role → patientRepository empty
          * → falls back to user.getEmail().
          */
-        User user = makeUser(USER_ID, Role.PATIENT);
+        final User user = makeUser(USER_ID, Role.PATIENT);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null)).thenReturn(makeSavedPost());
         when(patientRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
+        final PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
         assertThat(dto.getUsername()).isEqualTo(EMAIL);
     }
 
@@ -275,19 +275,19 @@ class FeedControllerTest {
          * Covers: resolveDisplayName → CAREGIVER role → caregiverRepository found
          * → firstName + " " + lastName.
          */
-        User user = makeUser(USER_ID, Role.CAREGIVER);
+        final User user = makeUser(USER_ID, Role.CAREGIVER);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null)).thenReturn(makeSavedPost());
 
-        Caregiver caregiver = new Caregiver();
+        final Caregiver caregiver = new Caregiver();
         caregiver.setFirstName("Bob");
         caregiver.setLastName("Jones");
         when(caregiverRepository.findByUserId(USER_ID)).thenReturn(Optional.of(caregiver));
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
+        final PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
         assertThat(dto.getUsername()).isEqualTo("Bob Jones");
     }
 
@@ -297,15 +297,15 @@ class FeedControllerTest {
          * Covers: resolveDisplayName → CAREGIVER role → caregiverRepository empty
          * → falls back to user.getEmail().
          */
-        User user = makeUser(USER_ID, Role.CAREGIVER);
+        final User user = makeUser(USER_ID, Role.CAREGIVER);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null)).thenReturn(makeSavedPost());
         when(caregiverRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
+        final PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
         assertThat(dto.getUsername()).isEqualTo(EMAIL);
     }
 
@@ -315,14 +315,14 @@ class FeedControllerTest {
          * Covers: resolveDisplayName → else branch (ADMIN or FAMILY_MEMBER)
          * → returns user.getEmail() directly.
          */
-        User user = makeUser(USER_ID, Role.ADMIN);
+        final User user = makeUser(USER_ID, Role.ADMIN);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null)).thenReturn(makeSavedPost());
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
+        final PostWithCommentCountDto dto = (PostWithCommentCountDto) response.getBody();
         assertThat(dto.getUsername()).isEqualTo(EMAIL);
     }
 
@@ -332,12 +332,12 @@ class FeedControllerTest {
          * Covers: feedService.createPost() throws Exception
          * → caught by catch block → 500 with error message.
          */
-        User user = makeUser(USER_ID, Role.ADMIN);
+        final User user = makeUser(USER_ID, Role.ADMIN);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(feedService.createPost(USER_ID, "Test content", null))
                 .thenThrow(new RuntimeException("DB error"));
 
-        ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
+        final ResponseEntity<?> response = controller.createPost(postDataFor(USER_ID));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Error creating post");

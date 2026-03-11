@@ -47,7 +47,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act: Create the ChatModel bean
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean should be created successfully
         assertNotNull(chatModel);
@@ -64,7 +64,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act & Assert: Should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
@@ -86,7 +86,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act & Assert: Should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
@@ -108,7 +108,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act & Assert: Should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
@@ -130,7 +130,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act & Assert: Should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
@@ -152,11 +152,11 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act: Create ChatModel - should succeed but log warning
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created but security warning logged
         assertNotNull(chatModel);
-        ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
         verify(securityAuditService).logConfigurationValidationError(
                 eq("openai"),
                 eq("API_URL_SECURITY"),
@@ -176,7 +176,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act: Create ChatModel - should succeed with warning
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created and no audit error logged (only warning in logs)
         assertNotNull(chatModel);
@@ -193,7 +193,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", -0.5);
 
         // Act: Create ChatModel - should succeed with warning
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created successfully (warning only)
         assertNotNull(chatModel);
@@ -209,7 +209,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 2.5);
 
         // Act: Create ChatModel - should succeed with warning
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created successfully (warning only)
         assertNotNull(chatModel);
@@ -225,7 +225,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 0.7);
 
         // Act: Create ChatModel
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created successfully
         assertNotNull(chatModel);
@@ -242,7 +242,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 0.0);
 
         // Act: Create ChatModel with temperature 0.0
-        ChatModel chatModel1 = config.chatModel();
+        final ChatModel chatModel1 = config.chatModel();
 
         // Assert: Bean created successfully
         assertNotNull(chatModel1);
@@ -251,7 +251,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 2.0);
 
         // Act: Create ChatModel with temperature 2.0
-        ChatModel chatModel2 = config.chatModel();
+        final ChatModel chatModel2 = config.chatModel();
 
         // Assert: Bean created successfully
         assertNotNull(chatModel2);
@@ -265,14 +265,14 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
         ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
 
-        double[] temperatures = {0.5, 0.7, 1.0, 1.5};
+        final double[] temperatures = {0.5, 0.7, 1.0, 1.5};
 
-        for (double temp : temperatures) {
+        for (final double temp : temperatures) {
             // Arrange: Set temperature
             ReflectionTestUtils.setField(config, "temperature", temp);
 
             // Act: Create ChatModel
-            ChatModel chatModel = config.chatModel();
+            final ChatModel chatModel = config.chatModel();
 
             // Assert: Bean created successfully
             assertNotNull(chatModel, "ChatModel should be created with temperature " + temp);
@@ -289,7 +289,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act: Create ChatModel
-        ChatModel chatModel = config.chatModel();
+        final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created successfully without warnings
         assertNotNull(chatModel);
@@ -306,7 +306,7 @@ class AIChatServiceConfigTest {
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act & Assert: Should throw exception for API key first
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 

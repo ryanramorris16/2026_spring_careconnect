@@ -12,7 +12,7 @@ class WebSocketConnectionTest {
 
     @Test
     void noArgConstructor_createsInstance() throws Exception {
-        WebSocketConnection wsc = new WebSocketConnection();
+        final WebSocketConnection wsc = new WebSocketConnection();
 
         assertThat(wsc).isNotNull();
         assertThat(wsc.getId()).isNull();
@@ -31,7 +31,7 @@ class WebSocketConnectionTest {
 
     @Test
     void builder_defaults() throws Exception {
-        WebSocketConnection wsc = WebSocketConnection.builder()
+        final WebSocketConnection wsc = WebSocketConnection.builder()
                 .connectionId("conn-123")
                 .subscriptionType("authenticated")
                 .expiresAt(LocalDateTime.now().plusHours(1))
@@ -47,9 +47,9 @@ class WebSocketConnectionTest {
 
     @Test
     void builder_allFields() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now();
 
-        WebSocketConnection wsc = WebSocketConnection.builder()
+        final WebSocketConnection wsc = WebSocketConnection.builder()
                 .id(1L)
                 .connectionId("conn-abc")
                 .userEmail("user@example.com")
@@ -82,9 +82,9 @@ class WebSocketConnectionTest {
 
     @Test
     void updateLastActivity_refreshesTimestamp() throws Exception {
-        WebSocketConnection wsc = new WebSocketConnection();
+        final WebSocketConnection wsc = new WebSocketConnection();
         wsc.setLastActivityAt(LocalDateTime.now().minusMinutes(10));
-        LocalDateTime before = wsc.getLastActivityAt();
+        final LocalDateTime before = wsc.getLastActivityAt();
 
         wsc.updateLastActivity();
 
@@ -95,7 +95,7 @@ class WebSocketConnectionTest {
 
     @Test
     void isExpired_pastExpiresAt_returnsTrue() throws Exception {
-        WebSocketConnection wsc = new WebSocketConnection();
+        final WebSocketConnection wsc = new WebSocketConnection();
         wsc.setExpiresAt(LocalDateTime.now().minusMinutes(1));
 
         assertThat(wsc.isExpired()).isTrue();
@@ -103,7 +103,7 @@ class WebSocketConnectionTest {
 
     @Test
     void isExpired_futureExpiresAt_returnsFalse() throws Exception {
-        WebSocketConnection wsc = new WebSocketConnection();
+        final WebSocketConnection wsc = new WebSocketConnection();
         wsc.setExpiresAt(LocalDateTime.now().plusMinutes(10));
 
         assertThat(wsc.isExpired()).isFalse();
@@ -113,7 +113,7 @@ class WebSocketConnectionTest {
 
     @Test
     void deactivate_setsIsActiveFalse() throws Exception {
-        WebSocketConnection wsc = new WebSocketConnection();
+        final WebSocketConnection wsc = new WebSocketConnection();
         wsc.setIsActive(true);
 
         wsc.deactivate();
@@ -125,12 +125,12 @@ class WebSocketConnectionTest {
 
     @Test
     void equals_sameFields_returnsTrue() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
-        WebSocketConnection w1 = WebSocketConnection.builder()
+        final LocalDateTime now = LocalDateTime.now();
+        final WebSocketConnection w1 = WebSocketConnection.builder()
                 .id(1L).connectionId("c1").subscriptionType("auth")
                 .connectionType("local").connectedAt(now).lastActivityAt(now)
                 .expiresAt(now.plusHours(1)).isActive(true).build();
-        WebSocketConnection w2 = WebSocketConnection.builder()
+        final WebSocketConnection w2 = WebSocketConnection.builder()
                 .id(1L).connectionId("c1").subscriptionType("auth")
                 .connectionType("local").connectedAt(now).lastActivityAt(now)
                 .expiresAt(now.plusHours(1)).isActive(true).build();

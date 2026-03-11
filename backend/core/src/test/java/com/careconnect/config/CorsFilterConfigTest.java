@@ -43,7 +43,7 @@ class CorsFilterConfigTest {
     void corsConfigurationSource_IsCreated() throws Exception {
         // Verifies that corsFilter() returns a non-null UrlBasedCorsConfigurationSource,
         // which is the expected concrete type used to map CORS rules to URL patterns.
-        CorsConfigurationSource source = corsFilterConfig.corsFilter();
+        final CorsConfigurationSource source = corsFilterConfig.corsFilter();
         assertNotNull(source);
         assertTrue(source instanceof UrlBasedCorsConfigurationSource);
     }
@@ -52,11 +52,11 @@ class CorsFilterConfigTest {
     void corsConfiguration_HasCorrectAllowedOrigins() throws Exception {
         // Verifies that the injected origins are registered as allowed origin patterns
         // on the CORS configuration mapped to "/**" (all paths).
-        CorsConfigurationSource source = corsFilterConfig.corsFilter();
-        UrlBasedCorsConfigurationSource urlSource =
+        final CorsConfigurationSource source = corsFilterConfig.corsFilter();
+        final UrlBasedCorsConfigurationSource urlSource =
                 (UrlBasedCorsConfigurationSource) source;
 
-        CorsConfiguration config =
+        final CorsConfiguration config =
                 urlSource.getCorsConfigurations().get("/**");
 
         assertNotNull(config);
@@ -70,10 +70,10 @@ class CorsFilterConfigTest {
     void corsConfiguration_AllowsCredentials() throws Exception {
         // Verifies that credentials (cookies, Authorization headers) are permitted,
         // which is required for JWT cookie-based authentication flows.
-        UrlBasedCorsConfigurationSource source =
+        final UrlBasedCorsConfigurationSource source =
                 (UrlBasedCorsConfigurationSource) corsFilterConfig.corsFilter();
 
-        CorsConfiguration config =
+        final CorsConfiguration config =
                 source.getCorsConfigurations().get("/**");
 
         assertTrue(config.getAllowCredentials());
@@ -83,10 +83,10 @@ class CorsFilterConfigTest {
     void corsConfiguration_AllowsAllHeaders() throws Exception {
         // Verifies that both allowedHeaders and exposedHeaders are set to "*", meaning
         // any request header is accepted and any response header is visible to the client.
-        UrlBasedCorsConfigurationSource source =
+        final UrlBasedCorsConfigurationSource source =
                 (UrlBasedCorsConfigurationSource) corsFilterConfig.corsFilter();
 
-        CorsConfiguration config =
+        final CorsConfiguration config =
                 source.getCorsConfigurations().get("/**");
 
         assertEquals(List.of("*"), config.getAllowedHeaders());
@@ -97,10 +97,10 @@ class CorsFilterConfigTest {
     void corsConfiguration_HasCorrectAllowedMethods() throws Exception {
         // Verifies that the five standard HTTP methods required by the API are listed,
         // including OPTIONS which is needed for preflight CORS requests from browsers.
-        UrlBasedCorsConfigurationSource source =
+        final UrlBasedCorsConfigurationSource source =
                 (UrlBasedCorsConfigurationSource) corsFilterConfig.corsFilter();
 
-        CorsConfiguration config =
+        final CorsConfiguration config =
                 source.getCorsConfigurations().get("/**");
 
         assertEquals(
@@ -113,7 +113,7 @@ class CorsFilterConfigTest {
     void corsConfiguration_IsRegisteredForAllPaths() throws Exception {
         // Verifies that the CORS policy is applied globally (mapped to "/**"),
         // ensuring no endpoint is inadvertently left without CORS protection.
-        UrlBasedCorsConfigurationSource source =
+        final UrlBasedCorsConfigurationSource source =
                 (UrlBasedCorsConfigurationSource) corsFilterConfig.corsFilter();
 
         assertTrue(source.getCorsConfigurations().containsKey("/**"));

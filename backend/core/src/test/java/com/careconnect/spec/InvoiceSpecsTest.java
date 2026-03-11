@@ -40,7 +40,7 @@ class InvoiceSpecsTest {
 
     @Test
     void privateConstructor_isInstantiableViaReflection() throws Exception {
-        Constructor<InvoiceSpecs> ctor = InvoiceSpecs.class.getDeclaredConstructor();
+        final Constructor<InvoiceSpecs> ctor = InvoiceSpecs.class.getDeclaredConstructor();
         ctor.setAccessible(true);
         assertThat(ctor.newInstance()).isNotNull();
     }
@@ -64,8 +64,8 @@ class InvoiceSpecsTest {
 
     @Test
     void search_validQuery_buildsOrPredicateWithThreeLikes() throws Exception {
-        String q    = "John";
-        String like = "%" + q.toLowerCase() + "%";
+        final String q    = "John";
+        final String like = "%" + q.toLowerCase() + "%";
 
         when(root.get("invoiceNumber")).thenReturn(path);
         when(root.get("providerName")).thenReturn(path);
@@ -74,7 +74,7 @@ class InvoiceSpecsTest {
         when(cb.like(expr, like)).thenReturn(predicate);
         when(cb.or(predicate, predicate, predicate)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.search(q);
+        final Specification<Invoice> spec = InvoiceSpecs.search(q);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);
@@ -95,12 +95,12 @@ class InvoiceSpecsTest {
 
     @Test
     void providerName_valid_buildsEqualPredicate() throws Exception {
-        String p = "Dr. Smith";
+        final String p = "Dr. Smith";
 
         when(root.get("providerName")).thenReturn(path);
         when(cb.equal(path, p)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.providerName(p);
+        final Specification<Invoice> spec = InvoiceSpecs.providerName(p);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);
@@ -121,12 +121,12 @@ class InvoiceSpecsTest {
 
     @Test
     void patientName_valid_buildsEqualPredicate() throws Exception {
-        String p = "Jane Doe";
+        final String p = "Jane Doe";
 
         when(root.get("patientName")).thenReturn(path);
         when(cb.equal(path, p)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.patientName(p);
+        final Specification<Invoice> spec = InvoiceSpecs.patientName(p);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);
@@ -147,12 +147,12 @@ class InvoiceSpecsTest {
 
     @Test
     void statuses_nonEmpty_buildsInPredicate() throws Exception {
-        Set<PaymentStatus> ss = EnumSet.of(PaymentStatus.pending, PaymentStatus.overdue);
+        final Set<PaymentStatus> ss = EnumSet.of(PaymentStatus.pending, PaymentStatus.overdue);
 
         when(root.get("paymentStatus")).thenReturn(path);
         when(path.in(ss)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.statuses(ss);
+        final Specification<Invoice> spec = InvoiceSpecs.statuses(ss);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);
@@ -173,13 +173,13 @@ class InvoiceSpecsTest {
 
     @Test
     void dueBetween_bothValid_buildsBetweenPredicate() throws Exception {
-        OffsetDateTime start = OffsetDateTime.of(2024, 1,  1,  0,  0,  0, 0, ZoneOffset.UTC);
-        OffsetDateTime end   = OffsetDateTime.of(2024, 12, 31, 23, 59, 59, 0, ZoneOffset.UTC);
+        final OffsetDateTime start = OffsetDateTime.of(2024, 1,  1,  0,  0,  0, 0, ZoneOffset.UTC);
+        final OffsetDateTime end   = OffsetDateTime.of(2024, 12, 31, 23, 59, 59, 0, ZoneOffset.UTC);
 
         when(root.get("dueDate")).thenReturn(path);
         when(cb.between(path, start, end)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.dueBetween(start, end);
+        final Specification<Invoice> spec = InvoiceSpecs.dueBetween(start, end);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);
@@ -200,13 +200,13 @@ class InvoiceSpecsTest {
 
     @Test
     void amountBetween_bothValid_buildsBetweenPredicate() throws Exception {
-        BigDecimal min = BigDecimal.valueOf(10);
-        BigDecimal max = BigDecimal.valueOf(500);
+        final BigDecimal min = BigDecimal.valueOf(10);
+        final BigDecimal max = BigDecimal.valueOf(500);
 
         when(root.get("amountDue")).thenReturn(path);
         when(cb.between(path, min, max)).thenReturn(predicate);
 
-        Specification<Invoice> spec = InvoiceSpecs.amountBetween(min, max);
+        final Specification<Invoice> spec = InvoiceSpecs.amountBetween(min, max);
 
         assertThat(spec).isNotNull();
         assertThat(spec.toPredicate(root, cq, cb)).isEqualTo(predicate);

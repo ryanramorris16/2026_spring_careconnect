@@ -45,7 +45,7 @@ class FallBackControllerTest {
         when(request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)).thenReturn(404);
         when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn("/api/unknown");
 
-        ResponseEntity<String> response = controller.handleError(request);
+        final ResponseEntity<String> response = controller.handleError(request);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("No endpoint found for path: /api/unknown", response.getBody());
@@ -62,7 +62,7 @@ class FallBackControllerTest {
         when(request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)).thenReturn(500);
         when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn("/api/broken");
 
-        ResponseEntity<String> response = controller.handleError(request);
+        final ResponseEntity<String> response = controller.handleError(request);
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Error 500 for path: /api/broken", response.getBody());
@@ -80,7 +80,7 @@ class FallBackControllerTest {
         when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn(null);
         when(request.getRequestURI()).thenReturn("/fallback/uri");
 
-        ResponseEntity<String> response = controller.handleError(request);
+        final ResponseEntity<String> response = controller.handleError(request);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertEquals("No endpoint found for path: /fallback/uri", response.getBody());
