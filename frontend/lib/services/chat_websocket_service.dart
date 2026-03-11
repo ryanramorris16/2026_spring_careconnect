@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'auth_token_manager.dart';
+import 'chat_outbox_service.dart';
 import '../config/env_constant.dart';
 
 /// Model for incoming/outgoing chat messages
@@ -266,6 +267,16 @@ class ChatWebSocketService {
       switch (type) {
         case 'authenticated':
           print('✅ Authentication confirmed');
+          final senderId = int.tryParse(_currentUserId ?? '');
+          if (senderId != null) {
+            ChatOutboxService.retryQueuedMessages(senderId: senderId).then((
+              count,
+            ) {
+              if (count > 0) {
+                print('📤 Retried and sent $count queued chat message(s)');
+              }
+            });
+          }
           break;
 
         case 'message-received':

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:care_connect_app/services/api_service.dart';
+import 'package:care_connect_app/services/chat_outbox_service.dart';
 import 'package:care_connect_app/services/chat_websocket_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +43,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   StreamSubscription? _readReceiptSubscription;
   StreamSubscription? _connectionSubscription;
   Map<String, bool> _messageDeliveryStatus = {}; // clientMessageId -> delivered
+  bool _isRetryingQueuedMessages = false;
   bool _initialized = false;
   PlatformFile? _selectedAttachment;
   bool _isUploadingAttachment = false;
@@ -87,6 +90,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       setState(() => _webSocketConnected = true);
       print('✅ WebSocket initialized for user $_currentUserId');
+      await _retryQueuedMessages(showFeedback: false);
 
       // Listen for incoming messages
       _messageSubscription = ChatWebSocketService.onMessageReceived.listen((
@@ -104,6 +108,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           .listen((status) {
             if (mounted) {
               setState(() => _webSocketConnected = status == 'authenticated');
+              if (status == 'authenticated') {
+                _retryQueuedMessages();
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Chat connection: $status'),
@@ -342,12 +349,27 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     setState(() => _isUploadingAttachment = false);
 
+    // Check network connectivity first.
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final isOffline =
+        connectivityResult.isEmpty ||
+        connectivityResult.every((r) => r == ConnectivityResult.none);
+
+    if (isOffline) {
+      await _queueMessageForRetry(content, attachment: attachmentPayload);
+      return;
+    }
+
     if (!_webSocketConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chat not connected. Trying REST API...')),
+      // Try REST as fallback; if that also fails, queue the message.
+      final sent = await _sendMessageViaRest(
+        content,
+        attachment: attachmentPayload,
+        showFailureSnackbar: false,
       );
-      // Fallback to REST if WebSocket not connected
-      await _sendMessageViaRest(content, attachment: attachmentPayload);
+      if (!sent) {
+        await _queueMessageForRetry(content, attachment: attachmentPayload);
+      }
       return;
     }
 
@@ -357,32 +379,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _messageDeliveryStatus[clientMsgId] = false;
 
       // Add optimistic message to UI with temporary negative ID
-      final tempId =
-          -DateTime.now().millisecondsSinceEpoch; // Negative to avoid conflicts
-      final optimisticMsg = MessageDto(
-        id: tempId,
-        senderId: _currentUserId!,
-        receiverId: widget.peerUserId,
-        content: content.isNotEmpty
-            ? content
-            : 'Attachment: ${attachmentPayload?['name'] ?? 'file'}',
-        timestamp: DateTime.now(),
-        isRead: false,
-        attachmentFileId: _toNullableInt(attachmentPayload?['fileId']),
-        attachmentUrl: attachmentPayload?['url']?.toString(),
-        attachmentName: attachmentPayload?['name']?.toString(),
-        attachmentContentType: attachmentPayload?['contentType']?.toString(),
-        attachmentSize: _toNullableInt(attachmentPayload?['size']),
-      );
-
+      _addOptimisticOutgoingMessage(content, attachmentPayload);
       _controller.clear();
       _selectedAttachment = null;
-
-      if (mounted) {
-        setState(() {
-          messages.add(optimisticMsg);
-        });
-      }
 
       // Send via WebSocket
       final success = await ChatWebSocketService.sendMessage(
@@ -392,9 +391,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
 
       if (!success && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Failed to send message')));
+        await _queueMessageForRetry(
+          content,
+          attachment: attachmentPayload,
+          addOptimisticMessage: false,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Message queued. It will send when connection returns.',
+            ),
+          ),
+        );
       } else {
         // Refresh to replace optimistic IDs with DB IDs and read state.
         await fetchConversation(silent: true);
@@ -407,9 +415,96 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _sendMessageViaRest(
+  void _addOptimisticOutgoingMessage(
+    String content,
+    Map<String, dynamic>? attachment,
+  ) {
+    if (!mounted || _currentUserId == null) return;
+
+    final tempId = -DateTime.now().millisecondsSinceEpoch;
+    final optimisticMsg = MessageDto(
+      id: tempId,
+      senderId: _currentUserId!,
+      receiverId: widget.peerUserId,
+      content: content.isNotEmpty
+          ? content
+          : 'Attachment: ${attachment?['name'] ?? 'file'}',
+      timestamp: DateTime.now(),
+      isRead: false,
+      attachmentFileId: _toNullableInt(attachment?['fileId']),
+      attachmentUrl: attachment?['url']?.toString(),
+      attachmentName: attachment?['name']?.toString(),
+      attachmentContentType: attachment?['contentType']?.toString(),
+      attachmentSize: _toNullableInt(attachment?['size']),
+    );
+
+    setState(() {
+      messages.add(optimisticMsg);
+    });
+  }
+
+  Future<void> _queueMessageForRetry(
     String content, {
     Map<String, dynamic>? attachment,
+    bool addOptimisticMessage = true,
+  }) async {
+    if (_currentUserId == null) return;
+
+    final resolvedContent = content.trim().isNotEmpty
+        ? content
+        : 'Attachment: ${attachment?['name'] ?? 'file'}';
+
+    await ChatOutboxService.enqueueMessage(
+      senderId: _currentUserId!,
+      receiverId: widget.peerUserId,
+      content: resolvedContent,
+      attachment: attachment,
+      receiverName: widget.peerName,
+    );
+
+    if (addOptimisticMessage) {
+      _addOptimisticOutgoingMessage(resolvedContent, attachment);
+    }
+
+    _controller.clear();
+    _selectedAttachment = null;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Message queued. It will send when connection returns.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _retryQueuedMessages({bool showFeedback = true}) async {
+    if (_currentUserId == null || _isRetryingQueuedMessages) return;
+
+    _isRetryingQueuedMessages = true;
+    try {
+      final sentCount = await ChatOutboxService.retryQueuedMessages(
+        senderId: _currentUserId!,
+      );
+      if (sentCount > 0) {
+        await fetchConversation(silent: true);
+        if (showFeedback && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sent $sentCount queued message(s)')),
+          );
+        }
+      }
+    } finally {
+      _isRetryingQueuedMessages = false;
+    }
+  }
+
+  Future<bool> _sendMessageViaRest(
+    String content, {
+    Map<String, dynamic>? attachment,
+    bool showFailureSnackbar = true,
   }) async {
     try {
       await ApiService.sendMessage(
@@ -422,15 +517,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _controller.clear();
       _selectedAttachment = null;
       await fetchConversation();
+      return true;
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+      if (showFailureSnackbar) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+      }
+      return false;
     }
   }
 
   Widget buildMessageBubble(MessageDto msg) {
     final isMe = msg.senderId == _currentUserId;
+    final isPending = isMe && msg.id < 0;
     final isDelivered = _messageDeliveryStatus[msg.id.toString()] ?? true;
     final isSeen = msg.isRead;
     final hasAttachment =
@@ -443,7 +543,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
         decoration: BoxDecoration(
-          color: isMe ? Colors.blue.shade100 : Colors.grey.shade300,
+          color: isMe
+              ? (isPending ? Colors.orange.shade100 : Colors.blue.shade100)
+              : Colors.grey.shade300,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -510,17 +612,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 if (isMe) ...[
                   const SizedBox(width: 4),
                   Icon(
-                    isSeen
-                        ? Icons.done_all
-                        : (isDelivered ? Icons.done : Icons.schedule),
+                    isPending
+                        ? Icons.schedule
+                        : (isSeen
+                              ? Icons.done_all
+                              : (isDelivered ? Icons.done : Icons.schedule)),
                     size: 12,
-                    color: isSeen
-                        ? Colors.blue
-                        : (isDelivered ? Colors.grey : Colors.orange),
+                    color: isPending
+                        ? Colors.orange
+                        : (isSeen
+                              ? Colors.blue
+                              : (isDelivered ? Colors.grey : Colors.orange)),
                   ),
                   const SizedBox(width: 3),
                   Text(
-                    isSeen ? 'Seen' : (isDelivered ? 'Delivered' : 'Sending'),
+                    isPending
+                        ? 'Pending'
+                        : (isSeen
+                              ? 'Seen'
+                              : (isDelivered ? 'Delivered' : 'Sending')),
                     style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                   ),
                 ],

@@ -3,12 +3,14 @@ class ConversationPreviewDto {
   final String peerName;
   final String content; // last message
   final DateTime timestamp;
+  final bool isPending;
 
   ConversationPreviewDto({
     required this.peerId,
     required this.peerName,
     required this.content,
     required this.timestamp,
+    this.isPending = false,
   });
 
   factory ConversationPreviewDto.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class ConversationPreviewDto {
       timestamp:
           DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
           DateTime.now(),
+      isPending: json['isPending'] == true,
     );
   }
 }

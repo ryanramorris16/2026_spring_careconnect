@@ -100,7 +100,37 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                     : convo.content;
                 return ListTile(
                   title: Text(convo.peerName),
-                  subtitle: Text(previewText),
+                  subtitle: Row(
+                    children: [
+                      if (convo.isPending)
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Pending',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        child: Text(
+                          previewText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                   trailing: Text(
                     convo.timestamp.toIso8601String().split('T').join(' • '),
                     style: const TextStyle(fontSize: 12, color: Colors.grey),
