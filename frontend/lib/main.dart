@@ -21,6 +21,7 @@ import 'config/utils/web_utils.dart';
 import 'features/tasks/utils/task_type_manager.dart';
 import 'providers/theme_provider.dart';
 import 'providers/user_provider.dart';
+import 'providers/unread_message_provider.dart';
 import 'services/auth_migration_helper.dart';
 import 'services/messaging_service.dart';
 
@@ -48,13 +49,12 @@ Future<void> main() async {
 
       // Configure URL strategy for web to remove hash from URLs
       if (kIsWeb) {
-    // For hash-based routes:
-         setUrlStrategy(const HashUrlStrategy());
- 
-        }else{
-            // Or, for path-based routes (no #):
-          usePathUrlStrategy();
-        }
+        // For hash-based routes:
+        setUrlStrategy(const HashUrlStrategy());
+      } else {
+        // Or, for path-based routes (no #):
+        usePathUrlStrategy();
+      }
 
       // Create providers (don't initialize them yet)
       final userProvider = UserProvider();
@@ -70,6 +70,7 @@ Future<void> main() async {
             ChangeNotifierProvider.value(value: themeProvider),
             ChangeNotifierProvider.value(value: shortcutProvider),
             ChangeNotifierProvider.value(value: localeProvider),
+            ChangeNotifierProvider(create: (_) => UnreadMessageProvider()),
             ChangeNotifierProvider(create: (_) => TaskTypeManager()),
             ChangeNotifierProvider(create: (_) => ShortcutProvider()..init()),
           ],

@@ -123,21 +123,65 @@ public class ChatMessageWebSocketHandler extends TextWebSocketHandler {
         String recipientId = (String) payload.get("recipientId");
         String content = (String) payload.get("content");
         Object messageIdObj = payload.get("messageId");
+        Map<String, Object> attachment = null;
+        Object attachmentObj = payload.get("attachment");
+        if (attachmentObj instanceof Map<?, ?> attachmentMap) {
+            attachment = new HashMap<>();
+            for (Map.Entry<?, ?> entry : attachmentMap.entrySet()) {
+                attachment.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+        }
 
-        if (recipientId == null || content == null) {
-            sendError(session, "Missing required fields: recipientId, content");
+        boolean hasContent = content != null && !content.trim().isEmpty();
+        boolean hasAttachment = attachment != null && attachment.get("url") != null
+                && !String.valueOf(attachment.get("url")).trim().isEmpty();
+
+        if (recipientId == null || (!hasContent && !hasAttachment)) {
+            sendError(session, "Missing required fields: recipientId and content or attachment");
             return;
         }
 
         String clientMessageId = messageIdObj != null ? (String) messageIdObj : null;
+        String messageContent = hasContent ? content : "Attachment";
 
         // Persist message to database
         Message message = new Message();
         message.setSenderId(Long.parseLong(senderId));
         message.setReceiverId(Long.parseLong(recipientId));
-        message.setContent(content);
+        message.setContent(messageContent);
         message.setTimestamp(java.time.LocalDateTime.now());
         message.setRead(false);
+
+        if (attachment != null) {
+            Object fileId = attachment.get("fileId");
+            if (fileId != null) {
+                try {
+                    message.setAttachmentFileId(Long.parseLong(String.valueOf(fileId)));
+                } catch (NumberFormatException ignored) {
+                    // ignore malformed file ids from clients
+                }
+            }
+            Object url = attachment.get("url");
+            if (url != null) {
+                message.setAttachmentUrl(String.valueOf(url));
+            }
+            Object name = attachment.get("name");
+            if (name != null) {
+                message.setAttachmentName(String.valueOf(name));
+            }
+            Object contentType = attachment.get("contentType");
+            if (contentType != null) {
+                message.setAttachmentContentType(String.valueOf(contentType));
+            }
+            Object size = attachment.get("size");
+            if (size != null) {
+                try {
+                    message.setAttachmentSize(Long.parseLong(String.valueOf(size)));
+                } catch (NumberFormatException ignored) {
+                    // ignore malformed file sizes from clients
+                }
+            }
+        }
 
         Message savedMessage = messageRepository.save(message);
         log.info("Message saved to DB: id={}, from {} to {}", savedMessage.getId(), senderId, recipientId);
@@ -148,16 +192,24 @@ public class ChatMessageWebSocketHandler extends TextWebSocketHandler {
 
         if (recipientSession != null && recipientSession.isOpen()) {
             try {
-                Map<String, Object> deliveryPayload = Map.of(
-                    "type", "message-received",
-                    "messageId", savedMessage.getId(),
-                    "clientMessageId", clientMessageId != null ? clientMessageId : "",
-                    "senderId", senderId,
-                    "recipientId", recipientId,
-                    "content", content,
-                    "timestamp", savedMessage.getTimestamp().toString(),
-                    "delivered", true
-                );
+                Map<String, Object> deliveryPayload = new HashMap<>();
+                deliveryPayload.put("type", "message-received");
+                deliveryPayload.put("messageId", savedMessage.getId());
+                deliveryPayload.put("clientMessageId", clientMessageId != null ? clientMessageId : "");
+                deliveryPayload.put("senderId", senderId);
+                deliveryPayload.put("recipientId", recipientId);
+                deliveryPayload.put("content", messageContent);
+                deliveryPayload.put("timestamp", savedMessage.getTimestamp().toString());
+                deliveryPayload.put("delivered", true);
+                if (savedMessage.getAttachmentUrl() != null && !savedMessage.getAttachmentUrl().isEmpty()) {
+                    Map<String, Object> attachmentPayload = new HashMap<>();
+                    attachmentPayload.put("fileId", savedMessage.getAttachmentFileId());
+                    attachmentPayload.put("url", savedMessage.getAttachmentUrl());
+                    attachmentPayload.put("name", savedMessage.getAttachmentName());
+                    attachmentPayload.put("contentType", savedMessage.getAttachmentContentType());
+                    attachmentPayload.put("size", savedMessage.getAttachmentSize());
+                    deliveryPayload.put("attachment", attachmentPayload);
+                }
                 recipientSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(deliveryPayload)));
                 delivered = true;
                 log.info("Message {} delivered to user {}", savedMessage.getId(), recipientId);

@@ -1,5 +1,7 @@
 import 'package:care_connect_app/pages/settings_page.dart';
 import 'package:care_connect_app/features/emergency_qr/qr_screen.dart';
+import 'package:care_connect_app/features/social/presentation/pages/chat_inbox_screen.dart';
+import 'package:care_connect_app/providers/unread_message_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:flutter/material.dart';
@@ -114,7 +116,10 @@ class DashboardAppHeader extends StatelessWidget
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               onPressed: () {
-                                final userProvider = Provider.of<UserProvider>(context, listen: false);
+                                final userProvider = Provider.of<UserProvider>(
+                                  context,
+                                  listen: false,
+                                );
                                 final patient = userProvider.patientModel;
                                 final user = userProvider.user;
 
@@ -126,7 +131,9 @@ class DashboardAppHeader extends StatelessWidget
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Invalid date of birth. Cannot generate emergency QR.'),
+                                        content: Text(
+                                          'Invalid date of birth. Cannot generate emergency QR.',
+                                        ),
                                       ),
                                     );
                                     return;
@@ -135,22 +142,27 @@ class DashboardAppHeader extends StatelessWidget
                                   // Calculate accurate age
                                   final now = DateTime.now();
                                   int age = now.year - dobDate.year;
-                                  if (now.month < dobDate.month || (now.month == dobDate.month && now.day < dobDate.day)) {
+                                  if (now.month < dobDate.month ||
+                                      (now.month == dobDate.month &&
+                                          now.day < dobDate.day)) {
                                     age--;
                                   }
 
                                   // Create emergency ID from patient ID
-                                  final emergencyId = 'VIAL${user.patientId ?? user.id}';
+                                  final emergencyId =
+                                      'VIAL${user.patientId ?? user.id}';
 
                                   final emergencyInfo = EmergencyInfo(
                                     firstName: patient.firstName,
                                     lastName: patient.lastName,
-                                    bloodType: '', // Will be filled from backend
+                                    bloodType:
+                                        '', // Will be filled from backend
                                     dob: dobDate,
                                     age: age,
                                     gender: patient.gender,
                                     id: emergencyId,
-                                    allergiesCritical: [], // Will be loaded from backend
+                                    allergiesCritical:
+                                        [], // Will be loaded from backend
                                     contacts: [],
                                     secureToken: user.token,
                                   );
@@ -169,7 +181,9 @@ class DashboardAppHeader extends StatelessWidget
                                   // Show error if no patient data available
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Patient data not available for emergency QR'),
+                                      content: Text(
+                                        'Patient data not available for emergency QR',
+                                      ),
                                     ),
                                   );
                                 }
@@ -179,6 +193,71 @@ class DashboardAppHeader extends StatelessWidget
                                 color: Colors.red,
                                 size: 22,
                               ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Messages Icon with unread badge
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Consumer<UnreadMessageProvider>(
+                              builder: (context, unreadProvider, _) {
+                                return IconButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const ChatInboxScreen(),
+                                      ),
+                                    );
+                                    if (!context.mounted) return;
+                                    await unreadProvider.refreshUnreadCount();
+                                  },
+                                  icon: Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      Icon(
+                                        Icons.message_outlined,
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.6),
+                                        size: 22,
+                                      ),
+                                      if (unreadProvider.unreadCount > 0)
+                                        Positioned(
+                                          right: -6,
+                                          top: -6,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 5,
+                                              vertical: 1,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 16,
+                                            ),
+                                            child: Text(
+                                              unreadProvider.unreadCount > 99
+                                                  ? '99+'
+                                                  : unreadProvider.unreadCount
+                                                        .toString(),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),

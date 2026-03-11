@@ -7,6 +7,9 @@ class Patient {
   /// Unique identifier for the patient
   final String id;
 
+  /// Patient's user ID for authentication and chat purposes
+  final int? userId;
+
   /// Patient's first name
   final String firstName;
 
@@ -38,6 +41,7 @@ class Patient {
   ///
   /// Parameters:
   /// * [id] - Unique identifier for the patient
+  /// * [userId] - Patient's user ID for authentication and chat purposes
   /// * [firstName] - Patient's first name
   /// * [lastName] - Patient's last name
   /// * [lastUpdated] - Timestamp of the last update from this patient
@@ -49,6 +53,7 @@ class Patient {
   /// * [messageCount] - Number of unread messages from this patient (defaults to 0)
   Patient({
     required this.id,
+    this.userId,
     required this.firstName,
     required this.lastName,
     required this.lastUpdated,

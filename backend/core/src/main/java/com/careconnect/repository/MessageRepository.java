@@ -24,4 +24,14 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Optionally for inbox preview: last message per user
     @Query("SELECT m FROM Message m WHERE m.senderId = :userId OR m.receiverId = :userId ORDER BY m.timestamp DESC")
     List<Message> findAllUserMessages(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.receiverId = :userId AND m.isRead = false")
+    long countUnreadMessages(@Param("userId") Long userId);
+
+    boolean existsByAttachmentFileIdAndSenderIdOrAttachmentFileIdAndReceiverId(
+            Long attachmentFileId,
+            Long senderId,
+            Long attachmentFileIdAgain,
+            Long receiverId
+    );
 }

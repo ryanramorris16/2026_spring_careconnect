@@ -26,6 +26,21 @@ public class MessageController {
     // ✅ Send a new message
     @PostMapping("/send")
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+        String content = message.getContent();
+        boolean hasContent = content != null && !content.trim().isEmpty();
+        boolean hasAttachment = message.getAttachmentUrl() != null && !message.getAttachmentUrl().trim().isEmpty();
+
+        if (!hasContent && !hasAttachment) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (!hasContent && hasAttachment) {
+            String fallback = message.getAttachmentName() != null && !message.getAttachmentName().trim().isEmpty()
+                    ? "Attachment: " + message.getAttachmentName().trim()
+                    : "Attachment";
+            message.setContent(fallback);
+        }
+
         message.setTimestamp(LocalDateTime.now());
         message.setRead(false);
         Message saved = messageRepo.save(message);
@@ -68,5 +83,11 @@ public class MessageController {
         }
 
         return ResponseEntity.ok(new ArrayList<>(map.values()));
+    }
+
+    @GetMapping("/unread-count/{userId}")
+    public ResponseEntity<Map<String, Long>> getUnreadCount(@PathVariable Long userId) {
+        long unreadCount = messageRepo.countUnreadMessages(userId);
+        return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
     }
 }

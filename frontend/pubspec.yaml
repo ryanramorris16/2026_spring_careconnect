@@ -114,6 +114,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^1.5.0
+  web_socket_channel: ^3.0.3
   universal_html: ^2.2.4
   flutter_secure_storage: ^9.2.4
   # Flutter SDK
@@ -198,7 +199,7 @@ flutter:
     - assets/images/app_icon.png
     - assets/sherpa-onnx-streaming-zipformer-en-2023-06-26/
     - assets/sherpa-onnx-pyannote-segmentation-3-0/
-    - assets/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+    # - assets/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
     - assets/sherpa-onnx-zipformer-gigaspeech-2023-12-12/
     - assets/images/CareConnectLogo.png
     - assets/images/CareConnectLogo.svg

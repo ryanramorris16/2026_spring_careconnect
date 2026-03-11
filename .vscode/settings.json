@@ -1,3 +1,8 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+  "java.project.sourcePaths": [
+    "backend/core/src/main/java",
+    "backend/core/src/test/java"
+  ],
+  "java.import.maven.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

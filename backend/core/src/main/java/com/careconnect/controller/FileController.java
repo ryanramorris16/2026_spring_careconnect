@@ -5,6 +5,7 @@ import com.careconnect.dto.UserFileDTO;
 import com.careconnect.service.S3StorageService;
 import com.careconnect.service.FileManagementService;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.repository.MessageRepository;
 import com.careconnect.model.User;
 import com.careconnect.security.Role;
 import com.careconnect.service.CaregiverService;
@@ -49,6 +50,7 @@ public class FileController {
     private final PatientRepository patientRepository;
     private final CaregiverService caregiverService;
     private final PatientService patientService;
+    private final MessageRepository messageRepository;
 
     @Autowired
     public FileController(@Autowired(required = false) S3StorageService s3StorageService,
@@ -56,13 +58,15 @@ public class FileController {
                          UserRepository userRepository,
                          PatientRepository patientRepository,
                          CaregiverService caregiverService,
-                         PatientService patientService) {
+                         PatientService patientService,
+                         MessageRepository messageRepository) {
         this.s3StorageService = s3StorageService;
         this.fileManagementService = fileManagementService;
         this.userRepository = userRepository;
         this.patientRepository = patientRepository;
         this.caregiverService = caregiverService;
         this.patientService = patientService;
+        this.messageRepository = messageRepository;
     }
     
     @Value("${app.file.storage.use-s3:true}")
@@ -539,6 +543,20 @@ public class FileController {
         // If file is associated with a patient, check patient access
         if (fileDto.getPatientId() != null) {
             return hasAccessToPatient(currentUser, fileDto.getPatientId());
+        }
+
+        // Allow chat participants to access attachments exchanged in their messages.
+        if (fileDto.getId() != null) {
+            boolean isChatParticipant = messageRepository
+                    .existsByAttachmentFileIdAndSenderIdOrAttachmentFileIdAndReceiverId(
+                            fileDto.getId(),
+                            currentUser.getId(),
+                            fileDto.getId(),
+                            currentUser.getId()
+                    );
+            if (isChatParticipant) {
+                return true;
+            }
         }
         
         return false;

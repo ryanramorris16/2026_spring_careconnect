@@ -14,8 +14,10 @@ import '../../../../services/messaging_service.dart';
 import '../../../../services/call_notification_service.dart';
 import '../../../../widgets/messaging_widget.dart';
 import '../../../../widgets/call_notification_status_indicator.dart';
+import '../../../../widgets/hybrid_video_call_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/notifications_panel_widget.dart';
-
+import 'package:care_connect_app/providers/unread_message_provider.dart';
+import 'package:care_connect_app/features/social/presentation/pages/chat_inbox_screen.dart';
 
 import 'patient_medical_notes_page.dart';
 
@@ -47,7 +49,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
   // ===== Notifications (collapsible) state =====
   List<NotificationItem> _notifications = [];
 
-
   // Main content builder method
   Widget _buildMainContent() {
     return _buildContentBasedOnState();
@@ -64,22 +65,18 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
     _loadNotifications();
   }
 
+  Future<void> _loadNotifications() async {
+    try {
+      // TODO: wire to your real service, e.g.:
+      // final items = await NotificationService.fetchForCaregiver(userId);
+      // setState(() => _notifications = items);
 
-
-    Future<void> _loadNotifications() async {
-      try {
-        // TODO: wire to your real service, e.g.:
-        // final items = await NotificationService.fetchForCaregiver(userId);
-        // setState(() => _notifications = items);
-
-        // No hardcoded items; keep empty until service is wired
-        setState(() => _notifications = []);
-      } catch (_) {
-        // keep UI stable on error
-      }
+      // No hardcoded items; keep empty until service is wired
+      setState(() => _notifications = []);
+    } catch (_) {
+      // keep UI stable on error
     }
-
-
+  }
 
   Future<void> _initializeServices() async {
     try {
@@ -101,6 +98,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       final success = await CallNotificationService.initialize(
         userId: caregiverId.toString(),
         userRole: userProvider.user?.role.toUpperCase() ?? 'CAREGIVER',
+        userDisplayName: userProvider.user?.name,
         context: context,
       );
 
@@ -602,19 +600,26 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       // Generate unique call ID
       final callId = 'call_${DateTime.now().millisecondsSinceEpoch}';
 
-      // Send real-time call notification to patient
-      final notificationSent = await CallNotificationService.sendCallInvitation(
-        recipientId: patient.id.toString(),
-        recipientRole: 'PATIENT',
-        callId: callId,
-        isVideoCall: isVideoCall,
+      // Navigate immediately; invitation is sent only after caller joins and is waiting.
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => HybridVideoCallWidget(
+            userId: widget.caregiverId.toString(),
+            callId: callId,
+            recipientId: patient.id.toString(),
+            userRole: 'CAREGIVER',
+            returnPatientDetailsId: patient.id.toString(),
+            forcePatientDetailsOnExit: true,
+            returnAsCaregiver: true,
+            isInitiator: true,
+            isVideoEnabled: isVideoCall,
+            isAudioEnabled: true,
+            userName: caregiverName ?? 'Caregiver',
+            recipientName: '${patient.firstName} ${patient.lastName}',
+          ),
+        ),
       );
-
-      if (!notificationSent) {
-        print(
-          '⚠️ Failed to send real-time notification, falling back to standard method',
-        );
-      }
 
       // Also use the existing video call service for backward compatibility
       // final callData = await VideoCallService.initiateCall(
@@ -789,6 +794,56 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                 isInitialized: _callNotificationInitialized,
               ),
               const SizedBox(width: 12),
+              Consumer<UnreadMessageProvider>(
+                builder: (context, unreadProvider, _) {
+                  return IconButton(
+                    tooltip: 'Messages',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ChatInboxScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      await unreadProvider.refreshUnreadCount();
+                    },
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.message_outlined),
+                        if (unreadProvider.unreadCount > 0)
+                          Positioned(
+                            right: -6,
+                            top: -6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(minWidth: 16),
+                              child: Text(
+                                unreadProvider.unreadCount > 99
+                                    ? '99+'
+                                    : unreadProvider.unreadCount.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(Icons.help_outline),
                 onPressed: () {
@@ -806,6 +861,55 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                 isInitialized: _callNotificationInitialized,
               ),
               const SizedBox(width: 8),
+              Consumer<UnreadMessageProvider>(
+                builder: (context, unreadProvider, _) {
+                  return IconButton(
+                    tooltip: 'Messages',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ChatInboxScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      await unreadProvider.refreshUnreadCount();
+                    },
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.message_outlined),
+                        if (unreadProvider.unreadCount > 0)
+                          Positioned(
+                            right: -6,
+                            top: -6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(minWidth: 16),
+                              child: Text(
+                                unreadProvider.unreadCount > 99
+                                    ? '99+'
+                                    : unreadProvider.unreadCount.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ],
       currentRoute: '/dashboard',
       body: _buildMainContent(),
@@ -889,7 +993,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-
             // ===== Notifications (collapsible) at top =====
             NotificationsPanel(
               notifications: _notifications, // List<NotificationItem>
@@ -897,7 +1000,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
               initiallyExpanded: true,
             ),
             const SizedBox(height: 16),
-            
+
             Icon(
               Icons.person_search,
               size: isMobile ? 80.0 : 96.0,
@@ -968,7 +1071,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       onRefresh: fetchPatients,
       child: CustomScrollView(
         slivers: [
-          
           // ===== Notifications (collapsible) at top =====
           SliverToBoxAdapter(
             child: Padding(
@@ -992,7 +1094,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
             ),
           ),
 
-          
           // Show patient count
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
@@ -1080,18 +1181,13 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       icon: const Icon(Icons.add, color: Colors.white),
       label: const Text(
         'Start New Visit',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
       ),
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 2,
       ),
     );
@@ -1160,8 +1256,8 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                   ],
                 ),
               ),
-            )
-          )
+            ),
+          ),
         );
       },
     );
@@ -1576,4 +1672,3 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
     );
   }
 }
-

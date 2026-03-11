@@ -82,6 +82,7 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/ai-chat/**").authenticated()
                         .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
                         .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/v1/api/files/**").authenticated()
                         .requestMatchers("/v1/api/messages/**").authenticated()
                         .requestMatchers("/v1/api/patient/**").authenticated()
                         .requestMatchers("/api/patient/**").authenticated()
