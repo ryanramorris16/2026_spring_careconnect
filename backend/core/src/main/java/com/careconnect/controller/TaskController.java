@@ -29,12 +29,18 @@ public class TaskController {
     private AuthorizationService authorizationService;
 
     @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
+    public ResponseEntity<List<Task>> getAllTasks() throws UnauthorizedException {
+        // RBAC: Only admins and caregivers can view all tasks
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
+    public ResponseEntity<Task> getTaskById(@PathVariable Long id) throws UnauthorizedException {
+        // RBAC: Only admins and caregivers can view individual tasks
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         Task task = taskService.getTaskById(id);
         if (task != null) {
             return ResponseEntity.ok(task);
