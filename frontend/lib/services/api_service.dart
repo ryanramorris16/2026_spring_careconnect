@@ -1731,6 +1731,55 @@ class ApiService {
       return http.Response(jsonEncode({'error': e.toString()}), 500);
     }
   }
+
+  /// Persist medication taken timestamp for reminder dose windows.
+  static Future<http.Response> markMedicationTaken(
+    int patientId,
+    int medicationId, {
+    DateTime? takenAt,
+  }) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      final uri = Uri.parse(
+        '${ApiConstants.patients}/$patientId/medications/$medicationId/last-taken',
+      );
+      final payload = jsonEncode({
+        'lastTaken': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
+      });
+
+      return await _httpClient
+          .put(uri, headers: headers, body: payload)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
+          );
+    } catch (e) {
+      return http.Response(jsonEncode({'error': e.toString()}), 500);
+    }
+  }
+
+  /// Clear persisted medication taken timestamp.
+  static Future<http.Response> clearMedicationTakenStatus(
+    int patientId,
+    int medicationId,
+  ) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final uri = Uri.parse(
+        '${ApiConstants.patients}/$patientId/medications/$medicationId/last-taken',
+      );
+
+      return await _httpClient
+          .delete(uri, headers: headers)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
+          );
+    } catch (e) {
+      return http.Response(jsonEncode({'error': e.toString()}), 500);
+    }
+  }
   
   // fetch from backend
   static Future<List<dynamic>> fetchAllergies(final int patientId) async {
