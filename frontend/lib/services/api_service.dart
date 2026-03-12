@@ -470,6 +470,28 @@ class ApiService {
     }
   }
 
+  static Future<bool> setPatientMessagingEnabledForLink({
+    required int linkId,
+    required bool enabled,
+  }) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await _httpClient
+          .post(
+            Uri.parse(
+              '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/patient-messaging',
+            ),
+            headers: headers,
+            body: jsonEncode({'enabled': enabled}),
+          )
+          .timeout(const Duration(seconds: 20));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Check if a user with the given email exists
   static Future<Map<String, dynamic>> checkEmailExists(String email) async {
     final headers = await AuthTokenManager.getAuthHeaders();

@@ -81,21 +81,13 @@ public class SecurityConfig {
                         /* ---------- Static assets ------------------------------------- */
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
 
-                        /* ---------- Require JWT for these APIs ------------------------ */
-                        .requestMatchers("/v1/api/patients/**").authenticated()
-                        .requestMatchers("/v1/api/caregivers/**").authenticated()
-                        .requestMatchers("/v1/api/allergies/**").authenticated()
-                        .requestMatchers("/v1/api/symptoms/**").authenticated()
-                        .requestMatchers("/v1/api/ai/**", "/api/ai/**").authenticated()
-                        .requestMatchers("/v1/api/ai/deepseek/**").authenticated()
-                        .requestMatchers("/v1/api/family-members/**").authenticated()
-                        .requestMatchers("/v1/api/ai-chat/**").authenticated()
-                        .requestMatchers("/v1/api/caregiver-patient-links/**").authenticated()
-                        .requestMatchers("/v1/api/invoices/**").authenticated()
-                        .requestMatchers("/v1/api/patient/**").authenticated()
-                        .requestMatchers("/api/patient/**").authenticated()
+                        /* ---------- Require JWT for all API calls -------------------- */
+                        // Public paths (auth, ws, swagger) are already matched above by
+                        // permitAll() — Spring Security stops at the first matching rule,
+                        // so those are never caught here.
+                        .requestMatchers("/v1/api/**").authenticated()
                         .requestMatchers("/v3/api/**").authenticated()
-                        .requestMatchers("/api/v3/calls/**").authenticated()
+                        .requestMatchers("/api/**").authenticated()
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()
