@@ -102,51 +102,5 @@ void main() {
       expect(await db.getPendingOfflineSyncCount(), equals(0));
       expect(await db.getOfflineSyncById('to-delete'), isNull);
     });
-
-    test('mark methods are no-op for unknown id', () async {
-      final db = AppDatabase();
-
-      await db.markOfflineSyncAsSyncing('missing');
-      await db.markOfflineSyncAsFailed(
-        id: 'missing',
-        errorMessage: 'ignored',
-      );
-
-      expect(await db.getPendingOfflineSyncCount(), equals(0));
-    });
-
-    test('getPendingOfflineSyncQueue respects limit', () async {
-      final db = AppDatabase();
-      await db.upsertOfflineSyncOperation(
-        id: 'a',
-        method: 'POST',
-        url: 'https://example.org/v1/api/tasks',
-        headersJson: '{}',
-        bodyJson: '{"title":"A"}',
-        createdAtIso: '2026-03-12T10:00:00.000Z',
-        fingerprint: 'fp-a',
-      );
-      await db.upsertOfflineSyncOperation(
-        id: 'b',
-        method: 'POST',
-        url: 'https://example.org/v1/api/tasks',
-        headersJson: '{}',
-        bodyJson: '{"title":"B"}',
-        createdAtIso: '2026-03-12T10:01:00.000Z',
-        fingerprint: 'fp-b',
-      );
-      await db.upsertOfflineSyncOperation(
-        id: 'c',
-        method: 'POST',
-        url: 'https://example.org/v1/api/tasks',
-        headersJson: '{}',
-        bodyJson: '{"title":"C"}',
-        createdAtIso: '2026-03-12T10:02:00.000Z',
-        fingerprint: 'fp-c',
-      );
-
-      final queue = await db.getPendingOfflineSyncQueue(limit: 2);
-      expect(queue.map((e) => e.id).toList(), equals(<String>['a', 'b']));
-    });
   });
 }

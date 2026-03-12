@@ -7,18 +7,10 @@ import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 import 'db_encryption_service.dart';
-import 'generated/jpa_drift_bundle.dart';
 import 'offline_sync_row.dart';
 
-part 'app_database.g.dart';
-
-/// Encrypted Drift database used by mobile offline storage.
-///
-/// Table definitions are generated from backend JPA models and imported from
-/// `generated/jpa_drift_bundle.dart`. The generic offline request queue is
-/// persisted in a custom `offline_sync` table.
-@DriftDatabase(tables: [Moods, Tasks])
-class AppDatabase extends _$AppDatabase {
+/// Encrypted local database used only for offline sync queue persistence.
+class AppDatabase {
   AppDatabase({DbEncryptionService? encryptionService})
       : _encryptionService = encryptionService ?? DbEncryptionService();
 
@@ -31,7 +23,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> ensureOfflineSyncTable() async {
-    await customStatement('''
+    final db = await _openDb();
+    db.execute('''
       CREATE TABLE IF NOT EXISTS offline_sync (
         id TEXT PRIMARY KEY,
         method TEXT NOT NULL,
@@ -46,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
       )
     ''');
 
-    await customStatement('''
+    db.execute('''
       CREATE INDEX IF NOT EXISTS idx_offline_sync_status_created_at
       ON offline_sync(status, created_at)
     ''');
@@ -62,7 +55,9 @@ class AppDatabase extends _$AppDatabase {
     required String fingerprint,
   }) async {
     await ensureOfflineSyncTable();
-    await customStatement(
+    final db = await _openDb();
+
+    db.execute(
       '''
       INSERT OR IGNORE INTO offline_sync (
         id, method, url, headers_json, body_json, created_at, fingerprint
@@ -79,19 +74,23 @@ class AppDatabase extends _$AppDatabase {
       ],
     );
 
-    final row = await customSelect(
+    final row = db.select(
       'SELECT id FROM offline_sync WHERE fingerprint = ? LIMIT 1',
-      variables: <Variable<Object>>[Variable.withString(fingerprint)],
-    ).getSingleOrNull();
+      <Object?>[fingerprint],
+    );
 
-    return row?.read<String>('id') ?? id;
+    if (row.isEmpty) {
+      return id;
+    }
+    return row.first['id']?.toString() ?? id;
   }
 
   Future<List<OfflineSyncDbRow>> getPendingOfflineSyncQueue({
     int limit = 200,
   }) async {
     await ensureOfflineSyncTable();
-    final rows = await customSelect(
+    final db = await _openDb();
+    final rows = db.select(
       '''
       SELECT
         id,
@@ -109,41 +108,33 @@ class AppDatabase extends _$AppDatabase {
       ORDER BY created_at ASC, rowid ASC
       LIMIT ?
       ''',
-      variables: <Variable<Object>>[Variable.withInt(limit)],
-    ).get();
+      <Object?>[limit],
+    );
 
-    return rows.map((row) {
-      final createdAtRaw = row.read<String>('created_at');
-      return OfflineSyncDbRow(
-        id: row.read<String>('id'),
-        fingerprint: row.read<String>('fingerprint'),
-        method: row.read<String>('method'),
-        url: row.read<String>('url'),
-        headersJson: row.read<String>('headers_json'),
-        bodyJson: row.readNullable<String>('body_json'),
-        createdAt: DateTime.tryParse(createdAtRaw) ?? DateTime.now().toUtc(),
-        status: row.read<String>('status'),
-        retryCount: row.read<int>('retry_count'),
-        lastError: row.readNullable<String>('last_error'),
-      );
-    }).toList();
+    return rows.map(_mapRow).toList();
   }
 
   Future<int> getPendingOfflineSyncCount() async {
     await ensureOfflineSyncTable();
-    final row = await customSelect(
+    final db = await _openDb();
+    final rows = db.select(
       '''
       SELECT COUNT(*) AS count
       FROM offline_sync
       WHERE status IN ('pending', 'failed', 'syncing')
       ''',
-    ).getSingle();
-    return row.read<int>('count');
+    );
+    if (rows.isEmpty) {
+      return 0;
+    }
+    final value = rows.first['count'];
+    return value is int ? value : int.tryParse(value.toString()) ?? 0;
   }
 
   Future<OfflineSyncDbRow?> getOfflineSyncById(String id) async {
     await ensureOfflineSyncTable();
-    final row = await customSelect(
+    final db = await _openDb();
+    final rows = db.select(
       '''
       SELECT
         id,
@@ -160,30 +151,18 @@ class AppDatabase extends _$AppDatabase {
       WHERE id = ?
       LIMIT 1
       ''',
-      variables: <Variable<Object>>[Variable.withString(id)],
-    ).getSingleOrNull();
+      <Object?>[id],
+    );
 
-    if (row == null) {
+    if (rows.isEmpty) {
       return null;
     }
-
-    final createdAtRaw = row.read<String>('created_at');
-    return OfflineSyncDbRow(
-      id: row.read<String>('id'),
-      fingerprint: row.read<String>('fingerprint'),
-      method: row.read<String>('method'),
-      url: row.read<String>('url'),
-      headersJson: row.read<String>('headers_json'),
-      bodyJson: row.readNullable<String>('body_json'),
-      createdAt: DateTime.tryParse(createdAtRaw) ?? DateTime.now().toUtc(),
-      status: row.read<String>('status'),
-      retryCount: row.read<int>('retry_count'),
-      lastError: row.readNullable<String>('last_error'),
-    );
+    return _mapRow(rows.first);
   }
 
   Future<void> markOfflineSyncAsSyncing(String id) async {
-    await customStatement(
+    final db = await _openDb();
+    db.execute(
       "UPDATE offline_sync SET status = 'syncing' WHERE id = ?",
       <Object?>[id],
     );
@@ -193,7 +172,8 @@ class AppDatabase extends _$AppDatabase {
     required String id,
     required String errorMessage,
   }) async {
-    await customStatement(
+    final db = await _openDb();
+    db.execute(
       '''
       UPDATE offline_sync
       SET
@@ -204,17 +184,6 @@ class AppDatabase extends _$AppDatabase {
       ''',
       <Object?>[errorMessage, id],
     );
-  }
-
-  Future<void> deleteOfflineSyncById(String id) async {
-    await customStatement(
-      'DELETE FROM offline_sync WHERE id = ?',
-      <Object?>[id],
-    );
-  }
-
-  Future<void> closeDb() async {
-    await close();
   }
 
   Future<void> deleteOfflineSyncById(String id) async {

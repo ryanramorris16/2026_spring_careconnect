@@ -80,17 +80,13 @@ class LocalDbTestBindings {
   }
 
   static Future<void> uninstall() async {
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(_secureStorageChannel, null);
-    messenger.setMockMethodCallHandler(_pathProviderChannel, null);
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, null);
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_pathProviderChannel, null);
 
     if (_documentsDirectory != null && _documentsDirectory!.existsSync()) {
-      try {
-        await _documentsDirectory!.delete(recursive: true);
-      } catch (_) {
-        // Ignore cleanup failures from open handles during test shutdown.
-      }
+      await _documentsDirectory!.delete(recursive: true);
     }
     _documentsDirectory = null;
   }
