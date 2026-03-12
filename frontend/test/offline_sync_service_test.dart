@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:care_connect_app/services/local_db/app_database.dart';
 import 'package:care_connect_app/services/local_db/offline_sync_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -170,6 +171,63 @@ void main() {
       expect(flattened, isNot(contains('do-not-show')));
     });
 
+    test('user case: queues mixed offline writes in order and supports pre-sync delete', () async {
+      final moodId = await service.enqueueRequest(
+        method: 'POST',
+        uri: Uri.parse('https://example.org/v1/api/patient/1/mood'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body: '{"score":7,"label":"Okay"}',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final taskId = await service.enqueueRequest(
+        method: 'POST',
+        uri: Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body:
+            '{"title":"Morning meds","note":"With food","taskDate":"2026-03-12","time":"08:00"}',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final profileId = await service.enqueueRequest(
+        method: 'PATCH',
+        uri: Uri.parse('https://example.org/v1/api/profile'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body: '{"nickname":"MJ"}',
+      );
+
+      final queued = await service.getPendingQueue(limit: 10);
+      expect(
+        queued.map((item) => item.id).toList(),
+        equals(<String>[moodId, taskId, profileId]),
+      );
+
+      final deleted = await service.deleteQueuedRequestById(taskId);
+      expect(deleted, isTrue);
+
+      final afterDelete = await service.getPendingQueue(limit: 10);
+      expect(afterDelete.map((item) => item.id), isNot(contains(taskId)));
+      expect(afterDelete.length, equals(2));
+    });
+
+    test('user case: task payload nested under task field is human-readable', () async {
+      final queuedId = await service.enqueueRequest(
+        method: 'POST',
+        uri: Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body:
+            '{"task":"{\\"title\\":\\"Evening Walk\\",\\"note\\":\\"15 minutes\\",\\"taskDate\\":\\"2026-03-12\\",\\"time\\":\\"18:30\\"}"}',
+      );
+
+      final queue = await service.getPendingQueue(limit: 10);
+      final item = queue.firstWhere((entry) => entry.id == queuedId);
+      final details = item.displayDetails.join(' ');
+
+      expect(item.displayTitle, equals('Task'));
+      expect(details, contains('Title: Evening Walk'));
+      expect(details, contains('Note: 15 minutes'));
+      expect(details, contains('Task date: 2026-03-12'));
+      expect(details, contains('Task time: 18:30'));
+    });
+
     test('syncPendingQueue reports zero attempts when queue is empty', () async {
       final summary = await service.syncPendingQueue(limit: 50);
       expect(summary.attempted, equals(0));
@@ -183,6 +241,71 @@ void main() {
 
     test('syncQueuedRequestById returns true for unknown id', () async {
       expect(await service.syncQueuedRequestById('missing-id'), isTrue);
+    });
+
+    test('user case: malformed queued URL is marked failed during single-item sync', () async {
+      final db = AppDatabase();
+      await db.ensureOfflineSyncTable();
+      await db.upsertOfflineSyncOperation(
+        id: 'bad-url-item',
+        method: 'POST',
+        url: 'http://[',
+        headersJson: '{}',
+        bodyJson: '{"title":"invalid"}',
+        createdAtIso: '2026-03-12T15:00:00.000Z',
+        fingerprint: 'fp-bad-url-item',
+      );
+      await db.closeDb();
+
+      final ok = await service.syncQueuedRequestById('bad-url-item');
+      expect(ok, isFalse);
+
+      final verifyDb = AppDatabase();
+      final row = await verifyDb.getOfflineSyncById('bad-url-item');
+      expect(row, isNotNull);
+      expect(row!.status, equals('failed'));
+      expect(row.retryCount, equals(1));
+      expect(row.lastError, contains('Invalid queued URL'));
+      await verifyDb.deleteOfflineSyncById('bad-url-item');
+      await verifyDb.closeDb();
+    });
+
+    test('user case: syncPendingQueue summary counts deterministic malformed rows as failed', () async {
+      final db = AppDatabase();
+      await db.ensureOfflineSyncTable();
+      await db.upsertOfflineSyncOperation(
+        id: 'bad-url-1',
+        method: 'PUT',
+        url: 'http://[',
+        headersJson: '{}',
+        bodyJson: '{"title":"one"}',
+        createdAtIso: '2026-03-12T15:01:00.000Z',
+        fingerprint: 'fp-bad-url-1',
+      );
+      await db.upsertOfflineSyncOperation(
+        id: 'bad-url-2',
+        method: 'PATCH',
+        url: 'http://[',
+        headersJson: '{}',
+        bodyJson: '{"title":"two"}',
+        createdAtIso: '2026-03-12T15:02:00.000Z',
+        fingerprint: 'fp-bad-url-2',
+      );
+      await db.closeDb();
+
+      final summary = await service.syncPendingQueue(limit: 10);
+      expect(summary.attempted, equals(2));
+      expect(summary.succeeded, equals(0));
+      expect(summary.failed, equals(2));
+
+      final verifyDb = AppDatabase();
+      final row1 = await verifyDb.getOfflineSyncById('bad-url-1');
+      final row2 = await verifyDb.getOfflineSyncById('bad-url-2');
+      expect(row1?.status, equals('failed'));
+      expect(row2?.status, equals('failed'));
+      await verifyDb.deleteOfflineSyncById('bad-url-1');
+      await verifyDb.deleteOfflineSyncById('bad-url-2');
+      await verifyDb.closeDb();
     });
 
     test('OfflineQueueHttpClient queues offline write requests', () async {
