@@ -130,6 +130,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/patient/**").authenticated()
                         // Keep broad API auth from main while preserving explicit call route below.
                         .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
+                        .requestMatchers("/api/**").authenticated()
                         // Team A call lifecycle endpoints are under /api/v3/calls/**.
                         .requestMatchers("/api/v3/calls/**").authenticated()
 

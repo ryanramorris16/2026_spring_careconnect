@@ -26,7 +26,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   List<BottomNavItem> _navItems = [];
   late PageController _pageController;
@@ -40,10 +40,13 @@ class _MainScreenState extends State<MainScreen> {
   Timer? _syncStartDelayTimer;
   bool _showSyncCompleteBanner = false;
   Timer? _syncCompleteBannerHideTimer;
+  int _unreadMessageCount = 0;
+  Timer? _messageBadgeTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeConfig();
     _pageController = PageController(initialPage: widget.initialTabIndex ?? 0);
     _selectedIndex = widget.initialTabIndex ?? 0;
@@ -52,14 +55,21 @@ class _MainScreenState extends State<MainScreen> {
     _initializeConnectivitySyncBridge();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeCallNotifications();
+      _refreshUnreadMessageBadge();
+      _startUnreadMessageBadgePolling();
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _observedUserProvider?.removeListener(_handleConnectivityTransition);
     _syncStartDelayTimer?.cancel();
     _syncCompleteBannerHideTimer?.cancel();
+    _messageBadgeTimer?.cancel();
+    if (_moodStorageService != null) {
+      unawaited(_moodStorageService!.close());
+    }
     CallNotificationService.dispose();
     _pageController.dispose();
     super.dispose();
@@ -333,7 +343,11 @@ class _MainScreenState extends State<MainScreen> {
     if (navItem.screen != null) {
       setState(() {
         _selectedIndex = index;
+        if (navItem.routeName == 'messages') {
+          _unreadMessageCount = 0;
+        }
       });
+      _refreshUnreadMessageBadge();
 
       if (_config.enablePageAnimation) {
         _pageController.animateToPage(
@@ -347,10 +361,91 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  void _startUnreadMessageBadgePolling() {
+    _messageBadgeTimer?.cancel();
+    _messageBadgeTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _refreshUnreadMessageBadge();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshUnreadMessageBadge();
+    }
+  }
+
+  Future<void> _refreshUnreadMessageBadge() async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    if (user == null) return;
+
+    final hasMessagesTab = _navItems.any((item) => item.routeName == 'messages');
+    if (!hasMessagesTab) return;
+
+    try {
+      final inbox = await ApiService.getInbox(user.id);
+      final unreadCount = inbox
+          .whereType<Map<String, dynamic>>()
+          .where((item) => item['hasUnread'] == true)
+          .length;
+      if (!mounted) return;
+      setState(() {
+        final currentTab = _navItems[_selectedIndex].routeName;
+        _unreadMessageCount = currentTab == 'messages' ? 0 : unreadCount;
+      });
+    } catch (_) {
+      // Keep badge best-effort only.
+    }
+  }
+
+  Widget _buildNavIcon(BottomNavItem item, {required bool active}) {
+    final iconData = active ? (item.activeIcon ?? item.icon) : item.icon;
+    final icon = Icon(iconData);
+    final showBadge = item.routeName == 'messages' && _unreadMessageCount > 0;
+    if (!showBadge) {
+      return icon;
+    }
+
+    final label = _unreadMessageCount > 99 ? '99+' : '$_unreadMessageCount';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        icon,
+        Positioned(
+          right: -10,
+          top: -6,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+            decoration: BoxDecoration(
+              color: Colors.red.shade700,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _onPageChanged(int index) {
     setState(() {
       _selectedIndex = index;
+      if (_navItems[index].routeName == 'messages') {
+        _unreadMessageCount = 0;
+      }
     });
+    _refreshUnreadMessageBadge();
   }
 
   int? _toInt(dynamic value) {
@@ -980,8 +1075,8 @@ class _MainScreenState extends State<MainScreen> {
         iconSize: 24,
         items: _navItems.map((item) {
           return BottomNavigationBarItem(
-            icon: Icon(item.icon),
-            activeIcon: Icon(item.activeIcon ?? item.icon),
+            icon: _buildNavIcon(item, active: false),
+            activeIcon: _buildNavIcon(item, active: true),
             label: item.localizedLabel(t),
           );
         }).toList(),
