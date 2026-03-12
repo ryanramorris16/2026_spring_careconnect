@@ -1822,13 +1822,9 @@ class ApiService {
       final uri = Uri.parse(
         '${ApiConstants.patientsV3}/$patientId/medications',
       );
-<<<<<<< HEAD
       return await _httpClient
           .get(uri, headers: headers)
           .timeout(
-=======
-      return await httpClient.get(uri, headers: headers).timeout(
->>>>>>> ae1f148 (Add video calling backend and frontend coverage tests)
             const Duration(seconds: 10),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1870,13 +1866,9 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId',
       );
 
-<<<<<<< HEAD
       return await _httpClient
           .delete(uri, headers: headers)
           .timeout(
-=======
-      return await httpClient.delete(uri, headers: headers).timeout(
->>>>>>> ae1f148 (Add video calling backend and frontend coverage tests)
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1927,13 +1919,9 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/caregiver/$caregiverId',
       );
 
-<<<<<<< HEAD
       return await _httpClient
           .delete(uri, headers: headers)
           .timeout(
-=======
-      return await httpClient.delete(uri, headers: headers).timeout(
->>>>>>> ae1f148 (Add video calling backend and frontend coverage tests)
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1953,13 +1941,9 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/approve',
       );
 
-<<<<<<< HEAD
       return await _httpClient
           .put(uri, headers: headers)
           .timeout(
-=======
-      return await httpClient.put(uri, headers: headers).timeout(
->>>>>>> ae1f148 (Add video calling backend and frontend coverage tests)
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -2398,13 +2382,9 @@ Future<http.Response> getUserFilesByCategory(int userId) async {
 
     final uri = Uri.parse('${ApiConstants.baseUrl}files/users/$userId/list');
 
-<<<<<<< HEAD
     return await ApiService._httpClient
         .get(uri, headers: headers)
         .timeout(
-=======
-    return await httpClient.get(uri, headers: headers).timeout(
->>>>>>> ae1f148 (Add video calling backend and frontend coverage tests)
           const Duration(seconds: 10),
           onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
         );

@@ -67,9 +67,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _syncStartDelayTimer?.cancel();
     _syncCompleteBannerHideTimer?.cancel();
     _messageBadgeTimer?.cancel();
-    if (_moodStorageService != null) {
-      unawaited(_moodStorageService!.close());
-    }
     CallNotificationService.dispose();
     _pageController.dispose();
     super.dispose();
