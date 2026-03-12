@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../providers/unread_message_provider.dart';
 import '../../../../providers/user_provider.dart';
 import '../model/message_dto.dart';
 
@@ -249,23 +248,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         senderId: m.senderId.toString(),
       );
     }
-
-    if (mounted) {
-      await Provider.of<UnreadMessageProvider>(
-        context,
-        listen: false,
-      ).refreshUnreadCount();
-    }
   }
 
   @override
   void dispose() {
-    if (mounted) {
-      Provider.of<UnreadMessageProvider>(
-        context,
-        listen: false,
-      ).refreshUnreadCount();
-    }
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
     _readReceiptSubscription?.cancel();
