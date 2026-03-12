@@ -491,7 +491,7 @@ class _MainScreenState extends State<MainScreen> {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        'Queued Offline API Calls',
+                        'Queued Sync Items',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
