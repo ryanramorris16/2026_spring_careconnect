@@ -1296,6 +1296,60 @@ class ApiService {
     return 0;
   }
 
+  static Future<bool> setPatientVideoCallsEnabledForLink({
+    required int linkId,
+    required bool enabled,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.post(
+      Uri.parse(
+        '${ApiConstants._host}/v1/api/caregiver-patient-links/$linkId/patient-video-calls',
+      ),
+      headers: headers,
+      body: jsonEncode({'enabled': enabled}),
+    );
+
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  static Future<bool> setPatientMessagingEnabledForLink({
+    required int linkId,
+    required bool enabled,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.post(
+      Uri.parse(
+        '${ApiConstants._host}/v1/api/caregiver-patient-links/$linkId/patient-messaging',
+      ),
+      headers: headers,
+      body: jsonEncode({'enabled': enabled}),
+    );
+
+    return response.statusCode >= 200 && response.statusCode < 300;
+  }
+
+  static Future<Map<String, dynamic>> deletePatientCallHistoryDev(
+    int patientUserId,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient.delete(
+      Uri.parse('${ApiConstants._host}/api/v3/calls/patients/$patientUserId/telemetry'),
+      headers: headers,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'deletePatientCallHistoryDev failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+    return const {};
+  }
+
 
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
