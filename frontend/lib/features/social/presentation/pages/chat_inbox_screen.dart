@@ -2,7 +2,6 @@ import 'package:care_connect_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../providers/unread_message_provider.dart';
 import '../../../../providers/user_provider.dart';
 import '../model/conversation_preview_dto.dart';
 import 'chat_room_screen.dart';
@@ -50,10 +49,6 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
             .toList();
         isLoading = false;
       });
-      await Provider.of<UnreadMessageProvider>(
-        context,
-        listen: false,
-      ).refreshUnreadCount();
     } catch (e) {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(
