@@ -26,6 +26,8 @@ context dict keys:
   sb_sev        — severity count dict
 """
 
+from html import escape
+
 # ----------------------------------------------------------
 # Constants
 # ----------------------------------------------------------
@@ -138,13 +140,19 @@ def _finding_rows(findings: list) -> str:
     rows = ""
 
     for finding in findings:
+        severity = escape(str(finding.get("severity") or "info"))
+        file_path = escape(str(finding.get("file") or ""))
+        line = escape(str(finding.get("line") or ""))
+        rule = escape(str(finding.get("rule") or ""))
+        message = escape(str(finding.get("message") or ""))
+
         rows += (
             "<tr>"
-            f"<td>{_severity_badge(finding.get('severity'))}</td>"
-            f"<td><code>{finding.get('file', '')}</code></td>"
-            f"<td>{finding.get('line', '')}</td>"
-            f"<td>{finding.get('rule', '')}</td>"
-            f"<td>{finding.get('message', '')}</td>"
+            f"<td>{_severity_badge(severity)}</td>"
+            f"<td><code>{file_path}</code></td>"
+            f"<td>{line}</td>"
+            f"<td>{rule}</td>"
+            f"<td>{message}</td>"
             "</tr>"
         )
 
