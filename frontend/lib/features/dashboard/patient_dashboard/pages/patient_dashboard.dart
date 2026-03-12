@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/alter_notification_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/models/medication_reminder_item.dart';
-import 'package:care_connect_app/features/dashboard/patient_dashboard/models/medication_reminder_item.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/current_mood_widget.dart';
 import 'package:care_connect_app/shared/widgets/dashboard_appheader_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/services/patient_medication_reminder_service.dart';
@@ -35,13 +34,6 @@ class PatientDashboard extends StatefulWidget {
 }
 
 class _PatientDashboardState extends State<PatientDashboard> {
-  static const String _lowMoodAlertMessage =
-      'Mood score below normal range. Consider contacting your healthcare provider.';
-  static const String _pendingMedicationAlertMessage =
-      'You have medication reminders that are not marked as taken.';
-  static const String _pendingMedicationAlertId =
-      'reminder:pending_medications';
-
   static const String _lowMoodAlertMessage =
       'Mood score below normal range. Consider contacting your healthcare provider.';
   static const String _pendingMedicationAlertMessage =
@@ -301,14 +293,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
   /// Load medication reminders
   Future<void> _loadMedicationReminders() async {
     try {
-      final user = Provider.of<UserProvider>(context, listen: false).user;
-      final next = await _medicationReminderService.loadReminders(
-        patientId: user?.patientId,
-      );
-
-      if (!mounted) {
-        return;
-      }
       final user = Provider.of<UserProvider>(context, listen: false).user;
       final next = await _medicationReminderService.loadReminders(
         patientId: user?.patientId,
