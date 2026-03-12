@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart' as httpClient;
@@ -51,11 +52,23 @@ class ApiService {
   static const storage = FlutterSecureStorage();
 
   // Performance optimization: Connection pooling
-  static final http.Client _httpClient = http.Client();
+  static http.Client _httpClient = http.Client();
 
   // Method to dispose of resources
   static void dispose() {
     _httpClient.close();
+  }
+
+  @visibleForTesting
+  static void debugSetHttpClient(http.Client client) {
+    _httpClient.close();
+    _httpClient = client;
+  }
+
+  @visibleForTesting
+  static void debugResetHttpClient() {
+    _httpClient.close();
+    _httpClient = http.Client();
   }
 
   // ========================
@@ -398,9 +411,8 @@ class ApiService {
       );
       return linkedCaregiverLinks.any((link) {
         final caregiverRaw = link['caregiverUserId'];
-        final caregiverUserId = caregiverRaw is int
-            ? caregiverRaw
-            : int.tryParse('$caregiverRaw');
+        final caregiverUserId =
+            caregiverRaw is int ? caregiverRaw : int.tryParse('$caregiverRaw');
         final enabledRaw = link['patientVideoCallsEnabled'];
         final isEnabled = enabledRaw is bool
             ? enabledRaw
@@ -1418,8 +1430,8 @@ class ApiService {
 
     // Send the request
     var streamedResponse = await request.send().timeout(
-      const Duration(seconds: 30),
-    );
+          const Duration(seconds: 30),
+        );
     var response = await http.Response.fromStream(streamedResponse);
 
     return response;
@@ -1752,9 +1764,7 @@ class ApiService {
       final uri = Uri.parse(
         '${ApiConstants.patientsV3}/$patientId/medications',
       );
-      return await httpClient
-          .get(uri, headers: headers)
-          .timeout(
+      return await httpClient.get(uri, headers: headers).timeout(
             const Duration(seconds: 10),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1796,9 +1806,7 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId',
       );
 
-      return await httpClient
-          .delete(uri, headers: headers)
-          .timeout(
+      return await httpClient.delete(uri, headers: headers).timeout(
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1849,9 +1857,7 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/caregiver/$caregiverId',
       );
 
-      return await httpClient
-          .delete(uri, headers: headers)
-          .timeout(
+      return await httpClient.delete(uri, headers: headers).timeout(
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1871,9 +1877,7 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId/approve',
       );
 
-      return await httpClient
-          .put(uri, headers: headers)
-          .timeout(
+      return await httpClient.put(uri, headers: headers).timeout(
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -1938,11 +1942,13 @@ class ApiService {
     return response.statusCode == 200 || response.statusCode == 204;
   }
 
-  static Future<List<Map<String, dynamic>>> getCallTelemetry(String callId) async {
+  static Future<List<Map<String, dynamic>>> getCallTelemetry(
+      String callId) async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
-          .get(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'), headers: headers)
+          .get(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'),
+              headers: headers)
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
@@ -1967,7 +1973,8 @@ class ApiService {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
-          .get(Uri.parse('${ApiConstants.callsV3}/$callId/summary'), headers: headers)
+          .get(Uri.parse('${ApiConstants.callsV3}/$callId/summary'),
+              headers: headers)
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
@@ -2055,7 +2062,8 @@ class ApiService {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
-          .get(Uri.parse('${ApiConstants.callsV3}/telemetry/my'), headers: headers)
+          .get(Uri.parse('${ApiConstants.callsV3}/telemetry/my'),
+              headers: headers)
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
@@ -2106,10 +2114,12 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> deleteCallTelemetryDev(String callId) async {
+  static Future<Map<String, dynamic>> deleteCallTelemetryDev(
+      String callId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await _httpClient
-        .delete(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'), headers: headers)
+        .delete(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'),
+            headers: headers)
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
@@ -2117,7 +2127,8 @@ class ApiService {
       try {
         final decoded = jsonDecode(response.body);
         if (decoded is Map) {
-          final message = (decoded['message'] ?? decoded['error'] ?? '').toString().trim();
+          final message =
+              (decoded['message'] ?? decoded['error'] ?? '').toString().trim();
           if (message.isNotEmpty) {
             details = ' - $message';
           }
@@ -2145,7 +2156,8 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await _httpClient
         .delete(
-          Uri.parse('${ApiConstants.callsV3}/patients/$patientUserId/telemetry'),
+          Uri.parse(
+              '${ApiConstants.callsV3}/patients/$patientUserId/telemetry'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -2230,8 +2242,8 @@ Future<http.Response> uploadUserFileFromBytes({
 
   // Send the request
   var streamedResponse = await request.send().timeout(
-    const Duration(seconds: 30),
-  );
+        const Duration(seconds: 30),
+      );
   var response = await http.Response.fromStream(streamedResponse);
 
   return response;
@@ -2244,9 +2256,7 @@ Future<http.Response> getUserFilesByCategory(int userId) async {
 
     final uri = Uri.parse('${ApiConstants.baseUrl}files/users/$userId/list');
 
-    return await httpClient
-        .get(uri, headers: headers)
-        .timeout(
+    return await httpClient.get(uri, headers: headers).timeout(
           const Duration(seconds: 10),
           onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
         );
