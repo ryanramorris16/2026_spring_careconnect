@@ -1452,13 +1452,22 @@ class ApiService {
     required int senderId,
     required int receiverId,
     required String content,
+    Map<String, dynamic>? attachment,
   }) async {
     final headers = await AuthTokenManager.getAuthHeaders();
-    final body = jsonEncode({
+    final bodyMap = <String, dynamic>{
       'senderId': senderId,
       'receiverId': receiverId,
       'content': content,
-    });
+    };
+
+    // This branch's backend Message model is text-only. Keep the call shape
+    // compatible with newer chat UI without requiring backend changes.
+    if (attachment != null && attachment.isNotEmpty) {
+      bodyMap['attachment'] = attachment;
+    }
+
+    final body = jsonEncode(bodyMap);
 
     return await _httpClient
         .post(
@@ -1467,6 +1476,51 @@ class ApiService {
           body: body,
         )
         .timeout(const Duration(seconds: 15));
+  }
+
+  static Future<Map<String, dynamic>> uploadChatAttachment({
+    required int userId,
+    required String fileName,
+    String? filePath,
+    Uint8List? fileBytes,
+    required String category,
+  }) async {
+    http.Response response;
+
+    if (fileBytes != null) {
+      response = await uploadUserFileFromBytes(
+        userId: userId,
+        fileBytes: fileBytes,
+        fileName: fileName,
+        category: category,
+      );
+    } else if (filePath != null && filePath.trim().isNotEmpty) {
+      response = await uploadUserFile(
+        userId: userId,
+        file: File(filePath),
+        category: category,
+      );
+    } else {
+      throw Exception('No file data provided for chat attachment');
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Attachment upload failed (${response.statusCode})');
+    }
+
+    final decoded = jsonDecode(response.body);
+    final payload = decoded is Map<String, dynamic>
+        ? decoded
+        : <String, dynamic>{};
+
+    return {
+      'fileId': payload['fileId'] ?? payload['id'],
+      'url': payload['fileUrl'] ?? payload['url'],
+      'name': payload['fileName'] ?? payload['name'] ?? fileName,
+      'contentType': payload['contentType'] ?? payload['mimeType'],
+      'size': payload['fileSize'] ?? payload['size'],
+      'category': category,
+    };
   }
 
   static Future<List<dynamic>> getConversation({
