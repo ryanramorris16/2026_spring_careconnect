@@ -578,41 +578,89 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   /// Handle medication action
-  void _handleMedicationAction(int medicationId, bool taken) {
-    String frequency = 'Once daily';
-    for (final item in medicationReminders) {
-      if (item.medicationId == medicationId) {
-        frequency = item.frequency;
-        break;
+  Future<void> _handleMedicationAction(int medicationId, bool taken) async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final patientId = user?.patientId;
+    if (patientId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Unable to update medication right now'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
+      return;
     }
 
+    final actionAt = DateTime.now().toUtc();
     if (taken) {
       _medicationReminderService.markTaken(
         medicationId: medicationId,
-        frequency: frequency,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Medication marked as taken until next dose'),
-          backgroundColor: AppTheme.success,
-          duration: Duration(seconds: 2),
-        ),
+        takenAt: actionAt,
       );
     } else {
       _medicationReminderService.markMissed(medicationId: medicationId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Medication marked as missed'),
-          backgroundColor: Theme.of(context).colorScheme.tertiary,
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
 
-    // Backend currently does not expose a lastTaken/markTaken endpoint.
-    // We refresh reminders and enforce dose window locally.
-    _loadMedicationReminders();
+    final response = taken
+        ? await ApiService.markMedicationTaken(
+            patientId,
+            medicationId,
+            takenAt: actionAt,
+          )
+        : await ApiService.clearMedicationTakenStatus(
+            patientId,
+            medicationId,
+          );
+    final queuedOffline = response.headers['x-offline-queued'] == 'true';
+    final success = (response.statusCode >= 200 && response.statusCode < 300) ||
+        queuedOffline;
+
+    if (!success) {
+      _medicationReminderService.clearLocalOverride(medicationId: medicationId);
+    }
+
+    if (mounted) {
+      final snackBarTheme = Theme.of(context);
+      late final SnackBar snackBar;
+      if (success) {
+        if (queuedOffline) {
+          snackBar = SnackBar(
+            content: Text(
+              taken
+                  ? 'Medication taken update queued for sync'
+                  : 'Medication missed update queued for sync',
+            ),
+            backgroundColor: snackBarTheme.colorScheme.tertiary,
+            duration: const Duration(seconds: 2),
+          );
+        } else if (taken) {
+          snackBar = const SnackBar(
+            content: Text('Medication marked as taken until next dose'),
+            backgroundColor: AppTheme.success,
+            duration: Duration(seconds: 2),
+          );
+        } else {
+          snackBar = SnackBar(
+            content: const Text('Medication marked as missed'),
+            backgroundColor: snackBarTheme.colorScheme.tertiary,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      } else {
+        snackBar = SnackBar(
+          content: const Text('Unable to update medication status'),
+          backgroundColor: snackBarTheme.colorScheme.error,
+          duration: const Duration(seconds: 2),
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
+    await _loadMedicationReminders();
   }
 
   /// Handle contacting provider
@@ -846,16 +894,18 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                     // Medication Reminders
                                     MedicationRemindersWidget(
                                       reminders: medicationReminders,
-                                      onMarkTaken: (medicationId) =>
-                                          _handleMedicationAction(
-                                            medicationId,
-                                            true,
-                                          ),
-                                      onMarkMissed: (medicationId) =>
-                                          _handleMedicationAction(
-                                            medicationId,
-                                            false,
-                                          ),
+                                      onMarkTaken: (medicationId) {
+                                        _handleMedicationAction(
+                                          medicationId,
+                                          true,
+                                        );
+                                      },
+                                      onMarkMissed: (medicationId) {
+                                        _handleMedicationAction(
+                                          medicationId,
+                                          false,
+                                        );
+                                      },
                                     ),
 
                                     // Upcoming EVV & Past EVV
@@ -931,10 +981,12 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         // Medication Reminders
                         MedicationRemindersWidget(
                           reminders: medicationReminders,
-                          onMarkTaken: (medicationId) =>
-                              _handleMedicationAction(medicationId, true),
-                          onMarkMissed: (medicationId) =>
-                              _handleMedicationAction(medicationId, false),
+                          onMarkTaken: (medicationId) {
+                            _handleMedicationAction(medicationId, true);
+                          },
+                          onMarkMissed: (medicationId) {
+                            _handleMedicationAction(medicationId, false);
+                          },
                         ),
 
                         const SizedBox(height: 12),
