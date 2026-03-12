@@ -270,7 +270,6 @@ class OfflineSyncService {
 
   OfflineSyncQueueItem _toQueueItem(OfflineSyncDbRow row) {
     final display = _buildSafeDisplay(
-      method: row.method,
       url: row.url,
       bodyJson: row.bodyJson,
       createdAt: row.createdAt,
@@ -290,7 +289,6 @@ class OfflineSyncService {
   }
 
   _SafeDisplay _buildSafeDisplay({
-    required String method,
     required String url,
     required String? bodyJson,
     required DateTime createdAt,
@@ -350,20 +348,20 @@ class OfflineSyncService {
         'Task time: ${time ?? '-'}',
       ];
 
-      final verb = method.toUpperCase() == 'DELETE'
-          ? 'Task Delete'
-          : method.toUpperCase() == 'POST'
-              ? 'Task Create'
-              : 'Task Update';
-      return _SafeDisplay(title: verb, details: details);
+      return _SafeDisplay(title: 'Task', details: details);
     }
 
-    final shortPath = uri == null
-        ? url
-        : (uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path);
+    final genericDetails = _buildGenericPayloadDetails(body);
+    if (genericDetails.isNotEmpty) {
+      return _SafeDisplay(
+        title: 'Queued Update',
+        details: genericDetails,
+      );
+    }
+
     return _SafeDisplay(
-      title: '${method.toUpperCase()} Request',
-      details: <String>['Endpoint: $shortPath'],
+      title: 'Queued Update',
+      details: <String>['Waiting to sync'],
     );
   }
 
@@ -392,6 +390,81 @@ class OfflineSyncService {
       }
     }
     return null;
+  }
+
+  List<String> _buildGenericPayloadDetails(Map<String, dynamic> body) {
+    if (body.isEmpty) {
+      return const <String>[];
+    }
+
+    final details = <String>[];
+    final entries = body.entries.where((entry) {
+      return !_isSensitiveField(entry.key);
+    });
+
+    for (final entry in entries) {
+      final value = _toDisplayValue(entry.value);
+      if (value == null || value.isEmpty) {
+        continue;
+      }
+      details.add('${_humanizeField(entry.key)}: $value');
+      if (details.length >= 5) {
+        break;
+      }
+    }
+
+    return details;
+  }
+
+  bool _isSensitiveField(String key) {
+    final lower = key.toLowerCase();
+    return lower.contains('password') ||
+        lower.contains('token') ||
+        lower.contains('secret') ||
+        lower.contains('authorization') ||
+        lower.contains('cookie') ||
+        lower.contains('refresh');
+  }
+
+  String _humanizeField(String raw) {
+    final withSpaces = raw.replaceAll(RegExp(r'[_-]+'), ' ').replaceAllMapped(
+      RegExp(r'([a-z])([A-Z])'),
+      (m) => '${m.group(1)} ${m.group(2)}',
+    );
+    final trimmed = withSpaces.trim();
+    if (trimmed.isEmpty) {
+      return 'Field';
+    }
+    return trimmed[0].toUpperCase() + trimmed.substring(1);
+  }
+
+  String? _toDisplayValue(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) {
+        return null;
+      }
+      return _truncate(text, max: 80);
+    }
+    if (value is num || value is bool) {
+      return value.toString();
+    }
+    if (value is List) {
+      if (value.isEmpty) {
+        return null;
+      }
+      return '${value.length} item${value.length == 1 ? '' : 's'}';
+    }
+    if (value is Map) {
+      if (value.isEmpty) {
+        return null;
+      }
+      return '${value.length} field${value.length == 1 ? '' : 's'}';
+    }
+    return _truncate(value.toString(), max: 80);
   }
 
   Map<String, dynamic> _expandNestedTaskPayload(Map<String, dynamic> body) {
