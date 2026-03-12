@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/alter_notification_widget.dart';
+import 'package:care_connect_app/features/dashboard/patient_dashboard/models/medication_reminder_item.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/current_mood_widget.dart';
 import 'package:care_connect_app/shared/widgets/dashboard_appheader_widget.dart';
+import 'package:care_connect_app/features/dashboard/patient_dashboard/services/patient_medication_reminder_service.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/medication_reminder_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/offline_notification_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/primary_care_provider_widget.dart';
@@ -32,6 +34,13 @@ class PatientDashboard extends StatefulWidget {
 }
 
 class _PatientDashboardState extends State<PatientDashboard> {
+  static const String _lowMoodAlertMessage =
+      'Mood score below normal range. Consider contacting your healthcare provider.';
+  static const String _pendingMedicationAlertMessage =
+      'You have medication reminders that are not marked as taken.';
+  static const String _pendingMedicationAlertId =
+      'reminder:pending_medications';
+
   // Patient data
   Map<String, dynamic>? patient;
   List<Map<String, dynamic>> caregivers = [];
@@ -44,7 +53,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   // Dashboard specific data
   List<CheckIn> recentCheckIns = [];
-  MedicationReminder? upcomingReminder;
+  List<MedicationReminderItem> medicationReminders = [];
   Map<String, dynamic>? primaryCareProvider;
 
   // Mood tracking
@@ -60,6 +69,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   // Alert dismissal tracking
   Set<String> dismissedAlertIds = {};
+  final PatientMedicationReminderService _medicationReminderService =
+      PatientMedicationReminderService();
 
   // EVV sections state
   final EvvService _evvService = EvvService();
@@ -74,7 +85,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
     _initializeCallNotifications();
     _checkConnectivity();
     _loadRecentMoodData();
-    _loadMedicationReminders();
     _loadPrimaryCareProvider();
     _loadEvvSections();
   }
@@ -108,10 +118,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
         return;
       }
 
-      // Check for alerts
-      _checkForAlerts();
+      await _loadMedicationReminders();
+      final alerts = await _buildAlerts(id);
 
+      if (!mounted) {
+        return;
+      }
       setState(() {
+        activeAlerts = alerts;
         loading = false;
       });
     } catch (e) {
@@ -279,17 +293,33 @@ class _PatientDashboardState extends State<PatientDashboard> {
   /// Load medication reminders
   Future<void> _loadMedicationReminders() async {
     try {
-      // This would be an API call to get medication reminders
-      // For now, using sample data
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final next = await _medicationReminderService.loadReminders(
+        patientId: user?.patientId,
+      );
+
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        upcomingReminder = MedicationReminder(
-          medicationName: 'Blood Pressure Medication',
-          scheduledTime: DateTime.now().add(const Duration(days: 1, hours: 9)),
-          status: 'Scheduled reminder',
+        medicationReminders = next;
+        activeAlerts = _withMedicationReminderAlert(
+          activeAlerts,
+          hasPendingUntaken: _hasPendingMedicationReminders(next),
         );
       });
     } catch (e) {
       print('Error loading medication reminders: $e');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        medicationReminders = [];
+        activeAlerts = _withMedicationReminderAlert(
+          activeAlerts,
+          hasPendingUntaken: false,
+        );
+      });
     }
   }
 
@@ -314,30 +344,156 @@ class _PatientDashboardState extends State<PatientDashboard> {
     }
   }
 
-  /// Check for alerts based on current data
-  void _checkForAlerts() {
-    activeAlerts.clear();
+  int? _parseMoodScore(dynamic value) {
+    if (value is int) {
+      return value.clamp(1, 10);
+    }
+    if (value is num) {
+      return value.round().clamp(1, 10);
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) {
+        return parsed.clamp(1, 10);
+      }
+    }
+    return null;
+  }
 
-    // Check mood score
-    if (currentMoodScore < 5) {
-      activeAlerts.add(
+  DateTime? _parseMoodDate(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is int) {
+      try {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  double? _averageMoodLast7Days(List<dynamic> moodHistory) {
+    final nowUtc = DateTime.now().toUtc();
+    final cutoffUtc = nowUtc.subtract(const Duration(days: 7));
+    var total = 0;
+    var count = 0;
+
+    for (final row in moodHistory) {
+      if (row is! Map) {
+        continue;
+      }
+
+      final score = _parseMoodScore(row['score']);
+      final date = _parseMoodDate(
+        row['createdAt'] ?? row['date'] ?? row['timestamp'] ?? row['updatedAt'],
+      );
+
+      if (score == null || date == null) {
+        continue;
+      }
+
+      final utcDate = date.toUtc();
+      if (utcDate.isBefore(cutoffUtc)) {
+        continue;
+      }
+
+      total += score;
+      count += 1;
+    }
+
+    if (count == 0) {
+      return null;
+    }
+
+    return total / count;
+  }
+
+  List<AlertNotification> _withMoodAlertForAverage(
+    List<AlertNotification> existing,
+    double? averageMood,
+  ) {
+    final next = existing
+        .where(
+          (alert) =>
+              !(alert.type == AlertType.important &&
+                  alert.message == _lowMoodAlertMessage),
+        )
+        .toList();
+
+    if (averageMood != null && averageMood <= 5.0) {
+      next.insert(
+        0,
         AlertNotification(
           type: AlertType.important,
-          message: 'Mood score below normal range. Consider contacting your healthcare provider.',
+          message: _lowMoodAlertMessage,
         ),
       );
     }
 
-    // Check for missed medications
-    // This would check actual medication data
-    if (DateTime.now().hour > 10) {
-      activeAlerts.add(
-        AlertNotification(
-          type: AlertType.reminder,
-          message: 'You have a missed medication dose. Please take it as soon as possible.',
-        ),
-      );
+    return next;
+  }
+
+  bool _hasPendingMedicationReminders(List<MedicationReminderItem> reminders) {
+    return _medicationReminderService.hasPendingUntaken(reminders);
+  }
+
+  bool _isPendingMedicationAlert(AlertNotification alert) {
+    return alert.type == AlertType.reminder &&
+        alert.message == _pendingMedicationAlertMessage;
+  }
+
+  String _alertId(AlertNotification alert) {
+    if (_isPendingMedicationAlert(alert)) {
+      return _pendingMedicationAlertId;
     }
+    return '${alert.type.name}:${alert.message}';
+  }
+
+  List<AlertNotification> _withMedicationReminderAlert(
+    List<AlertNotification> existing, {
+    required bool hasPendingUntaken,
+  }) {
+    final next = existing
+        .where((alert) => !_isPendingMedicationAlert(alert))
+        .toList();
+
+    if (!hasPendingUntaken) {
+      dismissedAlertIds.remove(_pendingMedicationAlertId);
+      return next;
+    }
+
+    next.add(
+      AlertNotification(
+        type: AlertType.reminder,
+        message: _pendingMedicationAlertMessage,
+      ),
+    );
+    return next;
+  }
+
+  void _handleAverageMoodChanged(double averageMood) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      activeAlerts = _withMoodAlertForAverage(activeAlerts, averageMood);
+    });
+  }
+
+  /// Build alerts from real dashboard data only.
+  Future<List<AlertNotification>> _buildAlerts(int userId) async {
+    final moodHistory = await ApiService.getMoodHistory(userId);
+    final averageMood = _averageMoodLast7Days(moodHistory);
+    final moodAlerts = _withMoodAlertForAverage(<AlertNotification>[], averageMood);
+    return _withMedicationReminderAlert(
+      moodAlerts,
+      hasPendingUntaken: _hasPendingMedicationReminders(medicationReminders),
+    );
   }
 
   /// Load family members
@@ -406,16 +562,29 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   /// Handle medication action
-  void _handleMedicationAction(bool taken) {
+  void _handleMedicationAction(int medicationId, bool taken) {
+    String frequency = 'Once daily';
+    for (final item in medicationReminders) {
+      if (item.medicationId == medicationId) {
+        frequency = item.frequency;
+        break;
+      }
+    }
+
     if (taken) {
+      _medicationReminderService.markTaken(
+        medicationId: medicationId,
+        frequency: frequency,
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Medication marked as taken'),
+          content: Text('Medication marked as taken until next dose'),
           backgroundColor: AppTheme.success,
           duration: Duration(seconds: 2),
         ),
       );
     } else {
+      _medicationReminderService.markMissed(medicationId: medicationId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Medication marked as missed'),
@@ -425,7 +594,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
     }
 
-    // Would call API to update medication status
+    // Backend currently does not expose a lastTaken/markTaken endpoint.
+    // We refresh reminders and enforce dose window locally.
     _loadMedicationReminders();
   }
 
@@ -617,7 +787,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                         .where(
                                           (alert) =>
                                               !dismissedAlertIds.contains(
-                                                alert.hashCode.toString(),
+                                                _alertId(alert),
                                               ),
                                         )
                                         .map(
@@ -627,7 +797,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                             onDismiss: () {
                                               setState(() {
                                                 dismissedAlertIds.add(
-                                                  alert.hashCode.toString(),
+                                                  _alertId(alert),
                                                 );
                                               });
                                             },
@@ -640,6 +810,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                       moodLabel: currentMoodLabel,
                                       moodTags: moodTags,
                                       date: DateTime.now(),
+                                      onAverageMoodChanged:
+                                          _handleAverageMoodChanged,
                                     ),
 
                                     // Recent Check-ins
@@ -656,14 +828,19 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                 child: Column(
                                   children: [
                                     // Medication Reminders
-                                    if (upcomingReminder != null)
-                                      MedicationRemindersWidget(
-                                        reminder: upcomingReminder!,
-                                        onMarkTaken: () =>
-                                            _handleMedicationAction(true),
-                                        onMarkMissed: () =>
-                                            _handleMedicationAction(false),
-                                      ),
+                                    MedicationRemindersWidget(
+                                      reminders: medicationReminders,
+                                      onMarkTaken: (medicationId) =>
+                                          _handleMedicationAction(
+                                            medicationId,
+                                            true,
+                                          ),
+                                      onMarkMissed: (medicationId) =>
+                                          _handleMedicationAction(
+                                            medicationId,
+                                            false,
+                                          ),
+                                    ),
 
                                     // Upcoming EVV & Past EVV
                                     const SizedBox(height: 12),
@@ -705,7 +882,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         ...activeAlerts
                             .where(
                               (alert) => !dismissedAlertIds.contains(
-                                alert.hashCode.toString(),
+                                _alertId(alert),
                               ),
                             )
                             .map(
@@ -715,7 +892,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                 onDismiss: () {
                                   setState(() {
                                     dismissedAlertIds.add(
-                                      alert.hashCode.toString(),
+                                      _alertId(alert),
                                     );
                                   });
                                 },
@@ -728,6 +905,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           moodLabel: currentMoodLabel,
                           moodTags: moodTags,
                           date: DateTime.now(),
+                          onAverageMoodChanged: _handleAverageMoodChanged,
                         ),
 
                         // Recent Check-Ins
@@ -735,12 +913,13 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           RecentCheckInsWidget(checkIns: recentCheckIns),
 
                         // Medication Reminders
-                        if (upcomingReminder != null)
-                          MedicationRemindersWidget(
-                            reminder: upcomingReminder!,
-                            onMarkTaken: () => _handleMedicationAction(true),
-                            onMarkMissed: () => _handleMedicationAction(false),
-                          ),
+                        MedicationRemindersWidget(
+                          reminders: medicationReminders,
+                          onMarkTaken: (medicationId) =>
+                              _handleMedicationAction(medicationId, true),
+                          onMarkMissed: (medicationId) =>
+                              _handleMedicationAction(medicationId, false),
+                        ),
 
                         const SizedBox(height: 12),
                         _buildUpcomingEvvSection(theme),

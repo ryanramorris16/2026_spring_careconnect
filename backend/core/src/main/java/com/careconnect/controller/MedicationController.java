@@ -19,15 +19,6 @@ public class MedicationController {
     private MedicationService medicationService;
 
     // ================================================================
-    // 1. Fetch all medications for a patient
-    // ================================================================
-    @GetMapping("/{patientId}/medications")
-    public ResponseEntity<List<MedicationDTO>> getAllMedications(@PathVariable Long patientId) {
-        List<MedicationDTO> allMeds = medicationService.getAllMedicationsForPatient(patientId);
-        return ResponseEntity.ok(allMeds);
-    }
-
-    // ================================================================
     // 1.1 Fetch only active medications
     // ================================================================
     @GetMapping("/{patientId}/medications/active")
@@ -46,18 +37,6 @@ public class MedicationController {
     }
 
     // ================================================================
-    // 2. Add a new medication (creates record as PENDING)
-    // ================================================================
-    @PostMapping("/{patientId}/medications")
-    public ResponseEntity<MedicationDTO> addMedication(
-            @PathVariable Long patientId,
-            @RequestBody MedicationDTO newMedication) {
-
-        MedicationDTO createdMedication = medicationService.addMedication(patientId, newMedication);
-        return ResponseEntity.ok(createdMedication);
-    }
-
-    // ================================================================
     // 3. Approve a medication (sets isActive=true, approval_status='APPROVED')
     // ================================================================
     @PutMapping("/{patientId}/medications/{medicationId}/approve")
@@ -73,21 +52,7 @@ public class MedicationController {
     }
 
     // ================================================================
-    // 4. Remove (soft delete) medication and trigger notification (Patient-side)
-    // ================================================================
-    @DeleteMapping("/{patientId}/medications/{medicationId}")
-    public ResponseEntity<?> deleteMedication(
-            @PathVariable Long patientId,
-            @PathVariable Long medicationId) {
-
-        medicationService.deactivateMedication(patientId, medicationId);
-        return ResponseEntity.ok(Map.of(
-                "message", "Medication removed and notification sent"
-        ));
-    }
-
-    // ================================================================
-    // 5. Hard delete medication (Caregiver-side)
+    // 4. Hard delete medication (Caregiver-side)
     // ================================================================
     @DeleteMapping("/{patientId}/medications/{medicationId}/caregiver/{caregiverId}")
     public ResponseEntity<?> deleteMedicationByCaregiver(
