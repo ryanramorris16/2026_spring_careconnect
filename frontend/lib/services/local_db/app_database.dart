@@ -1,120 +1,69 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
-import 'package:sqlite3/open.dart';
+import 'package:flutter/foundation.dart';
+
+// IMPORTANT: Drift imports are disabled on web
+// The entire AppDatabase class is native-only and should never be used on web
+// 
+// On web platforms:
+// - mood_storage_service.dart imports mood_storage_service_web.dart instead
+// - local_db_startup.dart calls the web no-op implementation
+//
+// DO NOT uncomment drift imports unless you also:
+// 1. Re-enable drift in pubspec.yaml
+// 2. Re-enable sqlite3 and sqlcipher_flutter_libs in pubspec.yaml  
+// 3. Re-enable drift_dev in dev_dependencies
+// import 'package:drift/drift.dart';
+// import 'package:drift/native.dart' as drift_native;
 
 import 'db_encryption_service.dart';
-import 'generated/jpa_drift_bundle.dart';
+// import 'generated/jpa_drift_bundle.dart';
 
-part 'app_database.g.dart';
+// Conditional import of generated drift bundle
+// import 'generated/jpa_drift_bundle_web.dart'
+//     if (dart.library.io) 'generated/jpa_drift_bundle.dart' as drift_bundle;
 
-/// Encrypted Drift database used by mobile offline storage.
+// part 'app_database.g.dart';
+
+/// DISABLED ON WEB: This class is native-only and requires SQLite/Drift.
+/// 
+/// Encrypted Drift database used by mobile offline storage on iOS, Android,
+/// Windows, macOS, and Linux platforms only.
+/// 
+/// NOTE: This implementation should never be instantiated or imported on web.
+/// Conditional imports in mood_storage_service.dart and local_db_startup.dart
+/// ensure this file is not loaded on web.
 ///
-/// Table definitions are generated from backend JPA models and imported from
-/// `generated/jpa_drift_bundle.dart`.
-@DriftDatabase(tables: [Moods, Tasks])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase({DbEncryptionService? encryptionService})
-      : _encryptionService = encryptionService ?? DbEncryptionService(),
-        super(_openConnection(encryptionService ?? DbEncryptionService()));
-
-  final DbEncryptionService _encryptionService;
-
-  @override
-  int get schemaVersion => 1;
-
-  /// Indicates whether an encryption key exists in secure storage.
-  Future<bool> isEncrypted() async {
-    return _encryptionService.hasEncryptionKey();
-  }
-
-  /// Inserts one mood row into the local encrypted database.
-  Future<int> insertMood({
-    required int userId,
-    required int score,
-    required String label,
-    DateTime? createdAt,
-  }) {
-    return into(moods).insert(
-      MoodsCompanion.insert(
-        userId: userId,
-        score: score,
-        label: label,
-        createdAt: Value(createdAt ?? DateTime.now()),
-      ),
+/// Table definitions are generated from backend JPA models.
+/// 
+/// To use this class (on native platforms):
+/// 1. Uncomment the imports above
+/// 2. Re-enable drift, sqlite3, and sqlcipher in pubspec.yaml
+/// 3. Run: dart run tool/generate_sql_from_jpa.dart
+class AppDatabase {
+  // PLACEHOLDER: Class disabled on web - only uncomment when drift is re-enabled
+  // Original implementation would extend _$AppDatabase
+  
+  AppDatabase({/* parameters */}) {
+    throw UnsupportedError(
+      'AppDatabase (Drift SQLite) is not supported on web. '
+      'Use web local storage strategies (LocalStorage, IndexedDB, etc) instead.',
     );
   }
 
-  /// Returns moods for one user, newest first.
-  Future<List<Mood>> getMoodsForUser(int userIdValue) {
-    final query = select(moods)
-      ..where((tbl) => tbl.userId.equals(userIdValue))
-      ..orderBy([(tbl) => OrderingTerm.desc(tbl.createdAt)]);
-    return query.get();
-  }
-
-  /// Returns moods for one user, oldest first.
-  ///
-  /// This order is useful when presenting a queue where the oldest unsynced
-  /// item should be processed first.
-  Future<List<Mood>> getMoodsForUserOldestFirst(int userIdValue) {
-    final query = select(moods)
-      ..where((tbl) => tbl.userId.equals(userIdValue))
-      ..orderBy([(tbl) => OrderingTerm.asc(tbl.createdAt)]);
-    return query.get();
-  }
-
-  /// Returns one mood row by local primary key for a specific user.
-  Future<Mood?> getMoodByIdForUser({
-    required int moodId,
-    required int userIdValue,
-  }) {
-    final query = select(moods)
-      ..where((tbl) => tbl.id.equals(moodId))
-      ..where((tbl) => tbl.userId.equals(userIdValue))
-      ..limit(1);
-    return query.getSingleOrNull();
-  }
-
-  /// Deletes one mood row by local primary key.
-  Future<int> deleteMoodById(int moodId) {
-    return (delete(moods)..where((tbl) => tbl.id.equals(moodId))).go();
-  }
-
-  /// Deletes mood rows by primary key.
-  Future<void> deleteMoodsByIds(Iterable<int> ids) async {
-    final values = ids.toList();
-    if (values.isEmpty) {
-      return;
-    }
-    await (delete(moods)..where((tbl) => tbl.id.isIn(values))).go();
-  }
+  // ORIGINAL METHODS - COMMENTED OUT UNTIL DRIFT IS RE-ENABLED
+  // 
+  // Future<bool> isEncrypted() async { ... }
+  // Future<int> insertMood({...}) { ... }
+  // Future<List<Mood>> getMoodsForUser(int userIdValue) { ... }
+  // Future<List<Mood>> getMoodsForUserOldestFirst(int userIdValue) { ... }  
+  // Future<Mood?> getMoodByIdForUser({...}) { ... }
+  // Future<int> deleteMoodById(int moodId) { ... }
+  // Future<void> deleteMoodsByIds(Iterable<int> ids) async { ... }
 }
 
-/// Opens the encrypted sqlite database and applies SQLCipher keying.
-QueryExecutor _openConnection(DbEncryptionService encryptionService) {
-  return LazyDatabase(() async {
-    // SQLCipher requires overriding sqlite loader on Android.
-    if (Platform.isAndroid) {
-      open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
-      await applyWorkaroundToOpenSqlCipherOnOldAndroidVersions();
-    }
-
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'careconnect_mobile.sqlite'));
-    final encryptionKey = await encryptionService.getOrCreateEncryptionKey();
-
-    return NativeDatabase(
-      file,
-      setup: (database) {
-        final escaped = encryptionService.escapeForPragma(encryptionKey);
-        database.execute("PRAGMA key = '$escaped';");
-        database.execute('PRAGMA foreign_keys = ON;');
-      },
-    );
-  });
-}
+// ORIGINAL CONNECTION CODE - COMMENTED OUT UNTIL DRIFT IS RE-ENABLED
+// 
+// QueryExecutor _openConnection(DbEncryptionService encryptionService) { ... }

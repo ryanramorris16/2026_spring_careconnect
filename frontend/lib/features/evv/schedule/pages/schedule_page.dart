@@ -20,6 +20,8 @@ class SchedulePage extends StatefulWidget {
   State<SchedulePage> createState() => _SchedulePageState();
 }
 
+enum _SchedulePerspective { caregiver, patient }
+
 class _SchedulePageState extends State<SchedulePage> {
   List<ScheduledVisit> _scheduledVisits = [];
   List<ScheduledVisit> _upcomingVisits = [];
@@ -35,6 +37,15 @@ class _SchedulePageState extends State<SchedulePage> {
 
   // Internal pool used to compute summary consistently with UI
   List<ScheduledVisit> _summaryPool = [];
+
+  // Perspective and filter state
+  _SchedulePerspective _perspective = _SchedulePerspective.caregiver;
+  bool _filtersExpanded = false;
+  DateTime? _filterStartDate;
+  DateTime? _filterEndDate;
+  int? _filterPatientId;
+  String? _filterServiceType;
+  String? _filterStatus;
 
   @override
   void initState() {
@@ -239,9 +250,11 @@ class _SchedulePageState extends State<SchedulePage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                _buildPerspectiveToggle(context),
                 _buildHeader(context),
-                const SizedBox(height: 12),
-                _buildViewModeSelector(context),
+                _buildFilterBar(context),
+                if (_perspective == _SchedulePerspective.caregiver)
+                  _buildViewModeSelector(context),
                 Expanded(child: _buildViewContent(context)),
               ],
             ),
@@ -308,9 +321,641 @@ class _SchedulePageState extends State<SchedulePage> {
     );
   }
 
-  Widget _buildViewContent(BuildContext context) {
-    // Combine all visits for calendar views
+  // ─── Filter helpers ────────────────────────────────────────────────────────
+
+  bool get _hasActiveFilters =>
+      _filterStartDate != null ||
+      _filterEndDate != null ||
+      _filterPatientId != null ||
+      (_filterServiceType != null && _filterServiceType!.isNotEmpty) ||
+      (_filterStatus != null && _filterStatus!.isNotEmpty);
+
+  List<ScheduledVisit> _getFilteredVisits(List<ScheduledVisit> source) {
+    return source.where((v) {
+      if (_filterStartDate != null) {
+        final start = DateTime(
+          _filterStartDate!.year,
+          _filterStartDate!.month,
+          _filterStartDate!.day,
+        );
+        if (v.scheduledTime.isBefore(start)) return false;
+      }
+      if (_filterEndDate != null) {
+        final end = DateTime(
+          _filterEndDate!.year,
+          _filterEndDate!.month,
+          _filterEndDate!.day,
+          23,
+          59,
+          59,
+        );
+        if (v.scheduledTime.isAfter(end)) return false;
+      }
+      if (_filterPatientId != null && v.patientId != _filterPatientId) {
+        return false;
+      }
+      if (_filterServiceType != null &&
+          _filterServiceType!.isNotEmpty &&
+          v.serviceType != _filterServiceType) {
+        return false;
+      }
+      if (_filterStatus != null &&
+          _filterStatus!.isNotEmpty &&
+          v.status != _filterStatus) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  // ─── Perspective toggle ────────────────────────────────────────────────────
+
+  Widget _buildPerspectiveToggle(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border(bottom: BorderSide(color: theme.dividerColor, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: SegmentedButton<_SchedulePerspective>(
+              segments: const [
+                ButtonSegment(
+                  value: _SchedulePerspective.caregiver,
+                  icon: Icon(Icons.badge_outlined, size: 18),
+                  label: Text('Caregiver View'),
+                ),
+                ButtonSegment(
+                  value: _SchedulePerspective.patient,
+                  icon: Icon(Icons.person_outline, size: 18),
+                  label: Text('Patient View'),
+                ),
+              ],
+              selected: {_perspective},
+              onSelectionChanged: (Set<_SchedulePerspective> sel) {
+                setState(() => _perspective = sel.first);
+              },
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.comfortable,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Badge(
+            isLabelVisible: _hasActiveFilters,
+            child: IconButton(
+              tooltip: _filtersExpanded ? 'Hide Filters' : 'Show Filters',
+              icon: Icon(
+                _filtersExpanded ? Icons.filter_list_off : Icons.filter_list,
+                color: _hasActiveFilters
+                    ? cs.primary
+                    : cs.onSurfaceVariant,
+              ),
+              onPressed: () =>
+                  setState(() => _filtersExpanded = !_filtersExpanded),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Filter bar ────────────────────────────────────────────────────────────
+
+  Widget _buildFilterBar(BuildContext context) {
+    if (!_filtersExpanded) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final dateFormat = DateFormat('MMM d, yyyy');
+
+    // Collect unique patients from loaded visits for the dropdown
     final allVisits = [..._scheduledVisits, ..._upcomingVisits];
+    final patientMap = <int, String>{};
+    for (final v in allVisits) {
+      patientMap[v.patientId] = v.patientName;
+    }
+
+    const serviceTypes = [
+      'Personal Care',
+      'Medication Management',
+      'Meal Preparation',
+      'Light Housekeeping',
+      'Companionship',
+      'Transportation',
+      'Respite Care',
+      'Physical Therapy',
+      'Occupational Therapy',
+      'Skilled Nursing',
+    ];
+
+    const statuses = ['Scheduled', 'In Progress', 'Completed', 'Cancelled'];
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1 — Date range
+          Row(
+            children: [
+              Expanded(
+                child: _buildDateFilterField(
+                  label: 'From Date',
+                  value: _filterStartDate != null
+                      ? dateFormat.format(_filterStartDate!)
+                      : null,
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: _filterStartDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (d != null) setState(() => _filterStartDate = d);
+                  },
+                  onClear: _filterStartDate != null
+                      ? () => setState(() => _filterStartDate = null)
+                      : null,
+                  theme: theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDateFilterField(
+                  label: 'To Date',
+                  value: _filterEndDate != null
+                      ? dateFormat.format(_filterEndDate!)
+                      : null,
+                  icon: Icons.event_outlined,
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: _filterEndDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (d != null) setState(() => _filterEndDate = d);
+                  },
+                  onClear: _filterEndDate != null
+                      ? () => setState(() => _filterEndDate = null)
+                      : null,
+                  theme: theme,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Row 2 — Patient + Service Type
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdownFilter<int>(
+                  label: 'Patient',
+                  value: _filterPatientId,
+                  icon: Icons.person_outline,
+                  items: patientMap.entries
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(
+                            e.value,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _filterPatientId = v),
+                  theme: theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdownFilter<String>(
+                  label: 'Service Type',
+                  value: _filterServiceType,
+                  icon: Icons.medical_services_outlined,
+                  items: serviceTypes
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _filterServiceType = v),
+                  theme: theme,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Row 3 — Status + Clear all
+          Row(
+            children: [
+              Expanded(
+                child: _buildDropdownFilter<String>(
+                  label: 'Status',
+                  value: _filterStatus,
+                  icon: Icons.flag_outlined,
+                  items: statuses
+                      .map(
+                        (s) => DropdownMenuItem(value: s, child: Text(s)),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _filterStatus = v),
+                  theme: theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _hasActiveFilters
+                      ? () => setState(() {
+                            _filterStartDate = null;
+                            _filterEndDate = null;
+                            _filterPatientId = null;
+                            _filterServiceType = null;
+                            _filterStatus = null;
+                          })
+                      : null,
+                  icon: const Icon(Icons.clear_all, size: 18),
+                  label: const Text('Clear Filters'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: cs.error,
+                    side: BorderSide(
+                      color: _hasActiveFilters ? cs.error : theme.dividerColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateFilterField({
+    required String label,
+    required String? value,
+    required IconData icon,
+    required VoidCallback onTap,
+    required VoidCallback? onClear,
+    required ThemeData theme,
+  }) {
+    final cs = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 18),
+          suffixIcon: onClear != null
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  onPressed: onClear,
+                  padding: EdgeInsets.zero,
+                )
+              : null,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          filled: true,
+          fillColor: cs.surface,
+        ),
+        child: Text(
+          value ?? 'Any',
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: value != null ? cs.onSurface : cs.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownFilter<T>({
+    required String label,
+    required T? value,
+    required IconData icon,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    required ThemeData theme,
+  }) {
+    final cs = theme.colorScheme;
+
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 18),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        filled: true,
+        fillColor: cs.surface,
+      ),
+      hint: Text('Any', style: TextStyle(color: cs.onSurfaceVariant)),
+      items: [
+        DropdownMenuItem<T>(
+          value: null,
+          child: Text('Any', style: TextStyle(color: cs.onSurfaceVariant)),
+        ),
+        ...items,
+      ],
+      onChanged: onChanged,
+    );
+  }
+
+  // ─── Patient-centric view ──────────────────────────────────────────────────
+
+  Widget _buildPatientCentricView(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    final allFiltered = _getFilteredVisits(
+      [..._scheduledVisits, ..._upcomingVisits],
+    );
+
+    // Group by patientId
+    final Map<int, List<ScheduledVisit>> byPatient = {};
+    for (final v in allFiltered) {
+      byPatient.putIfAbsent(v.patientId, () => []).add(v);
+    }
+
+    // Sort each patient's list chronologically
+    for (final list in byPatient.values) {
+      list.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    }
+
+    // Sort patients by earliest visit
+    final sortedPatients = byPatient.entries.toList()
+      ..sort(
+        (a, b) =>
+            a.value.first.scheduledTime.compareTo(b.value.first.scheduledTime),
+      );
+
+    if (sortedPatients.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: cs.onSurfaceVariant.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No visits match the current filters',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Adjust filters or schedule new visits',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              '${sortedPatients.length} Patient${sortedPatients.length != 1 ? 's' : ''} · '
+              '${allFiltered.length} Visit${allFiltered.length != 1 ? 's' : ''}',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+          ...sortedPatients.map((e) => _buildPatientCard(e.value, theme)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientCard(List<ScheduledVisit> visits, ThemeData theme) {
+    final cs = theme.colorScheme;
+    final patient = visits.first;
+
+    final scheduled = visits.where((v) => v.status == 'Scheduled').length;
+    final inProgress = visits.where((v) => v.status == 'In Progress').length;
+    final completed = visits.where((v) => v.status == 'Completed').length;
+    final cancelled = visits.where((v) => v.status == 'Cancelled').length;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Patient header row
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withOpacity(0.4),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: cs.primary,
+                  child: Text(
+                    patient.patientName.isNotEmpty
+                        ? patient.patientName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      color: cs.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        patient.patientName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (scheduled > 0)
+                            _buildStatusPill(
+                              '$scheduled Scheduled',
+                              cs.primary,
+                              cs.onPrimary,
+                            ),
+                          if (inProgress > 0)
+                            _buildStatusPill(
+                              '$inProgress In Progress',
+                              Colors.orange,
+                              Colors.white,
+                            ),
+                          if (completed > 0)
+                            _buildStatusPill(
+                              '$completed Completed',
+                              Colors.green,
+                              Colors.white,
+                            ),
+                          if (cancelled > 0)
+                            _buildStatusPill(
+                              '$cancelled Cancelled',
+                              cs.error,
+                              cs.onError,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Visit rows
+          ...visits.asMap().entries.map((entry) {
+            final isLast = entry.key == visits.length - 1;
+            return _buildPatientVisitRow(entry.value, isLast, theme);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusPill(String label, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: fg,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPatientVisitRow(
+    ScheduledVisit visit,
+    bool isLast,
+    ThemeData theme,
+  ) {
+    final cs = theme.colorScheme;
+    final statusColor = _getStatusColor(visit.status);
+    final timeStr = DateFormat('MMM d · HH:mm').format(visit.scheduledTime);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: theme.dividerColor.withOpacity(0.5),
+                ),
+              ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  visit.serviceType,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  timeStr,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: statusColor.withOpacity(0.5)),
+            ),
+            child: Text(
+              visit.status,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Main view content dispatcher ─────────────────────────────────────────
+
+  Widget _buildViewContent(BuildContext context) {
+    // Patient-centric perspective — ignore calendar view mode
+    if (_perspective == _SchedulePerspective.patient) {
+      return _buildPatientCentricView(context);
+    }
+
+    // Caregiver perspective — apply filters and route to selected view mode
+    final allVisits = _getFilteredVisits(
+      [..._scheduledVisits, ..._upcomingVisits],
+    );
 
     switch (_viewMode) {
       case 'month':
@@ -597,8 +1242,8 @@ class _SchedulePageState extends State<SchedulePage> {
   Widget _buildTodaysVisitsSection() {
     final theme = Theme.of(context);
 
-    // Filter out completed visits - only show scheduled visits
-    final activeVisits = _scheduledVisits
+    // Apply active filters then keep only pending scheduled visits
+    final activeVisits = _getFilteredVisits(_scheduledVisits)
         .where((visit) => visit.status == 'Scheduled')
         .toList();
 
@@ -899,13 +1544,14 @@ class _SchedulePageState extends State<SchedulePage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    if (_upcomingVisits.isEmpty) {
+    final filteredUpcoming = _getFilteredVisits(_upcomingVisits);
+    if (filteredUpcoming.isEmpty) {
       return const SizedBox.shrink();
     }
 
     // Group visits by date
     final Map<String, List<ScheduledVisit>> groupedVisits = {};
-    for (var visit in _upcomingVisits) {
+    for (var visit in filteredUpcoming) {
       final dateKey = DateFormat('yyyy-MM-dd').format(visit.scheduledTime);
       groupedVisits.putIfAbsent(dateKey, () => []).add(visit);
     }

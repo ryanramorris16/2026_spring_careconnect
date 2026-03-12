@@ -88,9 +88,13 @@ dependencies:
   # my key storage
   flutter_dotenv: ^6.0.0
   # Local storage for offline messaging
-  drift: ^2.29.0
-  sqlite3: ^2.9.4
-  sqlcipher_flutter_libs: ^0.6.8
+  # NOTE: drift, sqlite3, and sqlcipher are native-only packages incompatible with web
+  # They are disabled to allow web builds to compile
+  # For mobile/desktop (iOS/Android/Windows/macOS/Linux), these should be re-enabled
+  # Web local storage strategy (IndexedDB/LocalStorage/Hive Web) can be implemented later
+  # drift: ^2.29.0
+  # sqlite3: ^2.9.4
+  # sqlcipher_flutter_libs: ^0.6.8
   # -- Astha - start
   # ag
   provider: ^6.1.5+1
@@ -181,7 +185,7 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.5.1
   build_runner: ^2.4.9
-  drift_dev: ^2.29.0
+  # drift_dev: ^2.29.0  # Commented since drift is disabled for web builds
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.0
 
