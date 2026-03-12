@@ -4,11 +4,7 @@ import 'package:care_connect_app/features/dashboard/patient_dashboard/models/med
 import 'package:care_connect_app/services/api_service.dart';
 
 class PatientMedicationReminderService {
-  // Local optimistic overrides:
-  // - key exists with DateTime value: locally marked as taken at that time.
-  // - key exists with null value: locally marked as missed (clear taken status).
-  final Map<int, DateTime?> _localLastTakenOverrideByMedicationId =
-      <int, DateTime?>{};
+  final Map<int, DateTime> _takenUntilByMedicationId = <int, DateTime>{};
 
   Future<List<MedicationReminderItem>> loadReminders({
     required int? patientId,
@@ -53,33 +49,11 @@ class PatientMedicationReminderService {
       final dosage = (row['dosage'] ?? 'Dose not set').toString();
       final frequency = (row['frequency'] ?? 'Once daily').toString();
       final startDate = DateTime.tryParse((row['startDate'] ?? '').toString());
-      final frequencyInterval = _frequencyInterval(frequency);
-      final serverLastTaken = _parseDateTime(row['lastTaken']);
-      final hasLocalOverride =
-          _localLastTakenOverrideByMedicationId.containsKey(medicationId);
-      final localLastTaken = _localLastTakenOverrideByMedicationId[medicationId];
-
-      final effectiveLastTaken =
-          hasLocalOverride ? localLastTaken : serverLastTaken;
-      final nextDueFromLastTaken =
-          effectiveLastTaken?.toLocal().add(frequencyInterval);
-      final isTakenForWindow =
-          nextDueFromLastTaken != null && nextDueFromLastTaken.isAfter(now);
-      final nextDueAt = nextDueFromLastTaken ??
-          (startDate != null && startDate.isAfter(now) ? startDate : now);
-
-      // Clear local optimistic override once backend state catches up.
-      if (hasLocalOverride) {
-        if (localLastTaken == null && serverLastTaken == null) {
-          _localLastTakenOverrideByMedicationId.remove(medicationId);
-        } else if (localLastTaken != null && serverLastTaken != null) {
-          final serverUtc = serverLastTaken.toUtc();
-          final localUtc = localLastTaken.toUtc();
-          if (!serverUtc.isBefore(localUtc)) {
-            _localLastTakenOverrideByMedicationId.remove(medicationId);
-          }
-        }
-      }
+      final takenUntil = _takenUntilByMedicationId[medicationId];
+      final isTakenForWindow = takenUntil != null && takenUntil.isAfter(now);
+      final nextDueAt = isTakenForWindow
+          ? takenUntil
+          : (startDate != null && startDate.isAfter(now) ? startDate : now);
 
       reminders.add(
         MedicationReminderItem(
@@ -100,7 +74,7 @@ class PatientMedicationReminderService {
       return a.nextDueAt.compareTo(b.nextDueAt);
     });
 
-    _localLastTakenOverrideByMedicationId.removeWhere(
+    _takenUntilByMedicationId.removeWhere(
       (medicationId, _) => !activeMedicationIds.contains(medicationId),
     );
 
@@ -109,18 +83,15 @@ class PatientMedicationReminderService {
 
   void markTaken({
     required int medicationId,
-    DateTime? takenAt,
+    required String frequency,
   }) {
-    _localLastTakenOverrideByMedicationId[medicationId] =
-        (takenAt ?? DateTime.now()).toUtc();
+    _takenUntilByMedicationId[medicationId] = DateTime.now().add(
+      _frequencyInterval(frequency),
+    );
   }
 
   void markMissed({required int medicationId}) {
-    _localLastTakenOverrideByMedicationId[medicationId] = null;
-  }
-
-  void clearLocalOverride({required int medicationId}) {
-    _localLastTakenOverrideByMedicationId.remove(medicationId);
+    _takenUntilByMedicationId.remove(medicationId);
   }
 
   bool hasPendingUntaken(List<MedicationReminderItem> reminders) {
@@ -136,16 +107,6 @@ class PatientMedicationReminderService {
     }
     if (value is String) {
       return int.tryParse(value);
-    }
-    return null;
-  }
-
-  DateTime? _parseDateTime(dynamic value) {
-    if (value is DateTime) {
-      return value;
-    }
-    if (value is String && value.trim().isNotEmpty) {
-      return DateTime.tryParse(value.trim());
     }
     return null;
   }

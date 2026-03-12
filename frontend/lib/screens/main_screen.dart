@@ -9,6 +9,8 @@ import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
 import '../services/api_service.dart';
 import '../services/local_db/offline_sync_service.dart';
+import '../services/api_service.dart';
+import '../services/local_db/offline_sync_service.dart';
 import '../features/telemetry/telemetry.dart';
 
 /// Main screen of the application. This is where the user is navigated to
@@ -491,7 +493,7 @@ class _MainScreenState extends State<MainScreen> {
                     const Padding(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Text(
-                        'Queued Sync Items',
+                        'Queued Offline API Calls',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,

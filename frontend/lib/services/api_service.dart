@@ -9,6 +9,7 @@ import 'package:path/path.dart' as path;
 import '../config/env_constant.dart';
 import 'api_service_offline.dart';
 import 'auth_token_manager.dart';
+import 'local_db/offline_sync_service.dart';
 
 class ApiConstants {
   //V1 endpoints
@@ -47,18 +48,25 @@ class ApiConstants {
 
 class ApiService {
   static const storage = FlutterSecureStorage();
-  static final http.Client _httpClient = ApiServiceOffline.httpClient;
+  static final OfflineSyncService _offlineSyncService =
+      OfflineSyncService.instance();
+  static bool Function()? _canQueueOfflineWrites;
+
+  // Performance optimization: Connection pooling with offline queue support.
+  static final http.Client _httpClient = OfflineQueueHttpClient(
+    inner: http.Client(),
+    offlineSyncService: _offlineSyncService,
+    canQueueWrites: () => _canQueueOfflineWrites?.call() ?? true,
+  );
 
   static void configureOfflineQueue({
     required bool Function() canQueueOfflineWrites,
   }) {
-    ApiServiceOffline.configure(
-      canQueueOfflineWrites: canQueueOfflineWrites,
-    );
+    _canQueueOfflineWrites = canQueueOfflineWrites;
   }
 
   static Future<void> initializeOfflineQueue() async {
-    await ApiServiceOffline.initialize();
+    await _offlineSyncService.initialize();
   }
 
   // Method to dispose of resources
@@ -576,23 +584,23 @@ class ApiService {
   static Future<List<OfflineSyncQueueItem>> getOfflineSyncQueue({
     int limit = 200,
   }) async {
-    return ApiServiceOffline.getPendingQueue(limit: limit);
+    return _offlineSyncService.getPendingQueue(limit: limit);
   }
 
   static Future<int> getOfflineSyncPendingCount() async {
-    return ApiServiceOffline.getPendingCount();
+    return _offlineSyncService.getPendingCount();
   }
 
   static Future<bool> syncOfflineQueuedRequestById(String id) async {
-    return ApiServiceOffline.syncQueuedRequestById(id);
+    return _offlineSyncService.syncQueuedRequestById(id);
   }
 
   static Future<bool> deleteOfflineQueuedRequestById(String id) async {
-    return ApiServiceOffline.deleteQueuedRequestById(id);
+    return _offlineSyncService.deleteQueuedRequestById(id);
   }
 
   static Future<OfflineSyncRunSummary> syncOfflineQueue({int limit = 200}) async {
-    return ApiServiceOffline.syncPendingQueue(limit: limit);
+    return _offlineSyncService.syncPendingQueue(limit: limit);
   }
 
   // ========================
@@ -1818,7 +1826,7 @@ class ApiService {
         body: body,
       ).timeout(const Duration(seconds: 20));
 
-      final queuedOffline = ApiServiceOffline.isQueuedOfflineResponse(response);
+      final queuedOffline = response.headers['x-offline-queued'] == 'true';
       if ((response.statusCode >= 200 && response.statusCode < 300) ||
           queuedOffline) {
         final decoded = jsonDecode(response.body);
