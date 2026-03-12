@@ -3,6 +3,7 @@ package com.careconnect.service.evv;
 import com.careconnect.dto.evv.*;
 import com.careconnect.model.evv.*;
 import com.careconnect.repository.PatientRepository;
+import com.careconnect.repository.UserRepository;
 import com.careconnect.repository.evv.EvvCorrectionRepository;
 import com.careconnect.repository.evv.EvvOfflineQueueRepository;
 import com.careconnect.repository.evv.EvvRecordRepository;
@@ -27,6 +28,7 @@ public class EvvService {
     private final EvvCorrectionRepository correctionRepository;
     private final EvvOfflineQueueRepository offlineQueueRepository;
     private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
     private final EvvLocationService locationService;
     private final AuditLogger audit;
     private final ScheduledVisitRepository scheduledVisitRepository;
@@ -39,11 +41,17 @@ public class EvvService {
         // Build individual name from patient data
         String individualName = patient.getFirstName() + " " + patient.getLastName();
         
+        // Snapshot caregiver name for immutable audit trail
+        String caregiverName = userRepository.findById(req.getCaregiverId())
+                .map(u -> u.getName() != null ? u.getName() : "Caregiver #" + req.getCaregiverId())
+                .orElse("Caregiver #" + req.getCaregiverId());
+        
         var rec = EvvRecord.builder()
                 .patient(patient)
                 .serviceType(req.getServiceType())
                 .individualName(individualName)
                 .caregiverId(req.getCaregiverId())
+                .caregiverName(caregiverName)
                 .dateOfService(req.getDateOfService())
                 .timeIn(req.getTimeIn())
                 .timeOut(req.getTimeOut())
@@ -104,7 +112,8 @@ public class EvvService {
     }
     
     /**
-     * Helper method to save check-in and check-out locations for an EVV record
+     * Helper method to save check-in and check-out locations for an EVV record.
+     * Passes noGpsReason, manualAddress, and accuracyM per federal EVV requirements.
      */
     private void saveLocationsForRecord(EvvRecord record, EvvRecordRequestDto req) {
         // Determine check-in location source
@@ -118,33 +127,37 @@ public class EvvService {
         // Save check-in location if data is provided
         if (checkinSource != null) {
             try {
+                NoGpsReason checkinReason = parseNoGpsReason(req.getCheckinNoGpsReason());
                 EvvLocationRequest checkinLocationReq = EvvLocationRequest.builder()
                         .evvRecordId(record.getId())
                         .role(EvvLocationRole.CHECK_IN)
                         .type(EvvLocationType.valueOf(checkinSource))
+                        .noGpsReason(checkinReason)
+                        .manualAddress(req.getCheckinManualAddress())
                         .build();
                 
-                // If GPS, add coordinates (if available)
                 if ("GPS".equals(checkinSource)) {
                     Double lat = req.getCheckinLocationLat() != null ? req.getCheckinLocationLat() : req.getLocationLat();
                     Double lng = req.getCheckinLocationLng() != null ? req.getCheckinLocationLng() : req.getLocationLng();
                     
                     if (lat != null && lng != null) {
-                        checkinLocationReq.setCoords(EvvLocationRequest.CoordinatesDto.builder()
+                        EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
                                 .lat(BigDecimal.valueOf(lat))
                                 .lng(BigDecimal.valueOf(lng))
-                                .build());
-                        // Only save if we have valid coordinates for GPS
+                                .build();
+                        if (req.getCheckinAccuracyM() != null) {
+                            coords.setAccuracyM(BigDecimal.valueOf(req.getCheckinAccuracyM()));
+                        }
+                        checkinLocationReq.setCoords(coords);
                         locationService.saveLocation(checkinLocationReq);
                     } else {
                         System.err.println("Warning: GPS check-in location requested but coordinates not provided");
                     }
                 } else {
-                    // PATIENT_ADDRESS doesn't need coordinates
+                    // PATIENT_ADDRESS or MANUAL - no GPS coords needed
                     locationService.saveLocation(checkinLocationReq);
                 }
             } catch (Exception e) {
-                // Log but don't fail the record creation
                 System.err.println("Warning: Failed to save check-in location: " + e.getMessage());
             }
         }
@@ -152,32 +165,45 @@ public class EvvService {
         // Save check-out location if data is provided
         if (req.getCheckoutLocationSource() != null) {
             try {
+                NoGpsReason checkoutReason = parseNoGpsReason(req.getCheckoutNoGpsReason());
                 EvvLocationRequest checkoutLocationReq = EvvLocationRequest.builder()
                         .evvRecordId(record.getId())
                         .role(EvvLocationRole.CHECK_OUT)
                         .type(EvvLocationType.valueOf(req.getCheckoutLocationSource()))
+                        .noGpsReason(checkoutReason)
+                        .manualAddress(req.getCheckoutManualAddress())
                         .build();
                 
-                // If GPS, add coordinates (if available)
                 if ("GPS".equals(req.getCheckoutLocationSource())) {
                     if (req.getCheckoutLocationLat() != null && req.getCheckoutLocationLng() != null) {
-                        checkoutLocationReq.setCoords(EvvLocationRequest.CoordinatesDto.builder()
+                        EvvLocationRequest.CoordinatesDto coords = EvvLocationRequest.CoordinatesDto.builder()
                                 .lat(BigDecimal.valueOf(req.getCheckoutLocationLat()))
                                 .lng(BigDecimal.valueOf(req.getCheckoutLocationLng()))
-                                .build());
-                        // Only save if we have valid coordinates for GPS
+                                .build();
+                        if (req.getCheckoutAccuracyM() != null) {
+                            coords.setAccuracyM(BigDecimal.valueOf(req.getCheckoutAccuracyM()));
+                        }
+                        checkoutLocationReq.setCoords(coords);
                         locationService.saveLocation(checkoutLocationReq);
                     } else {
                         System.err.println("Warning: GPS check-out location requested but coordinates not provided");
                     }
                 } else {
-                    // PATIENT_ADDRESS doesn't need coordinates
+                    // PATIENT_ADDRESS or MANUAL
                     locationService.saveLocation(checkoutLocationReq);
                 }
             } catch (Exception e) {
-                // Log but don't fail the record creation
                 System.err.println("Warning: Failed to save check-out location: " + e.getMessage());
             }
+        }
+    }
+
+    private NoGpsReason parseNoGpsReason(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return NoGpsReason.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return NoGpsReason.OTHER;
         }
     }
 
