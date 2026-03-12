@@ -121,5 +121,68 @@ void main() {
 
       await db.closeDb();
     });
+
+    test('getOfflineSyncById returns null for unknown id', () async {
+      final db = AppDatabase();
+      await db.ensureOfflineSyncTable();
+
+      expect(await db.getOfflineSyncById('missing-id'), isNull);
+
+      await db.closeDb();
+    });
+
+    test('mark methods are no-op for unknown id', () async {
+      final db = AppDatabase();
+      await db.ensureOfflineSyncTable();
+
+      await db.markOfflineSyncAsSyncing('does-not-exist');
+      await db.markOfflineSyncAsFailed(
+        id: 'does-not-exist',
+        errorMessage: 'should not throw',
+      );
+
+      expect(await db.getPendingOfflineSyncCount(), equals(0));
+      await db.closeDb();
+    });
+
+    test('getPendingOfflineSyncQueue respects limit', () async {
+      final db = AppDatabase();
+      await db.ensureOfflineSyncTable();
+
+      await db.upsertOfflineSyncOperation(
+        id: 'one',
+        method: 'POST',
+        url: 'https://example.org/v1/api/tasks',
+        headersJson: '{}',
+        bodyJson: '{"title":"one"}',
+        createdAtIso: '2026-03-12T12:00:00.000Z',
+        fingerprint: 'fp-one',
+      );
+      await db.upsertOfflineSyncOperation(
+        id: 'two',
+        method: 'POST',
+        url: 'https://example.org/v1/api/tasks',
+        headersJson: '{}',
+        bodyJson: '{"title":"two"}',
+        createdAtIso: '2026-03-12T12:01:00.000Z',
+        fingerprint: 'fp-two',
+      );
+      await db.upsertOfflineSyncOperation(
+        id: 'three',
+        method: 'POST',
+        url: 'https://example.org/v1/api/tasks',
+        headersJson: '{}',
+        bodyJson: '{"title":"three"}',
+        createdAtIso: '2026-03-12T12:02:00.000Z',
+        fingerprint: 'fp-three',
+      );
+
+      final rows = await db.getPendingOfflineSyncQueue(limit: 2);
+      expect(rows.length, equals(2));
+      expect(rows.first.id, equals('one'));
+      expect(rows.last.id, equals('two'));
+
+      await db.closeDb();
+    });
   });
 }

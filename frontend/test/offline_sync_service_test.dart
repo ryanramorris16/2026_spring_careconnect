@@ -40,6 +40,10 @@ void main() {
         isTrue,
       );
       expect(service.shouldQueueForError(Exception('bad request')), isFalse);
+      expect(
+        service.shouldQueueForError(Exception('SocketException: failed host lookup')),
+        isTrue,
+      );
     });
 
     test('buildQueuedStreamedResponse returns expected queued payload', () async {
@@ -75,6 +79,31 @@ void main() {
         uri: Uri.parse('https://example.org/v1/api/patient/1/mood'),
         headers: <String, String>{'Content-Type': 'application/json'},
         body: '{"score":8,"label":"Good"}',
+      );
+
+      expect(first, equals(second));
+      expect(await service.getPendingCount(), equals(1));
+    });
+
+    test('enqueueRequest fingerprint ignores authorization header changes', () async {
+      final first = await service.enqueueRequest(
+        method: 'POST',
+        uri: Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer token-a',
+        },
+        body: '{"title":"Medication"}',
+      );
+
+      final second = await service.enqueueRequest(
+        method: 'POST',
+        uri: Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer token-b',
+        },
+        body: '{"title":"Medication"}',
       );
 
       expect(first, equals(second));
@@ -121,6 +150,26 @@ void main() {
       expect(genericDetails.toLowerCase(), isNot(contains('token')));
     });
 
+    test('pending queue generic display limits fields and removes sensitive values', () async {
+      final queuedId = await service.enqueueRequest(
+        method: 'PATCH',
+        uri: Uri.parse('https://example.org/v1/api/custom'),
+        headers: <String, String>{'Content-Type': 'application/json'},
+        body:
+            '{"fieldA":"a","fieldB":"b","fieldC":"c","fieldD":"d","fieldE":"e","fieldF":"f","password":"do-not-show","authorization":"do-not-show"}',
+      );
+
+      final queue = await service.getPendingQueue(limit: 10);
+      final item = queue.firstWhere((entry) => entry.id == queuedId);
+
+      expect(item.displayTitle, equals('Queued Update'));
+      expect(item.displayDetails.length, lessThanOrEqualTo(5));
+      final flattened = item.displayDetails.join(' ').toLowerCase();
+      expect(flattened, isNot(contains('password')));
+      expect(flattened, isNot(contains('authorization')));
+      expect(flattened, isNot(contains('do-not-show')));
+    });
+
     test('syncPendingQueue reports zero attempts when queue is empty', () async {
       final summary = await service.syncPendingQueue(limit: 50);
       expect(summary.attempted, equals(0));
@@ -130,6 +179,10 @@ void main() {
 
     test('deleteQueuedRequestById returns false for unknown id', () async {
       expect(await service.deleteQueuedRequestById('does-not-exist'), isFalse);
+    });
+
+    test('syncQueuedRequestById returns true for unknown id', () async {
+      expect(await service.syncQueuedRequestById('missing-id'), isTrue);
     });
 
     test('OfflineQueueHttpClient queues offline write requests', () async {
@@ -171,6 +224,27 @@ void main() {
       expect(await service.getPendingCount(), equals(0));
     });
 
+    test('OfflineQueueHttpClient does not queue replay-flagged requests', () async {
+      final client = OfflineQueueHttpClient(
+        inner: _ThrowingClient(TimeoutException('offline')),
+        offlineSyncService: service,
+        canQueueWrites: () => true,
+      );
+
+      final request = http.Request(
+        'POST',
+        Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+      )
+        ..headers[OfflineSyncService.replayHeader] = 'true'
+        ..body = '{"title":"Replay"}';
+
+      expect(
+        () => client.send(request),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(await service.getPendingCount(), equals(0));
+    });
+
     test('OfflineQueueHttpClient does not queue auth endpoint writes', () async {
       final client = OfflineQueueHttpClient(
         inner: _ThrowingClient(TimeoutException('offline')),
@@ -201,6 +275,26 @@ void main() {
         'POST',
         Uri.parse('https://example.org/v1/api/tasks/patient/1'),
       )..body = '{"title":"Should fail"}';
+
+      expect(
+        () => client.send(request),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(await service.getPendingCount(), equals(0));
+    });
+
+    test('OfflineQueueHttpClient does not queue multipart requests', () async {
+      final client = OfflineQueueHttpClient(
+        inner: _ThrowingClient(TimeoutException('offline')),
+        offlineSyncService: service,
+        canQueueWrites: () => true,
+      );
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://example.org/v1/api/tasks/patient/1'),
+      );
+      request.fields['title'] = 'Multipart task';
 
       expect(
         () => client.send(request),
