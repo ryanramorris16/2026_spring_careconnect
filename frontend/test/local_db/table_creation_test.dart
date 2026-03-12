@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:care_connect_app/services/local_db/create_table.dart';
+import 'package:care_connect_app/services/local_db/app_database.dart';
 
 void main() {
-  group('Table Creation Tests', () {
-    test('Create table module loads', () {
-      expect(true, true);
+  group('Database Table Tests', () {
+    test('AppDatabase instance can be created', () {
+      final db = AppDatabase();
+      expect(db, isNotNull);
     });
   });
 }
