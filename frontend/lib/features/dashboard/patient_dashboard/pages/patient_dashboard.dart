@@ -444,8 +444,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
   ) {
     final next = existing
         .where(
-          (alert) => !(alert.type == AlertType.important &&
-              alert.message == _lowMoodAlertMessage),
+          (alert) =>
+              !(alert.type == AlertType.important &&
+                  alert.message == _lowMoodAlertMessage),
         )
         .toList();
 
@@ -482,8 +483,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
     List<AlertNotification> existing, {
     required bool hasPendingUntaken,
   }) {
-    final next =
-        existing.where((alert) => !_isPendingMedicationAlert(alert)).toList();
+    final next = existing
+        .where((alert) => !_isPendingMedicationAlert(alert))
+        .toList();
 
     if (!hasPendingUntaken) {
       dismissedAlertIds.remove(_pendingMedicationAlertId);
@@ -512,8 +514,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
   Future<List<AlertNotification>> _buildAlerts(int userId) async {
     final moodHistory = await ApiService.getMoodHistory(userId);
     final averageMood = _averageMoodLast7Days(moodHistory);
-    final moodAlerts =
-        _withMoodAlertForAverage(<AlertNotification>[], averageMood);
+    final moodAlerts = _withMoodAlertForAverage(<AlertNotification>[], averageMood);
     return _withMedicationReminderAlert(
       moodAlerts,
       hasPendingUntaken: _hasPendingMedicationReminders(medicationReminders),
