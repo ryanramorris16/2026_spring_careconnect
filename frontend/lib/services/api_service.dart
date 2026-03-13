@@ -4,10 +4,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart' as httpClient;
 import 'package:path/path.dart' as path;
 
 import '../config/env_constant.dart';
+import 'api_service_offline.dart';
 import 'auth_token_manager.dart';
 
 class ApiConstants {
@@ -46,10 +46,24 @@ class ApiConstants {
 }
 
 class ApiService {
+<<<<<<< team_c
   static const storage = FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
+=======
+  static const storage = FlutterSecureStorage();
+  static final http.Client _httpClient = ApiServiceOffline.httpClient;
+>>>>>>> main
 
-  // Performance optimization: Connection pooling
-  static final http.Client _httpClient = http.Client();
+  static void configureOfflineQueue({
+    required bool Function() canQueueOfflineWrites,
+  }) {
+    ApiServiceOffline.configure(
+      canQueueOfflineWrites: canQueueOfflineWrites,
+    );
+  }
+
+  static Future<void> initializeOfflineQueue() async {
+    await ApiServiceOffline.initialize();
+  }
 
   // Method to dispose of resources
   static void dispose() {
@@ -560,6 +574,32 @@ class ApiService {
   }
 
   // ========================
+  // OFFLINE SYNC QUEUE METHODS
+  // ========================
+
+  static Future<List<OfflineSyncQueueItem>> getOfflineSyncQueue({
+    int limit = 200,
+  }) async {
+    return ApiServiceOffline.getPendingQueue(limit: limit);
+  }
+
+  static Future<int> getOfflineSyncPendingCount() async {
+    return ApiServiceOffline.getPendingCount();
+  }
+
+  static Future<bool> syncOfflineQueuedRequestById(String id) async {
+    return ApiServiceOffline.syncQueuedRequestById(id);
+  }
+
+  static Future<bool> deleteOfflineQueuedRequestById(String id) async {
+    return ApiServiceOffline.deleteQueuedRequestById(id);
+  }
+
+  static Future<OfflineSyncRunSummary> syncOfflineQueue({int limit = 200}) async {
+    return ApiServiceOffline.syncPendingQueue(limit: limit);
+  }
+
+  // ========================
   // UTILITY METHODS
   // ========================
 
@@ -1059,7 +1099,7 @@ class ApiService {
     Map<String, dynamic> familyMemberData,
   ) async {
     final headers = await AuthTokenManager.getAuthHeaders();
-    return await http.post(
+    return await _httpClient.post(
       Uri.parse(
         '${ApiConstants._host}/v1/api/patients/$patientId/family-members',
       ),
@@ -1079,7 +1119,7 @@ class ApiService {
       '${ApiConstants._host}/v1/api/patients/mood-pain-log',
     );
 
-    return await http.post(
+    return await _httpClient.post(
       url,
       headers: headers,
       body: jsonEncode({
@@ -1557,7 +1597,7 @@ class ApiService {
         final headers = await AuthTokenManager.getAuthHeaders();
         final uri = Uri.parse(
             '${ApiConstants.patients}/$patientId/medications');
-        return await httpClient
+        return await _httpClient
             .get(uri, headers: headers)
             .timeout(
           const Duration(seconds: 10),
@@ -1579,7 +1619,7 @@ class ApiService {
           '${ApiConstants.patients}/$patientId/medications',
         );
 
-        return await httpClient
+        return await _httpClient
             .post(
               uri,
               headers: headers,
@@ -1605,7 +1645,7 @@ class ApiService {
         '${ApiConstants.patients}/$patientId/medications/$medicationId',
       );
 
-        return await httpClient
+        return await _httpClient
             .delete(uri, headers: headers)
             .timeout(
               const Duration(seconds: 15),
@@ -1663,7 +1703,7 @@ class ApiService {
         '${ApiConstants.patients}/$patientId/medications/$medicationId/caregiver/$caregiverId',
       );
 
-      return await httpClient
+      return await _httpClient
           .delete(uri, headers: headers)
           .timeout(
             const Duration(seconds: 15),
@@ -1685,8 +1725,57 @@ class ApiService {
         '${ApiConstants.patients}/$patientId/medications/$medicationId/approve',
       );
 
-      return await httpClient
+      return await _httpClient
           .put(uri, headers: headers)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
+          );
+    } catch (e) {
+      return http.Response(jsonEncode({'error': e.toString()}), 500);
+    }
+  }
+
+  /// Persist medication taken timestamp for reminder dose windows.
+  static Future<http.Response> markMedicationTaken(
+    int patientId,
+    int medicationId, {
+    DateTime? takenAt,
+  }) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      final uri = Uri.parse(
+        '${ApiConstants.patients}/$patientId/medications/$medicationId/last-taken',
+      );
+      final payload = jsonEncode({
+        'lastTaken': (takenAt ?? DateTime.now()).toUtc().toIso8601String(),
+      });
+
+      return await _httpClient
+          .put(uri, headers: headers, body: payload)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
+          );
+    } catch (e) {
+      return http.Response(jsonEncode({'error': e.toString()}), 500);
+    }
+  }
+
+  /// Clear persisted medication taken timestamp.
+  static Future<http.Response> clearMedicationTakenStatus(
+    int patientId,
+    int medicationId,
+  ) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final uri = Uri.parse(
+        '${ApiConstants.patients}/$patientId/medications/$medicationId/last-taken',
+      );
+
+      return await _httpClient
+          .delete(uri, headers: headers)
           .timeout(
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
@@ -1733,8 +1822,22 @@ class ApiService {
         body: body,
       ).timeout(const Duration(seconds: 20));
 
-      if (response.statusCode == 201) {
-        return jsonDecode(response.body)['data'];
+      final queuedOffline = ApiServiceOffline.isQueuedOfflineResponse(response);
+      if ((response.statusCode >= 200 && response.statusCode < 300) ||
+          queuedOffline) {
+        final decoded = jsonDecode(response.body);
+        if (queuedOffline) {
+          return <String, dynamic>{
+            'queued': true,
+            'requestId': decoded is Map<String, dynamic>
+                ? decoded['requestId']
+                : null,
+          };
+        }
+        if (decoded is Map<String, dynamic>) {
+          return Map<String, dynamic>.from(decoded['data'] ?? decoded);
+        }
+        return <String, dynamic>{};
       } else {
         throw HttpException("Failed to add allergy for patient.");
       }
@@ -1800,7 +1903,7 @@ Future<http.Response> getUserFilesByCategory(int userId) async {
 
     final uri = Uri.parse('${ApiConstants.baseUrl}files/users/$userId/list');
 
-    return await httpClient
+    return await ApiService._httpClient
         .get(uri, headers: headers)
         .timeout(
           const Duration(seconds: 10),

@@ -33,6 +33,7 @@ public class MedicationController {
     private AuthorizationService authorizationService;
 
     // ================================================================
+<<<<<<< team_c
     // 1. Fetch all medications for a patient
     // ================================================================
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
@@ -46,6 +47,8 @@ public class MedicationController {
     }
 
     // ================================================================
+=======
+>>>>>>> main
     // 1.1 Fetch only active medications
     // ================================================================
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
@@ -72,6 +75,7 @@ public class MedicationController {
     }
 
     // ================================================================
+<<<<<<< team_c
     // 2. Add a new medication (creates record as PENDING)
     // ================================================================
     @RequirePermission(Permission.CREATE_TASKS)
@@ -88,6 +92,8 @@ public class MedicationController {
     }
 
     // ================================================================
+=======
+>>>>>>> main
     // 3. Approve a medication (sets isActive=true, approval_status='APPROVED')
     // ================================================================
     @RequirePermission(Permission.UPDATE_TASKS)
@@ -107,6 +113,7 @@ public class MedicationController {
     }
 
     // ================================================================
+<<<<<<< team_c
     // 4. Remove (soft delete) medication and trigger notification (Patient-side)
     // ================================================================
     @RequirePermission(Permission.DELETE_PATIENTS)
@@ -126,6 +133,9 @@ public class MedicationController {
 
     // ================================================================
     // 5. Hard delete medication (Caregiver-side)
+=======
+    // 4. Hard delete medication (Caregiver-side)
+>>>>>>> main
     // ================================================================
     @RequirePermission(Permission.DELETE_PATIENTS)
 
