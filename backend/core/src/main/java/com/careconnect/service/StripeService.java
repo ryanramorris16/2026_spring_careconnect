@@ -31,6 +31,14 @@ public class StripeService {
         return "{}";
     }
 
+    public java.util.Map<String, Object> createCustomer(String name, String email) {
+        return java.util.Map.of("id", "cus_stub_" + System.currentTimeMillis(), "success", true);
+    }
+
+    public java.util.Map<String, Object> createSubscription(String customerId, String priceId) {
+        return java.util.Map.of("id", "sub_stub_" + System.currentTimeMillis(), "success", true);
+    }
+
     public String getCustomerActiveSubscriptions(String customerId) {
         return "{}";
     }

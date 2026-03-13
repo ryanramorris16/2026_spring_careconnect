@@ -38,6 +38,8 @@ class _SubscriptionManagementPageState
   }
 
   Future<void> _loadSubscriptionData() async {
+    final userSession = await AuthTokenManager.getUserSession();
+
     setState(() {
       _isLoading = true;
       _error = null;
@@ -54,10 +56,8 @@ class _SubscriptionManagementPageState
 
       if (plansResponse.statusCode == 200) {
         final plansData = jsonDecode(plansResponse.body);
-        print('⚠️ Plans data from API: $plansData');
         if (plansData != null && plansData is List) {
           _plans = plansData.map((planData) {
-            print('⚠️ Processing plan: $planData');
             // Generate default features based on the plan
             final List<String> features = [];
 
@@ -272,15 +272,6 @@ class _SubscriptionManagementPageState
   }
 
   Future<void> _changePlan(SubscriptionPlan newPlan) async {
-    // Print debug information
-    print('⚠️ Change plan triggered. CustomerId: $_customerId');
-    if (_currentSubscription != null) {
-      print('⚠️ Current subscription ID: ${_currentSubscription?.id}');
-      print('⚠️ Current subscription planId: ${_currentSubscription?.planId}');
-      print('⚠️ Current subscription status: ${_currentSubscription?.status}');
-    } else {
-      print('⚠️ No current subscription');
-    }
 
     // Ensure we have a customerId for new subscriptions
     if (_processingAction) return;
@@ -643,9 +634,8 @@ class _SubscriptionManagementPageState
         if (!context.mounted) return;
 
         // Clear navigation history and go to login
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (route) => false);
+        context.go('/login');
+
       } else {
         final errorData = jsonDecode(response.body);
         throw Exception(errorData['error'] ?? 'Failed to cancel subscription');

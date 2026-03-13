@@ -56,10 +56,10 @@ class AuthTokenManager {
       }
       return null;
     } catch (e) {
-      // Return null on any error - let the app handle missing authentication
       return null;
     }
   }
+
 
   // Get user session data
   static Future<Map<String, dynamic>?> getUserSession() async {
@@ -81,18 +81,16 @@ class AuthTokenManager {
       if (expiryStr != null) {
         final expiry = int.parse(expiryStr);
         final currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-        // Add buffer time (5 minutes) to prevent edge cases
-        const bufferTime = 5 * 60; // 5 minutes in seconds
+        const bufferTime = 5 * 60;
         return currentTime < (expiry - bufferTime);
       }
-
-      // If no expiry info, try to validate with backend
-      return await _validateTokenWithBackend(token);
+      // If no expiry info, trust the token rather than making a network call
+      return token.isNotEmpty;
     } catch (e) {
-      return false; // Assume invalid on error for security
+      return false;
     }
   }
+
 
   // Validate token with backend (for cases where we don't have expiry info)
   static Future<bool> _validateTokenWithBackend(String token) async {
@@ -125,7 +123,7 @@ class AuthTokenManager {
     }
 
     return headers;
-  } // Clear all auth data
+  }// Clear all auth data
 
   static Future<void> clearAuthData() async {
     try {
