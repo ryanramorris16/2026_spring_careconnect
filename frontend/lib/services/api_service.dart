@@ -46,7 +46,7 @@ class ApiConstants {
 }
 
 class ApiService {
-  static const storage = FlutterSecureStorage();
+  static const storage = FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
 
   // Performance optimization: Connection pooling
   static final http.Client _httpClient = http.Client();
