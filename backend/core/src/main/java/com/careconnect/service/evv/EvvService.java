@@ -33,6 +33,36 @@ public class EvvService {
     private final AuditLogger audit;
     private final ScheduledVisitRepository scheduledVisitRepository;
 
+    /**
+     * Build audit event details map with location information from EVV record
+     */
+    private Map<String, Object> buildLocationDetails(EvvRecord record) {
+        var details = new java.util.HashMap<String, Object>();
+        
+        // Add legacy location if available
+        if (record.getLocationLat() != null || record.getLocationLng() != null) {
+            details.put("locationLat", record.getLocationLat());
+            details.put("locationLng", record.getLocationLng());
+            details.put("locationSource", record.getLocationSource());
+        }
+        
+        // Add check-in location if available
+        if (record.getCheckinLocationLat() != null || record.getCheckinLocationLng() != null) {
+            details.put("checkinLocationLat", record.getCheckinLocationLat());
+            details.put("checkinLocationLng", record.getCheckinLocationLng());
+            details.put("checkinLocationSource", record.getCheckinLocationSource());
+        }
+        
+        // Add check-out location if available
+        if (record.getCheckoutLocationLat() != null || record.getCheckoutLocationLng() != null) {
+            details.put("checkoutLocationLat", record.getCheckoutLocationLat());
+            details.put("checkoutLocationLng", record.getCheckoutLocationLng());
+            details.put("checkoutLocationSource", record.getCheckoutLocationSource());
+        }
+        
+        return details;
+    }
+
     @Transactional
     public EvvRecord createRecord(EvvRecordRequestDto req, Long actorId) {
         var patient = patientRepository.findById(req.getPatientId())
@@ -70,10 +100,15 @@ public class EvvService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
         var saved = recordRepository.save(rec); // REQ 2
-        audit.log(saved, actorId, "CREATED", null); // REQ 4
         
         // Save check-in and check-out locations using the new location service
         saveLocationsForRecord(saved, req);
+        
+        // Populate location fields and log with location data
+        populateLocationFields(saved);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(saved));
+        auditDetails.put("deviceInfo", req.getDeviceInfo());
+        audit.log(saved, actorId, "CREATED", auditDetails); // REQ 4
         
         // If this EVV record is linked to a scheduled visit, mark the scheduled visit as completed
         if (req.getScheduledVisitId() != null) {
@@ -216,10 +251,14 @@ public class EvvService {
             rec.markRejected();
         }
         recordRepository.save(rec);
-        audit.log(rec, actorId, approve ? "APPROVED" : "REJECTED", null);
         
-        // Populate location data before returning
+        // Populate location data before audit logging
         populateLocationFields(rec);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(rec));
+        if (comment != null) {
+            auditDetails.put("comment", comment);
+        }
+        audit.log(rec, actorId, approve ? "APPROVED" : "REJECTED", auditDetails);
         
         return rec;
     }
@@ -277,7 +316,12 @@ public class EvvService {
                 .build();
         
         offlineQueueRepository.save(queueItem);
-        audit.log(saved, actorId, "OFFLINE_CREATED", Map.of("deviceId", deviceId));
+        
+        // Populate location fields and log with location data
+        populateLocationFields(saved);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(saved));
+        auditDetails.put("deviceId", deviceId);
+        audit.log(saved, actorId, "OFFLINE_CREATED", auditDetails);
         
         return saved;
     }
@@ -354,11 +398,13 @@ public class EvvService {
         
         correctionRepository.save(correction);
         
-        audit.log(savedCorrected, actorId, "CORRECTED", Map.of(
-            "originalRecordId", originalRecord.getId(),
-            "reasonCode", req.getReasonCode(),
-            "explanation", req.getExplanation()
-        ));
+        // Populate location fields and log with comprehensive audit details
+        populateLocationFields(savedCorrected);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(savedCorrected));
+        auditDetails.put("originalRecordId", originalRecord.getId());
+        auditDetails.put("reasonCode", req.getReasonCode());
+        auditDetails.put("explanation", req.getExplanation());
+        audit.log(savedCorrected, actorId, "CORRECTED", auditDetails);
         
         return savedCorrected;
     }
@@ -371,7 +417,13 @@ public class EvvService {
         record.approveEor(approverId, req.getComment());
         recordRepository.save(record);
         
-        audit.log(record, approverId, "EOR_APPROVED", null);
+        // Populate location data before audit logging
+        populateLocationFields(record);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(record));
+        if (req.getComment() != null) {
+            auditDetails.put("comment", req.getComment());
+        }
+        audit.log(record, approverId, "EOR_APPROVED", auditDetails);
         
         return record;
     }
@@ -441,7 +493,14 @@ public class EvvService {
         correctedRecord.markApproved();
         recordRepository.save(correctedRecord);
         
-        audit.log(correctedRecord, approverId, "CORRECTION_APPROVED", null);
+        // Populate location data before audit logging
+        populateLocationFields(correctedRecord);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(correctedRecord));
+        auditDetails.put("correctionId", correctionId);
+        if (comment != null) {
+            auditDetails.put("comment", comment);
+        }
+        audit.log(correctedRecord, approverId, "CORRECTION_APPROVED", auditDetails);
         
         return correction;
     }
@@ -459,7 +518,14 @@ public class EvvService {
         correctedRecord.markRejected();
         recordRepository.save(correctedRecord);
         
-        audit.log(correctedRecord, reviewerId, "CORRECTION_REJECTED", null);
+        // Populate location data before audit logging
+        populateLocationFields(correctedRecord);
+        var auditDetails = new java.util.HashMap<>(buildLocationDetails(correctedRecord));
+        auditDetails.put("correctionId", correctionId);
+        if (comment != null) {
+            auditDetails.put("comment", comment);
+        }
+        audit.log(correctedRecord, reviewerId, "CORRECTION_REJECTED", auditDetails);
         
         return correction;
     }
