@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.*;
 import com.careconnect.model.ChatConversation;
 import com.careconnect.service.AIChatService;
@@ -37,6 +40,9 @@ public class AIChatController {
     private final AuthorizationService authorizationService;
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AIChatController.class);
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/chat")
     @Operation(
         summary = "Send chat message to AI",
@@ -72,6 +78,9 @@ public class AIChatController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/conversations/{patientId}")
     @Operation(
         summary = "Get patient's chat conversations",
@@ -96,6 +105,9 @@ public class AIChatController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/conversation/{conversationId}/messages")
     @Operation(
         summary = "Get conversation messages",
@@ -119,6 +131,9 @@ public class AIChatController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/history")
     @Operation(
@@ -187,6 +202,9 @@ public class AIChatController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/conversation/{conversationId}/deactivate")
     @Operation(
         summary = "Deactivate conversation",
@@ -214,6 +232,8 @@ public class AIChatController {
     }
     
     // AI Configuration endpoints
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/config")
     @Operation(
         summary = "Get AI configuration",
@@ -238,6 +258,9 @@ public class AIChatController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    @RequirePermission(Permission.CREATE_TASKS)
+
     
     @PostMapping("/config")
     @Operation(
@@ -265,6 +288,9 @@ public class AIChatController {
         }
     }
     
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
+    
     @DeleteMapping("/config")
     @Operation(
         summary = "Deactivate AI configuration",
@@ -289,6 +315,9 @@ public class AIChatController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/retention-policy")
     @Operation(

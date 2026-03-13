@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.User;
 import com.careconnect.repository.EmailCredentialRepository;
 import com.careconnect.model.EmailCredential;
@@ -18,6 +21,9 @@ public class EmailCredentialController {
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
     private final EmailCredentialRepository credRepo;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/email-credentials/status")
     public ResponseEntity<Boolean> getConnectionStatus(@RequestParam String userId) throws UnauthorizedException {

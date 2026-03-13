@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.CheckIn;
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
@@ -27,6 +30,9 @@ public class CheckInController {
     @Autowired
     private CheckInService checkInService;
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping()
     public ResponseEntity<CheckIn> patientCheckIn() throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -34,6 +40,9 @@ public class CheckInController {
         // TODO: Replace with actual patient check-in logic later
         return ResponseEntity.ok(new CheckIn());
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping()
     public ResponseEntity<List<CheckIn>> getCheckIns() throws UnauthorizedException {
@@ -43,6 +52,9 @@ public class CheckInController {
         // Fetch all check-ins (placeholder)
         return ResponseEntity.ok(checkInService.getAllCheckIns());
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/{id}")
     public ResponseEntity<CheckIn> getCheckIn(@PathVariable Long id) throws UnauthorizedException {
@@ -54,6 +66,9 @@ public class CheckInController {
         CheckIn target = checkInService.getCheckInByID(id);
         return ResponseEntity.ok(target);
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{id}")
     public ResponseEntity<CheckIn> updateCheckIn(@PathVariable Long id) throws UnauthorizedException {

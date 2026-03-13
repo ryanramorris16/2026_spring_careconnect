@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.QuestionDTO;
 import com.careconnect.service.QuestionService;
 import com.careconnect.util.SecurityUtil;
@@ -26,6 +29,8 @@ public class CheckInQuestionController {
      * GET /api/checkins/{checkInId}/questions
      * GET /v1/api/checkins/{checkInId}/questions
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{checkInId}/questions")
     public ResponseEntity<List<QuestionDTO>> getQuestions(@PathVariable("checkInId") Long checkInId) {
         // RBAC: Defense-in-depth — verify caller is a real user in the database

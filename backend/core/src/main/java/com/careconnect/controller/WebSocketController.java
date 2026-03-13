@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
@@ -28,6 +31,8 @@ public class WebSocketController {
     /**
      * Initialize WebSocket service (dummy endpoint for client handshake/testing)
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/init")
     @Operation(
         summary = "Initialize WebSocket service",
@@ -47,6 +52,8 @@ public class WebSocketController {
     /**
      * Register a user for WebSocket notifications
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/register-user")
     @Operation(
         summary = "Register user for WebSocket notifications",
@@ -85,6 +92,9 @@ public class WebSocketController {
     private final WebSocketNotificationService webSocketNotificationService;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/call-invitation")
     @Operation(
@@ -131,6 +141,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/sms-notification")
     @Operation(
         summary = "Send SMS notification",
@@ -173,6 +186,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/medication-reminder")
     @Operation(
         summary = "Send medication reminder",
@@ -213,6 +229,9 @@ public class WebSocketController {
             ));
         }
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/vital-signs-alert")
     @Operation(
@@ -260,6 +279,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/emergency-alert")
     @Operation(
         summary = "Send emergency alert",
@@ -304,6 +326,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/appointment-reminder")
     @Operation(
         summary = "Send appointment reminder",
@@ -345,6 +370,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/system-announcement")
     @Operation(
         summary = "Broadcast system announcement",
@@ -383,6 +411,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/online-users")
     @Operation(
         summary = "Get online users",
@@ -416,6 +447,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/user-status/{userId}")
     @Operation(
         summary = "Check user online status",
@@ -448,6 +482,9 @@ public class WebSocketController {
             ));
         }
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/sos-call")
     @Operation(

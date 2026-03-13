@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.evv.EvvLocationRequest;
 import com.careconnect.dto.evv.EvvLocationResponse;
 import com.careconnect.model.User;
@@ -34,6 +37,8 @@ public class EvvLocationController {
      * Save or update an EVV location (check-in or check-out)
      * Supports both GPS coordinates and patient address
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping
     @Operation(summary = "Save EVV location", 
                description = "Save or update check-in/check-out location for an EVV record. " +
@@ -60,6 +65,8 @@ public class EvvLocationController {
     /**
      * Get all locations for an EVV record
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/records/{evvRecordId}")
     @Operation(summary = "Get locations for EVV record", 
                description = "Retrieve all locations (check-in and check-out) for a specific EVV record")
@@ -78,6 +85,8 @@ public class EvvLocationController {
     /**
      * Get a specific location by role
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/records/{evvRecordId}/{role}")
     @Operation(summary = "Get specific location by role", 
                description = "Retrieve check-in or check-out location for an EVV record")
@@ -97,6 +106,8 @@ public class EvvLocationController {
     /**
      * Delete a location
      */
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
     @DeleteMapping("/records/{evvRecordId}/{role}")
     @Operation(summary = "Delete location", 
                description = "Delete a check-in or check-out location for an EVV record")

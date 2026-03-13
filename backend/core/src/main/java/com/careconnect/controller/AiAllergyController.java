@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.AiAllergyDTO;
 import com.careconnect.model.Allergy;
 import com.careconnect.repository.AllergyRepository;
@@ -31,6 +34,9 @@ public class AiAllergyController {
     private final AllergyRepository allergyRepository;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping(
             value = "/analyze/allergy",
