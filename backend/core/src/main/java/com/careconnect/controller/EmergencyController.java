@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.service.VialOfLifePdfService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +31,8 @@ public class EmergencyController {
     /**
      * Generate and serve a pre-filled Vial of Life PDF for emergency use
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{emergencyId}.pdf")
     @Operation(
         summary = "🚨 Get Emergency PDF",
@@ -78,6 +83,8 @@ public class EmergencyController {
     /**
      * Download emergency PDF (forces download instead of viewing)
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/download/{emergencyId}.pdf")
     @Operation(
         summary = "⬇️ Download Emergency PDF",
@@ -118,6 +125,8 @@ public class EmergencyController {
     /**
      * Health check endpoint for emergency services
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/health")
     @Operation(
         summary = "🏥 Emergency Service Health Check",
@@ -131,6 +140,8 @@ public class EmergencyController {
     /**
      * Debug endpoint to test patient data retrieval
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/debug/{emergencyId}")
     @Operation(
         summary = "🐛 Debug Patient Data",

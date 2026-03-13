@@ -1,4 +1,7 @@
 package com.careconnect.controller;
+
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
 import com.careconnect.dto.PostWithCommentCountDto;
 import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.PatientRepository;
@@ -60,6 +63,9 @@ public class FeedController {
     @Autowired
     private CaregiverRepository caregiverRepository;
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/all")
     @Operation(
         summary = "Get global feed",
@@ -88,9 +94,14 @@ public class FeedController {
         )
     })
     public ResponseEntity<?> getGlobalFeed() {
+        // RBAC: Defense-in-depth - ensure caller is authenticated
+        securityUtil.resolveCurrentUser();
         List<PostWithCommentCountDto> posts = feedService.getAllPostsWithCommentCount();
         return ResponseEntity.ok(posts);
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserFeed(@PathVariable Long userId) {
@@ -112,6 +123,9 @@ public class FeedController {
         return ResponseEntity.ok(posts);
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/friends-feed")
     public ResponseEntity<?> getFriendsFeed() {
         // (Updated) Removed manual authentication check
@@ -126,6 +140,9 @@ public class FeedController {
         List<PostWithCommentCountDto> posts = feedService.getPostsByUserAndFriends(user.getId());
         return ResponseEntity.ok(posts);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping(value = "/create", consumes = "application/json")
     public ResponseEntity<?> createPost(@RequestBody Post postData) {

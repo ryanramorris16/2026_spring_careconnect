@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.ConnectionRequest;
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
@@ -32,6 +35,9 @@ public class ConnectionRequestController {
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
     
+    @RequirePermission(Permission.CREATE_TASKS)
+
+    
     @PostMapping("/create")
     @Operation(
         summary = "Create connection request",
@@ -57,6 +63,9 @@ public class ConnectionRequestController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/process")
     @Operation(
         summary = "Process connection request",
@@ -78,6 +87,9 @@ public class ConnectionRequestController {
         }
     }
     
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+    
     @GetMapping("/pending/patient/{patientId}")
     @Operation(
         summary = "Get pending requests for patient",
@@ -91,6 +103,9 @@ public class ConnectionRequestController {
             return ResponseEntity.badRequest().body(Collections.emptyList());
         }
     }
+    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     
     @GetMapping("/pending/caregiver/{caregiverId}")
     @Operation(

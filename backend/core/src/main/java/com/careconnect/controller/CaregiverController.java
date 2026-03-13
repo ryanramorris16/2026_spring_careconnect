@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.Caregiver;
 import com.careconnect.model.Patient;
 import com.careconnect.model.User;
@@ -58,6 +61,8 @@ public class CaregiverController {
     private AuthorizationService authorizationService;
 
     // 1. List patients under a caregiver, with optional filtering
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{caregiverId}/patients")
     public ResponseEntity<List<PatientWithLinkDto>> getPatientsByCaregiver(
         @PathVariable("caregiverId") Long caregiverId,
@@ -71,6 +76,8 @@ public class CaregiverController {
     }
 
     // 2. Get caregiver details
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{caregiverId}")
     public ResponseEntity<Caregiver> getCaregiver(@PathVariable Long caregiverId, HttpServletRequest request) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -80,11 +87,17 @@ public class CaregiverController {
         return ResponseEntity.ok(caregiver);
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping
     public ResponseEntity<Caregiver> registerCaregiver(@RequestBody CaregiverRegistration reg) {
         Caregiver caregiver = auth.registerCaregiver(reg);
         return ResponseEntity.status(HttpStatus.CREATED).body(caregiver);
     }
+
+    @RequirePermission(Permission.UPDATE_TASKS)
+
 
     @PutMapping("/{caregiverId}")
     public ResponseEntity<Caregiver> updateCaregiver(@PathVariable Long caregiverId, @RequestBody Caregiver updatedCaregiver) throws UnauthorizedException {
@@ -94,6 +107,9 @@ public class CaregiverController {
         Caregiver caregiver = caregiverService.updateCaregiver(caregiverId, updatedCaregiver);
         return ResponseEntity.ok(caregiver);
     }
+
+     @RequirePermission(Permission.CREATE_TASKS)
+
 
      @PostMapping("/{caregiverId}/patients")
     public ResponseEntity<Patient> registerPatient(
@@ -110,6 +126,8 @@ public class CaregiverController {
     /**
      * Add an existing patient to a caregiver's care list by email
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/{caregiverId}/patients/add")
     @Operation(summary = "Add existing patient to caregiver",
             description = "Link an existing patient to the caregiver's care list using patient's email")
@@ -185,6 +203,8 @@ public class CaregiverController {
     /**
      * Get a specific patient under a caregiver's care
      */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{caregiverId}/patients/{patientId}")
     public ResponseEntity<?> getPatientForCaregiver(
             @PathVariable Long caregiverId,

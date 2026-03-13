@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
@@ -19,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("v1/api/websocket")
+@RequestMapping("/api/websocket")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "WebSocket Management", description = "WebSocket notifications and real-time communication management")
@@ -28,13 +31,17 @@ public class WebSocketController {
     /**
      * Initialize WebSocket service (dummy endpoint for client handshake/testing)
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/init")
     @Operation(
         summary = "Initialize WebSocket service",
         description = "Initialize or handshake with the WebSocket service via HTTP"
     )
     public ResponseEntity<Map<String, Object>> initializeWebSocketService(@RequestBody(required = false) Map<String, Object> request) {
-        // You can add any initialization logic here if needed
+        // RBAC: Verify the caller is an authenticated user (any role).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
         return ResponseEntity.ok(Map.of(
             "success", true,
             "message", "WebSocket service initialized",
@@ -45,12 +52,17 @@ public class WebSocketController {
     /**
      * Register a user for WebSocket notifications
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/register-user")
     @Operation(
         summary = "Register user for WebSocket notifications",
         description = "Register a user for WebSocket notifications via HTTP"
     )
     public ResponseEntity<Map<String, Object>> registerUserForWebSocket(@RequestBody Map<String, Object> request) {
+        // RBAC: Verify the caller is an authenticated user (any role).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
         try {
             String userId = (String) request.get("userId");
             String userName = (String) request.get("userName");
@@ -81,6 +93,9 @@ public class WebSocketController {
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/call-invitation")
     @Operation(
         summary = "Send call invitation",
@@ -94,7 +109,10 @@ public class WebSocketController {
     })
     public ResponseEntity<Map<String, Object>> sendCallInvitation(
             @RequestBody Map<String, Object> request) {
-        
+        // RBAC: Verify the caller is an authenticated user (any role may initiate calls).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
+
         try {
             String recipientId = (String) request.get("recipientId");
             String senderId = (String) request.get("senderId");
@@ -123,6 +141,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/sms-notification")
     @Operation(
         summary = "Send SMS notification",
@@ -135,7 +156,10 @@ public class WebSocketController {
     })
     public ResponseEntity<Map<String, Object>> sendSMSNotification(
             @RequestBody Map<String, Object> request) {
-        
+        // RBAC: Verify the caller is an authenticated user (any role may send notifications).
+        // resolveCurrentUser() throws RuntimeException if no valid JWT is present.
+        securityUtil.resolveCurrentUser();
+
         try {
             String recipientId = (String) request.get("recipientId");
             String senderId = (String) request.get("senderId");
@@ -161,6 +185,9 @@ public class WebSocketController {
             ));
         }
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/medication-reminder")
     @Operation(
@@ -202,6 +229,9 @@ public class WebSocketController {
             ));
         }
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/vital-signs-alert")
     @Operation(
@@ -249,6 +279,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/emergency-alert")
     @Operation(
         summary = "Send emergency alert",
@@ -293,6 +326,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/appointment-reminder")
     @Operation(
         summary = "Send appointment reminder",
@@ -334,6 +370,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/system-announcement")
     @Operation(
         summary = "Broadcast system announcement",
@@ -372,6 +411,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/online-users")
     @Operation(
         summary = "Get online users",
@@ -405,6 +447,9 @@ public class WebSocketController {
         }
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/user-status/{userId}")
     @Operation(
         summary = "Check user online status",
@@ -437,6 +482,9 @@ public class WebSocketController {
             ));
         }
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/sos-call")
     @Operation(

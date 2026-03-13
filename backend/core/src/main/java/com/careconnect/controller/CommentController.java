@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.Comment;
 import com.careconnect.service.CommentService;
 import com.careconnect.repository.UserRepository;
@@ -34,6 +37,9 @@ public class CommentController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/post/{postId}")
     @Operation(
@@ -78,6 +84,9 @@ public class CommentController {
         List<Comment> comments = commentService.getCommentsForPost(postId);
         return ResponseEntity.ok(comments);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/post/{postId}")
     public ResponseEntity<?> addCommentToPost(

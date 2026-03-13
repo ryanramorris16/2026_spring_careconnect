@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.NotificationSettingDTO;
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
@@ -26,6 +29,9 @@ public class NotificationSettingController {
     @Autowired
     private NotificationSettingService notificationSettingService;
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/{userId}")
     @Operation(summary = "Get notification settings for a user")
     public ResponseEntity<NotificationSettingDTO> getSettings(@PathVariable Long userId) throws UnauthorizedException {
@@ -34,6 +40,9 @@ public class NotificationSettingController {
 
         return ResponseEntity.ok(notificationSettingService.getByUserId(userId));
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping
     @Operation(summary = "Create or update notification settings for a user")
