@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:pay/pay.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../services/auth_token_manager.dart';
 import '../../../../services/billing_quote_service.dart';
 import '../../../../config/app_config.dart';
@@ -12,12 +12,16 @@ class WebPayPage extends StatefulWidget {
   final int tierId;
   final String? tier;
   final String? email;
+  final int? userId;
+  final String? state;
 
   const WebPayPage({
     super.key,
     this.tierId = 0,
     this.tier,
     this.email,
+    this.userId,
+    this.state,
   });
 
   @override
@@ -25,413 +29,111 @@ class WebPayPage extends StatefulWidget {
 }
 
 class _WebPayPageState extends State<WebPayPage> {
-  final String backendBase = const String.fromEnvironment('BACKEND_BASE_URL', defaultValue: 'http://localhost:8080');
+  final String backendBase = AppConfig.getBackendBaseUrl();
 
-  PaymentConfiguration? _googleConfig;
-  PaymentConfiguration? _appleConfig;
-  bool _googleAvailable = false;
-  bool _appleAvailable = false;
-  
-  // Billing quote state
   BillingQuote? _billingQuote;
   bool _loadingQuote = true;
   String? _quoteError;
-  
-  // Navigation parameters
+  bool _isProcessing = false;
+  bool _paymentSuccess = false;
+  String? _transactionId;
+
   late int _tierId;
-  String? _email;
+  int? _userId;
+  late String _selectedState;
+
+  static const List<String> _usStates = [
+    'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+    'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+    'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+    'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+    'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
+  ];
 
   @override
   void initState() {
     super.initState();
-    
-    // Use tierId from widget constructor
     _tierId = widget.tierId;
-    _email = widget.email;
-    
+    _userId = widget.userId;
+    _selectedState = widget.state ?? 'CA';
     _fetchBillingQuote();
-    // Payment config will be set up after quote is fetched
   }
 
-  void _setupPaymentConfigurations() {
-    // Configure Apple Pay
-    final appleJson = {
-      "provider": "apple",
-      "data": {
-        "merchantIdentifier": "com.lauh.careconnect",
-        "displayName": "CareConnect",
-        "machineRoundUpChargeAmount": "0.01",
-        "merchantCapabilities": [
-          "supports3DS",
-          "supportsEMV"
-        ],
-        "supportedCountries": ["US"],
-        "supportedNetworks": ["amex", "masterCard", "visa"],
-        "requiredShippingAddressFields": [],
-        "requiredBillingAddressFields": [],
-        "shippingType": "delivery",
-        "currencyCode": "USD",
-        "countryCode": "US"
-      }
-    };
+  bool get _showApplePay {
+    if (kIsWeb) return true;
+    try { return Platform.isIOS; } catch (_) { return false; }
+  }
 
-    try {
-      _appleConfig = PaymentConfiguration.fromJsonString(jsonEncode(appleJson));
-      _appleAvailable = true;
-      print('✅ Apple Pay configured successfully with merchant ID: com.lauh.careconnect');
-    } catch (e) {
-      print('❌ Apple Pay configuration failed: $e');
-      _appleConfig = null;
-      _appleAvailable = false;
-    }
-
-    // Configure Google Pay
-    final googleJson = {
-      "provider": "google",
-      "data": {
-        "environment": "TEST",  // Use TEST for testing
-        "apiVersion": 2,
-        "apiVersionMinor": 0,
-        "merchantInfo": {
-          "merchantName": "CareConnect",
-          "merchantId": "12345678901234567890"  // Required for Google Pay
-        },
-        "allowedPaymentMethods": [
-          {
-            "type": "CARD",
-            "parameters": {
-              "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-              "allowedCardNetworks": ["AMEX", "DISCOVER", "INTERAC", "MASTERCARD", "VISA"]
-            },
-            "tokenizationSpecification": {
-              "type": "DIRECT",
-              "parameters": {
-                "protocolVersion": "ECv1"
-              }
-            }
-          }
-        ],
-        "transactionInfo": {
-          "totalPriceStatus": "FINAL",
-          "totalPrice": _billingQuote?.totalDisplay.replaceFirst('\$', '') ?? "0.00",
-          "currencyCode": "USD"
-        }
-      }
-    };
-
-    try {
-      _googleConfig = PaymentConfiguration.fromJsonString(jsonEncode(googleJson));
-      _googleAvailable = true;
-      print('✅ Google Pay configured successfully');
-    } catch (e) {
-      print('❌ Google Pay configuration failed: $e');
-      _googleConfig = null;
-      _googleAvailable = false;
-    }
+  bool get _showGooglePay {
+    if (kIsWeb) return true;
+    try { return Platform.isAndroid; } catch (_) { return false; }
   }
 
   Future<void> _fetchBillingQuote() async {
+    setState(() { _loadingQuote = true; _quoteError = null; });
     try {
       final service = BillingQuoteService(backendBase: backendBase);
-      // Pass state for tax calculation (default to CA for demo, should come from user address)
       final quote = await service.getQuote(
         tierId: _tierId,
-        state: 'CA',  // TODO: Get from user's stored address or let user select
+        userId: _userId,
+        state: _selectedState,
       );
-      
-      if (mounted) {
-        setState(() {
-          _billingQuote = quote;
-          _loadingQuote = false;
-          // Set up payment configurations now that we have the quote amount
-          _setupPaymentConfigurations();
-        });
-      }
+      if (mounted) setState(() { _billingQuote = quote; _loadingQuote = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _quoteError = e.toString();
-          _loadingQuote = false;
-        });
-      }
+      if (mounted) setState(() { _quoteError = e.toString(); _loadingQuote = false; });
     }
   }
 
-  Future<void> _handlePayResult(Map<String, dynamic> result, String platform, String productId) async {
-    // Extract token from result (varies by provider)
-    String? token;
+  Future<Map<String, String>> _buildHeaders() async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
     try {
-      if (platform == 'google') {
-        // Google Pay returns the token in paymentMethodData
-        token = result['paymentMethodData']?['tokenizationData']?['token'];
-        if (token == null) {
-          token = jsonEncode(result['paymentMethodData']);
-        }
-      } else if (platform == 'apple') {
-        token = result['paymentData'] ?? jsonEncode(result);
-      }
-    } catch (_) {
-      token = jsonEncode(result);
-    }
+      final authHeaders = await AuthTokenManager.getAuthHeaders();
+      headers.addAll(authHeaders);
+    } catch (_) {}
+    return headers;
+  }
 
-    if (token == null || token.isEmpty) {
-      throw Exception('Failed to extract payment token');
-    }
+  Future<void> _processPayment(String platform) async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
 
-    // Route to appropriate payment endpoint based on platform
-    if (platform == 'google') {
-      await _processGooglePayment(token, productId);
-    } else if (platform == 'apple') {
-      await _processApplePayment(token, productId);
-    } else {
-      // Legacy endpoint for other platforms
-      final uri = Uri.parse('$backendBase/v1/api/billing/verify/${platform}');
+    try {
+      final uri = Uri.parse('$backendBase/v1/api/billing/pay/$platform');
+      final token = '${platform.toUpperCase()}_PAY_TOKEN_${DateTime.now().millisecondsSinceEpoch}';
+
       final body = {
-        'platform': platform.toUpperCase(),
-        'receipt': token,
-        'productId': productId,
-        'packageName': const String.fromEnvironment('WEB_PACKAGE_NAME', defaultValue: '')
+        'token': token,
+        'tierId': _tierId,
+        'state': _selectedState,
+        if (_userId != null) 'userId': _userId,
       };
 
-      final headers = await AuthTokenManager.getAuthHeaders();
-      final resp = await http.post(uri, headers: headers, body: jsonEncode(body));
-      if (resp.statusCode != 200) {
-        throw Exception('Verification failed: ${resp.body}');
-      }
-    }
-  }
+      final headers = await _buildHeaders();
+      final resp = await http.post(uri, headers: headers, body: jsonEncode(body))
+          .timeout(const Duration(seconds: 15));
 
-  Future<void> _processGooglePayment(String token, String productId) async {
-    // Call the Google Pay payment endpoint
-    final uri = Uri.parse('$backendBase/v1/api/billing/pay/google');
-    
-    final body = {
-      'token': token,
-      'tierId': _tierId,
-      'state': 'CA',  // TODO: Use actual user state
-    };
-
-    try {
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-      };
-      
-      // Try to add auth headers if available
-      try {
-        final authHeaders = await AuthTokenManager.getAuthHeaders();
-        headers.addAll(authHeaders);
-      } catch (_) {
-        // Proceed without auth
-      }
-
-      final resp = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
-
-      if (resp.statusCode != 200) {
-        throw Exception('Payment failed: ${resp.body}');
-      }
+      if (resp.statusCode != 200) throw Exception('Payment failed: ${resp.body}');
 
       final responseBody = jsonDecode(resp.body) as Map<String, dynamic>;
-      print('✅ Payment successful: ${responseBody['transactionId']}');
-      
-    } catch (e) {
-      print('❌ Payment error: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _processApplePayment(String token, String productId) async {
-    // Call the Apple Pay payment endpoint
-    final uri = Uri.parse('$backendBase/v1/api/billing/pay/apple');
-    
-    final body = {
-      'token': token,
-      'tierId': _tierId,
-      'state': 'CA',  // TODO: Use actual user state
-    };
-
-    try {
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-      };
-      
-      // Try to add auth headers if available
-      try {
-        final authHeaders = await AuthTokenManager.getAuthHeaders();
-        headers.addAll(authHeaders);
-      } catch (_) {
-        // Proceed without auth
+      if (responseBody['success'] != true) {
+        throw Exception(responseBody['message'] ?? 'Payment failed');
       }
-
-      final resp = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
-
-      if (resp.statusCode != 200) {
-        throw Exception('Apple Pay payment failed: ${resp.body}');
-      }
-
-      final responseBody = jsonDecode(resp.body) as Map<String, dynamic>;
-      print('✅ Apple Pay successful: ${responseBody['transactionId']}');
-      
-    } catch (e) {
-      print('❌ Apple Pay error: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _processApplePayment(String token, String productId) async {
-    // Call the Apple Pay payment endpoint
-    final uri = Uri.parse('$backendBase/v1/api/billing/pay/apple');
-    
-    final body = {
-      'token': token,
-      'tierId': _tierId,
-      'state': 'CA',  // TODO: Use actual user state
-    };
-
-    try {
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-      };
-      
-      // Try to add auth headers if available
-      try {
-        final authHeaders = await AuthTokenManager.getAuthHeaders();
-        headers.addAll(authHeaders);
-      } catch (_) {
-        // Proceed without auth
-      }
-
-      final resp = await http.post(
-        uri,
-        headers: headers,
-        body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
-
-      if (resp.statusCode != 200) {
-        throw Exception('Apple Pay payment failed: ${resp.body}');
-      }
-
-      final responseBody = jsonDecode(resp.body) as Map<String, dynamic>;
-      print('✅ Apple Pay successful: ${responseBody['transactionId']}');
-      
-    } catch (e) {
-      print('❌ Apple Pay error: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _initiateApplePayment() async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Processing Apple Pay...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-
-      // For demo: simulate Apple Pay token and process
-      final demoToken = jsonEncode({
-        'paymentData': 'APPLE_PAY_TOKEN_${DateTime.now().millisecondsSinceEpoch}'
-      });
-
-      await _processApplePayment(demoToken, _tierId.toString());
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Apple Pay payment successful!'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
+        setState(() {
+          _paymentSuccess = true;
+          _transactionId = responseBody['transactionId']?.toString();
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Apple Pay failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+          SnackBar(content: Text('Payment failed: $e'), backgroundColor: Colors.red, duration: const Duration(seconds: 4)),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
-  }
-
-  Future<void> _initiateGooglePayment() async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Processing Google Pay...'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-
-      // For demo: simulate Google Pay token and process
-      final demoToken = jsonEncode({
-        'paymentMethodData': {
-          'tokenizationData': {
-            'token': 'GOOGLE_PAY_TOKEN_${DateTime.now().millisecondsSinceEpoch}'
-          }
-        }
-      });
-
-      await _processGooglePayment(demoToken, _tierId.toString());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Google Pay payment successful!'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Google Pay failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildPaymentButton({
-    required String label,
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 24),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF14366E),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        elevation: 2,
-      ),
-    );
   }
 
   @override
@@ -442,81 +144,145 @@ class _WebPayPageState extends State<WebPayPage> {
         backgroundColor: const Color(0xFF14366E),
         foregroundColor: Colors.white,
       ),
-      body: _buildBody(),
+      body: _paymentSuccess ? _buildSuccessView() : _buildBody(),
+    );
+  }
+
+  Widget _buildSuccessView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 80),
+            const SizedBox(height: 24),
+            const Text('Payment Successful!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+            const SizedBox(height: 12),
+            if (_transactionId != null)
+              Text('Transaction: $_transactionId', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => context.go('/dashboard'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF14366E),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Go to Dashboard', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildBody() {
-    if (_loadingQuote) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    if (_loadingQuote) return const Center(child: CircularProgressIndicator());
 
     if (_quoteError != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text('Error loading quote: $_quoteError'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchBillingQuote,
-              child: const Text('Retry'),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Error loading quote: $_quoteError', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _fetchBillingQuote, child: const Text('Retry')),
+            ],
+          ),
         ),
       );
     }
 
-    if (_billingQuote == null) {
-      return const Center(child: Text('No quote available'));
-    }
+    if (_billingQuote == null) return const Center(child: Text('No quote available'));
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Order Summary Section
+          _buildStatePicker(),
+          const SizedBox(height: 24),
           _buildOrderSummary(),
           const SizedBox(height: 32),
-
-          // Payment Methods
-          const Text(
-            'Select Payment Method',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF14366E),
-            ),
-          ),
+          const Text('Select Payment Method',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
           const SizedBox(height: 16),
-
-          // Apple Pay Button
-          _buildPaymentButton(
-            label: 'Apple Pay',
-            icon: Icons.apple,
-            onPressed: () => _initiateApplePayment(),
-          ),
-          const SizedBox(height: 12),
-
-          // Google Pay Button
-          _buildPaymentButton(
-            label: 'Google Pay',
-            icon: Icons.payment,
-            onPressed: () => _initiateGooglePayment(),
-          ),
-
+          if (_showApplePay) ...[
+            _buildPaymentButton(
+              label: 'Pay with Apple Pay',
+              icon: Icons.apple,
+              backgroundColor: Colors.black,
+              onPressed: () => _processPayment('apple'),
+            ),
+            const SizedBox(height: 12),
+          ],
+          if (_showGooglePay)
+            _buildPaymentButton(
+              label: 'Pay with Google Pay',
+              icon: Icons.payment,
+              onPressed: () => _processPayment('google'),
+            ),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
+  Widget _buildPaymentButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? backgroundColor,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isProcessing ? null : onPressed,
+        icon: _isProcessing
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : Icon(icon, size: 24),
+        label: Text(label, style: const TextStyle(fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor ?? const Color(0xFF14366E),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatePicker() {
+    return Row(
+      children: [
+        const Text('Tax State: ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        const SizedBox(width: 8),
+        DropdownButton<String>(
+          value: _selectedState,
+          items: _usStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          onChanged: (val) {
+            if (val != null && val != _selectedState) {
+              setState(() => _selectedState = val);
+              _fetchBillingQuote();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildOrderSummary() {
     final quote = _billingQuote!;
-    
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
@@ -527,98 +293,27 @@ class _WebPayPageState extends State<WebPayPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Order Summary',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF14366E),
-            ),
-          ),
+          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
           const SizedBox(height: 16),
-
-          // Subscription tier
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                quote.tierName,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              Text(
-                quote.subtotalDisplay,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey[300],
-            margin: const EdgeInsets.symmetric(vertical: 12),
-          ),
-
-          // Taxes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Taxes (${quote.taxPercentageDisplay})',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                  Text(
-                    quote.taxJurisdiction,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-              Text(
-                quote.taxDisplay,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.grey[300],
-            margin: const EdgeInsets.symmetric(vertical: 12),
-          ),
-
-          // Total
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Total',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF14366E),
-                ),
-              ),
-              Text(
-                quote.totalDisplay,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF14366E),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Currency: ${quote.currency}',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(quote.tierName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            Text(quote.subtotalDisplay, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          ]),
+          Container(height: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(vertical: 12)),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Taxes (${quote.taxPercentageDisplay})', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              Text(quote.taxJurisdiction, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            ]),
+            Text(quote.taxDisplay, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+          ]),
+          Container(height: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(vertical: 12)),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+            Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+          ]),
+          const SizedBox(height: 8),
+          Text('Currency: ${quote.currency}', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
         ],
       ),
     );

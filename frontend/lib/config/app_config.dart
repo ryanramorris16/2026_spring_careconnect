@@ -12,14 +12,14 @@ class AppConfig {
     return dotenv.env['CC_BASE_URL_WEB'] ?? 'http://localhost:8080';
   }
 
-  /// Stripe Publishable Key
-  static String getStripePublishableKey() {
-    return dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
-  }
-
-  /// Apple Merchant ID
+  /// Apple Merchant ID for Apple Pay
   static String getAppleMerchantId() {
     return dotenv.env['APPLE_MERCHANT_ID'] ?? '';
+  }
+
+  /// Google Pay Merchant ID
+  static String getGooglePayMerchantId() {
+    return dotenv.env['GOOGLE_PAY_MERCHANT_ID'] ?? '';
   }
 
   /// Check if Google Places API key is configured

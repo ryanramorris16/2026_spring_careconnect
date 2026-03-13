@@ -179,47 +179,68 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
         ),
         if (_showSuggestions && _suggestions.isNotEmpty)
           Container(
+            constraints: const BoxConstraints(maxHeight: 250),
             decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(color: Colors.grey[300]!),
-                right: BorderSide(color: Colors.grey[300]!),
-                bottom: BorderSide(color: Colors.grey[300]!),
-              ),
+              color: Colors.white,
+              border: Border.all(color: Colors.grey[300]!),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(8),
                 bottomRight: Radius.circular(8),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Material(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = _suggestions[index];
-                  return ListTile(
-                    title: Text(
-                      suggestion.mainText,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Text(
-                      suggestion.secondaryText,
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    leading: const Icon(
-                      Icons.location_on_outlined,
-                      size: 18,
-                      color: Colors.grey,
-                    ),
-                    onTap: () => _selectSuggestion(suggestion),
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    tileColor: index.isEven ? Colors.grey[50] : Colors.white,
-                    hoverColor: Colors.blue[50],
-                  );
-                },
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: Material(
+                color: Colors.white,
+                elevation: 0,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, index) {
+                    final suggestion = _suggestions[index];
+                    return ListTile(
+                      title: Text(
+                        suggestion.mainText,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      subtitle: Text(
+                        suggestion.secondaryText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      leading: Icon(
+                        Icons.location_on_outlined,
+                        size: 20,
+                        color: Colors.grey[700],
+                      ),
+                      onTap: () => _selectSuggestion(suggestion),
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      tileColor: index.isEven ? Colors.grey[50] : Colors.white,
+                      hoverColor: Colors.blue[50],
+                    );
+                  },
+                ),
               ),
             ),
           ),

@@ -266,10 +266,19 @@ class _RegistrationPageState extends State<RegistrationPage> {
       //     context.go('/login');
       //   }
 
-      // Navigate to subscription tiers selection page instead
       if (mounted) {
-        final email = _emailController.text;
-        context.go('/select-subscription-tier', extra: {'email': email});
+        if (_selectedRole == 'Caregiver') {
+          final email = _emailController.text;
+          final addressState = _stateController.text.isNotEmpty
+              ? _stateController.text
+              : null;
+          context.go('/select-subscription-tier', extra: {
+            'email': email,
+            'state': addressState,
+          });
+        } else {
+          context.go('/login');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -453,80 +462,68 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
         const SizedBox(height: 8),
 
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedRole,
-              hint: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 16,
+        Row(
+          children: _roles.keys.map((String role) {
+            final isSelected = _selectedRole == role;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: role == 'Patient' ? 8 : 0,
+                  left: role == 'Caregiver' ? 8 : 0,
                 ),
-                child: Text(
-                  'Select account role',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                ),
-              ),
-              isExpanded: true,
-              icon: Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
-              ),
-              items: _roles.keys.map((String role) {
-                return DropdownMenuItem<String>(
-                  value: role,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
+                child: GestureDetector(
+                  onTap: widget.lockRole
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedRole = role;
+                            _currentStep = 0;
+                          });
+                        },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withOpacity(0.08)
+                          : Colors.white,
+                      border: Border.all(
+                        color: isSelected ? AppTheme.primary : Colors.grey[300]!,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
                       children: [
                         Icon(
                           _roles[role]!['icon'],
-                          size: 20,
-                          color: AppTheme.primary,
+                          size: 32,
+                          color: isSelected ? AppTheme.primary : Colors.grey[500],
                         ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              role,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              '(${_roles[role]!['subtitle']})',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 10),
+                        Text(
+                          role,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _roles[role]!['subtitle'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected ? AppTheme.primary.withOpacity(0.7) : Colors.grey[500],
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                );
-              }).toList(),
-              onChanged: widget.lockRole
-                  ? null
-                  : (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                        // Reset to step 0 when role changes to recalculate total steps
-                        _currentStep = 0;
-                      });
-                    },
-            ),
-          ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
 
         const SizedBox(height: 20),

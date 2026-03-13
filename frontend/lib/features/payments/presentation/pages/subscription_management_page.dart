@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
@@ -10,7 +12,6 @@ import 'package:care_connect_app/widgets/common_drawer.dart';
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import '../../models/subscription_model.dart';
 import '../../models/package_model.dart';
-// import '../pages/stripe_checkout_page.dart';
 
 class SubscriptionManagementPage extends StatefulWidget {
   const SubscriptionManagementPage({super.key});
@@ -516,40 +517,27 @@ class _SubscriptionManagementPageState
     }
   }
 
-  // Helper method to redirect to the checkout page
   void _redirectToCheckout(
     SubscriptionPlan plan,
     String? userId,
     String? customerId,
   ) {
-    // Convert SubscriptionPlan to PackageModel for the checkout page
-    final package = PackageModel(
-      id: plan.id,
-      name: plan.name,
-      description: plan.description,
-      priceCents: (plan.amount * 100).toInt(), // Convert dollars to cents
-    );
+    final tierId = int.tryParse(plan.id) ?? 0;
+    final userIdInt = userId != null ? int.tryParse(userId) : null;
 
-    // Navigate to checkout page
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Text("place holder"),
-        // builder: (_) => StripeCheckoutPage(
-        //   package: package,
-        //   userId: userId,
-        //   stripeCustomerId: customerId,
-        //   fromPortal:
-        //       true, // Indicate this is coming from subscription management page
-        // ),
-      ),
-    ).then((_) {
-      // Refresh data when returning from checkout
-      _loadSubscriptionData();
-      setState(() {
-        _processingAction = false;
+    if (kIsWeb) {
+      context.go('/web-pay', extra: {
+        'tierId': tierId,
+        'tier': plan.name,
+        'userId': userIdInt,
       });
-    });
+    } else {
+      context.go('/native-billing', extra: {
+        'tierId': tierId,
+        'tier': plan.name,
+        'userId': userIdInt,
+      });
+    }
   }
 
   Future<void> _cancelSubscription() async {
@@ -630,10 +618,8 @@ class _SubscriptionManagementPageState
     });
 
     try {
-      // Use stripe subscription ID for cancellation request as the backend expects it
       final response = await ApiService.cancelSubscription(
-        _currentSubscription!
-            .stripeSubscriptionId, // Use Stripe's subscription ID
+        _currentSubscription!.stripeSubscriptionId,
       );
       if (response.statusCode == 200) {
         // Show brief success message

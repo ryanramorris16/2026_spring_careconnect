@@ -3,10 +3,14 @@ import 'dart:io' show Platform;
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../config/app_config.dart';
 
 class NativeBillingService {
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  final int userId;
+
+  NativeBillingService({required this.userId});
 
   void init() {
     final purchaseUpdated = _iap.purchaseStream;
@@ -37,14 +41,11 @@ class NativeBillingService {
     for (final purchase in purchases) {
       try {
         if (purchase.status == PurchaseStatus.purchased || purchase.status == PurchaseStatus.restored) {
-          // Verify receipt with backend
           await _verifyPurchaseWithServer(purchase);
           if (purchase.pendingCompletePurchase) await _iap.completePurchase(purchase);
-        } else if (purchase.status == PurchaseStatus.error) {
-          // handle error
         }
       } catch (e) {
-        // log
+        // log error
       }
     }
   }
@@ -52,10 +53,11 @@ class NativeBillingService {
   Future<void> _verifyPurchaseWithServer(PurchaseDetails purchase) async {
     final receipt = purchase.verificationData.serverVerificationData;
     final source = Platform.isIOS ? 'apple' : (Platform.isAndroid ? 'google' : 'web');
-    final uri = Uri.parse('${_backendBaseUrl()}/v1/api/billing/verify/$source');
+    final backendBase = AppConfig.getBackendBaseUrl();
+    final uri = Uri.parse('$backendBase/v1/api/billing/verify/$source');
 
     final body = {
-      'userId': _currentUserId(),
+      'userId': userId,
       'platform': source.toUpperCase(),
       'receipt': receipt,
       'productId': purchase.productID,
@@ -68,17 +70,6 @@ class NativeBillingService {
     if (resp.statusCode != 200) {
       throw Exception('Receipt verification failed: ${resp.body}');
     }
-  }
-
-  // Helpers - adjust to your auth / config
-  String _backendBaseUrl() {
-    // Use environment or config in your app; fallback to localhost
-    return const String.fromEnvironment('BACKEND_BASE_URL', defaultValue: 'http://localhost:8080');
-  }
-
-  int _currentUserId() {
-    // Replace with your app's auth user id retrieval
-    return int.parse(const String.fromEnvironment('TEST_USER_ID', defaultValue: '0'));
   }
 
   String _androidPackageName() {
