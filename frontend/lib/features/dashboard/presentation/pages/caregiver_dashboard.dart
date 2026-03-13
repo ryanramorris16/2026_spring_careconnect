@@ -18,7 +18,6 @@ import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/no
 
 
 import 'patient_medical_notes_page.dart';
-
 class CaregiverDashboard extends StatefulWidget {
   final String userRole;
   final int? patientId;
