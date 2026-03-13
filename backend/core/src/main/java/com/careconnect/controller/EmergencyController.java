@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Emergency Information", description = "Emergency medical information and Vial of Life PDF generation")
 public class EmergencyController {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmergencyController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmergencyController.class);
 
     @Autowired
     private VialOfLifePdfService vialOfLifePdfService;
@@ -55,7 +55,7 @@ public class EmergencyController {
             @PathVariable String emergencyId) {
 
         try {
-            logger.info("Emergency PDF requested for ID: {}", emergencyId);
+            LOGGER.info("Emergency PDF requested for ID: {}", emergencyId);
 
             byte[] pdfContent = vialOfLifePdfService.generateVialOfLifePdf(emergencyId);
 
@@ -67,10 +67,10 @@ public class EmergencyController {
             return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
 
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid emergency ID: {}", emergencyId);
+            LOGGER.warn("Invalid emergency ID: {}", emergencyId);
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error generating emergency PDF for ID: {}", emergencyId, e);
+            LOGGER.error("Error generating emergency PDF for ID: {}", emergencyId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -94,7 +94,7 @@ public class EmergencyController {
             @PathVariable String emergencyId) {
 
         try {
-            logger.info("Emergency PDF download requested for ID: {}", emergencyId);
+            LOGGER.info("Emergency PDF download requested for ID: {}", emergencyId);
 
             byte[] pdfContent = vialOfLifePdfService.generateVialOfLifePdf(emergencyId);
 
@@ -106,10 +106,10 @@ public class EmergencyController {
             return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
 
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid emergency ID: {}", emergencyId);
+            LOGGER.warn("Invalid emergency ID: {}", emergencyId);
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error generating emergency PDF for ID: {}", emergencyId, e);
+            LOGGER.error("Error generating emergency PDF for ID: {}", emergencyId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -141,7 +141,7 @@ public class EmergencyController {
             @Parameter(description = "Emergency ID (e.g., VIAL123456)", required = true)
             @PathVariable String emergencyId) {
         try {
-            logger.info("Debug: Testing patient data retrieval for emergency ID: {}", emergencyId);
+            LOGGER.info("Debug: Testing patient data retrieval for emergency ID: {}", emergencyId);
 
             // Extract patient ID from emergency ID
             Long patientId;
@@ -166,13 +166,13 @@ public class EmergencyController {
                 byte[] pdfContent = vialOfLifePdfService.generateVialOfLifePdf(emergencyId);
                 return ResponseEntity.ok("SUCCESS: PDF generated successfully. Size: " + pdfContent.length + " bytes");
             } catch (Exception e) {
-                logger.error("Debug: Error in PDF generation", e);
+                LOGGER.error("Debug: Error in PDF generation", e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error generating PDF: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             }
 
         } catch (Exception e) {
-            logger.error("Debug: Unexpected error", e);
+            LOGGER.error("Debug: Unexpected error", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Unexpected error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
