@@ -69,6 +69,7 @@ SET first_name = 'Sarah',
     caregiver_type = 'MD'
 WHERE user_id = (SELECT id FROM users WHERE email = 'sarah.mitchell@careconnect.com');
 
+
 -- ============================================
 -- 4. FAMILY_MEMBER TABLE
 -- ============================================
