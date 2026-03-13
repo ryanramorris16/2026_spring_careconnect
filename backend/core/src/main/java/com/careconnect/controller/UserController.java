@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.dto.UserResponse;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
@@ -20,8 +17,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.util.Map;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +41,6 @@ public class UserController {
     /**
      * Reset password for user (caregiver or patient) using username (email) and reset token
      */
-    @RequirePermission(Permission.CREATE_TASKS)
-
     @PostMapping("/reset-password")
     @Operation(
         summary = "Reset user password",
@@ -62,13 +55,7 @@ public class UserController {
                 schema = @Schema(implementation = com.careconnect.dto.ResetPasswordRequest.class),
                 examples = @ExampleObject(
                     name = "Password Reset Example",
-                    value = """
-                    {
-                        "username": "user@example.com",
-                        "resetToken": "abc123-reset-token-xyz789",
-                        "newPassword": "NewSecurePassword123!"
-                    }
-                    """
+                    value = "{\n    \"username\": \"user@example.com\",\n    \"resetToken\": \"abc123-reset-token-xyz789\",\n    \"newPassword\": \"NewSecurePassword123!\"\n}"
                 )
             )
         )
@@ -76,20 +63,12 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Password reset successful",
             content = @Content(mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "message": "Password updated successfully"
-                    }
-                    """)
+                examples = @ExampleObject(value = "{\n    \"message\": \"Password updated successfully\"\n}")
             )
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request or expired token",
             content = @Content(mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "error": "Invalid or expired reset token"
-                    }
-                    """)
+                examples = @ExampleObject(value = "{\n    \"error\": \"Invalid or expired reset token\"\n}")
             )
         )
     })
@@ -106,8 +85,6 @@ public class UserController {
     /**
      * Set up password for new users using verification token (from patient registration)
      */
-    @RequirePermission(Permission.CREATE_TASKS)
-
     @PostMapping("/setup-password")
     @Operation(
         summary = "Set up password for new user",
@@ -122,13 +99,7 @@ public class UserController {
                 schema = @Schema(implementation = com.careconnect.dto.SetupPasswordRequest.class),
                 examples = @ExampleObject(
                     name = "Password Setup Example",
-                    value = """
-                    {
-                        "username": "patient@example.com",
-                        "verificationToken": "c4de0569-80a6-44f5-a6ad-dd0adba19c6e",
-                        "newPassword": "MyNewPassword123!"
-                    }
-                    """
+                    value = "{\n    \"username\": \"patient@example.com\",\n    \"verificationToken\": \"c4de0569-80a6-44f5-a6ad-dd0adba19c6e\",\n    \"newPassword\": \"MyNewPassword123!\"\n}"
                 )
             )
         )
@@ -136,20 +107,12 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Password setup successful",
             content = @Content(mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "message": "Password setup completed successfully"
-                    }
-                    """)
+                examples = @ExampleObject(value = "{\n    \"message\": \"Password setup completed successfully\"\n}")
             )
         ),
         @ApiResponse(responseCode = "400", description = "Invalid request or token",
             content = @Content(mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "error": "Invalid or expired verification token"
-                    }
-                    """)
+                examples = @ExampleObject(value = "{\n    \"error\": \"Invalid or expired verification token\"\n}")
             )
         )
     })
@@ -161,9 +124,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/search")
     public ResponseEntity<List<UserResponse>> searchUsers(
@@ -202,8 +162,6 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
-    @RequirePermission(Permission.UPDATE_TASKS)
-
     @PutMapping("/{userId}/leaderboard-opt-in")
     public ResponseEntity<?> toggleLeaderboardOptIn(
             @PathVariable Long userId,
@@ -226,17 +184,11 @@ public class UserController {
         return ResponseEntity.ok(Collections.singletonMap("message", "Leaderboard opt-in status updated."));
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
     @GetMapping("/leaderboard")
     public ResponseEntity<List<com.careconnect.dto.LeaderboardEntry>> getLeaderboard() {
         List<com.careconnect.dto.LeaderboardEntry> leaderboard = userRepo.findLeaderboard();
         return ResponseEntity.ok(leaderboard);
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/check-email")
     @Operation(
@@ -248,12 +200,7 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Email check completed",
             content = @Content(mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "exists": true,
-                        "role": "PATIENT"
-                    }
-                    """)
+                examples = @ExampleObject(value = "{\n    \"exists\": true,\n    \"role\": \"PATIENT\"\n}")
             )
         )
     })

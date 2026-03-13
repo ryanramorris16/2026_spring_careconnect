@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.dto.*;
 import com.careconnect.exception.AppException;
 import com.careconnect.model.Caregiver;
@@ -120,8 +117,6 @@ public class PatientController {
     }
 
     // 1. List caregivers associated with a patient
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/caregivers")
     public ResponseEntity<List<Caregiver>> getCaregiversByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -135,8 +130,6 @@ public class PatientController {
     }
 
     // 2. Get patient details
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}")
     public ResponseEntity<Patient> getPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -147,9 +140,6 @@ public class PatientController {
         
         return ResponseEntity.ok(patient);
     }
-
-    @RequirePermission(Permission.UPDATE_TASKS)
-
 
     @PutMapping("/{patientId}")
     public ResponseEntity<Patient> updatePatient(@PathVariable Long patientId, @RequestBody Patient updatedPatient) {
@@ -168,8 +158,6 @@ public class PatientController {
     }
 
     // 3. Get all family members for a patient
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/family-members")
     public ResponseEntity<List<FamilyMemberLinkResponse>> getFamilyMembersByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -188,8 +176,6 @@ public class PatientController {
     }
 
     // 4. Register a new family member for a patient
-    @RequirePermission(Permission.CREATE_TASKS)
-
     @PostMapping("/{patientId}/family-members")
     public ResponseEntity<FamilyMemberLinkResponse> registerFamilyMember(
             @PathVariable Long patientId,
@@ -225,8 +211,6 @@ public class PatientController {
     }
 
     // 5. Revoke family member access to a patient
-    @RequirePermission(Permission.DELETE_PATIENTS)
-
     @DeleteMapping("/family-members/{linkId}")
     public ResponseEntity<Void> revokeFamilyMemberAccess(@PathVariable Long linkId) {
         User currentUser = getCurrentUser();
@@ -241,8 +225,6 @@ public class PatientController {
     }
 
     // 6. Get family members for the current patient (convenience endpoint)
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/family-members")
     @Operation(
         summary = "👨‍👩‍👧‍👦 Get my family members",
@@ -270,8 +252,6 @@ public class PatientController {
     }
 
     // 7. Get current patient's profile
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/me")
     @Operation(
         summary = "👤 Get my patient profile",
@@ -302,35 +282,29 @@ public class PatientController {
     // === MOOD & PAIN LOG ENDPOINTS ===
 
     // 6. Create a new mood pain log entry
-    @RequirePermission(Permission.CREATE_TASKS)
-
     @PostMapping("/mood-pain-log")
     @Operation(
         summary = "📊 Create mood & pain log entry",
-        description = """
-            Create a new mood and pain log entry for the current patient.
-            
-            **Requirements:**
-            - Must be authenticated as a PATIENT
-            - Mood value: 1-10 scale (1 = worst, 10 = best)
-            - Pain value: 0-10 scale:
-              • 0 = No pain
-              • 1 = Pain is very mild, barely noticeable. Most of the time you don't think about it
-              • 2 = Minor pain. It's annoying. You may have sharp pain now and then
-              • 3 = Noticeable pain. It may distract you, but you can get used to it
-              • 4 = Moderate pain. If you are involved in an activity, you're able to ignore the pain for a while. But it is still distracting
-              • 5 = Moderately strong pain. You can't ignore it for more than a few minutes. But, with effort, you can still work or do some social activities
-              • 6 = Moderately stronger pain. You avoid some of your normal daily activities. You have trouble concentrating
-              • 7 = Strong pain. It keeps you from doing normal activities
-              • 8 = Very strong pain. It's hard to do anything at all
-              • 9 = Pain that is very hard to tolerate. You can't carry on a conversation
-              • 10 = Worst pain possible
-            - Timestamp cannot be in the future
-            
-            **Usage:**
-            This endpoint allows patients to track their daily mood and pain levels,
-            providing valuable data for caregivers and healthcare providers.
-            """,
+        description = "Create a new mood and pain log entry for the current patient.\n\n"
+            + "**Requirements:**\n"
+            + "- Must be authenticated as a PATIENT\n"
+            + "- Mood value: 1-10 scale (1 = worst, 10 = best)\n"
+            + "- Pain value: 0-10 scale:\n"
+            + "  0 = No pain\n"
+            + "  1 = Pain is very mild, barely noticeable. Most of the time you don't think about it\n"
+            + "  2 = Minor pain. It's annoying. You may have sharp pain now and then\n"
+            + "  3 = Noticeable pain. It may distract you, but you can get used to it\n"
+            + "  4 = Moderate pain. If you are involved in an activity, you're able to ignore the pain for a while. But it is still distracting\n"
+            + "  5 = Moderately strong pain. You can't ignore it for more than a few minutes. But, with effort, you can still work or do some social activities\n"
+            + "  6 = Moderately stronger pain. You avoid some of your normal daily activities. You have trouble concentrating\n"
+            + "  7 = Strong pain. It keeps you from doing normal activities\n"
+            + "  8 = Very strong pain. It's hard to do anything at all\n"
+            + "  9 = Pain that is very hard to tolerate. You can't carry on a conversation\n"
+            + "  10 = Worst pain possible\n"
+            + "- Timestamp cannot be in the future\n\n"
+            + "**Usage:**\n"
+            + "This endpoint allows patients to track their daily mood and pain levels, "
+            + "providing valuable data for caregivers and healthcare providers.",
         tags = {"Patient Management", "📊 Mood & Pain Tracking"}
     )
     @ApiResponses({
@@ -355,8 +329,6 @@ public class PatientController {
     }
 
     // 7. Get all mood pain logs for the current patient
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/mood-pain-log")
     @Operation(
         summary = "📋 Get all mood & pain logs",
@@ -381,8 +353,6 @@ public class PatientController {
     }
 
     // 8. Get mood pain logs with pagination
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/mood-pain-log/paginated")
     public ResponseEntity<Page<MoodPainLogResponse>> getMoodPainLogsWithPagination(
             @RequestParam(defaultValue = "0") int page,
@@ -399,8 +369,6 @@ public class PatientController {
     }
 
     // 9. Get mood pain logs within a date range
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/mood-pain-log/range")
     public ResponseEntity<List<MoodPainLogResponse>> getMoodPainLogsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -417,8 +385,6 @@ public class PatientController {
     }
 
     // 10. Get the latest mood pain log
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/mood-pain-log/latest")
     public ResponseEntity<MoodPainLogResponse> getLatestMoodPainLog() {
         User currentUser = getCurrentUser();
@@ -433,8 +399,6 @@ public class PatientController {
     }
 
     // 11. Update an existing mood pain log
-    @RequirePermission(Permission.UPDATE_TASKS)
-
     @PutMapping("/mood-pain-log/{logId}")
     public ResponseEntity<MoodPainLogResponse> updateMoodPainLog(
             @PathVariable Long logId,
@@ -451,8 +415,6 @@ public class PatientController {
     }
 
     // 12. Delete a mood pain log
-    @RequirePermission(Permission.DELETE_PATIENTS)
-
     @DeleteMapping("/mood-pain-log/{logId}")
     public ResponseEntity<Void> deleteMoodPainLog(@PathVariable Long logId) {
         User currentUser = getCurrentUser();
@@ -467,8 +429,6 @@ public class PatientController {
     }
 
     // 13. Get mood pain logs for a specific patient (for caregivers to view)
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/mood-pain-log")
     public ResponseEntity<List<MoodPainLogResponse>> getMoodPainLogsForPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
@@ -482,21 +442,16 @@ public class PatientController {
     }
 
     // 14. Get advanced mood and pain analytics
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/mood-pain-log/analytics")
     @Operation(
         summary = "📈 Get mood & pain analytics",
-        description = """
-            Get detailed analytics for mood and pain data including trends, averages, and time series data.
-            
-            **Features:**
-            - Average mood and pain levels over the period
-            - Trend analysis (improving/declining)
-            - Min/max values
-            - Entry counts
-            - Time series data for charts
-            """,
+        description = "Get detailed analytics for mood and pain data including trends, averages, and time series data.\n\n"
+            + "**Features:**\n"
+            + "- Average mood and pain levels over the period\n"
+            + "- Trend analysis (improving/declining)\n"
+            + "- Min/max values\n"
+            + "- Entry counts\n"
+            + "- Time series data for charts",
         tags = {"Patient Management", "📊 Mood & Pain Tracking"}
     )
     public ResponseEntity<MoodPainAnalyticsDTO> getMoodPainAnalytics(
@@ -516,8 +471,6 @@ public class PatientController {
     /**
      * Get complete patient profile including allergies
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/profile")
     @Operation(summary = "Get patient profile", description = "Get complete patient profile including allergies")
     @ApiResponses(value = {
@@ -554,8 +507,6 @@ public class PatientController {
     /**
      * Update patient profile information
      */
-    @RequirePermission(Permission.UPDATE_TASKS)
-
     @PutMapping("/{patientId}/profile")
     @Operation(summary = "Update patient profile", description = "Update patient profile information (allergies managed separately)")
     @ApiResponses(value = {
@@ -643,8 +594,6 @@ public class PatientController {
      * Get enhanced patient profile with comprehensive medical information
      * This includes medications, latest vitals, mood/pain data, and medical summary
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/profile/enhanced")
     @Operation(summary = "Get enhanced patient profile", 
                description = "Get comprehensive patient profile including medications, latest vitals, mood/pain data, and medical summary")
@@ -679,16 +628,10 @@ public class PatientController {
         }
     }
     
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-    
     @GetMapping("/{patientId}/provider")
     public ResponseEntity<Map<String, Object>> getPrimaryCareProvider(@PathVariable Long patientId) {
         return ResponseEntity.ok(patientService.getPrimaryProvider(patientId));
     }
-    
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     
     @GetMapping("/{patientID}/medications")
     @Operation(summary = "Get all medications for patient",
@@ -708,9 +651,6 @@ public class PatientController {
         List<MedicationDTO> allMeds = medicationService.getAllMedicationsForPatient(patientID);
         return ResponseEntity.ok(allMeds);
     }
-
-    @RequirePermission(Permission.CREATE_TASKS)
-
 
     @PostMapping("/{patientID}/medications")
     @Operation(summary = "Add medication for patient",
@@ -755,9 +695,6 @@ public class PatientController {
         MedicationDTO createdMedication = medicationService.createMedication(medicationWithPatientId);
         return ResponseEntity.ok(createdMedication);
     }
-
-    @RequirePermission(Permission.DELETE_PATIENTS)
-
 
     @DeleteMapping("/{patientID}/medications/{medicationId}")
     @Operation(summary = "Remove medication for patient",

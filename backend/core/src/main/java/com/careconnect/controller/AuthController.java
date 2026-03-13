@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.dto.*;
 import com.careconnect.exception.OAuthException;
 import com.careconnect.model.Patient;
@@ -45,8 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.careconnect.security.TokenHashService;
-
 @RestController
 @RequestMapping("/v1/api/auth")
 @Tag(name = "Authentication", description = "Authentication and authorization endpoints including login, registration, email verification, and OAuth")
@@ -67,48 +62,31 @@ public class AuthController {
     @Value("${frontend.base-url}")
     private String frontendBaseUrl; // --- Register new user ---
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
     @PostMapping("/register")
-    @Operation(summary = "📝 Register a new user", description = """
-            Register a new patient or caregiver account.
-
-            **For Swagger UI Testing:**
-            1. Use this endpoint to create a test account
-            2. Check your email for verification (if email is configured)
-            3. Use the `/login` endpoint to get a JWT token
-            4. Click "Authorize" and enter the token for testing protected endpoints
-
-            **Registration Flow:**
-            1. Submit registration with email, password, and role
-            2. Account is created (may require email verification)
-            3. Use the email/password to login and get JWT token
-            4. Use JWT token to access protected endpoints
-
-            **Test Example:**
-            ```json
-            {
-                "email": "test@example.com",
-                "password": "password123",
-                "name": "Test User",
-                "role": "PATIENT"
-            }
-            ```
-            """, tags = { "🔑 Authentication" }, security = {} // No authentication required for registration
+    @Operation(summary = "Register a new user", description = "Register a new patient or caregiver account.\n\n"
+            + "**For Swagger UI Testing:**\n"
+            + "1. Use this endpoint to create a test account\n"
+            + "2. Check your email for verification (if email is configured)\n"
+            + "3. Use the `/login` endpoint to get a JWT token\n"
+            + "4. Click \"Authorize\" and enter the token for testing protected endpoints\n\n"
+            + "**Registration Flow:**\n"
+            + "1. Submit registration with email, password, and role\n"
+            + "2. Account is created (may require email verification)\n"
+            + "3. Use the email/password to login and get JWT token\n"
+            + "4. Use JWT token to access protected endpoints\n\n"
+            + "**Test Example:**\n"
+            + "```json\n"
+            + "{\n"
+            + "    \"email\": \"test@example.com\",\n"
+            + "    \"password\": \"password123\",\n"
+            + "    \"name\": \"Test User\",\n"
+            + "    \"role\": \"PATIENT\"\n"
+            + "}\n"
+            + "```\n", tags = { "Authentication" }, security = {} // No authentication required for registration
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Registration successful, verification email sent", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "message": "Registration successful. Please check your email to verify your account.",
-                        "userId": 123
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "error": "Email already exists"
-                    }
-                    """)))
+            @ApiResponse(responseCode = "200", description = "Registration successful, verification email sent", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"message\": \"Registration successful. Please check your email to verify your account.\",\n    \"userId\": 123\n}"))),
+            @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"error\": \"Email already exists\"\n}")))
     })
     public ResponseEntity<?> register(
             @Parameter(description = "User registration details", required = true) @RequestBody RegisterRequest request) {
@@ -116,48 +94,24 @@ public class AuthController {
         return authService.register(request);
     }
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
     @PostMapping("/login")
-    @Operation(summary = "Login user", description = """
-            Authenticate user with email and password. Returns JWT token for API access.
-
-            **For Swagger UI Testing:**
-            1. Use this endpoint to login and get a JWT token
-            2. Copy the `token` from the response
-            3. Click the "Authorize" button (🔒) at the top of this page
-            4. Enter: `Bearer {your-token-here}`
-            5. Now you can test all protected endpoints!
-
-            **Response includes:**
-            - `token`: JWT token for API authentication (valid for 3 hours)
-            - `user`: User profile information
-            - `patientId`/`caregiverId`: Role-specific ID (if applicable)
-
-            **Test Credentials:**
-            If you need test credentials, use the registration endpoint first.
-            """, tags = { "Authentication" }, security = {} // No authentication required for login
+    @Operation(summary = "Login user", description = "Authenticate user with email and password. Returns JWT token for API access.\n\n"
+            + "**For Swagger UI Testing:**\n"
+            + "1. Use this endpoint to login and get a JWT token\n"
+            + "2. Copy the `token` from the response\n"
+            + "3. Click the \"Authorize\" button at the top of this page\n"
+            + "4. Enter: `Bearer {your-token-here}`\n"
+            + "5. Now you can test all protected endpoints!\n\n"
+            + "**Response includes:**\n"
+            + "- `token`: JWT token for API authentication (valid for 3 hours)\n"
+            + "- `user`: User profile information\n"
+            + "- `patientId`/`caregiverId`: Role-specific ID (if applicable)\n\n"
+            + "**Test Credentials:**\n"
+            + "If you need test credentials, use the registration endpoint first.\n", tags = { "Authentication" }, security = {} // No authentication required for login
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login successful", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class), examples = @ExampleObject(value = """
-                    {
-                        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "user": {
-                            "id": 123,
-                            "name": "John Doe",
-                            "email": "john@example.com",
-                            "role": "PATIENT"
-                        },
-                        "patientId": 456,
-                        "caregiverId": null
-                    }
-                    """))),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "error": "Invalid credentials"
-                    }
-                    """)))
+            @ApiResponse(responseCode = "200", description = "Login successful", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponse.class), examples = @ExampleObject(value = "{\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n        \"id\": 123,\n        \"name\": \"John Doe\",\n        \"email\": \"john@example.com\",\n        \"role\": \"PATIENT\"\n    },\n    \"patientId\": 456,\n    \"caregiverId\": null\n}"))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"error\": \"Invalid credentials\"\n}")))
     })
     public ResponseEntity<LoginResponse> loginV2(
             @Parameter(description = "Login credentials", required = true) @RequestBody LoginRequest req,
@@ -166,8 +120,6 @@ public class AuthController {
     }
 
     // --- Email verification ---
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/verify/{token}")
     @Operation(summary = "✉️ Verify email address", description = "Verify user email address using verification token", tags = {
             "🔑 Authentication" }, security = {} // No authentication required for email verification
@@ -176,24 +128,13 @@ public class AuthController {
         return authService.verifyToken(token);
     }
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
     @PostMapping("/resend-verification")
     @Operation(summary = "🔄 Resend verification email", description = "Resend verification email to an unverified user", tags = {
             "🔑 Authentication" }, security = {} // No authentication required for resending verification
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Verification email sent successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "message": "Verification email sent successfully! Please check your inbox."
-                    }
-                    """))),
-            @ApiResponse(responseCode = "400", description = "Email already verified", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "error": "This email address is already verified."
-                    }
-                    """)))
+            @ApiResponse(responseCode = "200", description = "Verification email sent successfully", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"message\": \"Verification email sent successfully! Please check your inbox.\"\n}"))),
+            @ApiResponse(responseCode = "400", description = "Email already verified", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"error\": \"This email address is already verified.\"\n}")))
     })
     public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -204,19 +145,12 @@ public class AuthController {
         return authService.resendVerificationEmail(email);
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
     @GetMapping("/check-verification")
     @Operation(summary = "🔍 Check email verification status", description = "Check if an email address is verified without sending any emails", tags = {
             "🔑 Authentication" }, security = {} // No authentication required for checking verification status
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Verification status retrieved", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                    {
-                        "verified": true
-                    }
-                    """)))
+            @ApiResponse(responseCode = "200", description = "Verification status retrieved", content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\n    \"verified\": true\n}")))
     })
     public ResponseEntity<?> checkVerification(@RequestParam String email) {
         if (email == null || email.isEmpty()) {
@@ -225,9 +159,6 @@ public class AuthController {
         }
         return authService.checkEmailVerificationStatus(email);
     }
-
-    @RequirePermission(Permission.CREATE_TASKS)
-
 
     @PostMapping("/password/forgot")
     @Operation(summary = "🔐 Request password reset", description = "Request a password reset link to be sent via email", tags = {
@@ -259,9 +190,6 @@ public class AuthController {
         }
     }
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
     @PostMapping("/password/change")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
             HttpServletRequest httpRequest) {
@@ -279,9 +207,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/password/reset")
     public ResponseEntity<?> validateResetToken(@RequestParam String token) {
@@ -390,17 +315,11 @@ public class AuthController {
         return "oauth_failed";
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
     @GetMapping("/sso/google")
     public void googleLogin(HttpServletResponse response) throws IOException {
         String googleAuthUrl = authService.buildGoogleOAuthUrl();
         response.sendRedirect(googleAuthUrl);
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/sso/google/callback")
     public void googleCallback(
@@ -460,9 +379,6 @@ public class AuthController {
     @Autowired
     private AlexaCodeStoreService alexaCodeStore;
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
     @PostMapping("/sso/alexa/code")
     public ResponseEntity<?> generateAlexaCode(HttpServletRequest request) {
         String token = extractTokenFromRequest(request);
@@ -481,9 +397,6 @@ public class AuthController {
         String code = alexaCodeStore.generateCode(token);
         return ResponseEntity.ok(Map.of("code", code));
     }
-
-    @RequirePermission(Permission.CREATE_TASKS)
-
 
     @PostMapping(value = "/sso/alexa/token", consumes = "application/x-www-form-urlencoded")
     public ResponseEntity<?> exchangeAlexaToken(
@@ -688,9 +601,6 @@ public class AuthController {
                 .body(Map.of("error", "unsupported_grant_type"));
     }
 
-@RequirePermission(Permission.CREATE_TASKS)
-
-
 @PostMapping("/sso/alexa/unlink")
 public ResponseEntity<?> unlinkAlexaAccount(HttpServletRequest request) {
     try {
@@ -728,9 +638,6 @@ public ResponseEntity<?> unlinkAlexaAccount(HttpServletRequest request) {
                 .body(Map.of("error", e.getMessage()));
     }
 }
-
-@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
 @GetMapping("/me")
 @Operation(
@@ -773,4 +680,5 @@ public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
                 .body(Map.of("error", "Invalid token"));
 
     }
+}
 }
