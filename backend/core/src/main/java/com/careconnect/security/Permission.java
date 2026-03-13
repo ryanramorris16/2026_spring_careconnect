@@ -121,8 +121,23 @@ public enum Permission {
      * Generate CSV, PDF, or other formats for download.
      */
     EXPORT_HEALTH_DATA("Export health data reports"),
-    
-    
+
+
+    // ========== Medication Permissions ==========
+
+    /**
+     * View medication information for patients.
+     * Access to medication lists and prescription details.
+     */
+    VIEW_MEDICATIONS("View medication information"),
+
+    /**
+     * Manage medications for patients.
+     * Add, update, and remove medication records.
+     */
+    MANAGE_MEDICATIONS("Manage patient medications"),
+
+
     // ========== Billing & Subscription Permissions ==========
     
     /**

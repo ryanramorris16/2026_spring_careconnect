@@ -22,11 +22,11 @@ public class PermissionTest {
     }
 
     @Test
-    @DisplayName("Should have exactly 26 permissions defined")
+    @DisplayName("Should have exactly 28 permissions defined")
     public void testPermissionCount() throws Exception {
         Permission[] permissions = Permission.values();
-        assertEquals(26, permissions.length, 
-            "Should have exactly 26 permissions defined");
+        assertEquals(28, permissions.length, 
+            "Should have exactly 28 permissions defined");
     }
 
     @Test
@@ -156,7 +156,7 @@ public class PermissionTest {
         Permission[] permissions = Permission.values();
         assertNotNull(permissions, "values() should not return null");
         assertTrue(permissions.length > 0, "values() should return at least one permission");
-        assertEquals(26, permissions.length, "Should return all 26 permissions");
+        assertEquals(28, permissions.length, "Should return all 28 permissions");
     }
 
     @Test
