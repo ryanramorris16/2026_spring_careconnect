@@ -54,6 +54,13 @@ CATEGORY_MAP = {
     "SpotBugs":        "SAST — Java",
 }
 
+CATEGORY_MAP = {
+    "Flutter Analyze": "SAST — Flutter",
+    "Checkstyle":      "SAST — Java",
+    "PMD":             "SAST — Java",
+    "SpotBugs":        "SAST — Java",
+}
+
 CSS = """
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
