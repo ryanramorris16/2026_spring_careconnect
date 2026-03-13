@@ -13,6 +13,9 @@ import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.repository.PlanRepository;
 import com.careconnect.repository.SubscriptionRepository;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -60,13 +63,15 @@ public class SubscriptionController {
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
-    
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
+
     @Value("${stripe.webhook-secret}")
     private String stripeWebhookSecret;
-    
+
     @Value("${frontend.base-url}")
     private String frontendBaseUrl;
-    
+
 
     public SubscriptionController(
         SubscriptionService subscriptionService,
@@ -74,7 +79,9 @@ public class SubscriptionController {
         SubscriptionEnrichmentService subscriptionEnrichmentService,
         UserRepository userRepository,
         PlanRepository planRepository,
-        SubscriptionRepository subscriptionRepository
+        SubscriptionRepository subscriptionRepository,
+        SecurityUtil securityUtil,
+        AuthorizationService authorizationService
         // @Value("${stripe.webhook-secret}") String stripeWebhookSecret
     ) {
         this.subscriptionService = subscriptionService;
@@ -83,7 +90,9 @@ public class SubscriptionController {
         this.userRepository = userRepository;
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
-        // this.stripeWebhookSecret = stripeWebhookSecret; 
+        this.securityUtil = securityUtil;
+        this.authorizationService = authorizationService;
+        // this.stripeWebhookSecret = stripeWebhookSecret;
     }
 	
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
@@ -113,8 +122,10 @@ public class SubscriptionController {
             @RequestParam String name,
             @RequestParam Integer priceCents,
             @RequestParam String billingPeriod,
-            @RequestParam(required = false) Boolean isActive) {
-        
+            @RequestParam(required = false) Boolean isActive) throws UnauthorizedException {
+
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         Plan plan = subscriptionService.createPlan(code, name, priceCents, billingPeriod, isActive);
         return ResponseEntity.ok(plan);
     }
@@ -134,7 +145,9 @@ public class SubscriptionController {
     @PostMapping("/plans/{planId}/sync-with-stripe")
     public ResponseEntity<?> syncPlanWithStripe(
             @PathVariable String planId,
-            @RequestParam(defaultValue = "true") boolean createIfMissing) {
+            @RequestParam(defaultValue = "true") boolean createIfMissing) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Plan plan = subscriptionService.syncPlanWithStripe(Long.parseLong(planId), createIfMissing);
             return ResponseEntity.ok(plan);
@@ -147,7 +160,9 @@ public class SubscriptionController {
 
     
     @PostMapping("/sync-from-stripe/{stripeSubscriptionId}")
-    public ResponseEntity<?> syncSubscriptionFromStripe(@PathVariable String stripeSubscriptionId) {
+    public ResponseEntity<?> syncSubscriptionFromStripe(@PathVariable String stripeSubscriptionId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Subscription subscription = subscriptionService.syncSubscriptionFromStripe(stripeSubscriptionId);
             return ResponseEntity.ok(subscription);
@@ -160,7 +175,9 @@ public class SubscriptionController {
 
     
     @GetMapping("/stripe/{customerId}/subscriptions")
-    public ResponseEntity<String> getStripeCustomerSubscriptions(@PathVariable String customerId) {
+    public ResponseEntity<String> getStripeCustomerSubscriptions(@PathVariable String customerId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String subs = stripeService.listSubscriptions(customerId);
         return ResponseEntity.ok(subs);
     }
@@ -169,7 +186,9 @@ public class SubscriptionController {
 
     
     @GetMapping("/sync-all-from-stripe/{customerId}")
-    public ResponseEntity<?> syncAllCustomerSubscriptions(@PathVariable String customerId) {
+    public ResponseEntity<?> syncAllCustomerSubscriptions(@PathVariable String customerId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             List<Subscription> subscriptions = subscriptionService.syncAllSubscriptionsForCustomer(customerId);
             return ResponseEntity.ok(subscriptions);
@@ -182,7 +201,9 @@ public class SubscriptionController {
 
 
     @GetMapping("/stripe/subscription/{subscriptionId}")
-    public ResponseEntity<String> getSubscription(@PathVariable String subscriptionId) {
+    public ResponseEntity<String> getSubscription(@PathVariable String subscriptionId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String sub = stripeService.getSubscription(subscriptionId);
         return ResponseEntity.ok(sub);
     }
@@ -191,7 +212,9 @@ public class SubscriptionController {
 
 
     @GetMapping("/stripe/subscriptions/search")
-    public ResponseEntity<String> searchSubscriptions(@RequestParam String query) {
+    public ResponseEntity<String> searchSubscriptions(@RequestParam String query) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         String result = stripeService.searchSubscriptions(query);
         return ResponseEntity.ok(result);
     }
@@ -207,6 +230,8 @@ public class SubscriptionController {
             @RequestParam(required = false) Long amount,
             @RequestParam(required = false) String stripeCustomerId,
             @RequestParam(required = false) String portal) {
+        // RBAC: Ensure the caller is authenticated
+        User currentUser = securityUtil.resolveCurrentUser();
         return subscriptionService.createCheckoutSession(request, plan, userId, amount, stripeCustomerId, portal);
     }
 
@@ -216,7 +241,10 @@ public class SubscriptionController {
     @RequirePermission(Permission.CREATE_TASKS)
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<?> cancelSubscription(@PathVariable String id) {
+    public ResponseEntity<?> cancelSubscription(@PathVariable String id) throws UnauthorizedException {
+        // RBAC: Only admins can cancel subscriptions by arbitrary ID
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             // Check if the id is a Stripe subscription ID or a database subscription ID
             if (id.startsWith("sub_")) {
@@ -247,7 +275,10 @@ public class SubscriptionController {
     @RequirePermission(Permission.CREATE_TASKS)
 
     @PostMapping("/database/{subscriptionId}/cancel")
-    public ResponseEntity<?> cancelSubscriptionById(@PathVariable Long subscriptionId) {
+    public ResponseEntity<?> cancelSubscriptionById(@PathVariable Long subscriptionId) throws UnauthorizedException {
+        // RBAC: Only admins can cancel subscriptions by database ID
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             subscriptionService.cancelSubscription(subscriptionId);
             return ResponseEntity.ok().body(Map.of(
@@ -265,7 +296,10 @@ public class SubscriptionController {
     @RequirePermission(Permission.CREATE_TASKS)
 
     @PostMapping("/stripe/{stripeSubscriptionId}/cancel")
-    public ResponseEntity<?> cancelSubscriptionByStripeId(@PathVariable String stripeSubscriptionId) {
+    public ResponseEntity<?> cancelSubscriptionByStripeId(@PathVariable String stripeSubscriptionId) throws UnauthorizedException {
+        // RBAC: Only admins can cancel subscriptions by Stripe ID
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             subscriptionService.cancelSubscriptionByStripeId(stripeSubscriptionId);
             return ResponseEntity.ok().body(Map.of(
@@ -290,8 +324,10 @@ public class SubscriptionController {
     public ResponseEntity<?> createSubscriptionDirect(
             @RequestParam(required = false) String customerId,
             @RequestParam(required = false) String priceId,
-            @RequestBody(required = false) Map<String, String> requestBody) {
-        
+            @RequestBody(required = false) Map<String, String> requestBody) throws UnauthorizedException {
+        // RBAC: Only admins can create subscriptions directly via Stripe
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             // Get parameters from either request params or request body
             String finalCustomerId = customerId;
@@ -333,7 +369,10 @@ public class SubscriptionController {
     @PostMapping("/create-direct-for-user")
     public ResponseEntity<?> createSubscriptionDirectForUser(
             @RequestParam Long userId,
-            @RequestParam String priceId) {
+            @RequestParam String priceId) throws UnauthorizedException {
+        // RBAC: Only admins can create subscriptions for other users
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Subscription subscription = subscriptionService.createSubscriptionDirectly(userId, priceId);
             return ResponseEntity.ok().body(Map.of(
@@ -366,7 +405,10 @@ public class SubscriptionController {
 
 
 @GetMapping("/user/{userId}")
-public ResponseEntity<?> getUserSubscriptions(@PathVariable Long userId) {
+public ResponseEntity<?> getUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
+    // RBAC: Users can view their own subscriptions; admins can view any
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireSelfOrAdmin(currentUser, userId);
     try {
         List<SubscriptionResponseDTO> subscriptionDTOs = subscriptionEnrichmentService.getEnrichedUserSubscriptions(userId);
         return ResponseEntity.ok(subscriptionDTOs);
@@ -379,7 +421,10 @@ public ResponseEntity<?> getUserSubscriptions(@PathVariable Long userId) {
 
 
 @GetMapping("/user/{userId}/refresh")
-public ResponseEntity<?> refreshAndGetUserSubscriptions(@PathVariable Long userId) {
+public ResponseEntity<?> refreshAndGetUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
+    // RBAC: Users can refresh their own subscriptions; admins can refresh any
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireSelfOrAdmin(currentUser, userId);
     try {
         // First sync with Stripe to ensure we have all subscriptions
         subscriptionService.refreshUserSubscriptionsFromStripe(userId);
@@ -396,8 +441,11 @@ public ResponseEntity<?> refreshAndGetUserSubscriptions(@PathVariable Long userI
 
 @GetMapping("/user/{userId}/force-import/{subscriptionId}")
 public ResponseEntity<?> forceImportSubscription(
-        @PathVariable Long userId, 
-        @PathVariable String subscriptionId) {
+        @PathVariable Long userId,
+        @PathVariable String subscriptionId) throws UnauthorizedException {
+    // RBAC: Only admins can force-import subscriptions
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
     try {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -469,7 +517,10 @@ public ResponseEntity<?> forceImportSubscription(
 
 
 @GetMapping("/user/{userId}/refresh-with-stripe")
-public ResponseEntity<?> refreshUserSubscriptionsWithStripe(@PathVariable Long userId) {
+public ResponseEntity<?> refreshUserSubscriptionsWithStripe(@PathVariable Long userId) throws UnauthorizedException {
+    // RBAC: Users can refresh their own subscriptions; admins can refresh any
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireSelfOrAdmin(currentUser, userId);
     try {
         List<Subscription> subscriptions = subscriptionService.refreshUserSubscriptionsFromStripe(userId);
         List<SubscriptionResponseDTO> subscriptionDTOs = subscriptionEnrichmentService.enrichSubscriptions(subscriptions);
@@ -486,7 +537,10 @@ public ResponseEntity<?> refreshUserSubscriptionsWithStripe(@PathVariable Long u
 
 
 @GetMapping("/user/{userId}/active")
-public ResponseEntity<?> getUserActiveSubscriptions(@PathVariable Long userId) {
+public ResponseEntity<?> getUserActiveSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
+    // RBAC: Users can view their own active subscriptions; admins can view any
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireSelfOrAdmin(currentUser, userId);
     try {
         List<SubscriptionResponseDTO> subscriptionDTOs = subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(userId);
         return ResponseEntity.ok(subscriptionDTOs);
@@ -499,7 +553,10 @@ public ResponseEntity<?> getUserActiveSubscriptions(@PathVariable Long userId) {
 
 
 @PostMapping("/user/{userId}/sync-from-stripe")
-public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long userId) {
+public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long userId) throws UnauthorizedException {
+    // RBAC: Only admins can trigger Stripe sync for users
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
     try {
         List<Subscription> subscriptions = subscriptionService.refreshUserSubscriptionsFromStripe(userId);
         // Use enrichment service to add plan details
@@ -520,7 +577,10 @@ public ResponseEntity<?> syncUserSubscriptionsFromStripe(@PathVariable Long user
     @PostMapping("/upgrade-or-downgrade")
     public ResponseEntity<?> upgradeOrDowngradeSubscription(
             @RequestParam String oldSubscriptionId,
-            @RequestParam String newPriceId) {
+            @RequestParam String newPriceId) throws UnauthorizedException {
+        // RBAC: Only admins can upgrade/downgrade subscriptions
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdmin(currentUser);
         try {
             Map<String, Object> result = stripeService.upgradeOrDowngradeSubscription(oldSubscriptionId, newPriceId);
             return ResponseEntity.ok(result);

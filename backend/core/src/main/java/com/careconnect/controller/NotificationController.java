@@ -6,6 +6,10 @@ import com.careconnect.security.RequirePermission;
 import com.careconnect.dto.FirebaseNotificationRequest;
 import com.careconnect.dto.NotificationResponse;
 import com.careconnect.model.DeviceToken;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.websocket.NotificationWebSocketHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,7 +19,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +37,12 @@ public class NotificationController {
 
     @Autowired
     private com.careconnect.service.NotificationService notificationService;
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
     /**
      * Send a WebSocket notification to a specific user
      */
@@ -69,10 +78,11 @@ public class NotificationController {
         @ApiResponse(responseCode = "400", description = "Invalid request"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<NotificationResponse> sendNotification(
-            @RequestBody FirebaseNotificationRequest request) {
-        
+            @RequestBody FirebaseNotificationRequest request) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         NotificationResponse response = notificationService.sendNotification(request);
         return ResponseEntity.ok(response);
     }
@@ -85,10 +95,11 @@ public class NotificationController {
         summary = "Send bulk push notifications",
         description = "Send push notifications to multiple device tokens"
     )
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<List<NotificationResponse>> sendBulkNotifications(
-            @RequestBody List<FirebaseNotificationRequest> requests) {
-        
+            @RequestBody List<FirebaseNotificationRequest> requests) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         List<NotificationResponse> responses = notificationService.sendBulkNotifications(requests);
         return ResponseEntity.ok(responses);
     }
@@ -101,14 +112,15 @@ public class NotificationController {
         summary = "Send notification to user",
         description = "Send push notification to all devices of a specific user"
     )
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public ResponseEntity<List<NotificationResponse>> sendNotificationToUser(
             @PathVariable Long userId,
             @RequestParam String title,
             @RequestParam String body,
             @RequestParam(required = false, defaultValue = "GENERAL") String notificationType,
-            @RequestParam(required = false) Map<String, String> data) {
-        
+            @RequestParam(required = false) Map<String, String> data) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         List<NotificationResponse> responses = notificationService
                 .sendNotificationToUser(userId, title, body, notificationType, data);
         return ResponseEntity.ok(responses);
@@ -122,13 +134,14 @@ public class NotificationController {
         summary = "Send vital signs alert",
         description = "Send vital signs alert to patient's caregivers"
     )
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN') or hasRole('PATIENT')")
     public CompletableFuture<ResponseEntity<List<NotificationResponse>>> sendVitalAlert(
             @PathVariable Long patientId,
             @RequestParam String vitalType,
             @RequestParam String vitalValue,
-            @RequestParam String alertLevel) {
-        
+            @RequestParam String alertLevel) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
+
         return notificationService.sendVitalAlert(patientId, vitalType, vitalValue, alertLevel)
                 .thenApply(ResponseEntity::ok);
     }
@@ -141,13 +154,14 @@ public class NotificationController {
         summary = "Send medication reminder",
         description = "Send medication reminder to patient"
     )
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN')")
     public CompletableFuture<ResponseEntity<List<NotificationResponse>>> sendMedicationReminder(
             @PathVariable Long patientId,
             @RequestParam String medicationName,
             @RequestParam String dosage,
-            @RequestParam String scheduledTime) {
-        
+            @RequestParam String scheduledTime) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+
         return notificationService.sendMedicationReminder(patientId, medicationName, dosage, scheduledTime)
                 .thenApply(ResponseEntity::ok);
     }
@@ -160,7 +174,6 @@ public class NotificationController {
         summary = "Send emergency alert",
         description = "Send emergency alert to all caregivers and family members"
     )
-    @PreAuthorize("hasRole('CAREGIVER') or hasRole('ADMIN') or hasRole('PATIENT') or hasRole('FAMILY_MEMBER')")
     public CompletableFuture<ResponseEntity<List<NotificationResponse>>> sendEmergencyAlert(
             @PathVariable Long patientId,
             @RequestParam String emergencyType,

@@ -206,7 +206,7 @@ class AuthService {
     required String name,
     required String email,
     required String password,
-    String role = 'patient',
+    String role = 'PATIENT',
     required String verificationBaseUrl,
   }) async {
     final headers = {'Content-Type': 'application/json'};
@@ -218,7 +218,7 @@ class AuthService {
         'name': name,
         'email': email,
         'password': password,
-        'role': role,
+        'role': role.toUpperCase(),
         'verificationBaseUrl': verificationBaseUrl,
       }),
     );

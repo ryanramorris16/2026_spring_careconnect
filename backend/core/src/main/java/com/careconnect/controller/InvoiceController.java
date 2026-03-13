@@ -8,10 +8,14 @@ import com.careconnect.dto.chat.AiRequest;
 import com.careconnect.dto.invoice.InvoiceDto;
 import com.careconnect.dto.invoice.InvoiceResponseDto;
 import com.careconnect.dto.invoice.PaymentDto;
+import com.careconnect.model.User;
 import com.careconnect.model.invoice.Invoice;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.invoice.LlmExtractionService;
 import com.careconnect.service.invoice.InvoiceService;
 import com.careconnect.service.invoice.TextractService;
+import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,16 +38,22 @@ public class InvoiceController {
     private final TextractService textractService;
     private final LlmExtractionService llmExtractionService;
     private final ObjectMapper objectMapper;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
     public InvoiceController(
             @Autowired(required = false) TextractService textractService,
             @Autowired(required = false) LlmExtractionService llmExtractionService,
             InvoiceService service,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            SecurityUtil securityUtil,
+            AuthorizationService authorizationService
     ) {
         this.service = service;
         this.llmExtractionService = llmExtractionService;
         this.textractService = textractService;
         this.objectMapper = objectMapper;
+        this.securityUtil = securityUtil;
+        this.authorizationService = authorizationService;
 
     }
 
@@ -63,7 +73,9 @@ public class InvoiceController {
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int pageSize
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         Sort s = InvoiceService.resolveSort(sort);
         Pageable pageable = PageRequest.of(page, pageSize, s);
 
@@ -90,7 +102,9 @@ public class InvoiceController {
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<InvoiceDto> get(@PathVariable String id) {
+    public ResponseEntity<InvoiceDto> get(@PathVariable String id) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         return service.get(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
@@ -98,7 +112,9 @@ public class InvoiceController {
 
 
     @PostMapping
-    public ResponseEntity<InvoiceDto> create(@RequestBody InvoiceDto dto) {
+    public ResponseEntity<InvoiceDto> create(@RequestBody InvoiceDto dto) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         InvoiceDto created = service.create(dto);
         return ResponseEntity.status(201).body(created);
     }
@@ -107,7 +123,9 @@ public class InvoiceController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<InvoiceDto> update(@PathVariable String id, @RequestBody InvoiceDto dto) {
+    public ResponseEntity<InvoiceDto> update(@PathVariable String id, @RequestBody InvoiceDto dto) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         InvoiceDto updated = service.update(id, dto);
         return ResponseEntity.ok(updated);
     }
@@ -116,7 +134,9 @@ public class InvoiceController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
+    public ResponseEntity<Void> delete(@PathVariable String id) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -127,7 +147,9 @@ public class InvoiceController {
             @PathVariable String id,
             @RequestBody PaymentDto dto,
             java.security.Principal principal
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         String actor = principal != null ? principal.getName() : "system";
         InvoiceDto updated = service.recordPayment(id, dto, actor);
         return ResponseEntity.ok(updated);
@@ -140,7 +162,9 @@ public class InvoiceController {
     public ResponseEntity<InvoiceDto> removePayment(
             @PathVariable String id,
             @PathVariable String paymentId
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         InvoiceDto updated = service.deletePayment(id, paymentId);
         return ResponseEntity.ok(updated);
     }
@@ -150,7 +174,9 @@ public class InvoiceController {
     @RequirePermission(Permission.CREATE_TASKS)
 
     @PostMapping(value = "/extract-llm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> extractWithLlm(@RequestParam("files") List<MultipartFile> files) {
+    public ResponseEntity<?> extractWithLlm(@RequestParam("files") List<MultipartFile> files) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
         if (isFileListInvalid(files)) {
             return ResponseEntity.badRequest().body("Please provide at least one valid file.");
         }

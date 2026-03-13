@@ -8,7 +8,6 @@ import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.model.evv.EvvRecordLocation;
 import com.careconnect.model.evv.EvvLocationRole;
 import com.careconnect.model.evv.EvvLocationType;
-import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.evv.EvvRecordLocationRepository;
 import com.careconnect.repository.evv.EvvRecordRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ public class EvvLocationService {
     
     private final EvvRecordLocationRepository locationRepository;
     private final EvvRecordRepository evvRecordRepository;
-    private final PatientRepository patientRepository;
     
     /**
      * Save or update an EVV location (upsert logic)

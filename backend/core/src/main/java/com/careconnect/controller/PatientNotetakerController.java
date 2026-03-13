@@ -23,6 +23,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.web.bind.annotation.RequestBody;
+
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -34,6 +39,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 @RequiredArgsConstructor
 public class PatientNotetakerController {
     private final PatientNotetakerService patientNotetakerService;
+    private final SecurityUtil securityUtil;
+    private final AuthorizationService authorizationService;
 
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
@@ -45,8 +52,10 @@ public class PatientNotetakerController {
         tags = {"Medical Notetaker", "Settings"}
     )
     public ResponseEntity<PatientNotetakerConfigDTO> getPatientNoteTakerConfig(
-            @PathVariable Long patientId) {
+            @PathVariable Long patientId) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         PatientNotetakerConfigDTO patientNotetakerConfig;
         try {
             patientNotetakerConfig = patientNotetakerService.getNotetakerConfigByPatientId(patientId);
@@ -68,8 +77,10 @@ public class PatientNotetakerController {
     )
     public ResponseEntity<PatientNotetakerConfigDTO> updatePatientNoteTakerConfig(
             @PathVariable Long patientId,
-            @RequestBody PatientNotetakerConfigDTO configDTO) {
+            @RequestBody PatientNotetakerConfigDTO configDTO) throws UnauthorizedException {
 
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         PatientNotetakerConfigDTO updatedConfig;
         try {
             updatedConfig = patientNotetakerService.createOrUpdatePatientNotetakerConfig(patientId, configDTO);
@@ -85,8 +96,10 @@ public class PatientNotetakerController {
 
 
     @PostMapping("/{patientId}/notes")
-    public ResponseEntity<PatientNoteDTO> createPatientNote(@PathVariable Long patientId, 
-        @RequestBody PatientNoteDTO noteDTO) {
+    public ResponseEntity<PatientNoteDTO> createPatientNote(@PathVariable Long patientId,
+        @RequestBody PatientNoteDTO noteDTO) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         try {
             PatientNoteDTO createdNote = patientNotetakerService.createNoteForPatient(patientId, noteDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdNote);
@@ -101,9 +114,11 @@ public class PatientNotetakerController {
 
 
     @PutMapping("/{patientId}/notes/{id}") 
-    public ResponseEntity<PatientNoteDTO> updatePatientNote(@PathVariable Long patientId, 
-        @PathVariable Long id, 
-        @RequestBody PatientNoteDTO noteDTO) {
+    public ResponseEntity<PatientNoteDTO> updatePatientNote(@PathVariable Long patientId,
+        @PathVariable Long id,
+        @RequestBody PatientNoteDTO noteDTO) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         try {
             PatientNoteDTO updatedNote = patientNotetakerService.updateNoteForPatient(patientId, id, noteDTO);
             return ResponseEntity.ok(updatedNote);
@@ -118,8 +133,10 @@ public class PatientNotetakerController {
 
 
     @GetMapping("/{patientId}/notes/{id}")
-    public ResponseEntity<PatientNoteDTO> getPatientNote(@PathVariable Long patientId, 
-        @PathVariable Long id) {
+    public ResponseEntity<PatientNoteDTO> getPatientNote(@PathVariable Long patientId,
+        @PathVariable Long id) throws UnauthorizedException {
+            User currentUser = securityUtil.resolveCurrentUser();
+            authorizationService.requirePatientAccess(currentUser, patientId);
             try{
                 PatientNoteDTO note = patientNotetakerService.getNoteById(patientId, id);
                 return ResponseEntity.ok(note);
@@ -134,7 +151,9 @@ public class PatientNotetakerController {
  
 
     @GetMapping("/{patientId}/notes")
-    public ResponseEntity<List<PatientNoteDTO>> getAllNotesForPatient(@PathVariable Long patientId) {
+    public ResponseEntity<List<PatientNoteDTO>> getAllNotesForPatient(@PathVariable Long patientId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         try {
             List<PatientNoteDTO> notes = patientNotetakerService.getAllNotesForPatient(patientId);
             return ResponseEntity.ok(notes);
@@ -148,8 +167,10 @@ public class PatientNotetakerController {
 
 
     @DeleteMapping("/{patientId}/notes/{id}")
-    public ResponseEntity<Void> deletePatientNote(@PathVariable Long patientId, 
-        @PathVariable Long id) {
+    public ResponseEntity<Void> deletePatientNote(@PathVariable Long patientId,
+        @PathVariable Long id) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
         try {
             patientNotetakerService.deleteNoteById(id);
             return ResponseEntity.noContent().build();

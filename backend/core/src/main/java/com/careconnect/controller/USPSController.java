@@ -4,8 +4,13 @@ import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
 
 import com.careconnect.model.USPSDigest;
+import com.careconnect.model.User;
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.USPSDigestService;
+import com.careconnect.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,12 +28,22 @@ public class USPSController {
 
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @GetMapping("/mail")
     public ResponseEntity<USPSDigest> getDigest(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) throws UnauthorizedException {
+        // RBAC: Only admins and caregivers can access USPS mail data
+        if (securityUtil != null && authorizationService != null) {
+            User currentUser = securityUtil.resolveCurrentUser();
+            authorizationService.requireAdminOrCaregiver(currentUser);
+        }
         var userId = jwt != null ? jwt.getSubject() : "demo-user"; // fallback for early testing
         var digestOpt = date != null
                 ? service.digestForDate(userId, date)

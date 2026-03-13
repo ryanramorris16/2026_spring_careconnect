@@ -3,9 +3,12 @@ package com.careconnect.controller;
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
 
+import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.model.Patient;
 import com.careconnect.model.User;
+import com.careconnect.util.SecurityUtil;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.service.v2.TaskServiceV2;
@@ -26,6 +29,12 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/v1/api/alexa")
 public class AlexaController {
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -266,7 +275,11 @@ public class AlexaController {
     @GetMapping("/calendarTasks/get")
     public ResponseEntity<?> getCalendarTasks(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestParam(value = "filter", defaultValue = "week") String filter) {
+            @RequestParam(value = "filter", defaultValue = "week") String filter) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (currentUser.isFamilyMember()) {
+            throw new UnauthorizedException("Family members cannot access Alexa features");
+        }
         Long patientId = null;
         try {
             System.out.println("📥 Received Alexa task retrieval request");
@@ -351,7 +364,11 @@ public class AlexaController {
     @PostMapping("/calendarTasks/add")
     public ResponseEntity<?> addCalendarTask(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestBody Map<String, Object> alexaBody) {
+            @RequestBody Map<String, Object> alexaBody) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (currentUser.isFamilyMember()) {
+            throw new UnauthorizedException("Family members cannot access Alexa features");
+        }
         Long patientId = null;
         try {
             System.out.println("📥 Received Alexa task creation request: " + alexaBody);

@@ -16,7 +16,9 @@
     <name>CareConnect Backend</name>
     <description>Spring Boot REST API for CareConnect</description>
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <aws.sdk.version>2.31.75</aws.sdk.version>
         <!-- OWASP Dependency-Check: default to environment variable, override with -Dnvd.api.key=... -->
         <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
@@ -31,6 +33,7 @@
         <sonar.sources>src/main</sonar.sources>
         <sonar.tests>src/test</sonar.tests>
         <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -214,6 +217,9 @@
             <artifactId>jjwt-api</artifactId>
             <version>0.11.5</version>
         </dependency>
+
+        <!-- add jacoco plugin dependency for coverage reporting -->
+        <!-- none needed as it's a plugin, not a dependency -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
@@ -334,13 +340,6 @@
             <version>2.9.1</version>
         </dependency>
 
-        <!-- JSoup for HTML parsing (USPS email content) -->
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
-        </dependency>
-
         <!-- Spring Boot Actuator for monitoring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -361,11 +360,10 @@
         </dependency>
         
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.21.0</version>
         </dependency>
-
     </dependencies>
 
     <!-- Always-on build plugins -->
@@ -381,7 +379,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -395,6 +393,37 @@
                 </configuration>
             </plugin>
 
+             <!-- Surefire plugin for tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                </configuration>
+            </plugin>
+            <!-- JaCoCo Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Checkstyle plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
