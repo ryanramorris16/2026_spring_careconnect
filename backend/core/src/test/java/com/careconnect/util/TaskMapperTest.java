@@ -3,13 +3,11 @@ package com.careconnect.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-<<<<<<< team_c
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-=======
->>>>>>> main
 
 import java.util.List;
 
@@ -49,14 +47,6 @@ class TaskMapperTest {
     }
 
     @Test
-<<<<<<< team_c
-    @DisplayName("parseDays should throw RuntimeException for malformed JSON")
-    void testParseDays_malformedJson() throws Exception {
-        final String badJson = "[true, false, invalid, false]";
-
-        final RuntimeException ex = assertThrows(RuntimeException.class, () -> TaskMapper.parseDays(badJson));
-        assertTrue(ex.getMessage().contains("Failed to parse daysOfWeek JSON"));
-=======
     @DisplayName("parseDays should return null for malformed JSON")
     void testParseDays_malformedJson() {
         String badJson = "[true, false, invalid, false]";
@@ -97,7 +87,6 @@ class TaskMapperTest {
         assertNotNull(result);
         assertEquals(7, result.size());
         assertEquals(List.of(true, false, true, false, false, true, false), result);
->>>>>>> main
     }
 
     // --------------------------------------------------------------------------
@@ -126,7 +115,7 @@ class TaskMapperTest {
     void testSerializeDays_serializationFailure() throws Exception {
         final List<Boolean> badList = mock(List.class);
         when(badList.size()).thenReturn(1);
-        when(badList.iterator()).thenThrow(new RuntimeException("mock error"));
+        when(badList.get(anyInt())).thenThrow(new RuntimeException("mock error"));
 
         final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> TaskMapper.serializeDays(badList));
