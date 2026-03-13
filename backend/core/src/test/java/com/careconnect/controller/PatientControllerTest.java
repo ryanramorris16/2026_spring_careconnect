@@ -853,6 +853,49 @@ class PatientControllerTest {
             mockMvc.perform(delete("/v1/api/patients/10/medications/1").with(csrf()))
                     .andExpect(status().isForbidden());
         }
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Patient can mark medication as taken")
+        void patientMarksMedicationTaken() throws Exception {
+            mockCurrentUser(patientUser);
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(medicationService.updateMedicationLastTaken(eq(10L), eq(1L), any()))
+                    .thenReturn(sampleMedication());
+
+            mockMvc.perform(put("/v1/api/patients/10/medications/1/last-taken")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lastTaken\":\"2026-03-12T12:00:00Z\"}"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @WithMockUser(username = "patient@test.com")
+        @DisplayName("Patient can clear medication taken status")
+        void patientClearsMedicationTakenStatus() throws Exception {
+            mockCurrentUser(patientUser);
+            when(patientService.getPatientById(10L)).thenReturn(patient);
+            when(medicationService.clearMedicationLastTaken(10L, 1L))
+                    .thenReturn(sampleMedication());
+
+            mockMvc.perform(delete("/v1/api/patients/10/medications/1/last-taken")
+                            .with(csrf()))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @WithMockUser(username = "family@test.com")
+        @DisplayName("Family member cannot mark medication as taken")
+        void familyMemberCannotMarkMedicationTaken() throws Exception {
+            mockCurrentUser(familyUser);
+
+            mockMvc.perform(put("/v1/api/patients/10/medications/1/last-taken")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lastTaken\":\"2026-03-12T12:00:00Z\"}"))
+                    .andExpect(status().isForbidden());
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════════
