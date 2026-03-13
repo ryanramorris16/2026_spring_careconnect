@@ -16,6 +16,8 @@ class VisitInProgressPage extends StatefulWidget {
   final double? latitude;
   final double? longitude;
   final int? scheduledVisitId;
+  final String? noGpsReason;
+  final double? accuracyM;
   
   const VisitInProgressPage({
     super.key,
@@ -25,6 +27,8 @@ class VisitInProgressPage extends StatefulWidget {
     this.latitude,
     this.longitude,
     this.scheduledVisitId,
+    this.noGpsReason,
+    this.accuracyM,
   });
 
   @override
@@ -202,6 +206,12 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
     if (widget.latitude != null && widget.longitude != null) {
       queryParams['latitude'] = widget.latitude.toString();
       queryParams['longitude'] = widget.longitude.toString();
+    }
+    if (widget.accuracyM != null) {
+      queryParams['checkinAccuracyM'] = widget.accuracyM.toString();
+    }
+    if (widget.noGpsReason != null) {
+      queryParams['checkinNoGpsReason'] = widget.noGpsReason!;
     }
     
     if (widget.scheduledVisitId != null) {

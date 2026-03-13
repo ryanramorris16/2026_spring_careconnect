@@ -73,7 +73,9 @@ public class EvvLocationService {
             location.setLatitude(request.getCoords().getLat());
             location.setLongitude(request.getCoords().getLng());
             location.setAccuracyM(request.getCoords().getAccuracyM());
-            location.setAddressSnapshotJson(null); // Clear address snapshot for GPS
+            location.setAddressSnapshotJson(null);
+            location.setNoGpsReason(null);
+            location.setManualAddress(null);
             
         } else if (request.getType() == EvvLocationType.PATIENT_ADDRESS) {
             // Get patient from EVV record
@@ -97,11 +99,28 @@ public class EvvLocationService {
                     "Patient does not have an address on file");
             }
             
-            // Set address snapshot and clear GPS fields
+            // Set address snapshot and clear GPS/manual fields
             location.setAddressSnapshotJson(addressSnapshot);
             location.setLatitude(null);
             location.setLongitude(null);
             location.setAccuracyM(null);
+            location.setManualAddress(null);
+            // Federal EVV: store reason GPS was not used
+            location.setNoGpsReason(request.getNoGpsReason());
+
+        } else if (request.getType() == EvvLocationType.MANUAL) {
+            // MANUAL type: caregiver-entered address (e.g. community or facility visit)
+            if (request.getManualAddress() == null || request.getManualAddress().isBlank()) {
+                throw new AppException(HttpStatus.BAD_REQUEST,
+                    "MANUAL location requires a manualAddress");
+            }
+            location.setManualAddress(request.getManualAddress());
+            location.setAddressSnapshotJson(null);
+            location.setLatitude(null);
+            location.setLongitude(null);
+            location.setAccuracyM(null);
+            // Federal EVV: store reason GPS was not used
+            location.setNoGpsReason(request.getNoGpsReason());
         }
         
         // Validate before saving
@@ -165,6 +184,8 @@ public class EvvLocationService {
                 .longitude(location.getLongitude())
                 .accuracyM(location.getAccuracyM())
                 .addressSnapshot(location.getAddressSnapshotJson())
+                .noGpsReason(location.getNoGpsReason())
+                .manualAddress(location.getManualAddress())
                 .createdAt(location.getCreatedAt())
                 .build();
     }
