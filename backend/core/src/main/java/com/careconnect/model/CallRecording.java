@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
         @Index(name = "idx_call_recordings_call_id", columnList = "call_id"),
         @Index(name = "idx_call_recordings_user_id", columnList = "initiated_by_user_id"),
         @Index(name = "idx_call_recordings_status", columnList = "status"),
-        @Index(name = "idx_call_recordings_started_at", columnList = "started_at")
+        @Index(name = "idx_call_recordings_started_at", columnList = "started_at"),
+        @Index(name = "idx_call_recordings_concat_status", columnList = "concatenation_status")
 })
 public class CallRecording extends Auditable {
 

@@ -531,6 +531,30 @@ class _PatientDashboardState extends State<PatientDashboard> {
     return int.tryParse('$value');
   }
 
+  String _normalizedText(dynamic value) {
+    return (value ?? '').toString().trim().toLowerCase();
+  }
+
+  String _normalizedPhone(dynamic value) {
+    return (value ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  /// Strips common title prefixes (Dr., Mr., etc.) and credential suffixes
+  /// (MD, RN, DO, etc.) so that "Dr. Sarah Mitchell, MD" matches "Sarah Mitchell".
+  String _normalizedPersonName(dynamic value) {
+    return (value ?? '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll(
+          RegExp(r'\b(dr|mr|mrs|ms|prof|md|rn|do|np|pa|phd|dds|dvm|jd)\b\.?'),
+          '',
+        )
+        .replaceAll(RegExp(r'[^a-z\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   bool _toBool(dynamic value, {bool defaultValue = true}) {
     if (value is bool) return value;
     final raw = '$value'.trim().toLowerCase();
@@ -540,6 +564,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
   }
 
   void _syncProviderCallingPolicy() {
+    // Wait until both data sources are loaded before resolving.
+    // Prevents a flash of "calling disabled" when caregiver links arrive
+    // before the primary care provider finishes loading.
+    if (primaryCareProvider == null) return;
+
     if (_linkedCaregiverLinks.isEmpty) {
       _callableCaregiver = null;
       _providerVideoCallsEnabled = false;
@@ -562,7 +591,53 @@ class _PatientDashboardState extends State<PatientDashboard> {
       }
     }
 
-    selectedLink ??= _linkedCaregiverLinks.first;
+    selectedLink ??= () {
+      final providerEmail = _normalizedText(primaryCareProvider?['email']);
+      if (providerEmail.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkEmail = _normalizedText(
+            link['caregiverEmail'] ?? link['email'],
+          );
+          if (linkEmail.isNotEmpty && linkEmail == providerEmail) {
+            return link;
+          }
+        }
+      }
+
+      final providerPhone = _normalizedPhone(primaryCareProvider?['phone']);
+      if (providerPhone.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkPhone = _normalizedPhone(
+            link['caregiverPhone'] ?? link['phone'],
+          );
+          if (linkPhone.isNotEmpty && linkPhone == providerPhone) {
+            return link;
+          }
+        }
+      }
+
+      final providerName = _normalizedPersonName(primaryCareProvider?['name']);
+      if (providerName.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkName = _normalizedPersonName(
+            link['caregiverName'] ?? link['name'],
+          );
+          if (linkName.isNotEmpty && linkName == providerName) {
+            return link;
+          }
+        }
+      }
+
+      return null;
+    }();
+
+    if (selectedLink == null) {
+      _callableCaregiver = null;
+      _providerVideoCallsEnabled = false;
+      _providerCallPolicyMessage =
+          'Video calling is unavailable because your provider is not linked for calling.';
+      return;
+    }
 
     final normalizedCaregiverUserId = _toInt(selectedLink['caregiverUserId']);
     final enabled = _toBool(selectedLink['patientVideoCallsEnabled']);
@@ -954,18 +1029,33 @@ class _PatientDashboardState extends State<PatientDashboard> {
                   ...?_callableCaregiver,
                   'id': _callableCaregiver?['caregiverUserId'] ??
                       primaryCareProvider?['caregiverUserId'],
-                  'firstName': ((primaryCareProvider?['name'] ?? '')
+                  'name': (_callableCaregiver?['caregiverName'] ??
+                      primaryCareProvider?['name'] ??
+                      '')
+                    .toString(),
+                  'firstName': (((_callableCaregiver?['caregiverName'] ??
+                          primaryCareProvider?['name']) ??
+                        '')
                           .toString()
                           .split(' ')
                           .isNotEmpty)
-                      ? (primaryCareProvider?['name'] ?? '').toString().split(' ').first
+                    ? ((_callableCaregiver?['caregiverName'] ??
+                            primaryCareProvider?['name']) ??
+                          '')
+                        .toString()
+                        .split(' ')
+                        .first
                       : '',
-                  'lastName': ((primaryCareProvider?['name'] ?? '')
+                  'lastName': (((_callableCaregiver?['caregiverName'] ??
+                          primaryCareProvider?['name']) ??
+                        '')
                           .toString()
                           .split(' ')
                           .length >
                       1)
-                      ? (primaryCareProvider?['name'] ?? '')
+                    ? ((_callableCaregiver?['caregiverName'] ??
+                            primaryCareProvider?['name']) ??
+                          '')
                           .toString()
                           .split(' ')
                           .skip(1)
