@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -81,6 +84,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
     private VitalSampleService vitalSampleService;
     private final ScheduledExecutorService sseExecutor = Executors.newScheduledThreadPool(2);
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/dashboard")
     public DashboardDTO dashboard(
             @RequestParam Long patientId,
@@ -91,13 +97,17 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
         return analyticsService.getDashboard(patientId, Period.ofDays(days));
     }
 
-    // @GetMapping("/export/csv")
+    // @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+ @GetMapping("/export/csv")
     // public ExportLinkDTO exportCsv(@RequestParam Long patientId,
     //                                @RequestParam String from,
     //                                @RequestParam String to) {
     //     String path = "/exports/csv/" + patientId + "/" + from + "_" + to + ".csv";
     //     return analyticsService.createSignedExportLink(path);
     // }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/export/vitals/csv")
     public ResponseEntity<byte[]> exportVitalsCsv(
@@ -113,13 +123,17 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
             .body(csv);
     }
 
-    // @GetMapping("/export/pdf")
+    // @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+ @GetMapping("/export/pdf")
     // public ExportLinkDTO exportPdf(@RequestParam Long patientId,
     //                                @RequestParam String from,
     //                                @RequestParam String to) {
     //     String path = "/exports/pdf/" + patientId + "/" + from + "_" + to + ".pdf";
     //     return analyticsService.createSignedExportLink(path);
     // }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/export/vitals/pdf")
     public ResponseEntity<byte[]> exportVitalsPdf(
@@ -134,6 +148,9 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
             .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
             .body(pdf);
 }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping(value = "/live", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter live(@RequestParam Long patientId) throws UnauthorizedException {
@@ -169,6 +186,8 @@ private final FamilyMemberLinkRepository familyMemberPatientLinkRepository;
         });
         return emitter;
     }
+
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
     @PreDestroy
     public void shutdownSseExecutor() {
@@ -239,6 +258,8 @@ public ResponseEntity<?> vitals(@RequestParam Long patientId, @RequestParam int 
     /**
      * Create a new vital sample
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/vitals")
     public ResponseEntity<?> createVitalSample(@RequestBody VitalSampleDTO vitalSampleDTO) {
         try {
@@ -306,6 +327,8 @@ public ResponseEntity<?> vitals(@RequestParam Long patientId, @RequestParam int 
     /**
      * Update an existing vital sample
      */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/vitals/{id}")
     public ResponseEntity<?> updateVitalSample(@PathVariable Long id, @RequestBody VitalSampleDTO vitalSampleDTO) {
         try {

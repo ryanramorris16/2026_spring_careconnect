@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 
 import com.careconnect.dto.chat.AiRequest;
 import com.careconnect.dto.invoice.InvoiceDto;
@@ -54,6 +57,9 @@ public class InvoiceController {
 
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> list(
             @RequestParam(required = false) String search,
@@ -92,12 +98,18 @@ public class InvoiceController {
         return ResponseEntity.ok(body);
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/{id}")
     public ResponseEntity<InvoiceDto> get(@PathVariable String id) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdminOrCaregiver(currentUser);
         return service.get(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping
     public ResponseEntity<InvoiceDto> create(@RequestBody InvoiceDto dto) throws UnauthorizedException {
@@ -107,6 +119,9 @@ public class InvoiceController {
         return ResponseEntity.status(201).body(created);
     }
 
+    @RequirePermission(Permission.UPDATE_TASKS)
+
+
     @PutMapping("/{id}")
     public ResponseEntity<InvoiceDto> update(@PathVariable String id, @RequestBody InvoiceDto dto) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -115,6 +130,9 @@ public class InvoiceController {
         return ResponseEntity.ok(updated);
     }
 
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -122,6 +140,8 @@ public class InvoiceController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/{id}/payments")
     public ResponseEntity<InvoiceDto> addPayment(
             @PathVariable String id,
@@ -134,6 +154,9 @@ public class InvoiceController {
         InvoiceDto updated = service.recordPayment(id, dto, actor);
         return ResponseEntity.ok(updated);
     }
+
+    @RequirePermission(Permission.DELETE_PATIENTS)
+
 
     @DeleteMapping("/{id}/payments/{paymentId}")
     public ResponseEntity<InvoiceDto> removePayment(
@@ -148,6 +171,8 @@ public class InvoiceController {
     /**
      * Endpoint that uses Textract to get raw text and then an LLM to structure the data.
      */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping(value = "/extract-llm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> extractWithLlm(@RequestParam("files") List<MultipartFile> files) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();

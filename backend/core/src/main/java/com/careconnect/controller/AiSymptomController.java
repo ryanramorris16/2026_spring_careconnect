@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.AiSymptomDTO;
 import com.careconnect.model.Allergy;
 import com.careconnect.model.SymptomEntry;
@@ -34,6 +37,9 @@ public class AiSymptomController {
     private final SymptomEntryRepository symptomEntryRepository;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping(
             value = "/analyze/symptom",

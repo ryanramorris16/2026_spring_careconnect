@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.QuestionDTO;
 import com.careconnect.dto.QuestionUpsertDTO;
 import com.careconnect.model.User;
@@ -39,12 +42,16 @@ public class QuestionController {
     }
 
     /** GET /api/questions?active=true|false */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping
     public List<QuestionDTO> list(@RequestParam(required = false) Boolean active) {
         return questions.listQuestions(active);
     }
 
     /** GET /api/questions/{id} */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/{id}")
     public ResponseEntity<QuestionDTO> one(@PathVariable Long id) {
         return questions.getOne(id)
@@ -53,6 +60,8 @@ public class QuestionController {
     }
 
     /** POST /api/questions */
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping
     public ResponseEntity<QuestionDTO> create(@RequestBody QuestionUpsertDTO body) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -62,6 +71,8 @@ public class QuestionController {
     }
 
     /** PUT /api/questions/{id} */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PutMapping("/{id}")
     public ResponseEntity<QuestionDTO> update(@PathVariable Long id,
                                               @RequestBody QuestionUpsertDTO body) throws UnauthorizedException {
@@ -73,6 +84,8 @@ public class QuestionController {
     }
 
     /** PATCH /api/questions/{id}/active?active=true|false */
+    @RequirePermission(Permission.UPDATE_TASKS)
+
     @PatchMapping("/{id}/active")
     public ResponseEntity<QuestionDTO> setActive(@PathVariable Long id,
                                                  @RequestParam boolean active) throws UnauthorizedException {

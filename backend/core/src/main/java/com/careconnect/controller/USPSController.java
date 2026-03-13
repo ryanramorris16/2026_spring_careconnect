@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.USPSDigest;
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
@@ -22,6 +25,8 @@ import java.time.LocalDate;
 public class USPSController {
 
     private final USPSDigestService service;
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
     @Autowired
     private SecurityUtil securityUtil;

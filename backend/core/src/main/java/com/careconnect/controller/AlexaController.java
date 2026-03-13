@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.UnauthorizedException;
@@ -267,6 +270,8 @@ public class AlexaController {
     // ==============================================================
     // 1️⃣ Get Tasks (authenticated) - NOW USES TASKSERVICEV2
     // ==============================================================
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/calendarTasks/get")
     public ResponseEntity<?> getCalendarTasks(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
@@ -354,6 +359,8 @@ public class AlexaController {
     // ==============================================================
     // 2️⃣ Add New CareConnect Task (authenticated) - NOW USES TASKSERVICEV2
     // ==============================================================
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/calendarTasks/add")
     public ResponseEntity<?> addCalendarTask(
             @RequestHeader(value = "Authorization", required = false) String authHeader,

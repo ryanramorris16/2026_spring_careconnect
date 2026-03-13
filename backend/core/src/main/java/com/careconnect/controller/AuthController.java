@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.dto.*;
 import com.careconnect.exception.OAuthException;
 import com.careconnect.model.Patient;
@@ -64,6 +67,9 @@ public class AuthController {
     @Value("${frontend.base-url}")
     private String frontendBaseUrl; // --- Register new user ---
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/register")
     @Operation(summary = "📝 Register a new user", description = """
             Register a new patient or caregiver account.
@@ -109,6 +115,9 @@ public class AuthController {
         // Delegate to AuthService for registration & verification logic
         return authService.register(request);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/login")
     @Operation(summary = "Login user", description = """
@@ -157,6 +166,8 @@ public class AuthController {
     }
 
     // --- Email verification ---
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/verify/{token}")
     @Operation(summary = "✉️ Verify email address", description = "Verify user email address using verification token", tags = {
             "🔑 Authentication" }, security = {} // No authentication required for email verification
@@ -164,6 +175,9 @@ public class AuthController {
     public ResponseEntity<?> verify(@PathVariable String token) {
         return authService.verifyToken(token);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/resend-verification")
     @Operation(summary = "🔄 Resend verification email", description = "Resend verification email to an unverified user", tags = {
@@ -190,6 +204,9 @@ public class AuthController {
         return authService.resendVerificationEmail(email);
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/check-verification")
     @Operation(summary = "🔍 Check email verification status", description = "Check if an email address is verified without sending any emails", tags = {
             "🔑 Authentication" }, security = {} // No authentication required for checking verification status
@@ -208,6 +225,9 @@ public class AuthController {
         }
         return authService.checkEmailVerificationStatus(email);
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping("/password/forgot")
     @Operation(summary = "🔐 Request password reset", description = "Request a password reset link to be sent via email", tags = {
@@ -239,6 +259,9 @@ public class AuthController {
         }
     }
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/password/change")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
             HttpServletRequest httpRequest) {
@@ -256,6 +279,9 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/password/reset")
     public ResponseEntity<?> validateResetToken(@RequestParam String token) {
@@ -364,11 +390,17 @@ public class AuthController {
         return "oauth_failed";
     }
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
     @GetMapping("/sso/google")
     public void googleLogin(HttpServletResponse response) throws IOException {
         String googleAuthUrl = authService.buildGoogleOAuthUrl();
         response.sendRedirect(googleAuthUrl);
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
 
     @GetMapping("/sso/google/callback")
     public void googleCallback(
@@ -428,6 +460,9 @@ public class AuthController {
     @Autowired
     private AlexaCodeStoreService alexaCodeStore;
 
+    @RequirePermission(Permission.CREATE_TASKS)
+
+
     @PostMapping("/sso/alexa/code")
     public ResponseEntity<?> generateAlexaCode(HttpServletRequest request) {
         String token = extractTokenFromRequest(request);
@@ -446,6 +481,9 @@ public class AuthController {
         String code = alexaCodeStore.generateCode(token);
         return ResponseEntity.ok(Map.of("code", code));
     }
+
+    @RequirePermission(Permission.CREATE_TASKS)
+
 
     @PostMapping(value = "/sso/alexa/token", consumes = "application/x-www-form-urlencoded")
     public ResponseEntity<?> exchangeAlexaToken(
@@ -650,42 +688,89 @@ public class AuthController {
                 .body(Map.of("error", "unsupported_grant_type"));
     }
 
-    @PostMapping("/sso/alexa/unlink")
-    public ResponseEntity<?> unlinkAlexaAccount(HttpServletRequest request) {
-        try {
-            String token = extractTokenFromRequest(request);
-            if (token == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "missing_token"));
-            }
+@RequirePermission(Permission.CREATE_TASKS)
 
-            String email = jwt.getEmailFromToken(token);
-            Optional<User> userOpt = userRepository.findByEmail(email);
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "user_not_found"));
-            }
 
-            User user = userOpt.get();
-            Optional<Patient> patientOpt = patientRepository.findByUser(user);
-            if (patientOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "patient_not_found"));
-            }
-
-            Patient patient = patientOpt.get();
-            patient.setAlexaLinked(false);
-            patient.setAlexaRefreshToken(null);
-            patient.setAlexaRefreshTokenExpiresAt(null);
-            patient.setAlexaRefreshTokenCreatedAt(null);
-            patientRepository.save(patient);
-
-            System.out.println("❌ Alexa unlinked for patient " + patient.getId());
-            return ResponseEntity.ok(Map.of("message", "Alexa account unlinked successfully."));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+@PostMapping("/sso/alexa/unlink")
+public ResponseEntity<?> unlinkAlexaAccount(HttpServletRequest request) {
+    try {
+        String token = extractTokenFromRequest(request);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "missing_token"));
         }
-    }
 
+        String email = jwt.getEmailFromToken(token);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "user_not_found"));
+        }
+
+        User user = userOpt.get();
+        Optional<Patient> patientOpt = patientRepository.findByUser(user);
+        if (patientOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "patient_not_found"));
+        }
+
+        Patient patient = patientOpt.get();
+        patient.setAlexaLinked(false);
+        patient.setAlexaRefreshToken(null);
+        patient.setAlexaRefreshTokenExpiresAt(null);
+        patient.setAlexaRefreshTokenCreatedAt(null);
+        patientRepository.save(patient);
+
+        System.out.println("❌ Alexa unlinked for patient " + patient.getId());
+        return ResponseEntity.ok(Map.of("message", "Alexa account unlinked successfully."));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+    }
+}
+
+@RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
+
+@GetMapping("/me")
+@Operation(
+    summary = "Get current authenticated user",
+    description = "Returns the currently logged-in user's profile information",
+    security = @SecurityRequirement(name = "bearerAuth")
+)
+public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
+
+    try {
+
+        String token = extractTokenFromRequest(request);
+
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+        }
+
+        String email = jwt.getEmailFromToken(token);
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "User not found"));
+        }
+
+        User user = userOpt.get();
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "role", user.getRole()
+        ));
+
+    } catch (Exception e) {
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Invalid token"));
+
+    }
 }
