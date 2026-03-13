@@ -1,5 +1,8 @@
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:care_connect_app/widgets/email_verification_dialog.dart';
+import 'package:care_connect_app/widgets/address_autocomplete_field.dart';
+import 'package:care_connect_app/services/google_places_service.dart';
+import 'package:care_connect_app/config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
@@ -243,23 +246,30 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
       if (!mounted) return;
 
-      // If skipEmailVerification is true, just close the modal and return true
-      if (widget.skipEmailVerification) {
-        Navigator.of(context).pop(true);
-        return;
-      }
+      // 🚫 EMAIL VERIFICATION TEMPORARILY DISABLED
+      // WebSocket is disabled so email verification cannot complete.
+      // For now, navigate directly to subscription tiers page instead.
+      // TODO: Re-enable email verification once WebSocket is working
+      //
+      // Original email verification code commented out:
+      //   if (widget.skipEmailVerification) {
+      //     Navigator.of(context).pop(true);
+      //     return;
+      //   }
+      //   final verified = await showDialog<bool>(
+      //     context: context,
+      //     barrierDismissible: false,
+      //     builder: (context) =>
+      //         EmailVerificationDialog(email: _emailController.text),
+      //   );
+      //   if (verified == true && mounted) {
+      //     context.go('/login');
+      //   }
 
-      // Show email verification dialog and wait for result
-      final verified = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) =>
-            EmailVerificationDialog(email: _emailController.text),
-      );
-
-      // If email was verified, navigate to login screen
-      if (verified == true && mounted) {
-        context.go('/login');
+      // Navigate to subscription tiers selection page instead
+      if (mounted) {
+        final email = _emailController.text;
+        context.go('/select-subscription-tier', extra: {'email': email});
       }
     } catch (e) {
       if (mounted) {
@@ -718,10 +728,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ),
           const SizedBox(height: 16),
 
-          _buildTextFormField(
+          AddressAutocompleteField(
             controller: _addressLine1Controller,
             label: 'Address Line 1',
+            hint: 'Start typing your address...',
             isRequired: true,
+            keyboardType: TextInputType.streetAddress,
+            googlePlacesApiKey: AppConfig.getGooglePlacesApiKey(),
+            onAddressSelected: (ParsedAddress address) {
+              setState(() {
+                _addressLine1Controller.text = address.street;
+                _addressLine2Controller.text = '';
+                _cityController.text = address.city;
+                _stateController.text = address.state;
+                _zipController.text = address.zip;
+              });
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Address line 1 is required';

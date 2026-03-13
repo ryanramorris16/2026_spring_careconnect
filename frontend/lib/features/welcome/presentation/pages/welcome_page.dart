@@ -87,38 +87,39 @@ class _WelcomePageState extends State<WelcomePage> {
               horizontal: isMobile ? 24 : 48,
               vertical: isMobile ? 32 : 48,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                            Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => LanguagePicker.show(context),
-                      icon: const Icon(Icons.language, color: Colors.white),
-                      label: Text(
-                        currentLangLabel,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: isMobile ? 12 : 14,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => LanguagePicker.show(context),
+                        icon: const Icon(Icons.language, color: Colors.white),
+                        label: Text(
+                          currentLangLabel,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: isMobile ? 12 : 14,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 10 : 12,
+                            vertical: isMobile ? 6 : 8,
+                          ),
+                          backgroundColor: Colors.white.withValues(alpha: 0.12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                          ),
                         ),
                       ),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 10 : 12,
-                          vertical: isMobile ? 6 : 8,
-                        ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          side: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
+                    ],
+                  ),
+                  SizedBox(height: isMobile ? 32 : 48),
 
                 // Logo container
                 Container(
@@ -302,24 +303,25 @@ class _WelcomePageState extends State<WelcomePage> {
                       ],
                     ),
                   ),
-                ],
+                  ],
 
-                const Spacer(),
+                  SizedBox(height: isMobile ? 32 : 48),
 
-                // Compliance badges at bottom
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 8,
-                    children: [
-                      _buildComplianceBadge(t.welcomeComplianceBadgeHipaa, isMobile),
-                      _buildComplianceBadge(t.welcomeComplianceBadgeWcag, isMobile),
-                      _buildComplianceBadge(t.welcomeComplianceBadgeSecure, isMobile),
-                    ],
+                  // Compliance badges at bottom
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 8,
+                      children: [
+                        _buildComplianceBadge(t.welcomeComplianceBadgeHipaa, isMobile),
+                        _buildComplianceBadge(t.welcomeComplianceBadgeWcag, isMobile),
+                        _buildComplianceBadge(t.welcomeComplianceBadgeSecure, isMobile),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -47,6 +47,9 @@ import '../../features/payments/models/package_model.dart';
 import '../../features/social/presentation/pages/main_feed_screen.dart';
 import '../../features/gamification/presentation/pages/gamification_screen.dart';
 import '../../features/payments/presentation/pages/stripe_checkout_page.dart';
+import '../../features/payments/presentation/pages/native_billing_page.dart';
+import '../../features/payments/presentation/pages/web_pay_page.dart';
+import '../../features/payments/presentation/pages/subscription_tier_selection_page.dart';
 import '../../features/analytics/analytics_page.dart';
 import '../../features/payments/presentation/pages/payment_success_page.dart';
 import '../../features/payments/presentation/pages/payment_cancel_page.dart';
@@ -404,6 +407,34 @@ final GoRouter appRouter = GoRouter(
           package: pkg,
           userId: userId,
           stripeCustomerId: stripeCustomerId,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/native-billing',
+      builder: (context, state) {
+        return const NativeBillingPage();
+      },
+    ),
+    GoRoute(
+      path: '/select-subscription-tier',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String?;
+        return SubscriptionTierSelectionPage(email: email);
+      },
+    ),
+    GoRoute(
+      path: '/web-pay',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final tierId = extra?['tierId'] as int?;
+        final tier = extra?['tier'] as String?;
+        final email = extra?['email'] as String?;
+        return WebPayPage(
+          tierId: tierId ?? 0,
+          tier: tier,
+          email: email,
         );
       },
     ),

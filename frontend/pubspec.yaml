@@ -116,6 +116,8 @@ dependencies:
   http: ^1.5.0
   universal_html: ^2.2.4
   flutter_secure_storage: ^9.2.4
+  in_app_purchase: ^3.2.3
+  pay: ^1.0.9
   # Flutter SDK
   flutter:
     sdk: flutter
@@ -194,11 +196,11 @@ flutter:
   generate: true  # enables gen-l10n on build
   uses-material-design: true
   assets:
+    - .env
     - assets/images/banner.png
     - assets/images/app_icon.png
     - assets/sherpa-onnx-streaming-zipformer-en-2023-06-26/
     - assets/sherpa-onnx-pyannote-segmentation-3-0/
-    - assets/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
     - assets/sherpa-onnx-zipformer-gigaspeech-2023-12-12/
     - assets/images/CareConnectLogo.png
     - assets/images/CareConnectLogo.svg

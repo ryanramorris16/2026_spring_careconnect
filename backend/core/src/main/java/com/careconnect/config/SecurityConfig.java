@@ -59,6 +59,9 @@ public class SecurityConfig {
                         "/v1/api/users/setup-password",
                         "/v1/api/email-test/**",  // Allow email testing endpoints
                         "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
+                        "/v1/api/billing/quote",  // Public billing quote endpoint (for price calculation)
+                        "/v1/api/billing/pay/**",  // Public payment processing endpoints (Google Pay, etc)
+                        "/v1/api/address/**",  // Public address autocomplete endpoints (for address suggestions)
                         "/oauth/**"// Permit OAuth paths
                 ).permitAll()
 
