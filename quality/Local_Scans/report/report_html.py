@@ -34,10 +34,17 @@ from html import escape
 
 SEVERITY_COLORS = {
     "critical": "#7c0000",
-    "high": "#c0392b",
-    "medium": "#e67e22",
-    "low": "#f1c40f",
-    "info": "#3498db",
+    "high":     "#c0392b",
+    "medium":   "#e67e22",
+    "low":      "#f1c40f",
+    "info":     "#3498db",
+}
+
+CATEGORY_MAP = {
+    "Flutter Analyze": "SAST — Flutter",
+    "Checkstyle":      "SAST — Java",
+    "PMD":             "SAST — Java",
+    "SpotBugs":        "SAST — Java",
 }
 
 CATEGORY_MAP = {
