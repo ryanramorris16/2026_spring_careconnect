@@ -61,11 +61,12 @@ class _SymptomTrackerScreenState extends State<SymptomTrackerScreen> {
     });
 
     if (severity >= 7) {
-      // Placeholder for real alert system
+      debugPrint('ALERT TRIGGERED: $symptom seeverity ${severity.toInt()}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          backgroundColor: Colors.red.shade700,
           content: Text(
-            'Alert: Symptom "$symptom" is severe and caregiver has been notified.',
+            'High sevirity symmptom recorded. Care team notificaiton triggered.',
           ),
         ),
       );

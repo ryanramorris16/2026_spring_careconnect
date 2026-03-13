@@ -21,7 +21,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
 
   void _loadMealQuestions() {
     // Placeholder for backend call in the future.
-    // Will replace this with the fetched set of questions from backend when sorted
+    // Will replace this with the fetched set of questions from backend when sorted.
     _mealQuestions = [
       'What did you eat for breakfast?',
       'What did you eat for lunch?',
@@ -35,17 +35,17 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
     }
   }
 
-  void _submitMealLog() {
+  Future<void> _submitMealLog() async {
     final now = DateTime.now();
     final log = {
       'timestamp': now.toIso8601String(),
       'responses': _responses.map((q, c) => MapEntry(q, c.text.trim())),
     };
+//Simulated perssistance unitil backend meal logging API become valuable.
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    // Placeholder for saving to backend.
-    // Will replace this with real API call in the future when backend is sorted
-    debugPrint('Meal log submitted: $log');
-
+    debugPrint('Meal log saved locally: : $log');
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Meal log submitted successfully.')),
     );
