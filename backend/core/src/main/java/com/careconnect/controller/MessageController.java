@@ -88,8 +88,10 @@ public class MessageController {
                         peerId,
                         u.getName(),
                         u.getEmail(),
+                        u.getRole().toString(),
                         m.getContent(),
-                        m.getTimestamp()
+                        m.getTimestamp(),
+                        !m.isRead()
                 );
                 map.put(peerId, dto);
             }
