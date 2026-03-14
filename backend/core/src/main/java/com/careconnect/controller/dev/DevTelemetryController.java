@@ -65,14 +65,8 @@ public class DevTelemetryController {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
-<<<<<<<<< Temporary merge branch 1
         if (o == null) return Collections.emptyMap();
         if (o instanceof Map<?, ?> m) return (Map<String, Object>) m;
         return Collections.emptyMap();
-=========
-        if (o == null) return null;
-        if (o instanceof Map) return (Map<String, Object>) o;
-        return null;
->>>>>>>>> Temporary merge branch 2
     }
 }
