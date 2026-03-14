@@ -10,6 +10,8 @@ import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
 import '../services/api_service.dart';
 import '../services/local_db/offline_sync_service.dart';
+import '../services/api_service.dart';
+import '../services/local_db/offline_sync_service.dart';
 import '../features/telemetry/telemetry.dart';
 import '../services/call_notification_service.dart';
 import '../widgets/hybrid_video_call_widget.dart';
@@ -189,7 +191,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             _failedRequestIds.add(item.id);
             // Keep failed item visible and move it to the end for later retry.
             if (_pendingSyncQueue.length > 1) {
-              final nextQueue = List<OfflineSyncQueueItem>.from(_pendingSyncQueue);
+              final nextQueue =
+                  List<OfflineSyncQueueItem>.from(_pendingSyncQueue);
               nextQueue.removeAt(0);
               nextQueue.add(item);
               _pendingSyncQueue = nextQueue;
@@ -304,14 +307,25 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  String? _telemetryScreenForNavItem(BottomNavItem item) {
-    final r = item.routeName.toLowerCase();
-    if (r == 'messages') return 'messages';
-    if (r == 'health') return 'health';
+  String _normalizeTelemetryValue(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+  }
 
-    final k = item.labelKey?.toLowerCase();
-    if (k == 'nav_messages') return 'messages';
-    if (k == 'nav_health') return 'health';
+  String? _telemetryScreenForNavItem(BottomNavItem item) {
+    final routeName = item.routeName.trim();
+    if (routeName.isNotEmpty) {
+      return _normalizeTelemetryValue(routeName);
+    }
+
+    final labelKey = item.labelKey?.trim();
+    if (labelKey != null && labelKey.isNotEmpty) {
+      final cleaned = labelKey.replaceFirst(RegExp(r'^nav_'), '');
+      return _normalizeTelemetryValue(cleaned);
+    }
 
     return null;
   }
@@ -319,12 +333,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   /// Handle bottom nav bar item tap.
   void _onItemTapped(int index) {
     final navItem = _navItems[index];
-
     final screenName = _telemetryScreenForNavItem(navItem);
+
     if (screenName != null && index != _selectedIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         try {
-          await Telemetry.event('screen_view', {'screen': screenName});
+          await Telemetry.event('button_tap', {
+            'screen': 'bottom_nav',
+            'button_name': screenName,
+          });
+
+          await Telemetry.event('screen_view', {
+            'screen': screenName,
+          });
         } catch (_) {}
       });
     }
@@ -332,7 +353,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     // Check if onPress callback exists and call it
     if (navItem.onPress != null) {
       navItem.onPress!(context, (context) => Container());
-      // Don't change screen if only onPress is present
       return;
     }
 
@@ -891,11 +911,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     return Material(
       color: Colors.blue.shade600,
       child: InkWell(
-        onTap: _openQueuedSyncSheet,
-        child: SizedBox(
+        onTap: () async {
+          try {
+            await Telemetry.event('button_tap', {
+              'screen': 'queued_sync_banner',
+              'button_name': 'open_queue_sheet',
+            });
+          } catch (_) {}
+
+          _openQueuedSyncSheet();
+        },
+        child: const SizedBox(
           height: 44,
           child: Center(
-            child: const SizedBox(
+            child: SizedBox(
               width: 24,
               height: 24,
               child: _SpinningSyncIcon(
@@ -960,8 +989,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                                 final status = isSyncing
                                     ? 'Syncing now'
                                     : isFailed
-                                    ? 'Failed (will retry)'
-                                    : 'Queued';
+                                        ? 'Failed (will retry)'
+                                        : 'Queued';
 
                                 return ListTile(
                                   leading: CircleAvatar(
@@ -1003,9 +1032,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       return;
     }
     setState(() {
-      _pendingSyncQueue = _pendingSyncQueue
-          .where((queued) => queued.id != item.id)
-          .toList();
+      _pendingSyncQueue =
+          _pendingSyncQueue.where((queued) => queued.id != item.id).toList();
       _failedRequestIds.remove(item.id);
     });
   }
@@ -1035,7 +1063,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       actions: [
         TextButton(
-          onPressed: () => _onItemTapped(_navItems.length - 1),
+          onPressed: () async {
+            try {
+              await Telemetry.event('button_tap', {
+                'screen': 'offline_banner',
+                'button_name': 'open_settings',
+              });
+            } catch (_) {}
+
+            _onItemTapped(_navItems.length - 1);
+          },
           child: Icon(
             Icons.settings,
             color: Colors.amber.shade900,

@@ -170,7 +170,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
       _pastEvvVisits = result.content
           .where((r) => r.patient?.id == patientId)
-          .toList();
+          .toList();
 
       // Try caregiver scheduled visits endpoint and filter by patient
       try {
@@ -179,7 +179,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
         if (caregivers.isNotEmpty) {
           caregiverId =
               (caregivers.first['id'] ?? caregivers.first['caregiverId'])
-                  as int?;
+                  as int?;
         } else {
           final cgRes = await http.get(
             Uri.parse('${ApiConstants.baseUrl}patients/$patientId/caregivers'),
@@ -207,7 +207,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
           ).toIso8601String().split('T')[0];
           final url = Uri.parse(
             '${ApiConstants.baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
-          );
+          );
           final res = await http.get(url, headers: headers);
           if (res.statusCode == 200) {
             final List<dynamic> data = jsonDecode(res.body);
@@ -218,7 +218,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               }
               if (m.containsKey('patient_id') && '${m['patient_id']}' == target) {
                 return true;
-              }
+              }
               final p = m['patient'];
               if (p is Map && ('${p['id']}' == target)) {
                 return true;
@@ -276,7 +276,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               if (id != null && seenIds.contains(id)) continue;
               if (id != null) seenIds.add(id);
               final service =
-                  raw['serviceType'] ??
+                  raw['serviceType'] ??
                   raw['service_type'] ??
                   raw['service'] ??
                   'Service';
@@ -290,7 +290,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               (a, b) => DateTime.parse(
                 a['scheduledTime'],
               ).compareTo(DateTime.parse(b['scheduledTime'])),
-            );
+            );
             _upcomingEvvAppointments = normalized;
           }
         }
@@ -1139,311 +1139,319 @@ class _PatientDashboardState extends State<PatientDashboard> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: theme.colorScheme.error.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error Loading Dashboard',
-                    style: theme.textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      error!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.6,
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: theme.colorScheme.error.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error Loading Dashboard',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
+                        onPressed: _loadDashboardData,
+                      ),
+                    ],
+                  ),
+                )
+              : SafeArea(
+                  child: RefreshIndicator(
+                    onRefresh: _loadDashboardData,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+
+                          // Responsive layout for tablets
+                          if (isTablet) ...[
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left Column
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        // Offline notification
+                                        if (_isOffline)
+                                          OfflineNotification(
+                                            lastSynced: _lastSynced,
+                                          ),
+
+                                        // Alert notifications
+                                        ...activeAlerts
+                                            .where(
+                                              (alert) =>
+                                                  !dismissedAlertIds.contains(
+                                                _alertId(alert),
+                                              ),
+                                            )
+                                            .map(
+                                              (alert) => AlertNotification(
+                                                type: alert.type,
+                                                message: alert.message,
+                                                onDismiss: () {
+                                                  setState(() {
+                                                    dismissedAlertIds.add(
+                                                      _alertId(alert),
+                                                    );
+                                                  });
+                                                },
+                                              ),
+                                            ),
+
+                                        // Current Mood
+                                        CurrentMoodWidget(
+                                          moodScore: currentMoodScore,
+                                          moodLabel: currentMoodLabel,
+                                          moodTags: moodTags,
+                                          date: DateTime.now(),
+                                          onAverageMoodChanged:
+                                              _handleAverageMoodChanged,
+                                        ),
+
+                                        // Recent Check-ins
+                                        if (recentCheckIns.isNotEmpty)
+                                          RecentCheckInsWidget(
+                                            checkIns: recentCheckIns,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Right Column
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        // Medication Reminders
+                                        MedicationRemindersWidget(
+                                          reminders: medicationReminders,
+                                          onMarkTaken: (medicationId) {
+                                            _handleMedicationAction(
+                                              medicationId,
+                                              true,
+                                            );
+                                          },
+                                          onMarkMissed: (medicationId) {
+                                            _handleMedicationAction(
+                                              medicationId,
+                                              false,
+                                            );
+                                          },
+                                        ),
+
+                                        // Upcoming EVV & Past EVV
+                                        const SizedBox(height: 12),
+                                        _buildUpcomingEvvSection(theme),
+                                        const SizedBox(height: 12),
+                                        _buildPastEvvSection(theme),
+
+                                        // Primary Care Provider
+                                        if (primaryCareProvider != null)
+                                          PrimaryCareProviderWidget(
+                                            providerName:
+                                                primaryCareProvider!['name'],
+                                            specialty: primaryCareProvider![
+                                                'specialty'],
+                                            organization: primaryCareProvider![
+                                                'organization'],
+                                            phone:
+                                                primaryCareProvider!['phone'],
+                                            email:
+                                                primaryCareProvider!['email'],
+                                            nextAppointment:
+                                                primaryCareProvider![
+                                                    'nextAppointment'],
+                                            appointmentType:
+                                                primaryCareProvider![
+                                                    'appointmentType'],
+                                            onContactProvider:
+                                                _handleContactProvider,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            // Mobile layout (single column)
+                            // Offline notification
+                            if (_isOffline)
+                              OfflineNotification(lastSynced: _lastSynced),
+
+                            // Alert notifications
+                            ...activeAlerts
+                                .where(
+                                  (alert) => !dismissedAlertIds.contains(
+                                    _alertId(alert),
+                                  ),
+                                )
+                                .map(
+                                  (alert) => AlertNotification(
+                                    type: alert.type,
+                                    message: alert.message,
+                                    onDismiss: () {
+                                      setState(() {
+                                        dismissedAlertIds.add(
+                                          _alertId(alert),
+                                        );
+                                      });
+                                    },
+                                  ),
+                                ),
+
+                            // Current Mood Widget
+                            CurrentMoodWidget(
+                              moodScore: currentMoodScore,
+                              moodLabel: currentMoodLabel,
+                              moodTags: moodTags,
+                              date: DateTime.now(),
+                              onAverageMoodChanged: _handleAverageMoodChanged,
+                            ),
+
+                            // Recent Check-Ins
+                            if (recentCheckIns.isNotEmpty)
+                              RecentCheckInsWidget(checkIns: recentCheckIns),
+
+                            // Medication Reminders
+                            MedicationRemindersWidget(
+                              reminders: medicationReminders,
+                              onMarkTaken: (medicationId) {
+                                _handleMedicationAction(medicationId, true);
+                              },
+                              onMarkMissed: (medicationId) {
+                                _handleMedicationAction(medicationId, false);
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+                            _buildUpcomingEvvSection(theme),
+                            const SizedBox(height: 12),
+                            _buildPastEvvSection(theme),
+
+                            // Primary Care Provider
+                            if (primaryCareProvider != null)
+                              PrimaryCareProviderWidget(
+                                providerName: primaryCareProvider!['name'],
+                                specialty: primaryCareProvider!['specialty'],
+                                organization:
+                                    primaryCareProvider!['organization'],
+                                phone: primaryCareProvider!['phone'],
+                                email: primaryCareProvider!['email'],
+                                nextAppointment:
+                                    primaryCareProvider!['nextAppointment'],
+                                appointmentType:
+                                    primaryCareProvider!['appointmentType'],
+                                onContactProvider: _handleContactProvider,
+                              ),
+                          ],
+
+                          // Emergency Actions
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: Column(
+                              children: [
+                                // SOS Emergency Button
+                                ElevatedButton.icon(
+                                  icon: const Icon(Icons.sos),
+                                  label: const Text('SOS Emergency'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.error,
+                                    foregroundColor: theme.colorScheme.onError,
+                                    minimumSize: const Size.fromHeight(48),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    CallIntegrationHelper.showSOSDialog(
+                                      context: context,
+                                      currentPatient: patient,
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 12),
+                                // Send SMS Notification Button
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.sms),
+                                  label: const Text('Send SMS to Caregiver'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: theme.colorScheme.primary,
+                                    side: BorderSide(
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    minimumSize: const Size.fromHeight(48),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    final caregiver = caregivers.firstWhere(
+                                      (c) =>
+                                          c['phone'] != null &&
+                                          c['phone'].toString().isNotEmpty,
+                                      orElse: () => {},
+                                    );
+
+                                    if (caregiver.isNotEmpty && user != null) {
+                                      _showSendMessageDialog(
+                                        context,
+                                        caregiver,
+                                        user,
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                            'No caregiver with phone number found.',
+                                          ),
+                                          backgroundColor:
+                                              theme.colorScheme.error,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 100), // Bottom padding for FAB
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                    onPressed: _loadDashboardData,
-                  ),
-                ],
-              ),
-            )
-          : SafeArea(
-              child: RefreshIndicator(
-                onRefresh: _loadDashboardData,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-
-                      // Responsive layout for tablets
-                      if (isTablet) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left Column
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    // Offline notification
-                                    if (_isOffline)
-                                      OfflineNotification(
-                                        lastSynced: _lastSynced,
-                                      ),
-
-                                    // Alert notifications
-                                    ...activeAlerts
-                                        .where(
-                                          (alert) =>
-                                              !dismissedAlertIds.contains(
-                                                _alertId(alert),
-                                              ),
-                                        )
-                                        .map(
-                                          (alert) => AlertNotification(
-                                            type: alert.type,
-                                            message: alert.message,
-                                            onDismiss: () {
-                                              setState(() {
-                                                dismissedAlertIds.add(
-                                                  _alertId(alert),
-                                                );
-                                              });
-                                            },
-                                          ),
-                                        ),
-
-                                    // Current Mood
-                                    CurrentMoodWidget(
-                                      moodScore: currentMoodScore,
-                                      moodLabel: currentMoodLabel,
-                                      moodTags: moodTags,
-                                      date: DateTime.now(),
-                                      onAverageMoodChanged:
-                                          _handleAverageMoodChanged,
-                                    ),
-
-                                    // Recent Check-ins
-                                    if (recentCheckIns.isNotEmpty)
-                                      RecentCheckInsWidget(
-                                        checkIns: recentCheckIns,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Right Column
-                              Expanded(
-                                child: Column(
-                                  children: [
-                                    // Medication Reminders
-                                    MedicationRemindersWidget(
-                                      reminders: medicationReminders,
-                                      onMarkTaken: (medicationId) {
-                                        _handleMedicationAction(
-                                          medicationId,
-                                          true,
-                                        );
-                                      },
-                                      onMarkMissed: (medicationId) {
-                                        _handleMedicationAction(
-                                          medicationId,
-                                          false,
-                                        );
-                                      },
-                                    ),
-
-                                    // Upcoming EVV & Past EVV
-                                    const SizedBox(height: 12),
-                                    _buildUpcomingEvvSection(theme),
-                                    const SizedBox(height: 12),
-                                    _buildPastEvvSection(theme),
-
-                                    // Primary Care Provider
-                                    if (primaryCareProvider != null)
-                                      PrimaryCareProviderWidget(
-                                        providerName:
-                                            primaryCareProvider!['name'],
-                                        specialty:
-                                            primaryCareProvider!['specialty'],
-                                        organization:
-                                            primaryCareProvider!['organization'],
-                                        phone: primaryCareProvider!['phone'],
-                                        email: primaryCareProvider!['email'],
-                                        nextAppointment:
-                                            primaryCareProvider!['nextAppointment'],
-                                        appointmentType:
-                                            primaryCareProvider!['appointmentType'],
-                                        onContactProvider:
-                                            _handleContactProvider,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else ...[
-                        // Mobile layout (single column)
-                        // Offline notification
-                        if (_isOffline)
-                          OfflineNotification(lastSynced: _lastSynced),
-
-                        // Alert notifications
-                        ...activeAlerts
-                            .where(
-                              (alert) => !dismissedAlertIds.contains(
-                                _alertId(alert),
-                              ),
-                            )
-                            .map(
-                              (alert) => AlertNotification(
-                                type: alert.type,
-                                message: alert.message,
-                                onDismiss: () {
-                                  setState(() {
-                                    dismissedAlertIds.add(
-                                      _alertId(alert),
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-
-                        // Current Mood Widget
-                        CurrentMoodWidget(
-                          moodScore: currentMoodScore,
-                          moodLabel: currentMoodLabel,
-                          moodTags: moodTags,
-                          date: DateTime.now(),
-                          onAverageMoodChanged: _handleAverageMoodChanged,
-                        ),
-
-                        // Recent Check-Ins
-                        if (recentCheckIns.isNotEmpty)
-                          RecentCheckInsWidget(checkIns: recentCheckIns),
-
-                        // Medication Reminders
-                        MedicationRemindersWidget(
-                          reminders: medicationReminders,
-                          onMarkTaken: (medicationId) {
-                            _handleMedicationAction(medicationId, true);
-                          },
-                          onMarkMissed: (medicationId) {
-                            _handleMedicationAction(medicationId, false);
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-                        _buildUpcomingEvvSection(theme),
-                        const SizedBox(height: 12),
-                        _buildPastEvvSection(theme),
-
-                        // Primary Care Provider
-                        if (primaryCareProvider != null)
-                          PrimaryCareProviderWidget(
-                            providerName: primaryCareProvider!['name'],
-                            specialty: primaryCareProvider!['specialty'],
-                            organization: primaryCareProvider!['organization'],
-                            phone: primaryCareProvider!['phone'],
-                            email: primaryCareProvider!['email'],
-                            nextAppointment:
-                                primaryCareProvider!['nextAppointment'],
-                            appointmentType:
-                                primaryCareProvider!['appointmentType'],
-                            onContactProvider: _handleContactProvider,
-                          ),
-                      ],
-
-                      // Emergency Actions
-                      Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Column(
-                          children: [
-                            // SOS Emergency Button
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.sos),
-                              label: const Text('SOS Emergency'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.error,
-                                foregroundColor: theme.colorScheme.onError,
-                                minimumSize: const Size.fromHeight(48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: () {
-                                CallIntegrationHelper.showSOSDialog(
-                                  context: context,
-                                  currentPatient: patient,
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            // Send SMS Notification Button
-                            OutlinedButton.icon(
-                              icon: const Icon(Icons.sms),
-                              label: const Text('Send SMS to Caregiver'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide(
-                                  color: theme.colorScheme.primary,
-                                ),
-                                minimumSize: const Size.fromHeight(48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: () {
-                                final caregiver = caregivers.firstWhere(
-                                  (c) =>
-                                      c['phone'] != null &&
-                                      c['phone'].toString().isNotEmpty,
-                                  orElse: () => {},
-                                );
-
-                                if (caregiver.isNotEmpty && user != null) {
-                                  _showSendMessageDialog(
-                                    context,
-                                    caregiver,
-                                    user,
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                        'No caregiver with phone number found.',
-                                      ),
-                                      backgroundColor: theme.colorScheme.error,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 100), // Bottom padding for FAB
-                    ],
-                  ),
                 ),
-              ),
-            ),
     );
   }
 
@@ -1567,7 +1575,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
               IconButton(
                 onPressed: _loadEvvSections,
                 icon: const Icon(Icons.refresh),
-              ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1588,7 +1596,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 ),
                 subtitle: Text(
                   '${when.month}/${when.day}/${when.year} • ${when.hour.toString().padLeft(2, '0')}:${when.minute.toString().padLeft(2, '0')}',
-                ),
+                ),
               );
             }),
         ],
@@ -1631,7 +1639,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 title: Text(
                   r.serviceType,
                   style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                ),
                 subtitle: Text('${date.month}/${date.day}/${date.year}'),
               );
             }),

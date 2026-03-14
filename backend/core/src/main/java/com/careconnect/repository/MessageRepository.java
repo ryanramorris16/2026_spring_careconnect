@@ -19,4 +19,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Optionally for inbox preview: last message per user
     @Query("SELECT m FROM Message m WHERE m.senderId = :userId OR m.receiverId = :userId ORDER BY m.timestamp DESC")
     List<Message> findAllUserMessages(@Param("userId") Long userId);
+
+    default void test() {
+        System.out.println("MessageRepository initialized");
+    }
 }

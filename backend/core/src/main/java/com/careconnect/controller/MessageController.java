@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.security.Permission;
+import com.careconnect.security.RequirePermission;
+
 import com.careconnect.model.Message;
 import com.careconnect.model.User;
 import com.careconnect.dto.InboxMessageDto;
@@ -19,6 +22,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.UnauthorizedException;
+import com.careconnect.util.SecurityUtil;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -44,6 +51,12 @@ public class MessageController {
 
     @Autowired
     private CaregiverRepository caregiverRepo;
+
+    @Autowired
+    private SecurityUtil securityUtil;
+
+    @Autowired
+    private AuthorizationService authorizationService;
 
     /** Resolve a display name by checking the role-specific profile first,
      *  falling back to User.name, then to the email local-part (before @). */
@@ -88,8 +101,14 @@ public class MessageController {
     }
 
     // ✅ Send a new message
+    @RequirePermission(Permission.CREATE_TASKS)
+
     @PostMapping("/send")
-    public ResponseEntity<?> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<?> sendMessage(@RequestBody Message message) throws UnauthorizedException {
+        // RBAC: caller must be the sender or an admin.
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, message.getSenderId());
+
         // Determine which user is the caregiver and which is the patient by looking
         // at both link directions (caregiver→patient or patient→caregiver).
         Long a = message.getSenderId();
@@ -110,18 +129,29 @@ public class MessageController {
     }
 
     // ✅ Fetch full conversation between two users
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/conversation")
     public ResponseEntity<List<Message>> getConversation(
             @RequestParam Long user1,
             @RequestParam Long user2
-    ) {
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        Long currentUserId = currentUser.getId();
+        if (!currentUserId.equals(user1) && !currentUserId.equals(user2) && !currentUser.isAdmin()) {
+            throw new UnauthorizedException("You can only view conversations you are a participant in");
+        }
         List<Message> conversation = messageRepo.findConversation(user1, user2);
         return ResponseEntity.ok(conversation);
     }
 
     // ✅ Inbox view: list all recent conversations with peer info
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+
     @GetMapping("/inbox/{userId}")
-    public ResponseEntity<List<InboxMessageDto>> getInbox(@PathVariable Long userId) {
+    public ResponseEntity<List<InboxMessageDto>> getInbox(@PathVariable Long userId) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireSelfOrAdmin(currentUser, userId);
         List<Message> messages = messageRepo.findAllUserMessages(userId);
         Map<Long, InboxMessageDto> map = new LinkedHashMap<>(); // keep order
 
