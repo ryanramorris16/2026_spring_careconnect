@@ -6,11 +6,10 @@ import org.springframework.stereotype.Repository;
 import com.careconnect.model.SummaryMetric;
 
 import java.time.Instant;
-import java.util.List;
 
 @Repository
 public interface SummaryMetricRepository extends JpaRepository<SummaryMetric, Long> {
-    SummaryMetric findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
+    SummaryMetric findTopByPatientUserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(
         Long patientId, Instant periodStart, Instant periodEnd
     );
 }

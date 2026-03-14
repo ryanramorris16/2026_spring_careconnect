@@ -8,9 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.time.Instant;
 import java.util.List;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Repository
 public interface WearableMetricRepository
         extends JpaRepository<WearableMetric, Long> {
@@ -26,5 +23,5 @@ public interface WearableMetricRepository
                         @Param("from")   Instant                 from,
                         @Param("to")     Instant                 to);
 	
-List<WearableMetric> findByPatient_IdAndRecordedAtBetween(Long patientId, Instant from, Instant to);
+  List<WearableMetric> findByPatientIdAndRecordedAtBetween(Long patientId, Instant from, Instant to);
 }

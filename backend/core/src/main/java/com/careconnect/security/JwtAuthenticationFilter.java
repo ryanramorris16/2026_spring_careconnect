@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String COOKIE_NAME = "AUTH";
 
     // Paths that should be excluded from JWT authentication
@@ -42,8 +42,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwt;
     private final UserDetailsService uds;
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
@@ -58,24 +56,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String requestURI = req.getRequestURI();
-        log.debug("Processing JWT authentication for: {}", requestURI);
+        LOG.debug("Processing JWT authentication for: {}", requestURI);
 
         /* ---------- 1. Find token (header or cookie) --------------------- */
         String token = resolveToken(req);
-        log.debug("Resolved token: {}", token != null ? "present" : "null");
+        LOG.debug("Resolved token: {}", token != null ? "present" : "null");
 
         /* ---------- 2. Validate & build Authentication ------------------- */
         if (token != null && jwt.validateToken(token)) {
-            log.debug("Token is valid, processing authentication");
+            LOG.debug("Token is valid, processing authentication");
             Claims claims = jwt.getClaims(token);
             String email  = claims.getSubject();
             String role   = claims.get("role", String.class);
-            log.debug("Token email subject: {}, role: {}", email, role);
+            LOG.debug("Token email subject: {}, role: {}", email, role);
 
             // Use role-specific user loading for more precise authentication  
             UserDetails userDetails;
-            if (role != null && uds instanceof UserDetailsServiceImpl) {
-                userDetails = ((UserDetailsServiceImpl) uds).loadUserByEmailAndRole(email, role);
+            if (role != null && uds instanceof UserDetailsServiceImpl userDetailsService) {
+                userDetails = userDetailsService.loadUserByEmailAndRole(email, role);
             } else {
                 // Fallback to email-only lookup (may have ambiguity issues)
                 userDetails = uds.loadUserByUsername(email);
@@ -86,7 +84,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetails, null, userDetails.getAuthorities());
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(auth);
-            log.debug("Authentication set for user: {} with role: {}", email, role);
+            LOG.debug("Authentication set for user: {} with role: {}", email, role);
 
             /* ---------- 3. Silent renew (<5 min left) -------------------- */
             if (jwt.needsRenewal(claims)) {
@@ -96,13 +94,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .maxAge(Duration.ofHours(3))            // sliding-window cap
                         .build();
                 res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-                log.debug("Token renewed for user: {}", email);
+                LOG.debug("Token renewed for user: {}", email);
             }
         } else {
             if (token != null) {
-                log.warn("Invalid token provided");
+                LOG.warn("Invalid token provided");
             } else {
-                log.debug("No token found in request");
+                LOG.debug("No token found in request");
             }
         }
 
