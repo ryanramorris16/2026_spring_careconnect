@@ -253,16 +253,16 @@ public final class InvoiceMapper {
     private static Double toD(BigDecimal bd) { return bd == null ? null : bd.doubleValue(); }
 
     private static PaymentStatus parseStatus(String s) {
-        if (s == null) return PaymentStatus.pending;
+        if (s == null) return PaymentStatus.PENDING;
         switch (s) {
-            case "pending": return PaymentStatus.pending;
-            case "overdue": return PaymentStatus.overdue;
-            case "pendingInsurance": return PaymentStatus.pendingInsurance;
-            case "sent": return PaymentStatus.sent;
-            case "paid": return PaymentStatus.paid;
-            case "partialPayment": return PaymentStatus.partialPayment;
-            case "rejectedInsurance": return PaymentStatus.rejectedInsurance;
-            default: return PaymentStatus.pending;
+            case "pending": return PaymentStatus.PENDING;
+            case "overdue": return PaymentStatus.OVERDUE;
+            case "pendingInsurance": return PaymentStatus.PENDING_INSURANCE;
+            case "sent": return PaymentStatus.SENT;
+            case "paid": return PaymentStatus.PAID;
+            case "partialPayment": return PaymentStatus.PARTIAL_PAYMENT;
+            case "rejectedInsurance": return PaymentStatus.REJECTED_INSURANCE;
+            default: return PaymentStatus.PENDING;
         }
     }
 
