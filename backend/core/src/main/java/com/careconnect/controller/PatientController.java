@@ -147,8 +147,7 @@ public class PatientController {
 
     @PutMapping("/{patientId}")
     public ResponseEntity<Patient> updatePatient(@PathVariable Long patientId, @RequestBody Patient updatedPatient) {
-        User currentUser = getCurrentUser();
-        
+        User currentUser = getCurrentUser();  
         // Family members have read-only access, cannot update
         if (currentUser.getRole() == Role.FAMILY_MEMBER) {
             throw new AppException(HttpStatus.FORBIDDEN, "Family members have read-only access");
@@ -356,30 +355,26 @@ public class PatientController {
     @PostMapping("/mood-pain-log")
     @Operation(
         summary = "📊 Create mood & pain log entry",
-        description = """
-            Create a new mood and pain log entry for the current patient.
-            
-            **Requirements:**
-            - Must be authenticated as a PATIENT
-            - Mood value: 1-10 scale (1 = worst, 10 = best)
-            - Pain value: 0-10 scale:
-              • 0 = No pain
-              • 1 = Pain is very mild, barely noticeable. Most of the time you don't think about it
-              • 2 = Minor pain. It's annoying. You may have sharp pain now and then
-              • 3 = Noticeable pain. It may distract you, but you can get used to it
-              • 4 = Moderate pain. If you are involved in an activity, you're able to ignore the pain for a while. But it is still distracting
-              • 5 = Moderately strong pain. You can't ignore it for more than a few minutes. But, with effort, you can still work or do some social activities
-              • 6 = Moderately stronger pain. You avoid some of your normal daily activities. You have trouble concentrating
-              • 7 = Strong pain. It keeps you from doing normal activities
-              • 8 = Very strong pain. It's hard to do anything at all
-              • 9 = Pain that is very hard to tolerate. You can't carry on a conversation
-              • 10 = Worst pain possible
-            - Timestamp cannot be in the future
-            
-            **Usage:**
-            This endpoint allows patients to track their daily mood and pain levels,
-            providing valuable data for caregivers and healthcare providers.
-            """,
+        description = "Create a new mood and pain log entry for the current patient.\n\n"
+            + "**Requirements:**\n"
+            + "- Must be authenticated as a PATIENT\n"
+            + "- Mood value: 1-10 scale (1 = worst, 10 = best)\n"
+            + "- Pain value: 0-10 scale:\n"
+            + "  0 = No pain\n"
+            + "  1 = Pain is very mild, barely noticeable. Most of the time you don't think about it\n"
+            + "  2 = Minor pain. It's annoying. You may have sharp pain now and then\n"
+            + "  3 = Noticeable pain. It may distract you, but you can get used to it\n"
+            + "  4 = Moderate pain. If you are involved in an activity, you're able to ignore the pain for a while. But it is still distracting\n"
+            + "  5 = Moderately strong pain. You can't ignore it for more than a few minutes. But, with effort, you can still work or do some social activities\n"
+            + "  6 = Moderately stronger pain. You avoid some of your normal daily activities. You have trouble concentrating\n"
+            + "  7 = Strong pain. It keeps you from doing normal activities\n"
+            + "  8 = Very strong pain. It's hard to do anything at all\n"
+            + "  9 = Pain that is very hard to tolerate. You can't carry on a conversation\n"
+            + "  10 = Worst pain possible\n"
+            + "- Timestamp cannot be in the future\n\n"
+            + "**Usage:**\n"
+            + "This endpoint allows patients to track their daily mood and pain levels, "
+            + "providing valuable data for caregivers and healthcare providers.",
         tags = {"Patient Management", "📊 Mood & Pain Tracking"}
     )
     @ApiResponses({
@@ -520,16 +515,13 @@ public class PatientController {
     @GetMapping("/mood-pain-log/analytics")
     @Operation(
         summary = "📈 Get mood & pain analytics",
-        description = """
-            Get detailed analytics for mood and pain data including trends, averages, and time series data.
-            
-            **Features:**
-            - Average mood and pain levels over the period
-            - Trend analysis (improving/declining)
-            - Min/max values
-            - Entry counts
-            - Time series data for charts
-            """,
+        description = "Get detailed analytics for mood and pain data including trends, averages, and time series data.\n\n"
+            + "**Features:**\n"
+            + "- Average mood and pain levels over the period\n"
+            + "- Trend analysis (improving/declining)\n"
+            + "- Min/max values\n"
+            + "- Entry counts\n"
+            + "- Time series data for charts",
         tags = {"Patient Management", "📊 Mood & Pain Tracking"}
     )
     public ResponseEntity<MoodPainAnalyticsDTO> getMoodPainAnalytics(
