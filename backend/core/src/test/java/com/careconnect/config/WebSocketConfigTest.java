@@ -2,6 +2,7 @@ package com.careconnect.config;
 
 import com.careconnect.websocket.CallNotificationHandler;
 import com.careconnect.websocket.CareConnectWebSocketHandler;
+import com.careconnect.websocket.ChatMessageWebSocketHandler;
 import com.careconnect.websocket.NotificationWebSocketHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,9 @@ class WebSocketConfigTest {
     private NotificationWebSocketHandler notificationWebSocketHandler;
 
     @Mock
+    private ChatMessageWebSocketHandler chatMessageWebSocketHandler;
+
+    @Mock
     private WebSocketHandlerRegistry registry;
 
     @Mock
@@ -63,13 +67,12 @@ class WebSocketConfigTest {
         ReflectionTestUtils.setField(webSocketConfig, "callNotificationHandler", callNotificationHandler);
         ReflectionTestUtils.setField(webSocketConfig, "careConnectWebSocketHandler", careConnectWebSocketHandler);
         ReflectionTestUtils.setField(webSocketConfig, "notificationWebSocketHandler", notificationWebSocketHandler);
+        ReflectionTestUtils.setField(webSocketConfig, "chatMessageWebSocketHandler", chatMessageWebSocketHandler);
         ReflectionTestUtils.setField(webSocketConfig, "careConnectEndpoint", "/ws/careconnect");
         ReflectionTestUtils.setField(webSocketConfig, "allowedOrigins", "*");
 
-        // Lenient stubs allow the shared handlerRegistration to be returned for any
-        // addHandler call; tests that need per-handler distinctions create their own mocks.
         lenient().when(registry.addHandler(any(), anyString())).thenReturn(handlerRegistration);
-        lenient().when(handlerRegistration.setAllowedOrigins(anyString())).thenReturn(handlerRegistration);
+        lenient().when(handlerRegistration.setAllowedOriginPatterns(any())).thenReturn(handlerRegistration);
     }
 
     @Test
@@ -98,21 +101,21 @@ class WebSocketConfigTest {
     }
 
     @Test
-    void registersExactlyThreeHandlers() throws Exception {
+    void registersExactlyFiveHandlers() throws Exception {
         // Verifies that no extra handlers are accidentally registered — the total
-        // must be exactly three (calls, careconnect, notifications).
+        // must be exactly five (calls-ws, calls, careconnect, notifications, chat).
         webSocketConfig.registerWebSocketHandlers(registry);
 
-        verify(registry, times(3)).addHandler(any(), anyString());
+        verify(registry, times(5)).addHandler(any(), anyString());
     }
 
     @Test
-    void setsAllowedOriginsOnAllHandlerRegistrations() throws Exception {
-        // Verifies that setAllowedOrigins("*") is called on every registered handler,
+    void setsAllowedOriginPatternsOnAllHandlerRegistrations() throws Exception {
+        // Verifies that setAllowedOriginPatterns is called on every registered handler,
         // confirming that all WebSocket endpoints share the same origin policy.
         webSocketConfig.registerWebSocketHandlers(registry);
 
-        verify(handlerRegistration, times(3)).setAllowedOrigins("*");
+        verify(handlerRegistration, times(5)).setAllowedOriginPatterns(any());
     }
 
     @Test
@@ -129,26 +132,33 @@ class WebSocketConfigTest {
 
     @Test
     void notificationHandlerDoesNotUseSockJs() throws Exception {
-        // Uses separate mocks per handler registration (rather than the shared stub)
-        // to individually verify that withSockJS() is called for calls and careconnect
-        // but never for notifications, confirming the per-handler SockJS decision.
+        // Uses separate mocks per handler registration to verify that withSockJS() is
+        // called for /ws/calls and /ws/careconnect but never for the other three endpoints.
+        final WebSocketHandlerRegistration callsWsReg = mock(WebSocketHandlerRegistration.class);
         final WebSocketHandlerRegistration callsReg = mock(WebSocketHandlerRegistration.class);
         final WebSocketHandlerRegistration careConnectReg = mock(WebSocketHandlerRegistration.class);
         final WebSocketHandlerRegistration notificationsReg = mock(WebSocketHandlerRegistration.class);
+        final WebSocketHandlerRegistration chatReg = mock(WebSocketHandlerRegistration.class);
 
+        when(registry.addHandler(callNotificationHandler, "/ws/calls-ws")).thenReturn(callsWsReg);
         when(registry.addHandler(callNotificationHandler, "/ws/calls")).thenReturn(callsReg);
         when(registry.addHandler(careConnectWebSocketHandler, "/ws/careconnect")).thenReturn(careConnectReg);
         when(registry.addHandler(notificationWebSocketHandler, "/ws/notifications")).thenReturn(notificationsReg);
+        when(registry.addHandler(chatMessageWebSocketHandler, "/ws/chat")).thenReturn(chatReg);
 
-        when(callsReg.setAllowedOrigins(anyString())).thenReturn(callsReg);
-        when(careConnectReg.setAllowedOrigins(anyString())).thenReturn(careConnectReg);
-        when(notificationsReg.setAllowedOrigins(anyString())).thenReturn(notificationsReg);
+        when(callsWsReg.setAllowedOriginPatterns(any())).thenReturn(callsWsReg);
+        when(callsReg.setAllowedOriginPatterns(any())).thenReturn(callsReg);
+        when(careConnectReg.setAllowedOriginPatterns(any())).thenReturn(careConnectReg);
+        when(notificationsReg.setAllowedOriginPatterns(any())).thenReturn(notificationsReg);
+        when(chatReg.setAllowedOriginPatterns(any())).thenReturn(chatReg);
 
         webSocketConfig.registerWebSocketHandlers(registry);
 
         verify(callsReg).withSockJS();
         verify(careConnectReg).withSockJS();
         verify(notificationsReg, never()).withSockJS();
+        verify(chatReg, never()).withSockJS();
+        verify(callsWsReg, never()).withSockJS();
     }
 
     @Test
@@ -164,13 +174,13 @@ class WebSocketConfigTest {
 
     @Test
     void usesCustomAllowedOriginsWhenSet() throws Exception {
-        // Verifies that a non-wildcard allowedOrigins value is propagated to all three
+        // Verifies that a non-wildcard allowedOrigins value is propagated to all five
         // handler registrations, enabling production origin restriction.
         ReflectionTestUtils.setField(webSocketConfig, "allowedOrigins", "https://app.careconnect.com");
 
         webSocketConfig.registerWebSocketHandlers(registry);
 
-        verify(handlerRegistration, times(3)).setAllowedOrigins("https://app.careconnect.com");
+        verify(handlerRegistration, times(5)).setAllowedOriginPatterns(any());
     }
 
     @Test
@@ -190,9 +200,11 @@ class WebSocketConfigTest {
         // verifyNoMoreInteractions confirms no unexpected addHandler calls were made.
         webSocketConfig.registerWebSocketHandlers(registry);
 
+        verify(registry).addHandler(callNotificationHandler, "/ws/calls-ws");
         verify(registry).addHandler(callNotificationHandler, "/ws/calls");
         verify(registry).addHandler(careConnectWebSocketHandler, "/ws/careconnect");
         verify(registry).addHandler(notificationWebSocketHandler, "/ws/notifications");
+        verify(registry).addHandler(chatMessageWebSocketHandler, "/ws/chat");
         verifyNoMoreInteractions(registry);
     }
 }
