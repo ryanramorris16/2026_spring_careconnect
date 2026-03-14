@@ -1,11 +1,11 @@
 package com.careconnect.model.invoice;
 
 public enum PaymentStatus {
-    pending,
-    overdue,
-    pendingInsurance,
-    sent,
-    paid,
-    partialPayment,
-    rejectedInsurance
+    PENDING,
+    OVERDUE,
+    PENDING_INSURANCE,
+    SENT,
+    PAID,
+    PARTIAL_PAYMENT,
+    REJECTED_INSURANCE
 }

@@ -135,14 +135,14 @@ public class InvoiceService {
                 .filter(s -> !s.isEmpty())
                 .map(s -> {
                     switch (s) {
-                        case "pending": return PaymentStatus.pending;
-                        case "overdue": return PaymentStatus.overdue;
-                        case "pendingInsurance": return PaymentStatus.pendingInsurance;
-                        case "sent": return PaymentStatus.sent;
-                        case "paid": return PaymentStatus.paid;
-                        case "partialPayment": return PaymentStatus.partialPayment;
-                        case "rejectedInsurance": return PaymentStatus.rejectedInsurance;
-                        default: return PaymentStatus.pending;
+                        case "pending": return PaymentStatus.PENDING;
+                        case "overdue": return PaymentStatus.OVERDUE;
+                        case "pendingInsurance": return PaymentStatus.PENDING_INSURANCE;
+                        case "sent": return PaymentStatus.SENT;
+                        case "paid": return PaymentStatus.PAID;
+                        case "partialPayment": return PaymentStatus.PARTIAL_PAYMENT;
+                        case "rejectedInsurance": return PaymentStatus.REJECTED_INSURANCE;
+                        default: return PaymentStatus.PENDING;
                     }
                 })
                 .collect(Collectors.toSet());
@@ -179,10 +179,10 @@ public class InvoiceService {
         invoice.setUpdatedAt(OffsetDateTime.now());
 
         if (due.signum() == 0) {
-            invoice.setPaymentStatus(PaymentStatus.paid);
+            invoice.setPaymentStatus(PaymentStatus.PAID);
             invoice.setPaidDate(p.getPaymentDate());
         } else if (paidSum.signum() > 0) {
-            invoice.setPaymentStatus(PaymentStatus.partialPayment);
+            invoice.setPaymentStatus(PaymentStatus.PARTIAL_PAYMENT);
         }
 
         // Persist
@@ -219,7 +219,7 @@ public class InvoiceService {
         invoice.setAmountDue(due);
         invoice.setUpdatedAt(OffsetDateTime.now());
         if (due.signum() == 0 && paidSum.signum() > 0) {
-            invoice.setPaymentStatus(PaymentStatus.paid);
+            invoice.setPaymentStatus(PaymentStatus.PAID);
             // set paidDate to latest payment date
             OffsetDateTime maxDate = invoice.getPayments().stream()
                     .map(InvoicePayment::getPaymentDate)
@@ -228,10 +228,10 @@ public class InvoiceService {
                     .orElse(null);
             invoice.setPaidDate(maxDate);
         } else if (paidSum.signum() > 0) {
-            invoice.setPaymentStatus(PaymentStatus.partialPayment);
+            invoice.setPaymentStatus(PaymentStatus.PARTIAL_PAYMENT);
             invoice.setPaidDate(null);
         } else {
-            invoice.setPaymentStatus(PaymentStatus.pending);
+            invoice.setPaymentStatus(PaymentStatus.PENDING);
             invoice.setPaidDate(null);
         }
 

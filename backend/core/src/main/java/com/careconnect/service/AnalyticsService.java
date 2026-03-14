@@ -46,7 +46,7 @@ public class AnalyticsService {
         // Original DB-based implementation restored
         Instant to = Instant.now();
         Instant from = to.minus(period);
-        SummaryMetric agg = summaryRepo.findTopByPatient_UserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(patientId, from, to);
+        SummaryMetric agg = summaryRepo.findTopByPatientUserIdAndPeriodStartAndPeriodEndOrderByCreatedAtDesc(patientId, from, to);
         double adherence;
         double avgHr;
         if (agg != null && agg.getGeneratedAt().isAfter(Instant.now().minus(Period.ofDays(1)))) {
@@ -93,7 +93,7 @@ public class AnalyticsService {
         // Original DB-based implementation restored
         Instant to = Instant.now();
         Instant from = to.minus(period);
-        List<WearableMetric> wearableMetrics = wearableRepo.findByPatient_IdAndRecordedAtBetween(patientId, from, to);
+        List<WearableMetric> wearableMetrics = wearableRepo.findByPatientIdAndRecordedAtBetween(patientId, from, to);
         Patient patient = getPatientById(patientId);
         LocalDateTime fromLdt = LocalDateTime.ofInstant(from, ZoneOffset.UTC);
         LocalDateTime toLdt = LocalDateTime.ofInstant(to, ZoneOffset.UTC);
