@@ -68,7 +68,7 @@ class MessageControllerTest {
         final Message saved = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hello!");
         when(messageRepo.save(any(Message.class))).thenReturn(saved);
 
-        final ResponseEntity<Message> response = controller.sendMessage(inbound);
+        final ResponseEntity<?> response = controller.sendMessage(inbound);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(saved);

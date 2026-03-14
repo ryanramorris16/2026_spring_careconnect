@@ -169,6 +169,9 @@ public class PatientController {
         Patient patient = patientService.getPatientById(patientId);
         LOG.debug("Found patient: id={}, userId={}, email={}", 
                   patient.getId(), patient.getUser().getId(), patient.getUser().getEmail());
+
+        // Enforce same role/link access policy used by other patient-detail endpoints
+        validatePatientAccess(patient.getUser().getId(), currentUser);
         
         // Use optimized query with patient_id (no joins needed)
         List<FamilyMemberLinkResponse> familyMembers = familyMemberService.getFamilyMembersByPatientId(patientId);

@@ -63,7 +63,41 @@ public class DevDataLoader implements CommandLineRunner {
             if (rs.next()) {
                 int userCount = rs.getInt(1);
                 log.info("Found {} existing users in database", userCount);
-                return userCount == 0;
+                if (userCount == 0) {
+                    return true;
+                }
+
+                int planCount = getTableCount(stmt, "plan");
+                int medicationCount = getTableCount(stmt, "patient_medication");
+                int symptomCount = getTableCount(stmt, "symptom_entry");
+                int subscriptionCount = getTableCount(stmt, "subscriptions");
+                int activeCaregiverLinkCount = getConditionalCount(
+                    stmt,
+                    "caregiver_patient_link",
+                    "status = 'ACTIVE'"
+                );
+                int activeFamilyLinkCount = getConditionalCount(
+                    stmt,
+                    "family_member_link",
+                    "status = 'ACTIVE'"
+                );
+
+                int caregiverCount = getTableCount(stmt, "caregiver");
+
+                boolean seedDataIncomplete = planCount == 0
+                        || medicationCount == 0
+                        || symptomCount == 0
+                        || subscriptionCount == 0
+                        || activeCaregiverLinkCount == 0
+                        || activeFamilyLinkCount == 0
+                        || caregiverCount < 2;
+
+                if (seedDataIncomplete) {
+                    log.info("Detected incomplete seed data. plan={}, patient_medication={}, symptom_entry={}, subscriptions={}, active_caregiver_links={}, active_family_links={}, caregivers={}. Running mock data repair.",
+                        planCount, medicationCount, symptomCount, subscriptionCount, activeCaregiverLinkCount, activeFamilyLinkCount, caregiverCount);
+                }
+
+                return seedDataIncomplete;
             }
 
             return true;
@@ -71,6 +105,28 @@ public class DevDataLoader implements CommandLineRunner {
             log.warn("Could not check user count: {}. Will attempt to load mock data.", e.getMessage());
             return true;
         }
+    }
+
+    private int getTableCount(Statement stmt, String tableName) {
+        try (var countResult = stmt.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
+            if (countResult.next()) {
+                return countResult.getInt(1);
+            }
+        } catch (Exception e) {
+            log.warn("Could not count {}: {}", tableName, e.getMessage());
+        }
+        return 0;
+    }
+
+    private int getConditionalCount(Statement stmt, String tableName, String whereClause) {
+        try (var countResult = stmt.executeQuery("SELECT COUNT(*) FROM " + tableName + " WHERE " + whereClause)) {
+            if (countResult.next()) {
+                return countResult.getInt(1);
+            }
+        } catch (Exception e) {
+            log.warn("Could not count {} with condition [{}]: {}", tableName, whereClause, e.getMessage());
+        }
+        return 0;
     }
 
     /**
@@ -99,8 +155,9 @@ public class DevDataLoader implements CommandLineRunner {
 
             log.info("✅ Mock data loaded successfully!");
             log.info("📧 Login credentials:");
-            log.info("   Patient:  patient@careconnect.com / password");
+            log.info("   Patient:   patient@careconnect.com / password");
             log.info("   Caregiver: caregiver@careconnect.com / password");
+            log.info("   Doctor:    sarah.mitchell@careconnect.com / password");
             log.info("   Family:    family@careconnect.com / password");
 
         } catch (Exception e) {

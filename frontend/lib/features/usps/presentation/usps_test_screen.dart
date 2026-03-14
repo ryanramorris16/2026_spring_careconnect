@@ -246,8 +246,8 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
 
     final base = getBackendBaseUrl();
 
-    // Use a platform-safe return URL; Uri.base works on web and mobile.
-    final currentUrl = kIsWeb ? Uri.base.toString() : getWebBaseUrl();
+    // Uri.base works across web/mobile/desktop without importing dart:html.
+    final currentUrl = Uri.base.toString();
     final authUrl = '$base/oauth/google/start?userId=${Uri.encodeComponent(user.id.toString())}&returnUrl=${Uri.encodeComponent(currentUrl)}';
 
     final uri = Uri.parse(authUrl);

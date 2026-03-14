@@ -18,6 +18,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.context.annotation.Profile;
 
+import java.util.concurrent.TimeUnit;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -69,6 +71,14 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .headers(headers -> headers
+                        .contentTypeOptions(contentType -> {
+                        })
+                        .frameOptions(frame -> frame.deny())
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(TimeUnit.DAYS.toSeconds(365)))
+                )
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(basic -> basic.authenticationEntryPoint(
                         (req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Basic Authentication Required")))
@@ -92,23 +102,23 @@ public class SecurityConfig {
                                 "/configuration/security"
                         ).permitAll()
 
-                /* ---------- public API endpoints ------------------------ */
-                .requestMatchers(
-                        "/v1/api/auth/**",
-                        "/api/v1/auth/**",  // Support both URL patterns
-                        "/api/auth/**",     // Support auth endpoints under /api/auth/
-                        "/v1/api/users/reset-password",  // Allow password reset (current)
-                        "/v1/api/users/setup-password",
-                        // "/v1/api/email-test/**" removed from permitAll — now requires ADMIN role (see below)
-                        "/v1/api/test/**", // Allow test endpoints (health check, swagger info)
-                        "/v1/api/subscriptions/webhook/**", // Stripe webhook callbacks (no JWT)
-                        "/oauth/**"// Permit OAuth paths
-                ).permitAll()
+                        /* ---------- public API endpoints ------------------------ */
+                        .requestMatchers(
+                                "/v1/api/auth/**",
+                                "/api/v1/auth/**",
+                                "/api/auth/**",
+                                "/v1/api/users/reset-password",
+                                "/v1/api/users/setup-password",
+                                "/v1/api/test/**",
+                                "/v1/api/subscriptions/webhook/**", // Stripe webhook callbacks (no JWT)
+                                "/oauth/**",
+                                // Keep websocket handshake public for Team A call notifications/signaling.
+                                "/ws/**"
+                        ).permitAll()
 
-                /* ---------- public static assets ------------------------ */
-                .requestMatchers(
-                        "/", "/index.html", "/favicon.ico", "/static/**"
-                ).permitAll()
+                        /* ---------- public static assets ------------------------ */
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         /* ---------- Admin-only endpoints ------------------------------- */
                         .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
@@ -148,10 +158,16 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/usps/**", "/api/usps/**").authenticated()
                         .requestMatchers("/v1/api/questions/**", "/api/questions/**").authenticated()
                         .requestMatchers("/v1/checkins/**", "/api/checkins/**").authenticated()
+                        .requestMatchers("/v1/api/patient/**").authenticated()
                         .requestMatchers("/api/patient/**").authenticated()
                         .requestMatchers("/api/gamification/**").authenticated()
                         .requestMatchers("/api/websocket/**").authenticated()
                         .requestMatchers("/api/email-credentials/**").authenticated()
+                        // Team A call lifecycle endpoints are under /api/v3/calls/**.
+                        .requestMatchers("/api/v3/calls/**").authenticated()
+                        // Broad catch-all for remaining versioned API paths.
+                        .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
+                        .requestMatchers("/api/**").authenticated()
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()

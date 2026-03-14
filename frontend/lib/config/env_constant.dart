@@ -5,12 +5,12 @@ import 'package:flutter/foundation.dart';
 // --- Raw values from --dart-define ---
 // We define all the compile-time variables here
 
-const String _agoraAppId = String.fromEnvironment('AGORA_APP_ID');
-const String _agoraAppCertificate = String.fromEnvironment(
-  'AGORA_APP_CERTIFICATE',
+// This is the new, unified backend URL.
+// Set your local dev URL in defaultValue
+const String _backendBaseUrl = String.fromEnvironment(
+  'BACKEND_URL',
+  defaultValue: '',
 );
-
-const String _backendBaseUrl = String.fromEnvironment('BACKEND_URL');
 
 const String _wsOverrideUrl = String.fromEnvironment('WEBSOCKET_SERVER_URL');
 const String _backendToken = String.fromEnvironment('CC_BACKEND_TOKEN');
@@ -48,26 +48,17 @@ String getFitbitClientSecret() {
   return secret;
 }
 
-/// Agora configuration accessors
-String getAgoraAppId() {
-  // Now reads from the _agoraAppId const
-  if (_agoraAppId.isEmpty) {
-    throw Exception('AGORA_APP_ID not set via --dart-define');
-  }
-  return _agoraAppId;
-}
-
-String getAgoraAppCertificate() {
-  // Optional, so no check
-  return _agoraAppCertificate;
-}
-
 /// Returns the unified WebSocket server base URL for both signaling and notifications
 ///
 /// Set WEBSOCKET_SERVER_URL via --dart-define to override.
 String _getUnifiedWebSocketBaseUrl() {
   // Prefer explicit environment variable
   if (_wsOverrideUrl.isNotEmpty) {
+    if (!kDebugMode && !_wsOverrideUrl.startsWith('wss://')) {
+      throw Exception(
+        'WEBSOCKET_SERVER_URL must use wss:// in release builds.',
+      );
+    }
     return _wsOverrideUrl;
   }
 
@@ -75,9 +66,17 @@ String _getUnifiedWebSocketBaseUrl() {
   if (base.startsWith('https://')) {
     return base.replaceFirst('https://', 'wss://');
   } else if (base.startsWith('http://')) {
+    if (!kDebugMode) {
+      throw Exception(
+        'In release builds, BACKEND_URL must use https:// and WebSocket must use wss://.',
+      );
+    }
     return base.replaceFirst('http://', 'ws://');
   }
   // Fallback
+  if (!kDebugMode) {
+    throw Exception('Unable to derive secure WebSocket URL for release build.');
+  }
   return 'ws://localhost:8080';
 }
 
@@ -91,6 +90,16 @@ String getWebSocketNotificationUrl() {
   return '${_getUnifiedWebSocketBaseUrl()}/ws/notifications';
 }
 
+/// Returns the WebSocket URL for call invitation/accept/decline events
+String getCallNotificationWebSocketUrl() {
+  return '${_getUnifiedWebSocketBaseUrl()}/ws/calls-ws';
+}
+
+/// Returns the WebSocket URL for the real-time P2P chat service
+String getChatWebSocketUrl() {
+  return '${_getUnifiedWebSocketBaseUrl()}/ws/chat';
+}
+
 /// Returns the Backend Base URL
 ///
 /// This is now controlled by a single --dart-define=BACKEND_URL variable.
@@ -98,6 +107,9 @@ String getBackendBaseUrl() {
   final configured = _backendBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
 
   if (configured.isNotEmpty) {
+    if (!kDebugMode && !configured.startsWith('https://')) {
+      throw Exception('BACKEND_URL must use https:// in release builds.');
+    }
     return configured;
   }
 
