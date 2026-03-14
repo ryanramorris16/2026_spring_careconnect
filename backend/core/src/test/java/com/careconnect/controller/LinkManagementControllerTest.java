@@ -72,7 +72,7 @@ class LinkManagementControllerTest {
     private CaregiverPatientLinkResponse caregiverLink(Long id, String status, LocalDateTime expiresAt) {
         return new CaregiverPatientLinkResponse(
                 id, 2L, "Care Giver", "care@test.com", 1L, "Pat Ient", "pat@test.com",
-                status, "TEMPORARY", LocalDateTime.now().minusDays(1), expiresAt, "note",
+                status, "TEMPORARY", false, false, LocalDateTime.now().minusDays(1), expiresAt, "note",
                 "admin", "ACTIVE".equals(status), expiresAt != null && expiresAt.isBefore(LocalDateTime.now())
         );
     }

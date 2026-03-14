@@ -247,12 +247,12 @@ class WebSocketNotificationServiceTest {
         final CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
-                "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
+                "ACTIVE", "PROFESSIONAL", false, false, LocalDateTime.now(), null, null, "admin", true, false);
 
         final CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
                 2L, 200L, "Nurse Bob", "bob@example.com",
                 1L, "John Doe", "john@example.com",
-                "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
+                "ACTIVE", "PROFESSIONAL", false, false, LocalDateTime.now(), null, null, "admin", true, false);
 
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of(link1, link2));
@@ -284,7 +284,7 @@ class WebSocketNotificationServiceTest {
         final CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
-                "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
+                "ACTIVE", "PROFESSIONAL", false, false, LocalDateTime.now(), null, null, "admin", true, false);
 
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of(link));
@@ -302,12 +302,12 @@ class WebSocketNotificationServiceTest {
         final CaregiverPatientLinkResponse link1 = new CaregiverPatientLinkResponse(
                 1L, 100L, "Nurse Alice", "alice@example.com",
                 1L, "John Doe", "john@example.com",
-                "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
+                "ACTIVE", "PROFESSIONAL", false, false, LocalDateTime.now(), null, null, "admin", true, false);
 
         final CaregiverPatientLinkResponse link2 = new CaregiverPatientLinkResponse(
                 2L, 200L, "Nurse Bob", "bob@example.com",
                 1L, "John Doe", "john@example.com",
-                "ACTIVE", "PROFESSIONAL", LocalDateTime.now(), null, null, "admin", true, false);
+                "ACTIVE", "PROFESSIONAL", false, false, LocalDateTime.now(), null, null, "admin", true, false);
 
         when(caregiverPatientLinkService.getCaregiversByPatient(1L))
                 .thenReturn(List.of(link1, link2));

@@ -11,9 +11,9 @@ import '../../../../services/subscription_service.dart';
 import '../../../../widgets/responsive_page_wrapper.dart';
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import '../../../../services/messaging_service.dart';
-import '../../../../services/call_notification_service.dart';
 import '../../../../widgets/messaging_widget.dart';
 import '../../../../widgets/call_notification_status_indicator.dart';
+import '../../../../widgets/hybrid_video_call_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/notifications_panel_widget.dart';
 
 
@@ -60,7 +60,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
     Future.microtask(() => fetchPatients());
     _loadCaregiverName();
     _initializeServices();
-    _initializeCallNotifications();
+    _callNotificationInitialized = true;
     _loadNotifications();
   }
 
@@ -90,39 +90,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
     }
   }
 
-  /// Initialize real-time call notification service
-  Future<void> _initializeCallNotifications() async {
-    try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final caregiverId = userProvider.user?.caregiverId ?? widget.caregiverId;
-
-      print('🔔 Initializing call notifications for caregiver: $caregiverId');
-
-      final success = await CallNotificationService.initialize(
-        userId: caregiverId.toString(),
-        userRole: userProvider.user?.role.toUpperCase() ?? 'CAREGIVER',
-        context: context,
-      );
-
-      setState(() {
-        _callNotificationInitialized = success;
-      });
-
-      if (success) {
-        print('✅ Call notification service initialized successfully');
-
-        // Listen to incoming call stream for additional handling if needed
-        CallNotificationService.incomingCallStream.listen((callData) {
-          print('📞 Caregiver dashboard received call notification: $callData');
-          // You can add additional logic here if needed
-        });
-      } else {
-        print('❌ Failed to initialize call notification service');
-      }
-    } catch (e) {
-      print('❌ Error initializing call notifications: $e');
-    }
-  }
 
   Future<void> _loadCaregiverName() async {
     try {
@@ -149,7 +116,6 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
   @override
   void dispose() {
     // Clean up call notification service
-    CallNotificationService.dispose();
     super.dispose();
   }
 
@@ -602,19 +568,26 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       // Generate unique call ID
       final callId = 'call_${DateTime.now().millisecondsSinceEpoch}';
 
-      // Send real-time call notification to patient
-      final notificationSent = await CallNotificationService.sendCallInvitation(
-        recipientId: patient.id.toString(),
-        recipientRole: 'PATIENT',
-        callId: callId,
-        isVideoCall: isVideoCall,
+      // Navigate immediately; invitation is sent only after caller joins and is waiting.
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => HybridVideoCallWidget(
+            userId: widget.caregiverId.toString(),
+            callId: callId,
+            recipientId: patient.id.toString(),
+            userRole: 'CAREGIVER',
+            returnPatientDetailsId: patient.id.toString(),
+            forcePatientDetailsOnExit: true,
+            returnAsCaregiver: true,
+            isInitiator: true,
+            isVideoEnabled: isVideoCall,
+            isAudioEnabled: true,
+            userName: caregiverName ?? 'Caregiver',
+            recipientName: '${patient.firstName} ${patient.lastName}',
+          ),
+        ),
       );
-
-      if (!notificationSent) {
-        print(
-          '⚠️ Failed to send real-time notification, falling back to standard method',
-        );
-      }
 
       // Also use the existing video call service for backward compatibility
       // final callData = await VideoCallService.initiateCall(
@@ -768,6 +741,43 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+
+  Future<void> _handlePatientVideoCallPolicy(
+    Patient patient, {
+    required bool enabled,
+  }) async {
+    final linkId = patient.linkId;
+    if (linkId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Missing caregiver link ID.')));
+      return;
+    }
+
+    final success = await ApiService.setPatientVideoCallsEnabledForLink(
+      linkId: linkId,
+      enabled: enabled,
+    );
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            enabled
+                ? 'Patient-initiated video calls enabled.'
+                : 'Patient-initiated video calls disabled.',
+          ),
+        ),
+      );
+      await fetchPatients();
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to update video call policy.')),
+    );
   }
 
   @override
@@ -1466,6 +1476,10 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                     _handleSuspendAction(patient);
                   } else if (value == 'reactivate') {
                     _handleReactivateAction(patient);
+                  } else if (value == 'disable_patient_video_calls') {
+                    _handlePatientVideoCallPolicy(patient, enabled: false);
+                  } else if (value == 'enable_patient_video_calls') {
+                    _handlePatientVideoCallPolicy(patient, enabled: true);
                   }
                 },
                 itemBuilder: (context) => [
@@ -1507,6 +1521,36 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                           ),
                           const SizedBox(width: 8),
                           const Text('Reactivate Relationship'),
+                        ],
+                      ),
+                    ),
+                  if (patient.linkStatus.toUpperCase() == 'ACTIVE' &&
+                      patient.patientVideoCallsEnabled)
+                    PopupMenuItem<String>(
+                      value: 'disable_patient_video_calls',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.videocam_off,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Disable Patient Video Calls'),
+                        ],
+                      ),
+                    ),
+                  if (patient.linkStatus.toUpperCase() == 'ACTIVE' &&
+                      !patient.patientVideoCallsEnabled)
+                    PopupMenuItem<String>(
+                      value: 'enable_patient_video_calls',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.videocam,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Enable Patient Video Calls'),
                         ],
                       ),
                     ),
