@@ -28,7 +28,7 @@ import javax.annotation.PostConstruct;
 @ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = true)
 public class SsmConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(SsmConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SsmConfig.class);
     private static final String SSM_PARAMETER_PREFIX = "/careconnect/prod/";
 
     @Autowired(required = false)
@@ -37,10 +37,10 @@ public class SsmConfig {
     @PostConstruct
     public void init() {
         if (ssmParameterService != null) {
-            logger.info("SSM Configuration initialized - production secrets will be loaded from AWS SSM Parameter Store");
-            logger.info("SSM Parameter prefix: {}", SSM_PARAMETER_PREFIX);
+            LOGGER.info("SSM Configuration initialized - production secrets will be loaded from AWS SSM Parameter Store");
+            LOGGER.info("SSM Parameter prefix: {}", SSM_PARAMETER_PREFIX);
         } else {
-            logger.warn("SSM Parameter Service not available - falling back to environment variables");
+            LOGGER.warn("SSM Parameter Service not available - falling back to environment variables");
         }
     }
 
@@ -152,7 +152,7 @@ public class SsmConfig {
      */
     private String getSsmParameter(String parameterName, String envFallback) {
         if (ssmParameterService == null) {
-            logger.warn("SSM service not available, using environment variable for: {}", parameterName);
+            LOGGER.warn("SSM service not available, using environment variable for: {}", parameterName);
             return envFallback;
         }
 
@@ -160,9 +160,9 @@ public class SsmConfig {
         String value = ssmParameterService.getParameterOrDefault(fullParameterName, envFallback);
 
         if (value == null || value.equals(envFallback)) {
-            logger.warn("Using environment variable fallback for parameter: {}", parameterName);
+            LOGGER.warn("Using environment variable fallback for parameter: {}", parameterName);
         } else {
-            logger.info("Loaded parameter from SSM: {}", parameterName);
+            LOGGER.info("Loaded parameter from SSM: {}", parameterName);
         }
 
         return value;
