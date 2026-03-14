@@ -95,4 +95,26 @@ public class UserFile {
     public enum StorageType {
         DATABASE, S3
     }
+    
+    // Manual getters for Lombok compatibility
+    public Long getId() { return id; }
+    public String getFilename() { return filename; }
+    public String getOriginalFilename() { return originalFilename; }
+    public String getContentType() { return contentType; }
+    public Long getFileSize() { return fileSize; }
+    public FileCategory getFileCategory() { return fileCategory; }
+    public LocalDateTime getUploadedAt() { return uploadedAt; }
+    public Boolean getIsActive() { return isActive; }
+    public StorageType getStorageType() { return storageType; }
+    public String getS3Path() { return s3Path; }
+    public Long getOwnerId() { return ownerId; }
+    public String getDescription() { return description; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Long getPatientId() { return patientId; }
+    public OwnerType getOwnerType() { return ownerType; }
+    
+    // Manual setters
+    public void setDescription(String description) { this.description = description; }
+    public void setPatientId(Long patientId) { this.patientId = patientId; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }
