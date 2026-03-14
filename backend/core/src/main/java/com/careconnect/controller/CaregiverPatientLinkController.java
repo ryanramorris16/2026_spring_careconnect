@@ -142,8 +142,7 @@ public class CaregiverPatientLinkController {
     }
 
     // 7. Get all caregivers linked to a patient
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
+    @RequirePermission(Permission.VIEW_MESSAGES)
     @GetMapping("/patients/{patientId}/caregivers")
     public ResponseEntity<List<CaregiverPatientLinkResponse>> getCaregiversByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
