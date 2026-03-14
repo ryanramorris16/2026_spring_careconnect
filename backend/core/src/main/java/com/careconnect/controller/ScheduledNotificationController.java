@@ -5,6 +5,7 @@ import com.careconnect.model.ScheduledNotification;
 import com.careconnect.model.User;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.RequirePermission;
+import com.careconnect.security.Permission;
 import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.ScheduledNotificationService;
 import com.careconnect.util.SecurityUtil;
@@ -28,7 +29,7 @@ public class ScheduledNotificationController {
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
 
-    @RequirePermission(value = "CREATE_TASKS")
+    @RequirePermission(Permission.CREATE_TASKS)
     @PostMapping
     @Operation(summary = "Create a scheduled notification")
     public ResponseEntity<ScheduledNotificationDTO> createScheduledNotification(@RequestBody ScheduledNotificationDTO dto) throws UnauthorizedException {
@@ -37,17 +38,17 @@ public class ScheduledNotificationController {
 
         ScheduledNotification notification = scheduledNotificationService.createScheduledNotification(
             null, // taskId - could be added to DTO
-            dto.receiverId(),
-            dto.title(),
-            dto.body(),
-            LocalDateTime.parse(dto.scheduledTime()),
-            dto.notificationType()
+            dto.getReceiverId(),
+            dto.getTitle(),
+            dto.getBody(),
+            LocalDateTime.parse(dto.getScheduledTime()),
+            dto.getNotificationType()
         );
 
         return ResponseEntity.ok(toDTO(notification));
     }
 
-    @RequirePermission(value = "VIEW_ASSIGNED_PATIENTS")
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get scheduled notifications for a user")
     public ResponseEntity<List<ScheduledNotificationDTO>> getUserNotifications(@PathVariable Long userId) throws UnauthorizedException {
@@ -62,7 +63,7 @@ public class ScheduledNotificationController {
         return ResponseEntity.ok(dtos);
     }
 
-    @RequirePermission(value = "CREATE_TASKS")
+    @RequirePermission(Permission.CREATE_TASKS)
     @PostMapping("/medication-reminder/{patientId}")
     @Operation(summary = "Create medication reminder notifications")
     public ResponseEntity<List<ScheduledNotificationDTO>> createMedicationReminders(
@@ -88,7 +89,7 @@ public class ScheduledNotificationController {
         return ResponseEntity.ok(dtos);
     }
 
-    @RequirePermission(value = "CREATE_TASKS")
+    @RequirePermission(Permission.CREATE_TASKS)
     @PostMapping("/appointment-reminder/{patientId}")
     @Operation(summary = "Create appointment reminder notification")
     public ResponseEntity<ScheduledNotificationDTO> createAppointmentReminder(
@@ -106,7 +107,7 @@ public class ScheduledNotificationController {
         return ResponseEntity.ok(toDTO(notification));
     }
 
-    @RequirePermission(value = "CREATE_TASKS")
+    @RequirePermission(Permission.CREATE_TASKS)
     @DeleteMapping("/{notificationId}")
     @Operation(summary = "Cancel a scheduled notification")
     public ResponseEntity<Void> cancelScheduledNotification(@PathVariable Long notificationId) throws UnauthorizedException {

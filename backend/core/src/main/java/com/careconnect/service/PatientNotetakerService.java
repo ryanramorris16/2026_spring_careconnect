@@ -10,7 +10,6 @@ import java.util.List;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.extern.slf4j.Slf4j;
 
 import com.careconnect.dto.PatientNoteDTO;
 import com.careconnect.dto.PatientNotetakerConfigDTO;
@@ -29,9 +28,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
-@Slf4j
+
 @Service
 public class PatientNotetakerService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PatientNotetakerService.class);
     private final TaskServiceV2 taskService;
     private final OpenRouterService openRouterService;
     private final PatientNoteRepository patientNoteRepository;

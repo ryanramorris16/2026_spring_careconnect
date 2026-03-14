@@ -39,14 +39,14 @@ public class NotificationService {
     public NotificationResponse sendNotification(FirebaseNotificationRequest request) {
         try {
             // For now, send SMS if phone number is available, otherwise this is a placeholder
-            if (request.targetToken() != null && request.targetToken().startsWith("+")) {
+            if (request.getTargetToken() != null && request.getTargetToken().startsWith("+")) {
                 // It's a phone number
-                String messageId = snsService.publishSms(request.targetToken(), request.body());
+                String messageId = snsService.publishSms(request.getTargetToken(), request.getBody());
                 return NotificationResponse.success(messageId);
             } else {
                 // For push notifications, we'd need device tokens registered with SNS
                 // This is a placeholder for future implementation
-                log.warn("Push notification to token {} not implemented yet", request.targetToken());
+                log.warn("Push notification to token {} not implemented yet", request.getTargetToken());
                 return NotificationResponse.success("push-placeholder-" + System.currentTimeMillis());
             }
         } catch (Exception e) {
@@ -102,12 +102,12 @@ public class NotificationService {
         }
 
         // Send push notifications to registered devices
-        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserId(userId);
+        List<DeviceToken> deviceTokens = deviceTokenRepository.findByUserIdAndIsActiveTrue(userId);
         for (DeviceToken token : deviceTokens) {
             if (shouldSendPush(notificationType, settings)) {
                 try {
                     // For now, send SMS to phone numbers, push notification support needs more setup
-                    if (token.getDeviceType() == DeviceToken.DeviceType.MOBILE && user.getPhone() != null) {
+                    if (token.getDeviceType() == DeviceToken.DeviceType.ANDROID && user.getPhone() != null) {
                         String messageId = snsService.publishSms(user.getPhone(), body);
                         responses.add(NotificationResponse.success(messageId));
                     }
@@ -252,8 +252,8 @@ public class NotificationService {
     public void registerDeviceToken(Long userId, String fcmToken, String deviceId, DeviceToken.DeviceType deviceType) {
         // For now, just store the token. Full SNS integration would require platform applications
         DeviceToken token = DeviceToken.builder()
-                .userId(userId)
-                .token(fcmToken)
+                .user(userRepository.findById(userId).orElseThrow())
+                .fcmToken(fcmToken)
                 .deviceId(deviceId)
                 .deviceType(deviceType)
                 .build();
@@ -265,7 +265,7 @@ public class NotificationService {
      * Unregister device token
      */
     public void unregisterDeviceToken(String fcmToken) {
-        deviceTokenRepository.deleteByToken(fcmToken);
+        deviceTokenRepository.findByFcmTokenAndIsActiveTrue(fcmToken).ifPresent(deviceTokenRepository::delete);
         log.info("Unregistered device token: {}", fcmToken);
     }
 

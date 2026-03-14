@@ -73,6 +73,9 @@ public class User {
     @Column(nullable = false)
     private String status = "ACTIVE";
 
+    @Column(name = "phone", length = 20)
+    private String phone;
+
     // ========== RBAC Permission Methods ==========
 
     /**

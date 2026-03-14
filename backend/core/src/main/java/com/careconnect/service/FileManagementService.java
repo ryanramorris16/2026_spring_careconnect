@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 //@Service
 @Slf4j
 @Transactional
+@Service
 public class FileManagementService {
 
     private static final Logger log = LoggerFactory.getLogger(FileManagementService.class);

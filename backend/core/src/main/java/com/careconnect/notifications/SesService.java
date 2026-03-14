@@ -1,5 +1,6 @@
 package com.careconnect.notifications;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.regions.Region;
@@ -19,6 +20,7 @@ public class SesService {
     private final SesClient sesClient;
     private final String fromAddress;
 
+    @Autowired
     public SesService(@Value("${aws.region:us-east-1}") String awsRegion,
                       @Value("${aws.ses.from:no-reply@careconnect.com}") String fromAddress) {
         Region region = Region.of(awsRegion);

@@ -1,5 +1,6 @@
 package com.careconnect.notifications;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.regions.Region;
@@ -14,6 +15,7 @@ public class SnsService {
 
     private final SnsClient snsClient;
 
+    @Autowired
     public SnsService(@Value("${aws.region:us-east-1}") String awsRegion) {
         Region region = Region.of(awsRegion);
         this.snsClient = SnsClient.builder().region(region).build();

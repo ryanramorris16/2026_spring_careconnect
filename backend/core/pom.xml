@@ -27,13 +27,6 @@
         <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
         <dependency-check.failBuild>false</dependency-check.failBuild>
         <!-- SonarQube Configuration -->
-        <sonar.projectKey>careconnect-backend</sonar.projectKey>
-        <sonar.projectName>CareConnect Backend</sonar.projectName>
-        <sonar.language>java</sonar.language>
-        <sonar.sources>src/main</sonar.sources>
-        <sonar.tests>src/test</sonar.tests>
-        <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -93,7 +86,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
+            <version>1.18.38</version>
             <scope>provided</scope>
         </dependency>
 
@@ -411,13 +404,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>17</source>
+                    <target>17</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.34</version>
+                            <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
