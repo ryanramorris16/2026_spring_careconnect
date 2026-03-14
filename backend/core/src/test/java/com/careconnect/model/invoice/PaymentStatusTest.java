@@ -13,13 +13,13 @@ class PaymentStatusTest {
         final PaymentStatus[] values = PaymentStatus.values();
 
         assertThat(values).containsExactlyInAnyOrder(
-                PaymentStatus.pending,
-                PaymentStatus.overdue,
-                PaymentStatus.pendingInsurance,
-                PaymentStatus.sent,
-                PaymentStatus.paid,
-                PaymentStatus.partialPayment,
-                PaymentStatus.rejectedInsurance
+                PaymentStatus.PENDING,
+                PaymentStatus.OVERDUE,
+                PaymentStatus.PENDING_INSURANCE,
+                PaymentStatus.SENT,
+                PaymentStatus.PAID,
+                PaymentStatus.PARTIAL_PAYMENT,
+                PaymentStatus.REJECTED_INSURANCE
         );
     }
 
@@ -27,57 +27,57 @@ class PaymentStatusTest {
 
     @Test
     void valueOf_pending_returnsPending() throws Exception {
-        assertThat(PaymentStatus.valueOf("pending")).isEqualTo(PaymentStatus.pending);
+        assertThat(PaymentStatus.valueOf("PENDING")).isEqualTo(PaymentStatus.PENDING);
     }
 
     @Test
     void valueOf_overdue_returnsOverdue() throws Exception {
-        assertThat(PaymentStatus.valueOf("overdue")).isEqualTo(PaymentStatus.overdue);
+        assertThat(PaymentStatus.valueOf("OVERDUE")).isEqualTo(PaymentStatus.OVERDUE);
     }
 
     @Test
     void valueOf_pendingInsurance_returnsPendingInsurance() throws Exception {
-        assertThat(PaymentStatus.valueOf("pendingInsurance")).isEqualTo(PaymentStatus.pendingInsurance);
+        assertThat(PaymentStatus.valueOf("PENDING_INSURANCE")).isEqualTo(PaymentStatus.PENDING_INSURANCE);
     }
 
     @Test
     void valueOf_sent_returnsSent() throws Exception {
-        assertThat(PaymentStatus.valueOf("sent")).isEqualTo(PaymentStatus.sent);
+        assertThat(PaymentStatus.valueOf("SENT")).isEqualTo(PaymentStatus.SENT);
     }
 
     @Test
     void valueOf_paid_returnsPaid() throws Exception {
-        assertThat(PaymentStatus.valueOf("paid")).isEqualTo(PaymentStatus.paid);
+        assertThat(PaymentStatus.valueOf("PAID")).isEqualTo(PaymentStatus.PAID);
     }
 
     @Test
     void valueOf_partialPayment_returnsPartialPayment() throws Exception {
-        assertThat(PaymentStatus.valueOf("partialPayment")).isEqualTo(PaymentStatus.partialPayment);
+        assertThat(PaymentStatus.valueOf("PARTIAL_PAYMENT")).isEqualTo(PaymentStatus.PARTIAL_PAYMENT);
     }
 
     @Test
     void valueOf_rejectedInsurance_returnsRejectedInsurance() throws Exception {
-        assertThat(PaymentStatus.valueOf("rejectedInsurance")).isEqualTo(PaymentStatus.rejectedInsurance);
+        assertThat(PaymentStatus.valueOf("REJECTED_INSURANCE")).isEqualTo(PaymentStatus.REJECTED_INSURANCE);
     }
 
     // ─── name() and ordinal() ─────────────────────────────────────────────────
 
     @Test
     void name_returnsCorrectString() throws Exception {
-        assertThat(PaymentStatus.pending.name()).isEqualTo("pending");
-        assertThat(PaymentStatus.paid.name()).isEqualTo("paid");
-        assertThat(PaymentStatus.overdue.name()).isEqualTo("overdue");
+        assertThat(PaymentStatus.PENDING.name()).isEqualTo("pending");
+        assertThat(PaymentStatus.PAID.name()).isEqualTo("paid");
+        assertThat(PaymentStatus.OVERDUE.name()).isEqualTo("overdue");
     }
 
     @Test
     void ordinal_isStable() throws Exception {
-        assertThat(PaymentStatus.pending.ordinal()).isEqualTo(0);
-        assertThat(PaymentStatus.overdue.ordinal()).isEqualTo(1);
-        assertThat(PaymentStatus.pendingInsurance.ordinal()).isEqualTo(2);
-        assertThat(PaymentStatus.sent.ordinal()).isEqualTo(3);
-        assertThat(PaymentStatus.paid.ordinal()).isEqualTo(4);
-        assertThat(PaymentStatus.partialPayment.ordinal()).isEqualTo(5);
-        assertThat(PaymentStatus.rejectedInsurance.ordinal()).isEqualTo(6);
+        assertThat(PaymentStatus.PENDING.ordinal()).isEqualTo(0);
+        assertThat(PaymentStatus.OVERDUE.ordinal()).isEqualTo(1);
+        assertThat(PaymentStatus.PENDING_INSURANCE.ordinal()).isEqualTo(2);
+        assertThat(PaymentStatus.SENT.ordinal()).isEqualTo(3);
+        assertThat(PaymentStatus.PAID.ordinal()).isEqualTo(4);
+        assertThat(PaymentStatus.PARTIAL_PAYMENT.ordinal()).isEqualTo(5);
+        assertThat(PaymentStatus.REJECTED_INSURANCE.ordinal()).isEqualTo(6);
     }
 
     // ─── Count ────────────────────────────────────────────────────────────────

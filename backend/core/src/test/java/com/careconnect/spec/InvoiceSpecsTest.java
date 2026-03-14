@@ -147,7 +147,7 @@ class InvoiceSpecsTest {
 
     @Test
     void statuses_nonEmpty_buildsInPredicate() throws Exception {
-        final Set<PaymentStatus> ss = EnumSet.of(PaymentStatus.pending, PaymentStatus.overdue);
+        final Set<PaymentStatus> ss = EnumSet.of(PaymentStatus.PENDING, PaymentStatus.OVERDUE);
 
         when(root.get("paymentStatus")).thenReturn(path);
         when(path.in(ss)).thenReturn(predicate);

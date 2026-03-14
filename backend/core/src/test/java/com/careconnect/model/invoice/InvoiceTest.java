@@ -50,7 +50,7 @@ class InvoiceTest {
                 .statementDate(now)
                 .dueDate(now.plusDays(30))
                 .paidDate(null)
-                .paymentStatus(PaymentStatus.pending)
+                .paymentStatus(PaymentStatus.PENDING)
                 .billedToInsurance(true)
                 .totalCharges(new BigDecimal("500.00"))
                 .totalAdjustments(new BigDecimal("50.00"))
@@ -77,7 +77,7 @@ class InvoiceTest {
         assertThat(invoice.getProviderEmail()).isEqualTo("abrown@clinic.com");
         assertThat(invoice.getPatientName()).isEqualTo("Jane Doe");
         assertThat(invoice.getPatientAccountNumber()).isEqualTo("ACC-001");
-        assertThat(invoice.getPaymentStatus()).isEqualTo(PaymentStatus.pending);
+        assertThat(invoice.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
         assertThat(invoice.isBilledToInsurance()).isTrue();
         assertThat(invoice.getTotalCharges()).isEqualByComparingTo(new BigDecimal("500.00"));
         assertThat(invoice.getAmountDue()).isEqualByComparingTo(new BigDecimal("450.00"));
@@ -95,13 +95,13 @@ class InvoiceTest {
 
         invoice.setId("INV-002");
         invoice.setInvoiceNumber("2025-0002");
-        invoice.setPaymentStatus(PaymentStatus.paid);
+        invoice.setPaymentStatus(PaymentStatus.PAID);
         invoice.setBilledToInsurance(false);
         invoice.setAmountDue(BigDecimal.ZERO);
 
         assertThat(invoice.getId()).isEqualTo("INV-002");
         assertThat(invoice.getInvoiceNumber()).isEqualTo("2025-0002");
-        assertThat(invoice.getPaymentStatus()).isEqualTo(PaymentStatus.paid);
+        assertThat(invoice.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(invoice.isBilledToInsurance()).isFalse();
         assertThat(invoice.getAmountDue()).isEqualByComparingTo(BigDecimal.ZERO);
     }
