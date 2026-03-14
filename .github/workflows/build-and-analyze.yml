@@ -763,16 +763,48 @@ jobs:
           key: dependency-check-${{ runner.os }}
 
       # ------------------------------------------------------
-      # Tool: OWASP Dependency-Check (SCA) — DISABLED
+      # Tool: OWASP Dependency-Check (SCA)
       # ----------------------------------------------------------
+      # Output: quality/analysis/raw/dependency-check-report.json
+      # ------------------------------------------------------
       - name: Run OWASP Dependency-Check (SCA)
         shell: bash
+        env:
+          NVD_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           set -euo pipefail
+          ROOT="${GITHUB_WORKSPACE}/${SCAN_ROOT}"
           OUT_DIR="${GITHUB_WORKSPACE}/quality/analysis/raw"
-          mkdir -p "${OUT_DIR}"
-          echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
-          echo "::warning::Dependency-Check is currently disabled (NVD API issue). Skipping SCA scan."
+          DATA_DIR="${GITHUB_WORKSPACE}/quality/analysis/dc-data"
+          mkdir -p "${OUT_DIR}" "${DATA_DIR}"
+      
+          curl -sSL -o dc.zip \
+            https://github.com/jeremylong/DependencyCheck/releases/download/v9.2.0/dependency-check-9.2.0-release.zip
+          unzip -q dc.zip
+      
+          if ! ./dependency-check/bin/dependency-check.sh \
+            --project "careconnect-scan" \
+            --scan "${ROOT}" \
+            --format JSON \
+            --out "${OUT_DIR}" \
+            --data "${DATA_DIR}" \
+            --nvdApiKey "${NVD_KEY}" \
+            --failOnCVSS 7 ; then
+
+            echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
+            ./dependency-check/bin/dependency-check.sh \
+              --project "careconnect-scan" \
+              --scan "${ROOT}" \
+              --format JSON \
+              --out "${OUT_DIR}" \
+              --data "${DATA_DIR}" \
+              --noupdate \
+              --disableAssembly \
+              --failOnCVSS 7 || true
+          fi
+
+          [[ -f "${OUT_DIR}/dependency-check-report.json" ]] || \
+            echo '{"dependencies":[]}' > "${OUT_DIR}/dependency-check-report.json"
 
       # ======================================================
       # GATE ENGINE + REPORTING
