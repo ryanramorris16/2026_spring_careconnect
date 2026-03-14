@@ -29,16 +29,7 @@ public class AIChatController {
     private final UserAIConfigService userAIConfigService;
     private final ChatConversationRepository chatConversationRepository;
     private final ChatCleanupService chatCleanupService;
-<<<<<<<<< Temporary merge branch 1
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AIChatController.class);
-=========
-    private final SecurityUtil securityUtil;
-    private final AuthorizationService authorizationService;
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AIChatController.class);
->>>>>>>>> Temporary merge branch 2
-
-    @RequirePermission(Permission.CREATE_TASKS)
-
 
     @PostMapping("/chat")
     @Operation(
@@ -54,12 +45,6 @@ public class AIChatController {
     })
     public ResponseEntity<ChatResponse> sendMessage(@Valid @RequestBody ChatRequest request) {
         LOG.info("Processing chat request for patient: {}, user: {}. Uploaded files: {}", request.getPatientId(), request.getUserId(), request.getUploadedFiles());
-=========
-    public ResponseEntity<ChatResponse> sendMessage(@Valid @RequestBody ChatRequest request) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-        log.info("Processing chat request for patient: {}, user: {}. Uploaded files: {}", request.getPatientId(), request.getUserId(), request.getUploadedFiles());
->>>>>>>>> Temporary merge branch 2
         try {
             ChatResponse response = aiChatService.processChat(request);
             if (response.getSuccess()) {
@@ -92,15 +77,9 @@ public class AIChatController {
     // @PreAuthorize("hasRole('PATIENT') or hasRole('CAREGIVER') or hasRole('FAMILY_MEMBER')")
     public ResponseEntity<List<ChatConversationSummary>> getPatientConversations(
             @Parameter(description = "Patient ID") @PathVariable Long patientId) {
-<<<<<<<<< Temporary merge branch 1
         
         LOG.info("Retrieving conversations for patient: {}", patientId);
         
-=========
-
-        log.info("Retrieving conversations for patient: {}", patientId);
-
->>>>>>>>> Temporary merge branch 2
         try {
             List<ChatConversationSummary> conversations = aiChatService.getPatientConversations(patientId);
             return ResponseEntity.ok(conversations);
@@ -123,15 +102,9 @@ public class AIChatController {
     // @PreAuthorize("hasRole('PATIENT') or hasRole('CAREGIVER') or hasRole('FAMILY_MEMBER')")
     public ResponseEntity<List<ChatMessageSummary>> getConversationMessages(
             @Parameter(description = "Conversation ID") @PathVariable String conversationId) {
-<<<<<<<<< Temporary merge branch 1
         
         LOG.info("Retrieving messages for conversation: {}", conversationId);
         
-=========
-
-        log.info("Retrieving messages for conversation: {}", conversationId);
-
->>>>>>>>> Temporary merge branch 2
         try {
             List<ChatMessageSummary> messages = aiChatService.getConversationMessages(conversationId);
             return ResponseEntity.ok(messages);
@@ -157,13 +130,6 @@ public class AIChatController {
             @RequestParam(defaultValue = "50") int limit) {
         
         LOG.info("Retrieving conversation history for user: {}, conversation: {}, limit: {}", 
-=========
-            @RequestParam(defaultValue = "50") int limit) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-
-        log.info("Retrieving conversation history for user: {}, conversation: {}, limit: {}",
->>>>>>>>> Temporary merge branch 2
             userId, conversationId, limit);
         
         try {
@@ -229,14 +195,6 @@ public class AIChatController {
         
         LOG.info("Deactivating conversation: {}", conversationId);
         
-=========
-            @Parameter(description = "Conversation ID") @PathVariable String conversationId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-
-        log.info("Deactivating conversation: {}", conversationId);
-
->>>>>>>>> Temporary merge branch 2
         try {
             aiChatService.deactivateConversation(conversationId);
             return ResponseEntity.ok().build();
@@ -261,12 +219,6 @@ public class AIChatController {
             @RequestParam Long userId,
             @RequestParam(required = false) Long patientId) {
         LOG.info("Retrieving AI config for user: {}, patient: {}", userId, patientId);
-=========
-            @RequestParam(required = false) Long patientId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-        log.info("Retrieving AI config for user: {}, patient: {}", userId, patientId);
->>>>>>>>> Temporary merge branch 2
         try {
             UserAIConfigDTO config = userAIConfigService.getUserAIConfig(userId, patientId);
             return ResponseEntity.ok(config);
@@ -290,12 +242,6 @@ public class AIChatController {
     public ResponseEntity<UserAIConfigDTO> saveUserAIConfig(
             @Valid @RequestBody UserAIConfigDTO configDTO) {
         LOG.info("Saving AI config for user: {}, patient: {}", configDTO.getUserId(), configDTO.getPatientId());
-=========
-            @Valid @RequestBody UserAIConfigDTO configDTO) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-        log.info("Saving AI config for user: {}, patient: {}", configDTO.getUserId(), configDTO.getPatientId());
->>>>>>>>> Temporary merge branch 2
         try {
             UserAIConfigDTO savedConfig = userAIConfigService.saveUserAIConfig(configDTO);
             boolean isNew = configDTO.getId() == null;
@@ -320,12 +266,6 @@ public class AIChatController {
             @RequestParam Long userId,
             @RequestParam(required = false) Long patientId) {
         LOG.info("Deactivating AI config for user: {}, patient: {}", userId, patientId);
-=========
-            @RequestParam(required = false) Long patientId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        if (currentUser.isFamilyMember()) throw new UnauthorizedException("Requires ADMIN, CAREGIVER, or PATIENT role");
-        log.info("Deactivating AI config for user: {}, patient: {}", userId, patientId);
->>>>>>>>> Temporary merge branch 2
         try {
             userAIConfigService.deactivateUserAIConfig(userId, patientId);
             return ResponseEntity.ok().build();
