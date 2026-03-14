@@ -50,6 +50,12 @@ class Patient {
   final String? maNumber;
   final List<dynamic>? allergies;
   final Map<String, dynamic>? vitalConditions;
+  // In-Home personalization fields
+  final String? likes;
+  final String? dislikes;
+  final String? habits;
+  final String? phobias;
+  final String? preferredCommunicationMethod;
 
   Patient({
     required this.id,
@@ -67,6 +73,11 @@ class Patient {
     this.maNumber,
     this.allergies,
     this.vitalConditions,
+    this.likes,
+    this.dislikes,
+    this.habits,
+    this.phobias,
+    this.preferredCommunicationMethod,
   });
 
   factory Patient.fromJson(Map<String, dynamic> json) {
@@ -160,6 +171,67 @@ class Patient {
       maNumber: patientData['maNumber']?.toString(),
       allergies: patientData['allergies'] ?? [],
       vitalConditions: patientData['latestVitals'] ?? {},
+      likes: (patientData['likes'] ?? patientData['personalizationLikes'])
+          ?.toString(),
+      dislikes:
+          (patientData['dislikes'] ?? patientData['personalizationDislikes'])
+              ?.toString(),
+      habits: (patientData['habits'] ?? patientData['personalizationHabits'])
+          ?.toString(),
+      phobias:
+          (patientData['phobias'] ?? patientData['personalizationPhobias'])
+              ?.toString(),
+      preferredCommunicationMethod:
+          (patientData['preferredCommunicationMethod'] ??
+                  patientData['preferred_communication_method'])
+              ?.toString(),
+    );
+  }
+
+  Patient copyWith({
+    int? id,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? phone,
+    String? dob,
+    String? relationship,
+    String? profileImageUrl,
+    Address? address,
+    int? linkId,
+    String? linkStatus,
+    String? gender,
+    String? maNumber,
+    List<dynamic>? allergies,
+    Map<String, dynamic>? vitalConditions,
+    String? likes,
+    String? dislikes,
+    String? habits,
+    String? phobias,
+    String? preferredCommunicationMethod,
+  }) {
+    return Patient(
+      id: id ?? this.id,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      dob: dob ?? this.dob,
+      relationship: relationship ?? this.relationship,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      address: address ?? this.address,
+      linkId: linkId ?? this.linkId,
+      linkStatus: linkStatus ?? this.linkStatus,
+      gender: gender ?? this.gender,
+      maNumber: maNumber ?? this.maNumber,
+      allergies: allergies ?? this.allergies,
+      vitalConditions: vitalConditions ?? this.vitalConditions,
+      likes: likes ?? this.likes,
+      dislikes: dislikes ?? this.dislikes,
+      habits: habits ?? this.habits,
+      phobias: phobias ?? this.phobias,
+      preferredCommunicationMethod:
+          preferredCommunicationMethod ?? this.preferredCommunicationMethod,
     );
   }
 

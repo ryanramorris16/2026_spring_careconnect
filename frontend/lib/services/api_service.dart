@@ -30,6 +30,13 @@ class ApiConstants {
   static final String tasks = '$_host/v1/api/tasks';
   static final String allergies = '$_host/v1/api/allergies';
   static final String symptoms = '$_host/v1/api/symptoms';
+  static final String riskTypes = '$_host/v1/api/risk-types';
+
+  // Client activities & logging (client = patient in API)
+  static final String clients = '$_host/v1/api/clients';
+  static final String activities = '$_host/v1/api/activities';
+  static final String config = '$_host/v1/api/config';
+  static final String activityLogs = '$_host/v1/api/activity-logs';
 
   //V2 endpoints
   static final String baseUrlV2 = '$_host/v2/api/';
@@ -936,10 +943,8 @@ class ApiService {
       return jsonDecode(response.body);
     } else if (response.statusCode == 403) {
       throw Exception('Access denied to patient models');
-      throw Exception('Access denied to patient data');
     } else {
       throw Exception('Failed to fetch patient models');
-      throw Exception('Failed to fetch patient data');
     }
   }
 
@@ -960,12 +965,10 @@ class ApiService {
       return jsonDecode(response.body);
     } else if (response.statusCode == 403) {
       throw Exception('Access denied to patient models');
-      throw Exception('Access denied to patient data');
     } else if (response.statusCode == 404) {
       throw Exception('Patient not found');
     } else {
       throw Exception('Failed to fetch patient models');
-      throw Exception('Failed to fetch patient data');
     }
   }
 
@@ -1002,7 +1005,6 @@ class ApiService {
       return jsonDecode(response.body);
     } else if (response.statusCode == 403) {
       throw Exception('Access denied to patient models');
-      throw Exception('Access denied to patient data');
     } else {
       throw Exception('Failed to fetch patient dashboard');
     }
@@ -1206,6 +1208,32 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
+  // ========================
+  // AUDIT LOG
+  // ========================
+
+  static Future<http.Response> getAuditLog(
+    int clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    String? type,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final query = <String, String>{};
+    if (startDate != null) {
+      query['startDate'] = _formatDate(startDate);
+    }
+    if (endDate != null) {
+      query['endDate'] = _formatDate(endDate);
+    }
+    if (type != null && type.isNotEmpty) {
+      query['type'] = type;
+    }
+    final uri = Uri.parse('${ApiConstants.clients}/$clientId/audit-log')
+        .replace(queryParameters: query.isEmpty ? null : query);
+    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 30));
+  }
+
   /// Update patient profile
   static Future<http.Response> updatePatientProfile(
     int patientId,
@@ -1219,6 +1247,317 @@ class ApiService {
           body: jsonEncode(updatedProfile),
         )
         .timeout(const Duration(seconds: 15));
+  }
+
+  // --- Known Risks (risk types + patient risks) ---
+  static Future<http.Response> getRiskTypes() async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(Uri.parse(ApiConstants.riskTypes), headers: headers)
+        .timeout(const Duration(seconds: 15));
+  }
+
+  static Future<http.Response> getPatientRisks(int patientId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.patients}/$patientId/risks'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  static Future<http.Response> flagPatientRisk(int patientId, int riskTypeId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    return await _httpClient
+        .post(
+          Uri.parse('${ApiConstants.patients}/$patientId/risks'),
+          headers: headers,
+          body: jsonEncode({'riskTypeId': riskTypeId}),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  static Future<http.Response> unflagPatientRisk(int patientId, int riskId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .delete(
+          Uri.parse('${ApiConstants.patients}/$patientId/risks/$riskId'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  // --- Client activities (ADL/IADL) ---
+  /// Resolve relative image URL to full URL. Returns null if input is null or empty.
+  static String? resolveImageUrl(String? relativeUrl) {
+    if (relativeUrl == null || relativeUrl.trim().isEmpty) return null;
+    final trimmed = relativeUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    final base = getBackendBaseUrl().replaceAll(RegExp(r'/+$'), '');
+    return trimmed.startsWith('/') ? '$base$trimmed' : '$base/$trimmed';
+  }
+
+  static Future<http.Response> getClientActivities(int clientId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.clients}/$clientId/activities'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /activities — all activities, optionally filtered by category (ADL | IADL).
+  static Future<http.Response> getActivities({String? category}) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final uri = category != null
+        ? Uri.parse('${ApiConstants.activities}?category=$category')
+        : Uri.parse(ApiConstants.activities);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// PUT /clients/{id}/activity-config/{activityId} — enable/disable activity for client.
+  static Future<http.Response> putClientActivityConfig(
+    int clientId,
+    int activityId, {
+    required bool isEnabled,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .put(
+          Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId'),
+          headers: headers,
+          body: jsonEncode({'isEnabled': isEnabled}),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// POST /clients/{id}/activity-config/{activityId}/icon — upload custom icon.
+  static Future<http.Response> postClientActivityIcon(
+    int clientId,
+    int activityId,
+    File imageFile,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    headers.remove('Content-Type');
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId/icon'),
+    );
+    request.headers.addAll(headers);
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      imageFile.path,
+      filename: path.basename(imageFile.path),
+    ));
+    var streamed = await request.send().timeout(const Duration(seconds: 30));
+    return await http.Response.fromStream(streamed);
+  }
+
+  static Future<http.Response> getCompetencyScale() async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.config}/competency-scale'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  static Future<http.Response> postActivityLog({
+    required int clientId,
+    required int activityId,
+    required int competencyScore,
+    int? satisfactionRating,
+    String? notes,
+    String? activityName,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final body = <String, dynamic>{
+      'clientId': clientId,
+      'activityId': activityId,
+      'competencyScore': competencyScore,
+    };
+    if (satisfactionRating != null) body['satisfactionRating'] = satisfactionRating;
+    if (notes != null && notes.trim().isNotEmpty) body['notes'] = notes.trim();
+    if (activityName != null && activityName.trim().isNotEmpty) body['activityName'] = activityName.trim();
+    return await _httpClient
+        .post(
+          Uri.parse(ApiConstants.activityLogs),
+          headers: headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /activity-logs?clientId=X&limit=N — list activity logs for a client.
+  static Future<http.Response> getActivityLogs(int clientId, {int limit = 100}) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final uri = Uri.parse(ApiConstants.activityLogs).replace(
+      queryParameters: {'clientId': clientId.toString(), 'limit': limit.toString()},
+    );
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// POST /clients/{id}/behavioral-incidents — create behavioral incident.
+  static Future<http.Response> postBehavioralIncident({
+    required int clientId,
+    required String observedBehavior,
+    required DateTime occurredAt,
+    String? triggerNotes,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final body = <String, dynamic>{
+      'observed_behavior': observedBehavior,
+      'occurred_at': occurredAt.toIso8601String(),
+    };
+    if (triggerNotes != null && triggerNotes.trim().isNotEmpty) {
+      body['trigger_notes'] = triggerNotes.trim();
+    }
+    return await _httpClient
+        .post(
+          Uri.parse('${ApiConstants.clients}/$clientId/behavioral-incidents'),
+          headers: headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /clients/{id}/behavioral-incidents — list behavioral incidents.
+  static Future<http.Response> getBehavioralIncidents(int clientId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.clients}/$clientId/behavioral-incidents'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// POST /clients/{id}/events — log a client-facing activity tap.
+  static Future<http.Response> postClientEvent({
+    required int clientId,
+    required int activityId,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final body = {'activity_id': activityId};
+    return await _httpClient
+        .post(
+          Uri.parse('${ApiConstants.clients}/$clientId/events'),
+          headers: headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// POST /clients/{id}/incident-reports — create structured incident report.
+  static Future<http.Response> postIncidentReport({
+    required int clientId,
+    required String incidentType,
+    required DateTime occurredAt,
+    required String location,
+    String? triggerNotes,
+    required List<String> actionsTaken,
+    required String outcome,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final body = <String, dynamic>{
+      'incident_type': incidentType,
+      'occurred_at': occurredAt.toIso8601String(),
+      'location': location,
+      'outcome': outcome,
+      'actions_taken': actionsTaken,
+    };
+    if (triggerNotes != null && triggerNotes.trim().isNotEmpty) {
+      body['trigger_notes'] = triggerNotes.trim();
+    }
+    return await _httpClient
+        .post(
+          Uri.parse('${ApiConstants.clients}/$clientId/incident-reports'),
+          headers: headers,
+          body: jsonEncode(body),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /clients/{id}/incident-reports — list incident reports for a client.
+  static Future<http.Response> getIncidentReports(int clientId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.clients}/$clientId/incident-reports'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /clients/{id}/incident-reports/{reportId}` — single report with actions.
+  static Future<http.Response> getIncidentReport(int clientId, int reportId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.clients}/$clientId/incident-reports/$reportId'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /clients/{id}/reports/competency-trends — average competency per activity per week.
+  /// Optional [startDate] and [endDate] (default: last 8 weeks). Dates as yyyy-MM-dd.
+  static Future<http.Response> getCompetencyTrends(
+    int clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final queryParams = <String, String>{};
+    if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
+    if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
+    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/competency-trends')
+        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+  }
+
+  static String _formatDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+
+  /// GET /clients/{id}/reports/behavioral-trends — incident count per week, top keywords, trend.
+  static Future<http.Response> getBehavioralTrends(
+    int clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final queryParams = <String, String>{};
+    if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
+    if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
+    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/behavioral-trends')
+        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+  }
+
+  /// GET /clients/{id}/reports/participation — activity log counts and last logged per activity.
+  static Future<http.Response> getParticipation(
+    int clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final queryParams = <String, String>{};
+    if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
+    if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
+    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/participation')
+        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
   }
 
   /// Upload profile picture or other files

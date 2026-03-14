@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:care_connect_app/features/activities/presentation/pages/client_activity_icon_screen.dart';
 import '../../../../services/evv_service.dart';
 import 'package:http/http.dart' as http;
 
@@ -189,7 +190,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
           if (res.statusCode == 200) {
             final List<dynamic> data = jsonDecode(res.body);
             bool matchesPatient(Map<String, dynamic> m) {
-              final target = patientId?.toString();
+              final target = patientId.toString();
               if (m.containsKey('patientId') && '${m['patientId']}' == target) return true;
               if (m.containsKey('patient_id') && '${m['patient_id']}' == target) return true;
               final p = m['patient'];
@@ -1248,7 +1249,87 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 subtitle: Text('${date.month}/${date.day}/${date.year}'),
               );
             }),
+          const SizedBox(height: 16),
+          _buildClientActivityTile(theme),
         ],
+      ),
+    );
+  }
+
+  Widget _buildClientActivityTile(ThemeData theme) {
+    return InkWell(
+      onTap: () {
+        // Use the patientId from the logged-in patient user.
+        final user = Provider.of<UserProvider>(context, listen: false).user;
+        final clientId = user?.patientId;
+        final patientProfile = patient;
+        final clientName = patientProfile == null
+            ? 'Client'
+            : '${patientProfile['firstName'] ?? ''} ${patientProfile['lastName'] ?? ''}'.trim();
+        if (clientId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Patient info not loaded yet. Please try again.')),
+          );
+          return;
+        }
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => ClientActivityIconScreen(
+              clientId: clientId,
+              clientName: clientName.isEmpty ? 'Client' : clientName,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.self_improvement,
+                color: theme.colorScheme.onPrimary,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Communication and Activity Logging',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap an icon to communicate a need or indicate an activity',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
       ),
     );
   }
