@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -169,6 +170,9 @@ public class PatientController {
         Patient patient = patientService.getPatientById(patientId);
         log.debug("Found patient: id={}, userId={}, email={}", 
                   patient.getId(), patient.getUser().getId(), patient.getUser().getEmail());
+
+        // Enforce same role/link access policy used by other patient-detail endpoints
+        validatePatientAccess(patient.getUser().getId(), currentUser);
         
         // Use optimized query with patient_id (no joins needed)
         List<FamilyMemberLinkResponse> familyMembers = familyMemberService.getFamilyMembersByPatientId(patientId);
@@ -697,7 +701,8 @@ public class PatientController {
                 medicationDTO.startDate(),
                 medicationDTO.endDate(),
                 medicationDTO.notes(),
-                true // Set as active by default
+                true, // Set as active by default
+                null
         );
 
         MedicationDTO createdMedication = medicationService.createMedication(medicationWithPatientId);
@@ -728,6 +733,60 @@ public class PatientController {
 
         // Deactivate the medication (soft delete)
         medicationService.deactivateMedication(patientID, medicationId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{patientID}/medications/{medicationId}/last-taken")
+    @Operation(summary = "Mark medication as taken",
+            description = "Persist last taken timestamp for medication reminder tracking")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Medication taken time updated successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Patient or medication not found")
+    })
+    public ResponseEntity<MedicationDTO> updateMedicationLastTaken(
+            @PathVariable Long patientID,
+            @PathVariable Long medicationId,
+            @RequestBody(required = false) MedicationLastTakenUpdateDTO request) {
+        User currentUser = getCurrentUser();
+
+        // Family members have read-only access, cannot modify medications
+        if (currentUser.getRole() == Role.FAMILY_MEMBER) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Family members have read-only access");
+        }
+
+        Patient patient = patientService.getPatientById(patientID);
+        validatePatientAccess(patient.getUser().getId(), currentUser);
+
+        final Instant lastTaken = request != null && request.lastTaken() != null
+                ? request.lastTaken()
+                : Instant.now();
+        MedicationDTO updated = medicationService.updateMedicationLastTaken(patientID, medicationId, lastTaken);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{patientID}/medications/{medicationId}/last-taken")
+    @Operation(summary = "Clear medication taken status",
+            description = "Clear persisted last taken timestamp for medication reminder tracking")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Medication taken status cleared successfully"),
+            @ApiResponse(responseCode = "403", description = "Access denied"),
+            @ApiResponse(responseCode = "404", description = "Patient or medication not found")
+    })
+    public ResponseEntity<Void> clearMedicationLastTaken(
+            @PathVariable Long patientID,
+            @PathVariable Long medicationId) {
+        User currentUser = getCurrentUser();
+
+        // Family members have read-only access, cannot modify medications
+        if (currentUser.getRole() == Role.FAMILY_MEMBER) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Family members have read-only access");
+        }
+
+        Patient patient = patientService.getPatientById(patientID);
+        validatePatientAccess(patient.getUser().getId(), currentUser);
+
+        medicationService.clearMedicationLastTaken(patientID, medicationId);
         return ResponseEntity.noContent().build();
     }
 

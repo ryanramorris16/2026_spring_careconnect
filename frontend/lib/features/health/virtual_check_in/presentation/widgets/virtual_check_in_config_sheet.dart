@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in_question.dart';
@@ -10,6 +9,7 @@ as vmap;
 
 import 'package:care_connect_app/features/health/virtual_check_in/services/checkin_api.dart';
 import 'package:care_connect_app/features/health/virtual_check_in/services/questions_api.dart';
+import 'package:care_connect_app/config/env_constant.dart';
 
 /// Bottom sheet that edits the patient's Virtual Check-In questions.
 class VirtualCheckInConfigSheet extends StatefulWidget {
@@ -50,11 +50,12 @@ class _VirtualCheckInConfigSheetState extends State<VirtualCheckInConfigSheet> {
   List<BackendQuestionDto> _catalog = [];
   final Set<String> _selectedToAdd = {}; // dto.id as string
   final TextEditingController _catalogFilterCtrl = TextEditingController();
+  final ScrollController _catalogScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    final base = kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+    final base = getBackendBaseUrl();
     _api = CheckInApi(base);
     _qApi = QuestionsApi(base);
 
@@ -72,6 +73,7 @@ class _VirtualCheckInConfigSheetState extends State<VirtualCheckInConfigSheet> {
   void dispose() {
     _newTextCtrl.dispose();
     _catalogFilterCtrl.dispose();
+    _catalogScrollController.dispose();
     super.dispose();
   }
 
@@ -358,7 +360,9 @@ class _VirtualCheckInConfigSheetState extends State<VirtualCheckInConfigSheet> {
                         ConstrainedBox(
                           constraints: const BoxConstraints(maxHeight: 240),
                           child: Scrollbar(
+                            controller: _catalogScrollController,
                             child: ListView.builder(
+                              controller: _catalogScrollController,
                               shrinkWrap: true,
                               itemCount: _catalog.length,
                               itemBuilder: (context, i) {

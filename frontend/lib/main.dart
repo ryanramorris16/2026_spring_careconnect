@@ -10,19 +10,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:provider/provider.dart';
 
 import 'config/router/app_router.dart';
 import 'services/auth_migration_helper.dart';
+import 'services/api_service.dart';
 import 'services/messaging_service.dart';
+import 'services/local_db/local_db_startup.dart';
 import 'config/theme/app_theme.dart';
 import 'config/utils/responsive_utils.dart';
 import 'config/utils/web_utils.dart';
 import 'features/tasks/utils/task_type_manager.dart';
 import 'providers/theme_provider.dart';
 import 'providers/user_provider.dart';
-import 'services/auth_migration_helper.dart';
-import 'services/messaging_service.dart';
 
 Future<void> main() async {
   // Global error handling for unhandled Dart errors
@@ -58,10 +57,14 @@ Future<void> main() async {
 
       // Create providers (don't initialize them yet)
       final userProvider = UserProvider();
+      ApiService.configureOfflineQueue(
+        canQueueOfflineWrites: () => userProvider.offlineModeEnabled,
+      );
       final themeProvider = ThemeProvider();
       final shortcutProvider = ShortcutProvider()..init();
       final localeProvider = LocaleProvider();
       await localeProvider.loadSaved();
+
       // Start the app immediately, initialize services in background
       runApp(
         MultiProvider(
@@ -71,7 +74,6 @@ Future<void> main() async {
             ChangeNotifierProvider.value(value: shortcutProvider),
             ChangeNotifierProvider.value(value: localeProvider),
             ChangeNotifierProvider(create: (_) => TaskTypeManager()),
-            ChangeNotifierProvider(create: (_) => ShortcutProvider()..init()),
           ],
           child: CareConnectAppWithErrorBoundary(),
         ),
@@ -126,10 +128,7 @@ class _CareConnectAppWithErrorBoundaryState
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () {
-                      // Navigate to home instead of calling runApp again
-                      Navigator.of(
-                        context,
-                      ).pushNamedAndRemoveUntil('/', (route) => false);
+                      appRouter.go('/');
                     },
                     child: const Text('Go Home'),
                   ),
@@ -187,6 +186,9 @@ Future<void> _handleAuthMigration() async {
 Future<void> _bootstrap() async {
   // Performance optimization: Warm up system caches
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  await initializeLocalDbOnStartup();
+  await ApiService.initializeOfflineQueue();
 
   // Initialize web-specific optimizations
   if (kIsWeb) {

@@ -2,18 +2,18 @@ import 'dart:convert';
 
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/alter_notification_widget.dart';
+import 'package:care_connect_app/features/dashboard/patient_dashboard/models/medication_reminder_item.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/current_mood_widget.dart';
 import 'package:care_connect_app/shared/widgets/dashboard_appheader_widget.dart';
+import 'package:care_connect_app/features/dashboard/patient_dashboard/services/patient_medication_reminder_service.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/medication_reminder_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/offline_notification_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/primary_care_provider_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/recent_checkin_widget.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/api_service.dart';
-import 'package:care_connect_app/services/call_notification_service.dart';
 import 'package:care_connect_app/services/communication_service.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/evv_service.dart';
@@ -32,6 +32,13 @@ class PatientDashboard extends StatefulWidget {
 }
 
 class _PatientDashboardState extends State<PatientDashboard> {
+  static const String _lowMoodAlertMessage =
+      'Mood score below normal range. Consider contacting your healthcare provider.';
+  static const String _pendingMedicationAlertMessage =
+      'You have medication reminders that are not marked as taken.';
+  static const String _pendingMedicationAlertId =
+      'reminder:pending_medications';
+
   // Patient data
   Map<String, dynamic>? patient;
   List<Map<String, dynamic>> caregivers = [];
@@ -44,8 +51,12 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   // Dashboard specific data
   List<CheckIn> recentCheckIns = [];
-  MedicationReminder? upcomingReminder;
+  List<MedicationReminderItem> medicationReminders = [];
   Map<String, dynamic>? primaryCareProvider;
+  Map<String, dynamic>? _callableCaregiver;
+  List<Map<String, dynamic>> _linkedCaregiverLinks = [];
+  bool _providerVideoCallsEnabled = true;
+  String? _providerCallPolicyMessage;
 
   // Mood tracking
   int currentMoodScore = 0;
@@ -60,6 +71,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   // Alert dismissal tracking
   Set<String> dismissedAlertIds = {};
+  final PatientMedicationReminderService _medicationReminderService =
+      PatientMedicationReminderService();
 
   // EVV sections state
   final EvvService _evvService = EvvService();
@@ -71,10 +84,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
   void initState() {
     super.initState();
     _loadDashboardData();
-    _initializeCallNotifications();
+    _callNotificationInitialized = true;
     _checkConnectivity();
     _loadRecentMoodData();
     _loadMedicationReminders();
+    _loadLinkedCaregiversForCalling();
     _loadPrimaryCareProvider();
     _loadEvvSections();
   }
@@ -108,10 +122,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
         return;
       }
 
-      // Check for alerts
-      _checkForAlerts();
+      await _loadMedicationReminders();
+      final alerts = await _buildAlerts(id);
 
+      if (!mounted) {
+        return;
+      }
       setState(() {
+        activeAlerts = alerts;
         loading = false;
       });
     } catch (e) {
@@ -141,21 +159,27 @@ class _PatientDashboardState extends State<PatientDashboard> {
         patientName = combined.isNotEmpty ? combined : null;
       } catch (_) {}
 
-      final result = await _evvService.searchRecords(EvvSearchRequest(
-        patientName: patientName,
-        page: 0,
-        size: 200,
-        sortBy: 'dateOfService',
-        sortDirection: 'DESC',
-      ));
-      _pastEvvVisits = result.content.where((r) => r.patient?.id == patientId).toList();
+      final result = await _evvService.searchRecords(
+        EvvSearchRequest(
+          patientName: patientName,
+          page: 0,
+          size: 200,
+          sortBy: 'dateOfService',
+          sortDirection: 'DESC',
+        ),
+      );
+      _pastEvvVisits = result.content
+          .where((r) => r.patient?.id == patientId)
+          .toList();
 
       // Try caregiver scheduled visits endpoint and filter by patient
       try {
         final headers = await ApiService.getAuthHeaders();
         int? caregiverId;
         if (caregivers.isNotEmpty) {
-          caregiverId = (caregivers.first['id'] ?? caregivers.first['caregiverId']) as int?;
+          caregiverId =
+              (caregivers.first['id'] ?? caregivers.first['caregiverId'])
+                  as int?;
         } else {
           final cgRes = await http.get(
             Uri.parse('${ApiConstants.baseUrl}patients/$patientId/caregivers'),
@@ -163,32 +187,53 @@ class _PatientDashboardState extends State<PatientDashboard> {
           );
           if (cgRes.statusCode == 200) {
             final cgs = List<Map<String, dynamic>>.from(jsonDecode(cgRes.body));
-            if (cgs.isNotEmpty) caregiverId = (cgs.first['id'] ?? cgs.first['caregiverId']) as int?;
+            if (cgs.isNotEmpty) {
+              caregiverId =
+                  (cgs.first['id'] ?? cgs.first['caregiverId']) as int?;
+            }
           }
         }
         if (caregiverId != null) {
-          final startStr = DateTime(now.year, now.month, now.day).toIso8601String().split('T')[0];
+          final startStr = DateTime(
+            now.year,
+            now.month,
+            now.day,
+          ).toIso8601String().split('T')[0];
           final endDate = now.add(const Duration(days: 30));
-          final endStr = DateTime(endDate.year, endDate.month, endDate.day).toIso8601String().split('T')[0];
-          final url = Uri.parse('${ApiConstants.baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr');
+          final endStr = DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+          ).toIso8601String().split('T')[0];
+          final url = Uri.parse(
+            '${ApiConstants.baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
+          );
           final res = await http.get(url, headers: headers);
           if (res.statusCode == 200) {
             final List<dynamic> data = jsonDecode(res.body);
             bool matchesPatient(Map<String, dynamic> m) {
-              final target = patientId?.toString();
-              if (m.containsKey('patientId') && '${m['patientId']}' == target) return true;
-              if (m.containsKey('patient_id') && '${m['patient_id']}' == target) return true;
+              final target = patientId.toString();
+              if (m.containsKey('patientId') && '${m['patientId']}' == target) {
+                return true;
+              }
+              if (m.containsKey('patient_id') && '${m['patient_id']}' == target) {
+                return true;
+              }
               final p = m['patient'];
-              if (p is Map && ('${p['id']}' == target)) return true;
+              if (p is Map && ('${p['id']}' == target)) {
+                return true;
+              }
               return false;
             }
+
             DateTime? parseWhen(Map<String, dynamic> m) {
               // Case 1: combined timestamp string
               final v = m['scheduledTime'] ?? m['scheduled_time'] ?? m['time'];
               if (v is String) {
                 // If this looks like HH:mm[:ss], combine with scheduledDate
                 if (RegExp(r'^\d{1,2}:\d{2}(:\d{2})?$').hasMatch(v)) {
-                  final d = (m['scheduledDate'] ?? m['scheduled_date']) as String?;
+                  final d =
+                      (m['scheduledDate'] ?? m['scheduled_date']) as String?;
                   if (d != null && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(d)) {
                     return DateTime.tryParse('$d $v');
                   }
@@ -197,11 +242,15 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 if (dt != null) return dt;
               }
               if (v is int) {
-                try { return DateTime.fromMillisecondsSinceEpoch(v); } catch (_) {}
+                try {
+                  return DateTime.fromMillisecondsSinceEpoch(v);
+                } catch (_) {}
               }
               // Case 2: separate date/time fields
-              final dateStr = (m['scheduledDate'] ?? m['scheduled_date']) as String?;
-              final timeStr = (m['scheduledTime'] ?? m['scheduled_time']) as String?;
+              final dateStr =
+                  (m['scheduledDate'] ?? m['scheduled_date']) as String?;
+              final timeStr =
+                  (m['scheduledTime'] ?? m['scheduled_time']) as String?;
               if (dateStr != null && timeStr != null) {
                 final date = DateTime.tryParse(dateStr);
                 if (date != null) {
@@ -226,10 +275,22 @@ class _PatientDashboardState extends State<PatientDashboard> {
               final id = raw['id'] ?? raw['visitId'] ?? raw['scheduledVisitId'];
               if (id != null && seenIds.contains(id)) continue;
               if (id != null) seenIds.add(id);
-              final service = raw['serviceType'] ?? raw['service_type'] ?? raw['service'] ?? 'Service';
-              normalized.add({'id': id, 'serviceType': service, 'scheduledTime': when.toIso8601String()});
+              final service =
+                  raw['serviceType'] ??
+                  raw['service_type'] ??
+                  raw['service'] ??
+                  'Service';
+              normalized.add({
+                'id': id,
+                'serviceType': service,
+                'scheduledTime': when.toIso8601String(),
+              });
             }
-            normalized.sort((a,b)=> DateTime.parse(a['scheduledTime']).compareTo(DateTime.parse(b['scheduledTime'])));
+            normalized.sort(
+              (a, b) => DateTime.parse(
+                a['scheduledTime'],
+              ).compareTo(DateTime.parse(b['scheduledTime'])),
+            );
             _upcomingEvvAppointments = normalized;
           }
         }
@@ -246,98 +307,505 @@ class _PatientDashboardState extends State<PatientDashboard> {
   /// Load recent mood data
   Future<void> _loadRecentMoodData() async {
     try {
-      // This would be an API call to get mood data
-      // For now, using sample data
-      setState(() {
-        currentMoodScore = 8;
-        currentMoodLabel = 'Good';
-        moodTags = ['happy', 'calm', 'comfortable', 'positive'];
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final userId = user?.id;
+      if (userId == null) {
+        return;
+      }
 
-        recentCheckIns = [
-          CheckIn(
-            date: DateTime.now(),
-            status: 'Feeling well today',
-            emoji: '😊',
-          ),
-          CheckIn(
-            date: DateTime.now().subtract(const Duration(days: 1)),
-            status: 'Slight headache',
-            emoji: '🙂',
-          ),
-          CheckIn(
-            date: DateTime.now().subtract(const Duration(days: 2)),
-            status: 'Medications taken',
-            emoji: '😐',
-          ),
-        ];
+      final response = await ApiService.getMoodHistory(userId);
+      final entries = response.whereType<Map<String, dynamic>>().map((entry) {
+        final scoreRaw = entry['score'];
+        final score = scoreRaw is int
+            ? scoreRaw
+            : int.tryParse(scoreRaw?.toString() ?? '') ?? 5;
+        final label = (entry['label'] ?? '').toString().trim();
+        final createdAt = DateTime.tryParse(
+          (entry['createdAt'] ?? '').toString(),
+        );
+        return {
+          'score': score,
+          'label': label,
+          'createdAt': createdAt ?? DateTime.now(),
+        };
+      }).toList();
+
+      entries.sort(
+        (a, b) =>
+            (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime),
+      );
+
+      final latest = entries.isNotEmpty ? entries.first : null;
+      final latestScore = (latest?['score'] as int?) ?? 0;
+      final latestLabel = (latest?['label'] as String?)?.isNotEmpty == true
+          ? latest!['label'] as String
+          : _moodLabelFromScore(latestScore);
+
+      setState(() {
+        currentMoodScore = latestScore;
+        currentMoodLabel = latestLabel;
+        moodTags = _moodTagsFromLabel(latestLabel);
+        recentCheckIns = entries.take(3).map((entry) {
+          final score = entry['score'] as int;
+          final label = entry['label'] as String;
+          final normalizedLabel = label.isNotEmpty
+              ? label
+              : _moodLabelFromScore(score);
+          return CheckIn(
+            date: entry['createdAt'] as DateTime,
+            status: normalizedLabel,
+            emoji: _moodEmojiFromScore(score),
+          );
+        }).toList();
       });
     } catch (e) {
       print('Error loading mood data: $e');
     }
   }
 
+  String _moodLabelFromScore(int score) {
+    if (score >= 9) return 'Excellent';
+    if (score >= 7) return 'Good';
+    if (score >= 5) return 'Fair';
+    if (score >= 1) return 'Poor';
+    return 'Unknown';
+  }
+
+  String _moodEmojiFromScore(int score) {
+    if (score >= 9) return '😄';
+    if (score >= 7) return '🙂';
+    if (score >= 5) return '😐';
+    if (score >= 1) return '😟';
+    return '😐';
+  }
+
+  List<String> _moodTagsFromLabel(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('excellent') || l.contains('great')) {
+      return const ['happy', 'calm', 'positive'];
+    }
+    if (l.contains('good')) {
+      return const ['comfortable', 'stable', 'positive'];
+    }
+    if (l.contains('fair') || l.contains('neutral')) {
+      return const ['neutral', 'watchful'];
+    }
+    if (l.contains('poor') || l.contains('sad')) {
+      return const ['low', 'monitoring'];
+    }
+    return const ['no recent mood data'];
+  }
+
   /// Load medication reminders
   Future<void> _loadMedicationReminders() async {
     try {
-      // This would be an API call to get medication reminders
-      // For now, using sample data
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final next = await _medicationReminderService.loadReminders(
+        patientId: user?.patientId,
+      );
+
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        upcomingReminder = MedicationReminder(
-          medicationName: 'Blood Pressure Medication',
-          scheduledTime: DateTime.now().add(const Duration(days: 1, hours: 9)),
-          status: 'Scheduled reminder',
+        medicationReminders = next;
+        activeAlerts = _withMedicationReminderAlert(
+          activeAlerts,
+          hasPendingUntaken: _hasPendingMedicationReminders(next),
         );
       });
     } catch (e) {
       print('Error loading medication reminders: $e');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        medicationReminders = [];
+        activeAlerts = _withMedicationReminderAlert(
+          activeAlerts,
+          hasPendingUntaken: false,
+        );
+      });
     }
   }
 
   /// Load primary care provider
   Future<void> _loadPrimaryCareProvider() async {
     try {
-      // This would be an API call to get provider data
-      // For now, using sample data
-      setState(() {
-        primaryCareProvider = {
-          'name': 'Dr. Sarah Mitchell, MD',
-          'specialty': 'Internal Medicine',
-          'organization': 'CareConnect Medical Group',
-          'phone': '(555) 123-4567',
-          'email': 'sarah.mitchell@careconnect.com',
-          'nextAppointment': DateTime.now().add(const Duration(days: 30)),
-          'appointmentType': 'Annual Checkup',
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final patientId = user?.patientId;
+      Map<String, dynamic>? provider;
+      if (patientId != null) {
+        final headers = await ApiService.getAuthHeaders();
+        final providerRes = await http.get(
+          Uri.parse('${ApiConstants.baseUrl}patients/$patientId/provider'),
+          headers: headers,
+        );
+
+        if (providerRes.statusCode == 200) {
+          final decoded = jsonDecode(providerRes.body);
+          if (decoded is Map<String, dynamic> && decoded.isNotEmpty) {
+            provider = decoded;
+          }
+        }
+      }
+
+      final fallback = _buildDefaultProvider();
+      if (provider == null || provider.isEmpty) {
+        provider = {
+          ...fallback,
+          'caregiverUserId':
+              _toInt(_callableCaregiver?['caregiverUserId']) ??
+              _toInt(fallback['caregiverUserId']),
         };
-      });
+      } else {
+        provider['caregiverUserId'] ??=
+            _toInt(_callableCaregiver?['caregiverUserId']) ??
+            _toInt(fallback['caregiverUserId']);
+      }
+      provider = _normalizeProvider(provider);
+
+      if (mounted) {
+        setState(() {
+          primaryCareProvider = provider;
+          _syncProviderCallingPolicy();
+        });
+      }
     } catch (e) {
       print('Error loading primary care provider: $e');
+      if (mounted) {
+        setState(() {
+          primaryCareProvider = _normalizeProvider(_buildDefaultProvider());
+          _syncProviderCallingPolicy();
+        });
+      }
     }
   }
 
-  /// Check for alerts based on current data
-  void _checkForAlerts() {
-    activeAlerts.clear();
+  Future<void> _loadLinkedCaregiversForCalling() async {
+    try {
+      final user = Provider.of<UserProvider>(context, listen: false).user;
+      final patientUserId = user?.id;
+      if (patientUserId == null) {
+        return;
+      }
 
-    // Check mood score
-    if (currentMoodScore < 5) {
-      activeAlerts.add(
+      final links = await ApiService.getPatientLinkedCaregiverLinks(
+        patientUserId,
+      );
+      if (mounted) {
+        setState(() {
+          _linkedCaregiverLinks = links;
+          _syncProviderCallingPolicy();
+        });
+      }
+    } catch (e) {
+      print('Error loading caregiver call policy: $e');
+    }
+  }
+
+  Map<String, dynamic> _buildDefaultProvider() {
+    return <String, dynamic>{
+      'name': 'Dr. Sarah Mitchell, MD',
+      'specialty': 'Internal Medicine',
+      'organization': 'CareConnect Medical Group',
+      'phone': '(555) 123-4567',
+      'email': 'sarah.mitchell@careconnect.com',
+      'nextAppointment': DateTime(2026, 4, 7, 20, 50),
+      'appointmentType': '8:50 PM - Annual Checkup',
+    };
+  }
+
+  Map<String, dynamic> _normalizeProvider(Map<String, dynamic> provider) {
+    final normalized = Map<String, dynamic>.from(provider);
+    final rawNextAppointment = normalized['nextAppointment'];
+    if (rawNextAppointment != null && rawNextAppointment is! DateTime) {
+      final parsed = DateTime.tryParse('$rawNextAppointment');
+      normalized['nextAppointment'] = parsed ?? DateTime.now();
+    }
+    return normalized;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse('$value');
+  }
+
+  String _normalizedText(dynamic value) {
+    return (value ?? '').toString().trim().toLowerCase();
+  }
+
+  String _normalizedPhone(dynamic value) {
+    return (value ?? '').toString().replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  /// Strips common title prefixes (Dr., Mr., etc.) and credential suffixes
+  /// (MD, RN, DO, etc.) so that "Dr. Sarah Mitchell, MD" matches "Sarah Mitchell".
+  String _normalizedPersonName(dynamic value) {
+    return (value ?? '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll(
+          RegExp(r'\b(dr|mr|mrs|ms|prof|md|rn|do|np|pa|phd|dds|dvm|jd)\b\.?'),
+          '',
+        )
+        .replaceAll(RegExp(r'[^a-z\s]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  bool _toBool(dynamic value, {bool defaultValue = true}) {
+    if (value is bool) return value;
+    final raw = '$value'.trim().toLowerCase();
+    if (raw == 'true') return true;
+    if (raw == 'false') return false;
+    return defaultValue;
+  }
+
+  void _syncProviderCallingPolicy() {
+    // Wait until both data sources are loaded before resolving.
+    // Prevents a flash of "calling disabled" when caregiver links arrive
+    // before the primary care provider finishes loading.
+    if (primaryCareProvider == null) return;
+
+    if (_linkedCaregiverLinks.isEmpty) {
+      _callableCaregiver = null;
+      _providerVideoCallsEnabled = false;
+      _providerCallPolicyMessage =
+          'Video calling is unavailable until a caregiver is linked.';
+      return;
+    }
+
+    final providerCaregiverUserId = _toInt(
+      primaryCareProvider?['caregiverUserId'],
+    );
+
+    Map<String, dynamic>? selectedLink;
+    if (providerCaregiverUserId != null) {
+      for (final link in _linkedCaregiverLinks) {
+        if (_toInt(link['caregiverUserId']) == providerCaregiverUserId) {
+          selectedLink = link;
+          break;
+        }
+      }
+    }
+
+    selectedLink ??= () {
+      final providerEmail = _normalizedText(primaryCareProvider?['email']);
+      if (providerEmail.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkEmail = _normalizedText(
+            link['caregiverEmail'] ?? link['email'],
+          );
+          if (linkEmail.isNotEmpty && linkEmail == providerEmail) {
+            return link;
+          }
+        }
+      }
+
+      final providerPhone = _normalizedPhone(primaryCareProvider?['phone']);
+      if (providerPhone.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkPhone = _normalizedPhone(
+            link['caregiverPhone'] ?? link['phone'],
+          );
+          if (linkPhone.isNotEmpty && linkPhone == providerPhone) {
+            return link;
+          }
+        }
+      }
+
+      final providerName = _normalizedPersonName(primaryCareProvider?['name']);
+      if (providerName.isNotEmpty) {
+        for (final link in _linkedCaregiverLinks) {
+          final linkName = _normalizedPersonName(
+            link['caregiverName'] ?? link['name'],
+          );
+          if (linkName.isNotEmpty && linkName == providerName) {
+            return link;
+          }
+        }
+      }
+
+      return null;
+    }();
+
+    if (selectedLink == null) {
+      _callableCaregiver = null;
+      _providerVideoCallsEnabled = false;
+      _providerCallPolicyMessage =
+          'Video calling is unavailable because your provider is not linked for calling.';
+      return;
+    }
+
+    final normalizedCaregiverUserId = _toInt(selectedLink['caregiverUserId']);
+    final enabled = _toBool(selectedLink['patientVideoCallsEnabled']);
+
+    _callableCaregiver = {
+      ...selectedLink,
+      'caregiverUserId': normalizedCaregiverUserId,
+    };
+    if (primaryCareProvider != null && normalizedCaregiverUserId != null) {
+      primaryCareProvider!['caregiverUserId'] = normalizedCaregiverUserId;
+    }
+
+    _providerVideoCallsEnabled = enabled;
+    _providerCallPolicyMessage = enabled
+        ? null
+        : 'Your provider has disabled patient-initiated video calls.';
+  }
+
+  int? _parseMoodScore(dynamic value) {
+    if (value is int) {
+      return value.clamp(1, 10);
+    }
+    if (value is num) {
+      return value.round().clamp(1, 10);
+    }
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) {
+        return parsed.clamp(1, 10);
+      }
+    }
+    return null;
+  }
+
+  DateTime? _parseMoodDate(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is int) {
+      try {
+        return DateTime.fromMillisecondsSinceEpoch(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  double? _averageMoodLast7Days(List<dynamic> moodHistory) {
+    final nowUtc = DateTime.now().toUtc();
+    final cutoffUtc = nowUtc.subtract(const Duration(days: 7));
+    var total = 0;
+    var count = 0;
+
+    for (final row in moodHistory) {
+      if (row is! Map) {
+        continue;
+      }
+
+      final score = _parseMoodScore(row['score']);
+      final date = _parseMoodDate(
+        row['createdAt'] ?? row['date'] ?? row['timestamp'] ?? row['updatedAt'],
+      );
+
+      if (score == null || date == null) {
+        continue;
+      }
+
+      final utcDate = date.toUtc();
+      if (utcDate.isBefore(cutoffUtc)) {
+        continue;
+      }
+
+      total += score;
+      count += 1;
+    }
+
+    if (count == 0) {
+      return null;
+    }
+
+    return total / count;
+  }
+
+  List<AlertNotification> _withMoodAlertForAverage(
+    List<AlertNotification> existing,
+    double? averageMood,
+  ) {
+    final next = existing
+        .where(
+          (alert) =>
+              !(alert.type == AlertType.important &&
+                  alert.message == _lowMoodAlertMessage),
+        )
+        .toList();
+
+    if (averageMood != null && averageMood <= 5.0) {
+      next.insert(
+        0,
         AlertNotification(
           type: AlertType.important,
-          message: 'Mood score below normal range. Consider contacting your healthcare provider.',
+          message: _lowMoodAlertMessage,
         ),
       );
     }
 
-    // Check for missed medications
-    // This would check actual medication data
-    if (DateTime.now().hour > 10) {
-      activeAlerts.add(
-        AlertNotification(
-          type: AlertType.reminder,
-          message: 'You have a missed medication dose. Please take it as soon as possible.',
-        ),
-      );
+    return next;
+  }
+
+  bool _hasPendingMedicationReminders(List<MedicationReminderItem> reminders) {
+    return _medicationReminderService.hasPendingUntaken(reminders);
+  }
+
+  bool _isPendingMedicationAlert(AlertNotification alert) {
+    return alert.type == AlertType.reminder &&
+        alert.message == _pendingMedicationAlertMessage;
+  }
+
+  String _alertId(AlertNotification alert) {
+    if (_isPendingMedicationAlert(alert)) {
+      return _pendingMedicationAlertId;
     }
+    return '${alert.type.name}:${alert.message}';
+  }
+
+  List<AlertNotification> _withMedicationReminderAlert(
+    List<AlertNotification> existing, {
+    required bool hasPendingUntaken,
+  }) {
+    final next = existing
+        .where((alert) => !_isPendingMedicationAlert(alert))
+        .toList();
+
+    if (!hasPendingUntaken) {
+      dismissedAlertIds.remove(_pendingMedicationAlertId);
+      return next;
+    }
+
+    next.add(
+      AlertNotification(
+        type: AlertType.reminder,
+        message: _pendingMedicationAlertMessage,
+      ),
+    );
+    return next;
+  }
+
+  void _handleAverageMoodChanged(double averageMood) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      activeAlerts = _withMoodAlertForAverage(activeAlerts, averageMood);
+    });
+  }
+
+  /// Build alerts from real dashboard data only.
+  Future<List<AlertNotification>> _buildAlerts(int userId) async {
+    final moodHistory = await ApiService.getMoodHistory(userId);
+    final averageMood = _averageMoodLast7Days(moodHistory);
+    final moodAlerts = _withMoodAlertForAverage(<AlertNotification>[], averageMood);
+    return _withMedicationReminderAlert(
+      moodAlerts,
+      hasPendingUntaken: _hasPendingMedicationReminders(medicationReminders),
+    );
   }
 
   /// Load family members
@@ -377,56 +845,91 @@ class _PatientDashboardState extends State<PatientDashboard> {
     }
   }
 
-  /// Initialize call notifications
-  Future<void> _initializeCallNotifications() async {
-    try {
-      final user = Provider.of<UserProvider>(context, listen: false).user;
-      final id = user?.id;
-
-      if (id == null) {
-        print('❌ Cannot initialize call notifications - no patient ID');
-        return;
-      }
-
-      print('🔔 Initializing call notification service for patient: $id');
-
-      await CallNotificationService.initialize(
-        userId: id.toString(),
-        userRole: 'PATIENT',
-        context: context,
-      );
-
-      _callNotificationInitialized = true;
-      setState(() {});
-      print('✅ Patient call notification service initialized successfully');
-    } catch (e) {
-      print('❌ Error initializing patient call notification service: $e');
-      _callNotificationInitialized = false;
-    }
-  }
 
   /// Handle medication action
-  void _handleMedicationAction(bool taken) {
-    if (taken) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Medication marked as taken'),
-          backgroundColor: AppTheme.success,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Medication marked as missed'),
-          backgroundColor: Theme.of(context).colorScheme.tertiary,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+  Future<void> _handleMedicationAction(int medicationId, bool taken) async {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final patientId = user?.patientId;
+    if (patientId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Unable to update medication right now'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
     }
 
-    // Would call API to update medication status
-    _loadMedicationReminders();
+    final actionAt = DateTime.now().toUtc();
+    if (taken) {
+      _medicationReminderService.markTaken(
+        medicationId: medicationId,
+        takenAt: actionAt,
+      );
+    } else {
+      _medicationReminderService.markMissed(medicationId: medicationId);
+    }
+
+    final response = taken
+        ? await ApiService.markMedicationTaken(
+            patientId,
+            medicationId,
+            takenAt: actionAt,
+          )
+        : await ApiService.clearMedicationTakenStatus(
+            patientId,
+            medicationId,
+          );
+    final queuedOffline = response.headers['x-offline-queued'] == 'true';
+    final success = (response.statusCode >= 200 && response.statusCode < 300) ||
+        queuedOffline;
+
+    if (!success) {
+      _medicationReminderService.clearLocalOverride(medicationId: medicationId);
+    }
+
+    if (mounted) {
+      final snackBarTheme = Theme.of(context);
+      late final SnackBar snackBar;
+      if (success) {
+        if (queuedOffline) {
+          snackBar = SnackBar(
+            content: Text(
+              taken
+                  ? 'Medication taken update queued for sync'
+                  : 'Medication missed update queued for sync',
+            ),
+            backgroundColor: snackBarTheme.colorScheme.tertiary,
+            duration: const Duration(seconds: 2),
+          );
+        } else if (taken) {
+          snackBar = const SnackBar(
+            content: Text('Medication marked as taken until next dose'),
+            backgroundColor: AppTheme.success,
+            duration: Duration(seconds: 2),
+          );
+        } else {
+          snackBar = SnackBar(
+            content: const Text('Medication marked as missed'),
+            backgroundColor: snackBarTheme.colorScheme.tertiary,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      } else {
+        snackBar = SnackBar(
+          content: const Text('Unable to update medication status'),
+          backgroundColor: snackBarTheme.colorScheme.error,
+          duration: const Duration(seconds: 2),
+        );
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
+    await _loadMedicationReminders();
   }
 
   /// Handle contacting provider
@@ -485,11 +988,99 @@ class _PatientDashboardState extends State<PatientDashboard> {
             ListTile(
               leading: const Icon(Icons.video_call),
               title: const Text('Video Call'),
-              subtitle: const Text('Schedule a video consultation'),
-              onTap: () {
+              subtitle: Text(
+                _providerVideoCallsEnabled
+                    ? 'Start a video call with your provider'
+                    : (_providerCallPolicyMessage ??
+                          'Video call disabled by caregiver'),
+              ),
+              enabled: _providerVideoCallsEnabled,
+              onTap: _providerVideoCallsEnabled
+                  ? () async {
                 Navigator.pop(context);
-                context.push('/schedule-appointment');
-              },
+
+                if (primaryCareProvider == null) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Provider information is unavailable.'),
+                    ),
+                  );
+                  return;
+                }
+
+                final user = Provider.of<UserProvider>(
+                  this.context,
+                  listen: false,
+                ).user;
+
+                if (user == null) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please log in again to place a call.'),
+                    ),
+                  );
+                  return;
+                }
+
+                final targetCaregiver = <String, dynamic>{
+                  ...?primaryCareProvider,
+                  ...?_callableCaregiver,
+                  'id': _callableCaregiver?['caregiverUserId'] ??
+                      primaryCareProvider?['caregiverUserId'],
+                  'name': (_callableCaregiver?['caregiverName'] ??
+                      primaryCareProvider?['name'] ??
+                      '')
+                    .toString(),
+                  'firstName': (((_callableCaregiver?['caregiverName'] ??
+                          primaryCareProvider?['name']) ??
+                        '')
+                          .toString()
+                          .split(' ')
+                          .isNotEmpty)
+                    ? ((_callableCaregiver?['caregiverName'] ??
+                            primaryCareProvider?['name']) ??
+                          '')
+                        .toString()
+                        .split(' ')
+                        .first
+                      : '',
+                  'lastName': (((_callableCaregiver?['caregiverName'] ??
+                          primaryCareProvider?['name']) ??
+                        '')
+                          .toString()
+                          .split(' ')
+                          .length >
+                      1)
+                    ? ((_callableCaregiver?['caregiverName'] ??
+                            primaryCareProvider?['name']) ??
+                          '')
+                          .toString()
+                          .split(' ')
+                          .skip(1)
+                          .join(' ')
+                      : '',
+                };
+
+                await CallIntegrationHelper.startVideoCallToCaregiver(
+                  context: this.context,
+                  currentUser: user,
+                  targetCaregiver: targetCaregiver,
+                  isVideoCall: true,
+                );
+              }
+                  : () {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _providerCallPolicyMessage ??
+                                'Video calling is currently disabled.',
+                          ),
+                        ),
+                      );
+                    },
             ),
           ],
         ),
@@ -499,7 +1090,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
 
   @override
   void dispose() {
-    CallNotificationService.dispose();
     super.dispose();
   }
 
@@ -514,7 +1104,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: DashboardAppHeader(
         userName: user?.name ?? '',
-        role: user?.role as String,
+        role: user?.role ?? '',
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Theme.of(context).primaryColor,
@@ -537,7 +1127,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
             builder: (context) => SizedBox(
               height: sheetHeight,
               child: AIChat(
-                role: 'patient', 
+                role: 'patient',
                 isModal: true,
                 patientId: user?.patientId, // Pass the actual patient ID
                 userId: user?.id,
@@ -617,7 +1207,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                         .where(
                                           (alert) =>
                                               !dismissedAlertIds.contains(
-                                                alert.hashCode.toString(),
+                                                _alertId(alert),
                                               ),
                                         )
                                         .map(
@@ -627,7 +1217,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                             onDismiss: () {
                                               setState(() {
                                                 dismissedAlertIds.add(
-                                                  alert.hashCode.toString(),
+                                                  _alertId(alert),
                                                 );
                                               });
                                             },
@@ -640,6 +1230,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                       moodLabel: currentMoodLabel,
                                       moodTags: moodTags,
                                       date: DateTime.now(),
+                                      onAverageMoodChanged:
+                                          _handleAverageMoodChanged,
                                     ),
 
                                     // Recent Check-ins
@@ -656,14 +1248,21 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                 child: Column(
                                   children: [
                                     // Medication Reminders
-                                    if (upcomingReminder != null)
-                                      MedicationRemindersWidget(
-                                        reminder: upcomingReminder!,
-                                        onMarkTaken: () =>
-                                            _handleMedicationAction(true),
-                                        onMarkMissed: () =>
-                                            _handleMedicationAction(false),
-                                      ),
+                                    MedicationRemindersWidget(
+                                      reminders: medicationReminders,
+                                      onMarkTaken: (medicationId) {
+                                        _handleMedicationAction(
+                                          medicationId,
+                                          true,
+                                        );
+                                      },
+                                      onMarkMissed: (medicationId) {
+                                        _handleMedicationAction(
+                                          medicationId,
+                                          false,
+                                        );
+                                      },
+                                    ),
 
                                     // Upcoming EVV & Past EVV
                                     const SizedBox(height: 12),
@@ -705,7 +1304,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         ...activeAlerts
                             .where(
                               (alert) => !dismissedAlertIds.contains(
-                                alert.hashCode.toString(),
+                                _alertId(alert),
                               ),
                             )
                             .map(
@@ -715,7 +1314,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                 onDismiss: () {
                                   setState(() {
                                     dismissedAlertIds.add(
-                                      alert.hashCode.toString(),
+                                      _alertId(alert),
                                     );
                                   });
                                 },
@@ -728,6 +1327,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           moodLabel: currentMoodLabel,
                           moodTags: moodTags,
                           date: DateTime.now(),
+                          onAverageMoodChanged: _handleAverageMoodChanged,
                         ),
 
                         // Recent Check-Ins
@@ -735,12 +1335,15 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           RecentCheckInsWidget(checkIns: recentCheckIns),
 
                         // Medication Reminders
-                        if (upcomingReminder != null)
-                          MedicationRemindersWidget(
-                            reminder: upcomingReminder!,
-                            onMarkTaken: () => _handleMedicationAction(true),
-                            onMarkMissed: () => _handleMedicationAction(false),
-                          ),
+                        MedicationRemindersWidget(
+                          reminders: medicationReminders,
+                          onMarkTaken: (medicationId) {
+                            _handleMedicationAction(medicationId, true);
+                          },
+                          onMarkMissed: (medicationId) {
+                            _handleMedicationAction(medicationId, false);
+                          },
+                        ),
 
                         const SizedBox(height: 12),
                         _buildUpcomingEvvSection(theme),
@@ -956,9 +1559,15 @@ class _PatientDashboardState extends State<PatientDashboard> {
             children: [
               Icon(Icons.event_available, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
-              Text('Upcoming EVV Appointments', style: theme.textTheme.titleMedium),
+              Text(
+                'Upcoming EVV Appointments',
+                style: theme.textTheme.titleMedium,
+              ),
               const Spacer(),
-              IconButton(onPressed: _loadEvvSections, icon: const Icon(Icons.refresh)),
+              IconButton(
+                onPressed: _loadEvvSections,
+                icon: const Icon(Icons.refresh),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -966,14 +1575,20 @@ class _PatientDashboardState extends State<PatientDashboard> {
             const Text('No upcoming appointments.')
           else
             ..._upcomingEvvAppointments.take(5).map((v) {
-              final when = DateTime.tryParse(v['scheduledTime'] ?? '') ?? DateTime.now();
+              final when =
+                  DateTime.tryParse(v['scheduledTime'] ?? '') ?? DateTime.now();
               final service = v['serviceType'] ?? 'Service';
               return ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.schedule),
-                title: Text(service, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${when.month}/${when.day}/${when.year} • ${when.hour.toString().padLeft(2,'0')}:${when.minute.toString().padLeft(2,'0')}'),
+                title: Text(
+                  service,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${when.month}/${when.day}/${when.year} • ${when.hour.toString().padLeft(2, '0')}:${when.minute.toString().padLeft(2, '0')}',
+                ),
               );
             }),
         ],
@@ -1013,7 +1628,10 @@ class _PatientDashboardState extends State<PatientDashboard> {
                   backgroundColor: Colors.green,
                   child: const Icon(Icons.check, color: Colors.white, size: 18),
                 ),
-                title: Text(r.serviceType, style: const TextStyle(fontWeight: FontWeight.w600)),
+                title: Text(
+                  r.serviceType,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text('${date.month}/${date.day}/${date.year}'),
               );
             }),
@@ -1022,3 +1640,5 @@ class _PatientDashboardState extends State<PatientDashboard> {
     );
   }
 }
+
+
