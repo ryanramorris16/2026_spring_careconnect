@@ -50,6 +50,7 @@ class ApiConstants {
 
 class ApiService {
   static const storage = FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
+  static http.Client _httpClient = ApiServiceOffline.httpClient;
 
   static void configureOfflineQueue({
     required bool Function() canQueueOfflineWrites,
