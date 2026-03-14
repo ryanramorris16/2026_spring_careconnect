@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 @Service
 public class CaregiverService {
     
-    private static final Logger log = LoggerFactory.getLogger(CaregiverService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CaregiverService.class);
 
     @Autowired
     private CaregiverRepository caregiverRepository;
@@ -287,7 +287,7 @@ public Patient registerPatient(PatientRegistration reg) {
                     "id", "cus_mock_" + System.currentTimeMillis(),
                     "success", true
                 );
-                log.info("Development mode: Using mock Stripe customer creation");
+                LOG.info("Development mode: Using mock Stripe customer creation");
             }
         } catch (Exception e) {
             throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -359,7 +359,7 @@ public Patient registerPatient(PatientRegistration reg) {
                             "id", "sub_mock_" + System.currentTimeMillis(),
                             "success", true
                         );
-                        log.info("Development mode: Using mock Stripe subscription creation");
+                        LOG.info("Development mode: Using mock Stripe subscription creation");
                     }
                     
                     // Save subscription information to database

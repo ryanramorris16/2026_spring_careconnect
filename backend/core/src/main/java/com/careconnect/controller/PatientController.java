@@ -40,7 +40,7 @@ import java.util.Optional;
 @SecurityRequirement(name = "Bearer Authentication")
 public class PatientController {
 
-    private static final Logger log = LoggerFactory.getLogger(PatientController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PatientController.class);
 
     @Autowired
     private PatientService patientService;
@@ -70,49 +70,49 @@ public class PatientController {
 
     // Helper method to check if user has access to patient
     private void validatePatientAccess(Long patientUserId, User currentUser) {
-        log.debug("validatePatientAccess - patientUserId={}, currentUser: id={}, role={}", 
+        LOG.debug("validatePatientAccess - patientUserId={}, currentUser: id={}, role={}", 
                   patientUserId, currentUser.getId(), currentUser.getRole());
         
         switch (currentUser.getRole()) {
             case PATIENT:
                 // Patients can only access their own data
-                log.debug("PATIENT role validation - checking if currentUser.id {} equals patientUserId {}", 
+                LOG.debug("PATIENT role validation - checking if currentUser.id {} equals patientUserId {}", 
                           currentUser.getId(), patientUserId);
                 if (!currentUser.getId().equals(patientUserId)) {
-                    log.warn("Access denied - Patient {} tried to access patient {}", 
+                    LOG.warn("Access denied - Patient {} tried to access patient {}", 
                              currentUser.getId(), patientUserId);
                     throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
                 }
-                log.debug("Access granted - Patient accessing their own data");
+                LOG.debug("Access granted - Patient accessing their own data");
                 break;
             case CAREGIVER:
                 // Caregivers can access patients they're linked to (ACTIVE and not expired)
                 boolean caregiverHasAccess = caregiverPatientLinkService.hasAccessToPatient(currentUser.getId(), patientUserId);
-                log.debug("CAREGIVER role validation - hasAccess={}", caregiverHasAccess);
+                LOG.debug("CAREGIVER role validation - hasAccess={}", caregiverHasAccess);
                 if (!caregiverHasAccess) {
-                    log.warn("Access denied - Caregiver {} has no active link to patient {}", 
+                    LOG.warn("Access denied - Caregiver {} has no active link to patient {}", 
                              currentUser.getId(), patientUserId);
                     throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
                 }
-                log.debug("Access granted - Caregiver has active link to patient");
+                LOG.debug("Access granted - Caregiver has active link to patient");
                 break;
             case FAMILY_MEMBER:
                 // Family members can access patients they're linked to (ACTIVE and not expired)
                 boolean familyMemberHasAccess = familyMemberService.hasAccessToPatient(currentUser.getId(), patientUserId);
-                log.debug("FAMILY_MEMBER role validation - hasAccess={}", familyMemberHasAccess);
+                LOG.debug("FAMILY_MEMBER role validation - hasAccess={}", familyMemberHasAccess);
                 if (!familyMemberHasAccess) {
-                    log.warn("Access denied - Family member {} has no active link to patient {}", 
+                    LOG.warn("Access denied - Family member {} has no active link to patient {}", 
                              currentUser.getId(), patientUserId);
                     throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
                 }
-                log.debug("Access granted - Family member has active link to patient");
+                LOG.debug("Access granted - Family member has active link to patient");
                 break;
             case ADMIN:
                 // Admins can access all patients
-                log.debug("ADMIN role - access granted");
+                LOG.debug("ADMIN role - access granted");
                 break;
             default:
-                log.warn("Access denied - Invalid role: {}", currentUser.getRole());
+                LOG.warn("Access denied - Invalid role: {}", currentUser.getRole());
                 throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
         }
     }
@@ -162,12 +162,12 @@ public class PatientController {
     @GetMapping("/{patientId}/family-members")
     public ResponseEntity<List<FamilyMemberLinkResponse>> getFamilyMembersByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
-        log.debug("GET /patients/{}/family-members - Current user: id={}, email={}, role={}", 
+        LOG.debug("GET /patients/{}/family-members - Current user: id={}, email={}, role={}", 
                   patientId, currentUser.getId(), currentUser.getEmail(), currentUser.getRole());
         
         // Get patient by patientId to ensure it exists
         Patient patient = patientService.getPatientById(patientId);
-        log.debug("Found patient: id={}, userId={}, email={}", 
+        LOG.debug("Found patient: id={}, userId={}, email={}", 
                   patient.getId(), patient.getUser().getId(), patient.getUser().getEmail());
 
         // Enforce same role/link access policy used by other patient-detail endpoints
@@ -175,7 +175,7 @@ public class PatientController {
         
         // Use optimized query with patient_id (no joins needed)
         List<FamilyMemberLinkResponse> familyMembers = familyMemberService.getFamilyMembersByPatientId(patientId);
-        log.debug("Retrieved {} family members for patientId={}", familyMembers.size(), patientId);
+        LOG.debug("Retrieved {} family members for patientId={}", familyMembers.size(), patientId);
         return ResponseEntity.ok(familyMembers);
     }
 
@@ -186,7 +186,7 @@ public class PatientController {
             @RequestBody FamilyMemberRegistration registration) {
         
         User currentUser = getCurrentUser();
-        log.debug("POST /patients/{}/family-members - Current user: id={}, email={}, role={}", 
+        LOG.debug("POST /patients/{}/family-members - Current user: id={}, email={}, role={}", 
                   patientId, currentUser.getId(), currentUser.getEmail(), currentUser.getRole());
         
         // Only patients and caregivers can register family members, not family members themselves
@@ -196,7 +196,7 @@ public class PatientController {
         
         // Get patient by patientId and extract user_id
         Patient patient = patientService.getPatientById(patientId);
-        log.debug("Found patient: id={}, userId={}, email={}", 
+        LOG.debug("Found patient: id={}, userId={}, email={}", 
                   patient.getId(), patient.getUser().getId(), patient.getUser().getEmail());
         
         // Create new registration with correct patient user ID
@@ -242,7 +242,7 @@ public class PatientController {
     })
     public ResponseEntity<List<FamilyMemberLinkResponse>> getMyFamilyMembers() {
         User currentUser = getCurrentUser();
-        log.debug("GET /patients/family-members - Current user: id={}, email={}, role={}", 
+        LOG.debug("GET /patients/family-members - Current user: id={}, email={}, role={}", 
                   currentUser.getId(), currentUser.getEmail(), currentUser.getRole());
         
         // Only patients can use this endpoint
@@ -251,7 +251,7 @@ public class PatientController {
         }
         
         List<FamilyMemberLinkResponse> familyMembers = familyMemberService.getFamilyMembersByPatient(currentUser.getId());
-        log.debug("Retrieved {} family members for patient userId={}", familyMembers.size(), currentUser.getId());
+        LOG.debug("Retrieved {} family members for patient userId={}", familyMembers.size(), currentUser.getId());
         return ResponseEntity.ok(familyMembers);
     }
 
@@ -270,7 +270,7 @@ public class PatientController {
     })
     public ResponseEntity<Patient> getMyProfile() {
         User currentUser = getCurrentUser();
-        log.debug("GET /patients/me - Current user: id={}, email={}, role={}", 
+        LOG.debug("GET /patients/me - Current user: id={}, email={}, role={}", 
                   currentUser.getId(), currentUser.getEmail(), currentUser.getRole());
         
         // Only patients can use this endpoint
@@ -279,7 +279,7 @@ public class PatientController {
         }
         
         Patient patient = patientService.getPatientByUserId(currentUser.getId());
-        log.debug("Retrieved patient profile: id={}, userId={}", patient.getId(), patient.getUser().getId());
+        LOG.debug("Retrieved patient profile: id={}, userId={}", patient.getId(), patient.getUser().getId());
         return ResponseEntity.ok(patient);
     }
 
@@ -502,7 +502,7 @@ public class PatientController {
             ));
 
         } catch (Exception e) {
-            log.error("Error getting patient profile for patientId: {}", patientId, e);
+            LOG.error("Error getting patient profile for patientId: {}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to retrieve patient profile"));
         }
@@ -540,7 +540,7 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            log.error("Error updating patient profile for patientId: {}", patientId, e);
+            LOG.error("Error updating patient profile for patientId: {}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to update patient profile"));
         }
@@ -589,7 +589,7 @@ public class PatientController {
             
             return false;
         } catch (Exception e) {
-            log.error("Error checking patient access", e);
+            LOG.error("Error checking patient access", e);
             return false;
         }
     }
@@ -626,7 +626,7 @@ public class PatientController {
             ));
 
         } catch (Exception e) {
-            log.error("Error getting enhanced patient profile for patientId: {}", patientId, e);
+            LOG.error("Error getting enhanced patient profile for patientId: {}", patientId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Failed to retrieve enhanced patient profile"));
         }
