@@ -101,8 +101,7 @@ public class MessageController {
     }
 
     // ✅ Send a new message
-    @RequirePermission(Permission.CREATE_TASKS)
-
+    @RequirePermission(Permission.SEND_MESSAGES)
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody Message message) throws UnauthorizedException {
         // RBAC: caller must be the sender or an admin.
@@ -129,8 +128,7 @@ public class MessageController {
     }
 
     // ✅ Fetch full conversation between two users
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
+    @RequirePermission(Permission.VIEW_MESSAGES)
     @GetMapping("/conversation")
     public ResponseEntity<List<Message>> getConversation(
             @RequestParam Long user1,
@@ -146,8 +144,7 @@ public class MessageController {
     }
 
     // ✅ Inbox view: list all recent conversations with peer info
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
+    @RequirePermission(Permission.VIEW_MESSAGES)
     @GetMapping("/inbox/{userId}")
     public ResponseEntity<List<InboxMessageDto>> getInbox(@PathVariable Long userId) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
