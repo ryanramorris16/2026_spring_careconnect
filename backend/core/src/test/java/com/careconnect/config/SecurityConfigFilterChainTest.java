@@ -76,7 +76,7 @@ class SecurityConfigFilterChainTest {
 
         @Bean
         @Primary
-        CorsConfigurationSource corsConfigurationSource() throws Exception {
+        CorsConfigurationSource testCorsConfigurationSource() throws Exception {
             final CorsConfiguration cfg = new CorsConfiguration();
             cfg.setAllowedOrigins(List.of("*"));
             cfg.setAllowedMethods(List.of("*"));

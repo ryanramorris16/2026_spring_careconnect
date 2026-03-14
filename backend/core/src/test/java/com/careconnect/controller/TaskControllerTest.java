@@ -95,7 +95,7 @@ class TaskControllerTest {
             when(taskService.getAllTasks()).thenReturn(List.of(sampleTask));
 
             // Act + Assert
-            mockMvc.perform(get("/v1/api/tasks"))
+            mockMvc.perform(get("/v3/api/tasks"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("Check Blood Pressure"));
@@ -117,7 +117,7 @@ class TaskControllerTest {
             when(taskService.getTaskById(1L)).thenReturn(sampleTask);
 
             // Act + Assert
-            mockMvc.perform(get("/v1/api/tasks/1"))
+            mockMvc.perform(get("/v3/api/tasks/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1))
                     .andExpect(jsonPath("$.name").value("Check Blood Pressure"));
@@ -134,7 +134,7 @@ class TaskControllerTest {
             when(taskService.getTaskById(999L)).thenReturn(null);
 
             // Act + Assert
-            mockMvc.perform(get("/v1/api/tasks/999"))
+            mockMvc.perform(get("/v3/api/tasks/999"))
                     .andExpect(status().isNotFound());
 
             // Assert
@@ -154,7 +154,7 @@ class TaskControllerTest {
             when(taskService.getTasksByPatient(10L)).thenReturn(List.of(sampleTask));
 
             // Act + Assert
-            mockMvc.perform(get("/v1/api/tasks/patient/10"))
+            mockMvc.perform(get("/v3/api/tasks/patient/10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(1))
                     .andExpect(jsonPath("$[0].name").value("Check Blood Pressure"));
@@ -176,7 +176,7 @@ class TaskControllerTest {
             when(taskService.createTask(eq(10L), any(TaskDto.class))).thenReturn(sampleTask);
 
             // Act + Assert
-            mockMvc.perform(post("/v1/api/tasks/patient/10")
+            mockMvc.perform(post("/v3/api/tasks/patient/10")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(sampleTaskDto)))
@@ -209,7 +209,7 @@ class TaskControllerTest {
             when(taskService.updateTask(eq(1L), any(TaskDto.class))).thenReturn(updatedTask);
 
             // Act + Assert
-            mockMvc.perform(put("/v1/api/tasks/1")
+            mockMvc.perform(put("/v3/api/tasks/1")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(sampleTaskDto)))
@@ -229,7 +229,7 @@ class TaskControllerTest {
             when(taskService.updateTask(eq(999L), any(TaskDto.class))).thenReturn(null);
 
             // Act + Assert
-            mockMvc.perform(put("/v1/api/tasks/999")
+            mockMvc.perform(put("/v3/api/tasks/999")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(sampleTaskDto)))
@@ -252,7 +252,7 @@ class TaskControllerTest {
             when(taskService.deleteTask(1L)).thenReturn(true);
 
             // Act + Assert
-            mockMvc.perform(delete("/v1/api/tasks/1").with(csrf()))
+            mockMvc.perform(delete("/v3/api/tasks/1").with(csrf()))
                     .andExpect(status().isNoContent());
 
             // Assert
@@ -267,7 +267,7 @@ class TaskControllerTest {
             when(taskService.deleteTask(999L)).thenReturn(false);
 
             // Act + Assert
-            mockMvc.perform(delete("/v1/api/tasks/999").with(csrf()))
+            mockMvc.perform(delete("/v3/api/tasks/999").with(csrf()))
                     .andExpect(status().isNotFound());
 
             // Assert
