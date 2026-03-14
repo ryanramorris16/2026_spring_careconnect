@@ -23,6 +23,7 @@ import com.careconnect.util.SecurityUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/v3/api/subscriptions")
+@ConditionalOnProperty(name = "careconnect.stripe.enabled", havingValue = "true", matchIfMissing = true)
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
