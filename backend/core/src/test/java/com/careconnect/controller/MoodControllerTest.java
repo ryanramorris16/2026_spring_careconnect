@@ -1,9 +1,15 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.Mood;
+import com.careconnect.model.User;
+import com.careconnect.repository.UserRepository;
 import com.careconnect.security.AuthorizationService;
+import com.careconnect.security.Role;
+import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.service.FamilyMemberService;
 import com.careconnect.service.MoodService;
 import com.careconnect.util.SecurityUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,10 +17,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -25,9 +34,26 @@ class MoodControllerTest {
     @Mock private MoodService moodService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
+    @Mock private UserRepository userRepository;
+    @Mock private CaregiverPatientLinkService caregiverPatientLinkService;
+    @Mock private FamilyMemberService familyMemberService;
 
     @InjectMocks
     private MoodController controller;
+
+    @BeforeEach
+    void setUpSecurityContext() {
+        final User patient = User.builder()
+                .id(USER_ID)
+                .email("patient@test.com")
+                .role(Role.PATIENT)
+                .password("p")
+                .status("ACTIVE")
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("patient@test.com", null, List.of()));
+        lenient().when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patient));
+    }
 
     private static final Long USER_ID      = 1L;
     private static final Long CAREGIVER_ID = 10L;

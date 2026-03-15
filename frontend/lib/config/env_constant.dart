@@ -5,8 +5,11 @@ import 'package:flutter/foundation.dart';
 // --- Raw values from --dart-define ---
 // We define all the compile-time variables here
 
-// This is the new, unified backend URL.
-// Set your local dev URL in defaultValue
+const String _agoraAppId = String.fromEnvironment('AGORA_APP_ID');
+const String _agoraAppCertificate = String.fromEnvironment(
+  'AGORA_APP_CERTIFICATE',
+);
+
 const String _backendBaseUrl = String.fromEnvironment(
   'BACKEND_URL',
   defaultValue: '',
@@ -105,24 +108,27 @@ String getChatWebSocketUrl() {
 /// This is now controlled by a single --dart-define=BACKEND_URL variable.
 String getBackendBaseUrl() {
   final configured = _backendBaseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+  String resolved = configured;
 
-  if (configured.isNotEmpty) {
-    if (!kDebugMode && !configured.startsWith('https://')) {
-      throw Exception('BACKEND_URL must use https:// in release builds.');
+  if (resolved.isEmpty) {
+    if (kIsWeb) {
+      resolved = 'http://localhost:8080';
+    } else {
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android:
+          resolved = 'http://10.0.2.2:8080';
+          break;
+        default:
+          resolved = 'http://localhost:8080';
+      }
     }
-    return configured;
   }
 
-  if (kIsWeb) {
-    return 'http://localhost:8080';
+  if (!kDebugMode && !resolved.startsWith('https://')) {
+    throw Exception('BACKEND_URL must use https:// in release builds.');
   }
 
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-      return 'http://10.0.2.2:8080';
-    default:
-      return 'http://localhost:8080';
-  }
+  return resolved;
 }
 
 String getBackendToken() {

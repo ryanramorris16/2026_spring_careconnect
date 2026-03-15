@@ -32,14 +32,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CallNotificationHandlerTest {
 
-    @Mock UserRepository     userRepository;
-    @Mock JwtTokenProvider   jwtTokenProvider;
-    @Mock WebSocketSession   session;
-    @Mock WebSocketSession   recipientSession;
-    @Mock User               user;
-    @Mock User               recipientUser;
+    @Mock UserRepository                  userRepository;
+    @Mock JwtTokenProvider                jwtTokenProvider;
+    @Mock CallTelemetryService            callTelemetryService;
+    @Mock CaregiverPatientLinkService     caregiverPatientLinkService;
+    @Mock WebSocketSession                session;
+    @Mock WebSocketSession                recipientSession;
+    @Mock User                            user;
+    @Mock User                            recipientUser;
 
     @InjectMocks CallNotificationHandler handler;
 

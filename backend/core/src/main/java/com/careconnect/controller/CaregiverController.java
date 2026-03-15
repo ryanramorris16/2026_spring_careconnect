@@ -87,7 +87,7 @@ public class CaregiverController {
         return ResponseEntity.ok(caregiver);
     }
 
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.CREATE_PATIENTS)
 
 
     @PostMapping
@@ -96,7 +96,7 @@ public class CaregiverController {
         return ResponseEntity.status(HttpStatus.CREATED).body(caregiver);
     }
 
-    @RequirePermission(Permission.UPDATE_TASKS)
+    @RequirePermission(Permission.UPDATE_PATIENTS)
 
 
     @PutMapping("/{caregiverId}")
@@ -108,7 +108,7 @@ public class CaregiverController {
         return ResponseEntity.ok(caregiver);
     }
 
-     @RequirePermission(Permission.CREATE_TASKS)
+     @RequirePermission(Permission.CREATE_PATIENTS)
 
 
      @PostMapping("/{caregiverId}/patients")
@@ -126,7 +126,7 @@ public class CaregiverController {
     /**
      * Add an existing patient to a caregiver's care list by email
      */
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.CREATE_PATIENTS)
 
     @PostMapping("/{caregiverId}/patients/add")
     @Operation(summary = "Add existing patient to caregiver",

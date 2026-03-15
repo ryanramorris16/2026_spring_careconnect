@@ -82,19 +82,16 @@ public class DevDataLoader implements CommandLineRunner {
                     "status = 'ACTIVE'"
                 );
 
-                int caregiverCount = getTableCount(stmt, "caregiver");
-
                 boolean seedDataIncomplete = planCount == 0
                         || medicationCount == 0
                         || symptomCount == 0
-                        || subscriptionCount == 0
-                        || activeCaregiverLinkCount == 0
-                        || activeFamilyLinkCount == 0
-                        || caregiverCount < 2;
+                    || subscriptionCount == 0
+                    || activeCaregiverLinkCount == 0
+                    || activeFamilyLinkCount == 0;
 
                 if (seedDataIncomplete) {
-                    log.info("Detected incomplete seed data. plan={}, patient_medication={}, symptom_entry={}, subscriptions={}, active_caregiver_links={}, active_family_links={}, caregivers={}. Running mock data repair.",
-                        planCount, medicationCount, symptomCount, subscriptionCount, activeCaregiverLinkCount, activeFamilyLinkCount, caregiverCount);
+                    log.info("Detected incomplete seed data. plan={}, patient_medication={}, symptom_entry={}, subscriptions={}, active_caregiver_links={}, active_family_links={}. Running mock data repair.",
+                        planCount, medicationCount, symptomCount, subscriptionCount, activeCaregiverLinkCount, activeFamilyLinkCount);
                 }
 
                 return seedDataIncomplete;
@@ -155,9 +152,8 @@ public class DevDataLoader implements CommandLineRunner {
 
             log.info("✅ Mock data loaded successfully!");
             log.info("📧 Login credentials:");
-            log.info("   Patient:   patient@careconnect.com / password");
+            log.info("   Patient:  patient@careconnect.com / password");
             log.info("   Caregiver: caregiver@careconnect.com / password");
-            log.info("   Doctor:    sarah.mitchell@careconnect.com / password");
             log.info("   Family:    family@careconnect.com / password");
 
         } catch (Exception e) {

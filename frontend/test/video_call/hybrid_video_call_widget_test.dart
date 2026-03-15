@@ -28,7 +28,6 @@
 // full coverage without a live backend.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -76,47 +75,6 @@ Widget _buildWidget({
 }
 
 void main() {
-  // ---------------------------------------------------------------------------
-  // Mock platform channels that are invoked during widget/provider init.
-  //
-  // UserProvider() calls _initConnectivity() which hits connectivity_plus.
-  // HybridVideoCallWidget._initializeCall() calls AuthTokenManager.getToken()
-  // which hits flutter_secure_storage.  Both use MethodChannels that have no
-  // host implementation in the test environment — they must be stubbed so the
-  // async chain can complete (or fail gracefully) instead of hanging forever.
-  // ---------------------------------------------------------------------------
-  setUp(() {
-    // connectivity_plus — return [ConnectivityResult.wifi] so UserProvider
-    // doesn't throw and the device is treated as online.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
-      (MethodCall call) async => ['wifi'],
-    );
-    // flutter_secure_storage — return null so getToken() returns null,
-    // which triggers the expected "no token" error path in _initializeCall().
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel(
-          'plugins.it_is_all_widgets.com/flutter_secure_storage'),
-      (MethodCall call) async => null,
-    );
-  });
-
-  tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
-      null,
-    );
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel(
-          'plugins.it_is_all_widgets.com/flutter_secure_storage'),
-      null,
-    );
-  });
-
   // =========================================================================
   // GROUP: Widget instantiation
   // TDD: CALL-001 — App / widget launches without crashing
@@ -174,11 +132,10 @@ void main() {
       'loading indicator disappears after async initialisation completes',
       (tester) async {
         await tester.pumpWidget(_buildWidget());
-        // AuthTokenManager.getToken() uses flutter_secure_storage (platform
-        // channel). runAsync lets the channel call resolve in real async time
-        // so _initializeCall() can throw and set _isLoading = false.
-        await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
-        await tester.pump();
+        // Allow the full async chain (_initializeCall) to finish.
+        // In the test environment this ends in an error (no JWT / backend),
+        // but _isLoading is set to false in the catch block.
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(find.byType(CircularProgressIndicator), findsNothing);
       },
     );
@@ -198,9 +155,7 @@ void main() {
       'shows an error message when call initialisation fails',
       (tester) async {
         await tester.pumpWidget(_buildWidget());
-        // runAsync lets flutter_secure_storage platform channel resolve.
-        await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
-        await tester.pump();
+        await tester.pumpAndSettle(const Duration(seconds: 5));
 
         // The widget wraps the error string in a Text widget.
         // We look for any Text that is not a known-good label.
@@ -224,9 +179,7 @@ void main() {
       'error state does not show CircularProgressIndicator',
       (tester) async {
         await tester.pumpWidget(_buildWidget());
-        // runAsync lets flutter_secure_storage platform channel resolve.
-        await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
-        await tester.pump();
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(find.byType(CircularProgressIndicator), findsNothing);
       },
     );
@@ -238,8 +191,7 @@ void main() {
         await tester.pumpWidget(
           _buildWidget(recipientId: '', callId: 'call-no-recipient'),
         );
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);
       },
     );
@@ -285,8 +237,7 @@ void main() {
         );
         // First frame — no crash.
         expect(tester.takeException(), isNull);
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);
       },
     );
@@ -306,8 +257,7 @@ void main() {
             ),
           ),
         );
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);
       },
     );
@@ -324,8 +274,7 @@ void main() {
             recipientRole: 'CAREGIVER',
           ),
         );
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);
       },
     );
@@ -343,8 +292,7 @@ void main() {
             callKind: 'CARE_TEAM',
           ),
         );
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);
       },
     );
@@ -431,8 +379,7 @@ void main() {
       'widget tree contains a Scaffold after async init regardless of error',
       (tester) async {
         await tester.pumpWidget(_buildWidget());
-        await tester.pump(Duration.zero);
-        await tester.pump(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(seconds: 5));
         expect(find.byType(Scaffold), findsOneWidget);
       },
     );
