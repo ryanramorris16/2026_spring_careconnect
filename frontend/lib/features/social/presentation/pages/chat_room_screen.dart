@@ -381,6 +381,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             user2: widget.peerUserId,
           ));
       final updated = data.map((json) => MessageDto.fromJson(json)).toList();
+      _reconcilePendingWithServerMessages(updated);
       final merged = <MessageDto>[...updated, ..._pendingMessages]
         ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
       if (!listEquals(messages, updated)) {
@@ -460,24 +461,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _pendingInFlightIds.add(pendingMessage.id);
 
     bool sent = false;
+    bool queuedOffline = false;
     try {
-      await (widget.messageSender?.call(
-            senderId: _currentUserId!,
-            receiverId: widget.peerUserId,
-            content: pendingMessage.content,
-          ) ??
-          ApiService.sendMessage(
-            senderId: _currentUserId!,
-            receiverId: widget.peerUserId,
-            content: pendingMessage.content,
-          ));
-      sent = true;
+      if (widget.messageSender != null) {
+        await widget.messageSender!.call(
+          senderId: _currentUserId!,
+          receiverId: widget.peerUserId,
+          content: pendingMessage.content,
+        );
+        sent = true;
+      } else {
+        final response = await ApiService.sendMessage(
+          senderId: _currentUserId!,
+          receiverId: widget.peerUserId,
+          content: pendingMessage.content,
+        );
+        queuedOffline = response.headers['x-offline-queued'] == 'true';
+        sent = !queuedOffline;
+      }
     } catch (_) {}
 
     if (!sent) {
+      if (queuedOffline) {
+        _markPendingMessageAsQueuedOffline(pendingMessage.id);
+      }
       _pendingInFlightIds.remove(pendingMessage.id);
       _persistPendingMessagesToCache();
       await _persistPendingMessagesToDisk();
+      if (queuedOffline && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Message queued for sync when internet is restored'),
+          ),
+        );
+      }
       return;
     }
 
@@ -499,8 +516,76 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final queueSnapshot = List<MessageDto>.from(_pendingMessages);
     for (final pending in queueSnapshot) {
+      if (pending.queuedOffline) {
+        continue;
+      }
       await _trySendPendingMessage(pending);
     }
+  }
+
+  void _markPendingMessageAsQueuedOffline(int pendingId) {
+    for (var i = 0; i < _pendingMessages.length; i++) {
+      final pending = _pendingMessages[i];
+      if (pending.id != pendingId || pending.queuedOffline) {
+        continue;
+      }
+
+      final updated = MessageDto(
+        id: pending.id,
+        senderId: pending.senderId,
+        receiverId: pending.receiverId,
+        content: pending.content,
+        timestamp: pending.timestamp,
+        queuedOffline: true,
+        attachmentId: pending.attachmentId,
+        attachmentName: pending.attachmentName,
+        attachmentContentType: pending.attachmentContentType,
+        attachmentSize: pending.attachmentSize,
+      );
+      _pendingMessages[i] = updated;
+
+      final visibleIndex = messages.indexWhere((m) => m.id == pendingId);
+      if (visibleIndex != -1) {
+        messages[visibleIndex] = updated;
+      }
+      break;
+    }
+  }
+
+  void _reconcilePendingWithServerMessages(List<MessageDto> serverMessages) {
+    if (_pendingMessages.isEmpty) {
+      return;
+    }
+
+    final remainingServer = List<MessageDto>.from(serverMessages);
+    final pendingToRemove = <int>{};
+
+    for (final pending in _pendingMessages) {
+      final matchIndex = remainingServer.indexWhere((serverMsg) {
+        if (serverMsg.senderId != pending.senderId ||
+            serverMsg.receiverId != pending.receiverId ||
+            serverMsg.content != pending.content) {
+          return false;
+        }
+
+        return !serverMsg.timestamp
+            .isBefore(pending.timestamp.subtract(const Duration(seconds: 5)));
+      });
+
+      if (matchIndex != -1) {
+        pendingToRemove.add(pending.id);
+        remainingServer.removeAt(matchIndex);
+      }
+    }
+
+    if (pendingToRemove.isEmpty) {
+      return;
+    }
+
+    _pendingMessages.removeWhere((m) => pendingToRemove.contains(m.id));
+    messages.removeWhere((m) => pendingToRemove.contains(m.id));
+    _persistPendingMessagesToCache();
+    _persistPendingMessagesToDisk();
   }
 
   // ── Attachments ────────────────────────────────────────────────────────────
