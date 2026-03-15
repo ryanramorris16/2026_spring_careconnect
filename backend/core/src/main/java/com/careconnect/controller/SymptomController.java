@@ -31,9 +31,7 @@ public class SymptomController {
     private final PatientRepository patientRepository;
     private final CaregiverService caregiverService;
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
-
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
     @PostMapping
     public ResponseEntity<?> create(@RequestBody SymptomDTO dto) {
         try {
@@ -49,9 +47,7 @@ public class SymptomController {
         }
     }
 
-    @RequirePermission(Permission.UPDATE_TASKS)
-
-
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SymptomDTO dto) {
         try {
@@ -72,9 +68,7 @@ public class SymptomController {
         }
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<?> list(@PathVariable Long patientId) {
         if (!hasAccessToPatient(patientId)) {
@@ -84,9 +78,7 @@ public class SymptomController {
         return ResponseEntity.ok(Map.of("data", symptomService.listByPatient(patientId)));
     }
 
-    @RequirePermission(Permission.DELETE_PATIENTS)
-
-
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {

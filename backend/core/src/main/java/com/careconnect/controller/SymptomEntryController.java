@@ -28,7 +28,7 @@ public class SymptomEntryController {
     private final AuthorizationService authorizationService;
 
     /** Create a new symptom entry */
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @PostMapping
     public ResponseEntity<?> createSymptom(@RequestBody SymptomEntryDTO dto) {
@@ -45,7 +45,7 @@ public class SymptomEntryController {
     }
 
     /** Get all symptoms for a patient */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<?> getSymptoms(@PathVariable Long patientId) throws UnauthorizedException {
@@ -61,7 +61,7 @@ public class SymptomEntryController {
     }
 
     /** Delete a symptom by ID */
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSymptom(@PathVariable Long id) {
