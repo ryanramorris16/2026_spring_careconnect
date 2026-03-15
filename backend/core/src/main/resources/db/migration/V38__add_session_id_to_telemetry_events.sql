@@ -1,0 +1,2 @@
+ALTER TABLE telemetry_events
+ADD COLUMN IF NOT EXISTS session_id VARCHAR(64);
