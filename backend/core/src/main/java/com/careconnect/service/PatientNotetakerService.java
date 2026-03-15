@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class PatientNotetakerService {
     private final TaskServiceV2 taskService;
-    private final OpenRouterService openRouterService;
+    private final Optional<OpenRouterService> openRouterService;
     private final PatientNoteRepository patientNoteRepository;
     private final PatientNotetakerConfigRepository patientNotetakerConfigRepository;
     private final PatientService patientService;
@@ -42,7 +43,7 @@ public class PatientNotetakerService {
     public PatientNotetakerService(PatientNoteRepository patientNoteRepository, 
         PatientNotetakerConfigRepository patientNotetakerConfigRepository, 
         PatientService patientService,
-        OpenRouterService openRouterService,
+        Optional<OpenRouterService> openRouterService,
         TaskServiceV2 taskService
         ) {
         this.patientNoteRepository = patientNoteRepository;
@@ -193,9 +194,13 @@ public class PatientNotetakerService {
                     0.2,
                     256);
 
-            OpenRouterResponse response; 
+            OpenRouterResponse response;
+            if (!openRouterService.isPresent()) {
+                log.warn("OpenRouter service is not available");
+                return;
+            }
             try {
-                response = openRouterService.sendChatRequest(request);
+                response = openRouterService.get().sendChatRequest(request);
             } catch (Exception e) {
                 log.error("Unable to reach OpenRouter service: {}", e.getMessage());
                 return;
@@ -236,9 +241,14 @@ public class PatientNotetakerService {
                 0.2,
                 256);
 
-        OpenRouterResponse response; 
+        if (!openRouterService.isPresent()) {
+            log.warn("OpenRouter service is not available, returning default summary");
+            return "AI Summary generation disabled";
+        }
+
+        OpenRouterResponse response;
         try {
-            response = openRouterService.sendChatRequest(request);
+            response = openRouterService.get().sendChatRequest(request);
         } catch (Exception e) {
             log.error("Unable to reach OpenRouter service: {}", e.getMessage());
             return "Failed to generate AI Summary";

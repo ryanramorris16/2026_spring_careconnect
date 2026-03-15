@@ -51,7 +51,7 @@ class PatientNotetakerServiceTest {
                 patientNoteRepository,
                 patientNotetakerConfigRepository,
                 patientService,
-                openRouterService,
+                Optional.of(openRouterService),
                 taskService);
 
         patient = Patient.builder().id(10L).firstName("John").lastName("Doe").build();

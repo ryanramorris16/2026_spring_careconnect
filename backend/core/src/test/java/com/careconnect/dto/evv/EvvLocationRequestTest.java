@@ -35,7 +35,7 @@ class EvvLocationRequestTest {
                 new BigDecimal("38.8951"), new BigDecimal("-77.0364"), new BigDecimal("5.0"));
 
         final EvvLocationRequest request = new EvvLocationRequest(
-                1L, EvvLocationRole.CHECK_IN, EvvLocationType.GPS, coords);
+                1L, EvvLocationRole.CHECK_IN, EvvLocationType.GPS, coords, null, null);
 
         assertThat(request.getEvvRecordId()).isEqualTo(1L);
         assertThat(request.getRole()).isEqualTo(EvvLocationRole.CHECK_IN);

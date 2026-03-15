@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import com.careconnect.model.Patient;
 import com.careconnect.repository.PatientRepository;
+import com.careconnect.repository.MessageRepository;
 
 @RestController
 @RequestMapping("/v1/api/files")
@@ -50,6 +51,7 @@ public class FileController {
     private final FileManagementService fileManagementService;
     private final UserRepository userRepository;
     private final PatientRepository patientRepository;
+    private final MessageRepository messageRepository;
     private final CaregiverService caregiverService;
     private final PatientService patientService;
 
@@ -58,12 +60,14 @@ public class FileController {
                          FileManagementService fileManagementService,
                          UserRepository userRepository,
                          PatientRepository patientRepository,
+                         MessageRepository messageRepository,
                          CaregiverService caregiverService,
                          PatientService patientService) {
         this.s3StorageService = s3StorageService;
         this.fileManagementService = fileManagementService;
         this.userRepository = userRepository;
         this.patientRepository = patientRepository;
+        this.messageRepository = messageRepository;
         this.caregiverService = caregiverService;
         this.patientService = patientService;
     }
@@ -569,6 +573,11 @@ public class FileController {
         // If file is associated with a patient, check patient access
         if (fileDto.getPatientId() != null) {
             return hasAccessToPatient(currentUser, fileDto.getPatientId());
+        }
+
+        // Allow chat attachment recipients/senders to access files shared in their conversation
+        if (messageRepository.existsAttachmentInUserConversation(fileDto.getId(), currentUser.getId())) {
+            return true;
         }
         
         return false;

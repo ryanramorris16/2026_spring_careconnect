@@ -1,6 +1,6 @@
 -- ============================================
 -- CareConnect Mock Data Generation - Fixed Schema
--- 1 Patient, 2 Caregivers, 1 Family Member
+-- 1 Patient, 1 Caregiver, 1 Family Member
 -- Corrected to match actual entity schemas
 -- ============================================
 
@@ -43,7 +43,7 @@ INSERT INTO caregiver (user_id, first_name, last_name, dob, email, phone, line1,
 SELECT
     (SELECT id FROM users WHERE email = 'sarah.mitchell@careconnect.com'),
     'Sarah',
-    'Mitchell',
+    'Mitchel',
     '1978-04-21',
     'sarah.mitchell@careconnect.com',
     '(555) 123-4567',
@@ -60,15 +60,6 @@ WHERE NOT EXISTS (
     JOIN users u ON c.user_id = u.id
     WHERE u.email = 'sarah.mitchell@careconnect.com'
 );
-
-UPDATE caregiver
-SET first_name = 'Sarah',
-    last_name = 'Mitchell',
-    email = 'sarah.mitchell@careconnect.com',
-    phone = '(555) 123-4567',
-    caregiver_type = 'MD'
-WHERE user_id = (SELECT id FROM users WHERE email = 'sarah.mitchell@careconnect.com');
-
 
 -- ============================================
 -- 4. FAMILY_MEMBER TABLE
@@ -121,7 +112,7 @@ WHERE NOT EXISTS (
 
 INSERT INTO providers (name, specialty, organization, phone, email)
 SELECT
-    'Dr. Sarah Mitchell, MD',
+    'Dr. Sarah Mitchel, MD',
     'Internal Medicine',
     'CareConnect Medical Group',
     '(555) 123-4567',
@@ -131,7 +122,7 @@ WHERE NOT EXISTS (
 );
 
 UPDATE providers
-SET name = 'Dr. Sarah Mitchell, MD',
+SET name = 'Dr. Sarah Mitchel, MD',
     specialty = 'Internal Medicine',
     organization = 'CareConnect Medical Group',
     phone = '(555) 123-4567'
@@ -169,10 +160,10 @@ WHERE NOT EXISTS (
 -- ============================================
 
 INSERT INTO patient_medication (patient_id, medication_name, dosage, frequency, route, medication_type, prescribed_by, prescribed_date, start_date, end_date, notes, is_active, approval_status, created_at) VALUES
-((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Metformin', '500mg', 'Twice daily', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchell', '2024-06-20', '2024-06-20', NULL, 'Take with meals to reduce stomach upset', true, 'PENDING', '2024-06-20 10:00:00'),
-((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Lisinopril', '10mg', 'Once daily', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchell', '2024-06-20', '2024-06-20', NULL, 'For blood pressure control', true, 'PENDING', '2024-06-20 10:00:00'),
-((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Atorvastatin', '20mg', 'Once daily at bedtime', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchell', '2024-07-15', '2024-07-15', NULL, 'For cholesterol management', true, 'PENDING', '2024-07-15 14:00:00'),
-((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Aspirin', '81mg', 'Once daily', 'Oral', 'SUPPLEMENT', 'Dr. Sarah Mitchell', '2024-06-20', '2024-06-20', NULL, 'Low-dose for cardiovascular protection', true, 'PENDING', '2024-06-20 10:00:00');
+((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Metformin', '500mg', 'Twice daily', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchel', '2024-06-20', '2024-06-20', NULL, 'Take with meals to reduce stomach upset', true, 'PENDING', '2024-06-20 10:00:00'),
+((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Lisinopril', '10mg', 'Once daily', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchel', '2024-06-20', '2024-06-20', NULL, 'For blood pressure control', true, 'PENDING', '2024-06-20 10:00:00'),
+((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Atorvastatin', '20mg', 'Once daily at bedtime', 'Oral', 'PRESCRIPTION', 'Dr. Sarah Mitchel', '2024-07-15', '2024-07-15', NULL, 'For cholesterol management', true, 'PENDING', '2024-07-15 14:00:00'),
+((SELECT p.id FROM patient p JOIN users u ON p.user_id = u.id WHERE u.email = 'patient@careconnect.com'), 'Aspirin', '81mg', 'Once daily', 'Oral', 'SUPPLEMENT', 'Dr. Sarah Mitchel', '2024-06-20', '2024-06-20', NULL, 'Low-dose for cardiovascular protection', true, 'PENDING', '2024-06-20 10:00:00');
 
 -- ============================================
 -- 8. PATIENT_ALLERGY - Remove updated_at column

@@ -20,7 +20,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("SELECT m FROM Message m WHERE m.senderId = :userId OR m.receiverId = :userId ORDER BY m.timestamp DESC")
     List<Message> findAllUserMessages(@Param("userId") Long userId);
 
-    default void test() {
-        System.out.println("MessageRepository initialized");
-    }
+        @Query("SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END FROM Message m " +
+            "WHERE m.attachmentId = :attachmentId " +
+            "AND (m.senderId = :userId OR m.receiverId = :userId)")
+        boolean existsAttachmentInUserConversation(
+            @Param("attachmentId") Long attachmentId,
+            @Param("userId") Long userId
+        );
 }
