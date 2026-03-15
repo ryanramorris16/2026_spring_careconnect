@@ -26,48 +26,53 @@ class LocalDbTestBindings {
     PathProviderPlatform.instance =
         _FakePathProviderPlatform(_documentsDir.path);
 
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_secureStorageChannel,
-            (MethodCall call) async {
-      final args = (call.arguments is Map)
-          ? Map<dynamic, dynamic>.from(call.arguments as Map)
-          : <dynamic, dynamic>{};
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
 
-      switch (call.method) {
-        case 'read':
-          final key = args['key']?.toString();
-          return key == null ? null : _secureStore[key];
+    // IMPORTANT: In many Flutter versions, this returns void (do NOT await).
+    messenger.setMockMethodCallHandler(
+      _secureStorageChannel,
+      (MethodCall call) async {
+        final args = (call.arguments is Map)
+            ? Map<dynamic, dynamic>.from(call.arguments as Map)
+            : <dynamic, dynamic>{};
 
-        case 'write':
-          final key = args['key']?.toString();
-          final value = args['value']?.toString() ?? '';
-          if (key != null) {
-            _secureStore[key] = value;
-          }
-          return null;
+        switch (call.method) {
+          case 'read':
+            final key = args['key']?.toString();
+            return key == null ? null : _secureStore[key];
 
-        case 'delete':
-          final key = args['key']?.toString();
-          if (key != null) {
-            _secureStore.remove(key);
-          }
-          return null;
+          case 'write':
+            final key = args['key']?.toString();
+            final value = args['value']?.toString() ?? '';
+            if (key != null) {
+              _secureStore[key] = value;
+            }
+            return null;
 
-        case 'deleteAll':
-          _secureStore.clear();
-          return null;
+          case 'delete':
+            final key = args['key']?.toString();
+            if (key != null) {
+              _secureStore.remove(key);
+            }
+            return null;
 
-        case 'containsKey':
-          final key = args['key']?.toString();
-          return key != null && _secureStore.containsKey(key);
+          case 'deleteAll':
+            _secureStore.clear();
+            return null;
 
-        case 'readAll':
-          return Map<String, String>.from(_secureStore);
+          case 'containsKey':
+            final key = args['key']?.toString();
+            return key != null && _secureStore.containsKey(key);
 
-        default:
-          return null;
-      }
-    });
+          case 'readAll':
+            return Map<String, String>.from(_secureStore);
+
+          default:
+            return null;
+        }
+      },
+    );
 
     _installed = true;
   }
@@ -84,8 +89,11 @@ class LocalDbTestBindings {
   static Future<void> uninstall() async {
     if (!_installed) return;
 
-    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_secureStorageChannel, null);
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+
+    // IMPORTANT: returns void in many versions (do NOT await).
+    messenger.setMockMethodCallHandler(_secureStorageChannel, null);
 
     if (_previousPathProvider != null) {
       PathProviderPlatform.instance = _previousPathProvider!;
