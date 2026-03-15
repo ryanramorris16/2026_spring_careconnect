@@ -552,7 +552,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  void _reconcilePendingWithServerMessages(List<MessageDto> serverMessages) {
+  void _reconcilePendingWithServerMessages(List<MessageDto> serverMessages) async {
     if (_pendingMessages.isEmpty) {
       return;
     }
@@ -585,7 +585,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _pendingMessages.removeWhere((m) => pendingToRemove.contains(m.id));
     messages.removeWhere((m) => pendingToRemove.contains(m.id));
     _persistPendingMessagesToCache();
-    _persistPendingMessagesToDisk();
+    await _persistPendingMessagesToDisk();
   }
 
   // ── Attachments ────────────────────────────────────────────────────────────
