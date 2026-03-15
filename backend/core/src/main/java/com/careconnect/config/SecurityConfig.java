@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+        private static final String ROLE_ADMIN = "ADMIN";
+
         @Bean
         @Order(0)
         @Profile("dev")
@@ -50,9 +52,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/v1/api/dev/telemetry").permitAll()
 
                         // restrict global telemetry controls and inspection
-                        .requestMatchers(HttpMethod.PUT, "/v1/api/dev/telemetry/enabled").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/enabled").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/recent").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/v1/api/dev/telemetry/enabled").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/enabled").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/recent").hasRole(ROLE_ADMIN)
 
                         .anyRequest().denyAll()
                 )
@@ -109,10 +111,12 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/v1/api/users/reset-password",
                                 "/v1/api/users/setup-password",
+                                "/v1/api/email-test/**",
                                 "/v1/api/test/**",
-                                "/v1/api/subscriptions/webhook/**", // Stripe webhook callbacks (no JWT)
+                                "/v1/api/billing/quote",
+                                "/v1/api/billing/pay/**",
+                                "/v1/api/address/**",
                                 "/oauth/**",
-                                // Keep websocket handshake public for Team A call notifications/signaling.
                                 "/ws/**"
                         ).permitAll()
 
@@ -121,10 +125,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         /* ---------- Admin-only endpoints ------------------------------- */
-                        .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
-                        .requestMatchers("/v1/api/email-test/**").hasRole("ADMIN")
+                        .requestMatchers("/v1/api/debug/**").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/v1/api/email-test/**").hasRole(ROLE_ADMIN)
 
                         /* ---------- Require JWT for these APIs ------------------------ */
+                        .requestMatchers("/v1/api/subscriptions/**").authenticated()
+                        .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/v1/api/notification-settings/**").authenticated()
                         .requestMatchers("/v1/api/patients/**").authenticated()
                         .requestMatchers("/v1/api/caregivers/**").authenticated()
                         .requestMatchers("/v1/api/allergies/**").authenticated()

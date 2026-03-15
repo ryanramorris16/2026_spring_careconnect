@@ -42,10 +42,11 @@ import '../../features/payments/presentation/pages/subscription_management_page.
 import '../../features/dashboard/presentation/pages/add_patient_screen.dart';
 import '../../features/auth/presentation/pages/password_reset_page.dart';
 import '../../features/auth/presentation/pages/reset_password_screen.dart'; // ADD THIS IMPORT
-import '../../features/payments/models/package_model.dart';
 import '../../features/social/presentation/pages/main_feed_screen.dart';
 import '../../features/gamification/presentation/pages/gamification_screen.dart';
-import '../../features/payments/presentation/pages/stripe_checkout_page.dart';
+import '../../features/payments/presentation/pages/native_billing_page.dart';
+import '../../features/payments/presentation/pages/web_pay_page.dart';
+import '../../features/payments/presentation/pages/subscription_tier_selection_page.dart';
 import '../../features/analytics/analytics_page.dart';
 import '../../features/payments/presentation/pages/payment_success_page.dart';
 import '../../features/payments/presentation/pages/payment_cancel_page.dart';
@@ -341,17 +342,10 @@ final GoRouter appRouter = GoRouter(
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final user = userProvider.user;
         final userId = state.uri.queryParameters['userId'];
-        final stripeCustomerId = state.uri.queryParameters['stripeCustomerId'];
 
-        // If we have userId and stripeCustomerId, this is part of the registration flow
-        // Or if user is a patient, show the original select package page
-        // Otherwise show the subscription management page for existing caregivers
-        if ((userId != null && stripeCustomerId != null) ||
+        if (userId != null ||
             (user != null && user.role.toUpperCase() == 'PATIENT')) {
-          return SelectPackagePage(
-            userId: userId,
-            stripeCustomerId: stripeCustomerId,
-          );
+          return SelectPackagePage(userId: userId);
         } else {
           return const SubscriptionManagementPage();
         }
@@ -394,15 +388,42 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/stripe-checkout',
+      redirect: (_, __) => '/select-package',
+    ),
+    GoRoute(
+      path: '/native-billing',
       builder: (context, state) {
-        final pkg = state.extra as PackageModel;
-        // Get userId and stripeCustomerId from query parameters if available
-        final userId = state.uri.queryParameters['userId'];
-        final stripeCustomerId = state.uri.queryParameters['stripeCustomerId'];
-        return StripeCheckoutPage(
-          package: pkg,
+        final extra = state.extra as Map<String, dynamic>?;
+        final tierId = extra?['tierId'] as int? ?? 0;
+        final tier = extra?['tier'] as String?;
+        final userId = extra?['userId'] as int?;
+        return NativeBillingPage(tierId: tierId, tier: tier, userId: userId);
+      },
+    ),
+    GoRoute(
+      path: '/select-subscription-tier',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String?;
+        final userState = extra?['state'] as String?;
+        return SubscriptionTierSelectionPage(email: email, userState: userState);
+      },
+    ),
+    GoRoute(
+      path: '/web-pay',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final tierId = extra?['tierId'] as int?;
+        final tier = extra?['tier'] as String?;
+        final email = extra?['email'] as String?;
+        final userId = extra?['userId'] as int?;
+        final userState = extra?['state'] as String?;
+        return WebPayPage(
+          tierId: tierId ?? 0,
+          tier: tier,
+          email: email,
           userId: userId,
-          stripeCustomerId: stripeCustomerId,
+          state: userState,
         );
       },
     ),

@@ -53,7 +53,7 @@ const ccBaseUrlOther = String.fromEnvironment('CC_BASE_URL_OTHER', defaultValue:
 const ccBackendToken = String.fromEnvironment('CC_BACKEND_TOKEN', defaultValue: 'test_token');
 const deepSeekUri = String.fromEnvironment('deepSeek_uri', defaultValue: 'https://api.deepseek.com/v1/chat/completions');
 const deepSeekKey = String.fromEnvironment('deepSeek_key', defaultValue: 'test_key');
-const stripePublishableKey = String.fromEnvironment('STRIPE_PUBLISHABLE_KEY', defaultValue: 'test_key');
+const appleMerchantId = String.fromEnvironment('APPLE_MERCHANT_ID', defaultValue: 'test_merchant_id');
   });
 
   group('Core App Tests', () {

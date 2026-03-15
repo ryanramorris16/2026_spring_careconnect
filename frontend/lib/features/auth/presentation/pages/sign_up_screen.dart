@@ -1,5 +1,8 @@
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:care_connect_app/widgets/email_verification_dialog.dart';
+import 'package:care_connect_app/widgets/address_autocomplete_field.dart';
+import 'package:care_connect_app/services/google_places_service.dart';
+import 'package:care_connect_app/config/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart';
@@ -243,23 +246,39 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
       if (!mounted) return;
 
-      // If skipEmailVerification is true, just close the modal and return true
-      if (widget.skipEmailVerification) {
-        Navigator.of(context).pop(true);
-        return;
-      }
+      // 🚫 EMAIL VERIFICATION TEMPORARILY DISABLED
+      // WebSocket is disabled so email verification cannot complete.
+      // For now, navigate directly to subscription tiers page instead.
+      // TODO: Re-enable email verification once WebSocket is working
+      //
+      // Original email verification code commented out:
+      //   if (widget.skipEmailVerification) {
+      //     Navigator.of(context).pop(true);
+      //     return;
+      //   }
+      //   final verified = await showDialog<bool>(
+      //     context: context,
+      //     barrierDismissible: false,
+      //     builder: (context) =>
+      //         EmailVerificationDialog(email: _emailController.text),
+      //   );
+      //   if (verified == true && mounted) {
+      //     context.go('/login');
+      //   }
 
-      // Show email verification dialog and wait for result
-      final verified = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) =>
-            EmailVerificationDialog(email: _emailController.text),
-      );
-
-      // If email was verified, navigate to login screen
-      if (verified == true && mounted) {
-        context.go('/login');
+      if (mounted) {
+        if (_selectedRole == 'Caregiver') {
+          final email = _emailController.text;
+          final addressState = _stateController.text.isNotEmpty
+              ? _stateController.text
+              : null;
+          context.go('/select-subscription-tier', extra: {
+            'email': email,
+            'state': addressState,
+          });
+        } else {
+          context.go('/login');
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -443,80 +462,68 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
         const SizedBox(height: 8),
 
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedRole,
-              hint: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 16,
+        Row(
+          children: _roles.keys.map((String role) {
+            final isSelected = _selectedRole == role;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: role == 'Patient' ? 8 : 0,
+                  left: role == 'Caregiver' ? 8 : 0,
                 ),
-                child: Text(
-                  'Select account role',
-                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                ),
-              ),
-              isExpanded: true,
-              icon: Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
-              ),
-              items: _roles.keys.map((String role) {
-                return DropdownMenuItem<String>(
-                  value: role,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
+                child: GestureDetector(
+                  onTap: widget.lockRole
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedRole = role;
+                            _currentStep = 0;
+                          });
+                        },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppTheme.primary.withOpacity(0.08)
+                          : Colors.white,
+                      border: Border.all(
+                        color: isSelected ? AppTheme.primary : Colors.grey[300]!,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
                       children: [
                         Icon(
                           _roles[role]!['icon'],
-                          size: 20,
-                          color: AppTheme.primary,
+                          size: 32,
+                          color: isSelected ? AppTheme.primary : Colors.grey[500],
                         ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              role,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              '(${_roles[role]!['subtitle']})',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 10),
+                        Text(
+                          role,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected ? AppTheme.primary : AppTheme.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _roles[role]!['subtitle'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected ? AppTheme.primary.withOpacity(0.7) : Colors.grey[500],
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                );
-              }).toList(),
-              onChanged: widget.lockRole
-                  ? null
-                  : (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                        // Reset to step 0 when role changes to recalculate total steps
-                        _currentStep = 0;
-                      });
-                    },
-            ),
-          ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
 
         const SizedBox(height: 20),
@@ -718,10 +725,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ),
           const SizedBox(height: 16),
 
-          _buildTextFormField(
+          AddressAutocompleteField(
             controller: _addressLine1Controller,
             label: 'Address Line 1',
+            hint: 'Start typing your address...',
             isRequired: true,
+            keyboardType: TextInputType.streetAddress,
+            googlePlacesApiKey: AppConfig.getGooglePlacesApiKey(),
+            onAddressSelected: (ParsedAddress address) {
+              setState(() {
+                _addressLine1Controller.text = address.street;
+                _addressLine2Controller.text = '';
+                _cityController.text = address.city;
+                _stateController.text = address.state;
+                _zipController.text = address.zip;
+              });
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Address line 1 is required';

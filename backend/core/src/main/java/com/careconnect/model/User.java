@@ -63,6 +63,37 @@ public class User {
     @Column(name = "stripe_customer_id")
     private String stripeCustomerId;
 
+    // Billing address fields (geocoded + standardized)
+    @Column(name = "address_line1")
+    private String addressLine1;
+
+    @Column(name = "address_line2")
+    private String addressLine2;
+
+    @Column(name = "city")
+    private String city;
+
+    @Column(name = "state", length = 2)
+    private String state; // 2-letter state code (e.g., "CA", "NY")
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "country", length = 2)
+    private String country; // 2-letter country code (default "US")
+
+    @Column(name = "address_place_id")
+    private String addressPlaceId; // Google Places place_id or equivalent provider ID
+
+    @Column(name = "address_formatted")
+    private String addressFormatted; // Full formatted address string from provider
+
+    @Column(name = "address_latitude")
+    private Double addressLatitude;
+
+    @Column(name = "address_longitude")
+    private Double addressLongitude;
+
     private Timestamp createdAt;
 
     private Timestamp lastLogin;
@@ -215,7 +246,6 @@ public class User {
     }
 
     // ========== Existing Methods ==========
-
     public boolean isActive() {
         return "ACTIVE".equalsIgnoreCase(status);
     }
@@ -265,4 +295,27 @@ public class User {
     public void setLeaderboardOptIn(Boolean leaderboardOptIn) {
         this.leaderboardOptIn = leaderboardOptIn;
     }
+    // Address getters
+    public String getAddressLine1() { return addressLine1; }
+    public String getAddressLine2() { return addressLine2; }
+    public String getCity() { return city; }
+    public String getState() { return state; }
+    public String getPostalCode() { return postalCode; }
+    public String getCountry() { return country; }
+    public String getAddressPlaceId() { return addressPlaceId; }
+    public String getAddressFormatted() { return addressFormatted; }
+    public Double getAddressLatitude() { return addressLatitude; }
+    public Double getAddressLongitude() { return addressLongitude; }
+
+    // Address setters
+    public void setAddressLine1(String addressLine1) { this.addressLine1 = addressLine1; }
+    public void setAddressLine2(String addressLine2) { this.addressLine2 = addressLine2; }
+    public void setCity(String city) { this.city = city; }
+    public void setState(String state) { this.state = state; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
+    public void setCountry(String country) { this.country = country; }
+    public void setAddressPlaceId(String addressPlaceId) { this.addressPlaceId = addressPlaceId; }
+    public void setAddressFormatted(String addressFormatted) { this.addressFormatted = addressFormatted; }
+    public void setAddressLatitude(Double addressLatitude) { this.addressLatitude = addressLatitude; }
+    public void setAddressLongitude(Double addressLongitude) { this.addressLongitude = addressLongitude; }
 }
