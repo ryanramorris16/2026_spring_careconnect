@@ -1,11 +1,9 @@
 """
-HTML Report Builder
+render_report package for the CareConnect Quality Gate HTML report.
 
-Thin shim — delegates to render_report package.
-
-Functions
----------
-build_html_report(evaluated_doc, env) -> str
+Exports
+-------
+build_html_report
     Build the full HTML quality gate report document.
 """
 
