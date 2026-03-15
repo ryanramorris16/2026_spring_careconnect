@@ -35,7 +35,7 @@ public class AllergyController {
     /**
      * Create a new allergy for a patient
      */
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @PostMapping
     public ResponseEntity<?> createAllergy(@RequestBody AllergyDTO allergyDTO) {
@@ -66,7 +66,7 @@ public class AllergyController {
     /**
      * Update an existing allergy
      */
-    @RequirePermission(Permission.UPDATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAllergy(@PathVariable Long id, @RequestBody AllergyDTO allergyDTO) {
@@ -103,7 +103,7 @@ public class AllergyController {
     /**
      * Get all allergies for a patient
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<?> getAllergiesForPatient(@PathVariable Long patientId) {
@@ -130,7 +130,7 @@ public class AllergyController {
     /**
      * Get active allergies for a patient
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/patient/{patientId}/active")
     public ResponseEntity<?> getActiveAllergiesForPatient(@PathVariable Long patientId) {
@@ -157,7 +157,7 @@ public class AllergyController {
     /**
      * Deactivate an allergy (soft delete)
      */
-    @RequirePermission(Permission.UPDATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<?> deactivateAllergy(@PathVariable Long id) {
@@ -193,7 +193,7 @@ public class AllergyController {
     /**
      * Permanently delete an allergy
      */
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAllergy(@PathVariable Long id) {
