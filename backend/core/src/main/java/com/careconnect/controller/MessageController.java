@@ -2,11 +2,14 @@ package com.careconnect.controller;
 
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
+import com.careconnect.security.Role;
 
 import com.careconnect.model.Message;
 import com.careconnect.model.User;
 import com.careconnect.dto.InboxMessageDto;
+import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.MessageRepository;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +34,19 @@ public class MessageController {
     private UserRepository userRepo;
 
     @Autowired
+    private PatientRepository patientRepo;
+
+    @Autowired
+    private CaregiverRepository caregiverRepo;
+
+    @Autowired
     private SecurityUtil securityUtil;
 
     @Autowired
     private AuthorizationService authorizationService;
 
     // ✅ Send a new message
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.SEND_MESSAGES)
 
     @PostMapping("/send")
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) throws UnauthorizedException {
@@ -50,7 +59,7 @@ public class MessageController {
     }
 
     // ✅ Fetch full conversation between two users
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_MESSAGES)
 
     @GetMapping("/conversation")
     public ResponseEntity<List<Message>> getConversation(
@@ -67,7 +76,7 @@ public class MessageController {
     }
 
     // ✅ Inbox view: list all recent conversations with peer info
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_MESSAGES)
 
     @GetMapping("/inbox/{userId}")
     public ResponseEntity<List<InboxMessageDto>> getInbox(@PathVariable Long userId) throws UnauthorizedException {
@@ -83,20 +92,54 @@ public class MessageController {
             Optional<User> peer = userRepo.findById(peerId);
             if (peer.isPresent()) {
                 User u = peer.get();
+                String peerName = resolveDisplayName(u);
+                String peerRole = u.getRole() != null ? u.getRole().name() : "UNKNOWN";
+                boolean hasUnread = m.getReceiverId().equals(userId) && !m.isRead();
                 InboxMessageDto dto = new InboxMessageDto(
                         m.getId(),
                         peerId,
-                        u.getName(),
+                        peerName,
                         u.getEmail(),
-                        u.getRole().toString(),
+                        peerRole,
                         m.getContent(),
                         m.getTimestamp(),
-                        !m.isRead()
+                        hasUnread
                 );
                 map.put(peerId, dto);
             }
         }
 
         return ResponseEntity.ok(new ArrayList<>(map.values()));
+    }
+
+    private String resolveDisplayName(User u) {
+        Role role = u.getRole();
+        if (role == Role.PATIENT) {
+            String profileName = patientRepo.findByUserId(u.getId())
+                    .map(p -> fullName(p.getFirstName(), p.getLastName()))
+                    .filter(s -> !s.isBlank())
+                    .orElse(null);
+            if (profileName != null) return profileName;
+        }
+        if (role == Role.CAREGIVER) {
+            String profileName = caregiverRepo.findByUserId(u.getId())
+                    .map(c -> fullName(c.getFirstName(), c.getLastName()))
+                    .filter(s -> !s.isBlank())
+                    .orElse(null);
+            if (profileName != null) return profileName;
+        }
+        if (u.getName() != null && !u.getName().isBlank()) return u.getName().trim();
+        String email = u.getEmail();
+        if (email != null && !email.isBlank()) {
+            int at = email.indexOf('@');
+            return at > 0 ? email.substring(0, at) : email;
+        }
+        return "Unknown";
+    }
+
+    private static String fullName(String first, String last) {
+        String f = (first != null) ? first.trim() : "";
+        String l = (last  != null) ? last.trim()  : "";
+        return (f + " " + l).trim();
     }
 }

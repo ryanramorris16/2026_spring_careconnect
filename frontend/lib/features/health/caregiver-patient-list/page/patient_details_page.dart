@@ -2355,7 +2355,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                                   ),
                                 ),
                               ),
-                            _buildPersonalizationCard(),
                             if (widget.isCaregiver && _caregiverLinkId != null)
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -2379,7 +2378,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                                   ),
                                 ),
                               ),
-                            _buildPersonalizationCard(),
                             if (widget.isCaregiver && _caregiverLinkId != null)
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -2403,7 +2401,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                                   ),
                                 ),
                               ),
-                            _buildPersonalizationCard(),
                             CommunicationHistoryCard(
                               events: _callHistoryEvents,
                               onCallTap: _openCallHistoryDetail,

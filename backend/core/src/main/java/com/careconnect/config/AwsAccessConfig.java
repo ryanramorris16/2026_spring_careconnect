@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.chimesdkmeetings.ChimeSdkMeetingsClient;
 import software.amazon.awssdk.services.chimesdkmediapipelines.ChimeSdkMediaPipelinesClient;
@@ -15,17 +14,20 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.textract.TextractClient;
+import org.springframework.beans.factory.annotation.Value;
+
 
 @Configuration
 @ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = false)
 public class AwsAccessConfig {
 
+    @Value("${aws.region:us-east-1}")
+    private String awsRegion;
 
     @Bean
     public Region defaultAwsRegion() {
-        return new DefaultAwsRegionProviderChain().getRegion();
+        return Region.of(awsRegion);
     }
-
 
     @Bean
     public DefaultCredentialsProvider awsCredentialsProvider() {
