@@ -34,9 +34,9 @@ import lombok.NoArgsConstructor;
  */
 
 @Data
+@AllArgsConstructor
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class ScheduledNotificationDTO {
     /**
      * The ID of the user who will receive the notification.

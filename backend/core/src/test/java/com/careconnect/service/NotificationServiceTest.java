@@ -15,14 +15,25 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.junit.jupiter.api.extension.ExtendWith(org.mockito.junit.jupiter.MockitoExtension.class)
 class NotificationServiceTest {
 
+    @org.mockito.Mock
+    private com.careconnect.notifications.SesService sesService;
+    @org.mockito.Mock
+    private com.careconnect.notifications.SnsService snsService;
+    @org.mockito.Mock
+    private com.careconnect.repository.DeviceTokenRepository deviceTokenRepository;
+    @org.mockito.Mock
+    private com.careconnect.repository.NotificationSettingRepository notificationSettingRepository;
+    @org.mockito.Mock
+    private com.careconnect.repository.UserRepository userRepository;
+
+    @org.mockito.InjectMocks
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
-        notificationService = new NotificationService();
     }
 
     // ========== sendNotification tests ==========

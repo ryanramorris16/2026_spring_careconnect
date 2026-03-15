@@ -3,15 +3,13 @@ package com.careconnect.dto.schedule;
 import com.careconnect.model.schedule.ScheduledVisit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class ScheduledVisitResponse {
     
     private Long id;
@@ -28,6 +26,8 @@ public class ScheduledVisitResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
+    public ScheduledVisitResponse() {}
+
     public ScheduledVisitResponse(ScheduledVisit visit, String patientName) {
         this.id = visit.getId();
         this.caregiverId = visit.getCaregiverId();

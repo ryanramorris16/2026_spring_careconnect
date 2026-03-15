@@ -36,9 +36,9 @@ import lombok.NoArgsConstructor;
  * </p>
  */
 @Data
+@AllArgsConstructor
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class TaskDtoV2 {
     /**
      * Unique identifier of the task.
