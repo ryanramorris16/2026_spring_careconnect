@@ -477,7 +477,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           content: pendingMessage.content,
         );
         queuedOffline = response.headers['x-offline-queued'] == 'true';
-        sent = !queuedOffline;
+        sent = !queuedOffline &&
+            response.statusCode >= 200 &&
+            response.statusCode < 300;
       }
     } catch (_) {}
 
