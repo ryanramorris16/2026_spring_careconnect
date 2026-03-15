@@ -6,15 +6,20 @@ import com.careconnect.security.Role;
 
 import com.careconnect.model.Message;
 import com.careconnect.model.User;
+import com.careconnect.dto.FileUploadResponse;
 import com.careconnect.dto.InboxMessageDto;
 import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.MessageRepository;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
+import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.service.FileManagementService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
@@ -38,6 +43,12 @@ public class MessageController {
 
     @Autowired
     private CaregiverRepository caregiverRepo;
+
+    @Autowired
+    private CaregiverPatientLinkService linkService;
+
+    @Autowired
+    private FileManagementService fileManagementService;
 
     @Autowired
     private SecurityUtil securityUtil;
@@ -110,6 +121,50 @@ public class MessageController {
         }
 
         return ResponseEntity.ok(new ArrayList<>(map.values()));
+    }
+
+    // ✅ Send a message with a file attachment (multipart)
+    @RequirePermission(Permission.SEND_MESSAGES)
+    @PostMapping("/send-attachment")
+    public ResponseEntity<?> sendAttachment(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam Long senderId,
+            @RequestParam Long receiverId
+    ) {
+        boolean allowed = linkService.isPatientMessagingEnabled(senderId, receiverId)
+                || linkService.isPatientMessagingEnabled(receiverId, senderId);
+        if (!allowed) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Messaging is not enabled for this caregiver-patient link.");
+        }
+
+        try {
+            User sender = userRepo.findById(senderId).orElse(null);
+            String userType = sender != null ? sender.getRole().name() : "PATIENT";
+
+            FileUploadResponse uploaded = fileManagementService.uploadFile(
+                    file, senderId, userType, "CHAT_ATTACHMENT", "Chat attachment", null);
+
+            Message message = new Message();
+            message.setSenderId(senderId);
+            message.setReceiverId(receiverId);
+            message.setContent("");
+            message.setTimestamp(LocalDateTime.now());
+            message.setRead(false);
+            message.setAttachmentId(uploaded.getFileId());
+            message.setAttachmentName(uploaded.getOriginalFilename());
+            message.setAttachmentContentType(uploaded.getContentType());
+            message.setAttachmentSize(file.getSize());
+
+            Message saved = messageRepo.save(message);
+            return ResponseEntity.ok(Map.of(
+                    "message", saved,
+                    "downloadUrl", "/v1/api/files/" + uploaded.getFileId() + "/download"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload attachment: " + e.getMessage());
+        }
     }
 
     private String resolveDisplayName(User u) {
