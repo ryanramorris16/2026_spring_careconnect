@@ -80,7 +80,7 @@ public class FileController {
     /**
      * Upload a file using the new database-first approach
      */
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @PostMapping("/upload")
     @Operation(summary = "Upload a file", description = "Upload a file for the current user (database-first storage)")
@@ -129,7 +129,7 @@ public class FileController {
     /**
      * Download a file by ID
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/{fileId}/download")
     @Operation(summary = "Download a file", description = "Download file content by file ID")
@@ -175,7 +175,7 @@ public class FileController {
     /**
      * List files for current user
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/my-files")
     @Operation(summary = "List my files", description = "List files owned by the current user")
@@ -208,7 +208,7 @@ public class FileController {
     /**
      * List files for a specific patient
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/patient/{patientId}")
     @Operation(summary = "List patient files", description = "List files associated with a specific patient")
@@ -252,7 +252,7 @@ public class FileController {
     /**
      * Delete a file
      */
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
     @DeleteMapping("/{fileId}")
     @Operation(summary = "Delete a file", description = "Delete a file by ID")
@@ -294,7 +294,7 @@ public class FileController {
     /**
      * Get user's profile image
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
     @GetMapping("/profile-image")
     @Operation(summary = "Get profile image", description = "Get current user's profile image")
@@ -329,7 +329,7 @@ public class FileController {
     
     // ==================== S3 ENDPOINTS ====================
 
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
 
     @PostMapping("/users/{userId}/upload")
@@ -386,7 +386,7 @@ public class FileController {
         }
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
 
     @GetMapping("/users/{userId}/download/{*filePath}")
@@ -421,7 +421,7 @@ public class FileController {
         }
     }
 
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.RECORD_HEALTH_DATA)
 
 
     @DeleteMapping("/users/{userId}/delete/{*filePath}")
@@ -455,7 +455,7 @@ public class FileController {
         }
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
 
     @GetMapping("/users/{userId}/list")
@@ -495,7 +495,7 @@ public class FileController {
         }
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_HEALTH_DATA)
 
 
     @GetMapping("/users/{userId}/categories")
