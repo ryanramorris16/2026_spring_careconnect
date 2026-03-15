@@ -156,6 +156,25 @@ public class AuthController {
         return ResponseEntity.ok(authService.loginV2(req, response));
     }
 
+    @GetMapping("/validate-token")
+    @Operation(summary = "Validate JWT token", description = "Check if the current JWT token is valid", tags = {"🔑 Authentication"})
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Collections.singletonMap("valid", false));
+            }
+            String token = authHeader.substring(7);
+            if (jwt.validateToken(token)) {
+                return ResponseEntity.ok(Collections.singletonMap("valid", true));
+            }
+            return ResponseEntity.status(401).body(Collections.singletonMap("valid", false));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Collections.singletonMap("valid", false));
+        }
+
+    }
+
     // --- Email verification ---
     @GetMapping("/verify/{token}")
     @Operation(summary = "✉️ Verify email address", description = "Verify user email address using verification token", tags = {

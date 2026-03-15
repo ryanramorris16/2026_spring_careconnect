@@ -74,6 +74,9 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
 
                         /* ---------- Require JWT for these APIs ------------------------ */
+                        .requestMatchers("/v1/api/subscriptions/**").authenticated()
+                        .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/v1/api/notification-settings/**").authenticated()
                         .requestMatchers("/v1/api/patients/**").authenticated()
                         .requestMatchers("/v1/api/caregivers/**").authenticated()
                         .requestMatchers("/v1/api/allergies/**").authenticated()
@@ -82,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/ai/deepseek/**").authenticated()
                         .requestMatchers("/v1/api/family-members/**").authenticated()
                         .requestMatchers("/v1/api/ai-chat/**").authenticated()
+
 
                         /* ---------- Everything else: deny (safer default) ------------- */
                         .anyRequest().denyAll()
