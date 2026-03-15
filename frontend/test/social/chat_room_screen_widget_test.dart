@@ -3,6 +3,7 @@ import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -179,6 +180,15 @@ void main() {
 
       final mockClient = _QueueThenOnlineClient();
       ApiService.debugSetHttpClient(mockClient);
+
+      const MethodChannel secureStorageChannel =
+          MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        secureStorageChannel,
+        (MethodCall methodCall) async => null,
+      );
 
       List<dynamic> serverConversation = <dynamic>[];
       var chatBuildCount = 0;
