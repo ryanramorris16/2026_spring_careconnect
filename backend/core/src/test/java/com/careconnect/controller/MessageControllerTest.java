@@ -3,10 +3,14 @@ package com.careconnect.controller;
 import com.careconnect.dto.InboxMessageDto;
 import com.careconnect.model.Message;
 import com.careconnect.model.User;
+import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.MessageRepository;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.Role;
+import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.service.FileManagementService;
 import com.careconnect.util.SecurityUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +33,10 @@ class MessageControllerTest {
 
     @Mock private MessageRepository messageRepo;
     @Mock private UserRepository userRepo;
+    @Mock private CaregiverPatientLinkService linkService;
+    @Mock private FileManagementService fileManagementService;
+    @Mock private PatientRepository patientRepo;
+    @Mock private CaregiverRepository caregiverRepo;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
 
@@ -65,10 +73,13 @@ class MessageControllerTest {
         inbound.setReceiverId(RECEIVER_ID);
         inbound.setContent("Hello!");
 
+        final User sender = makeUser(SENDER_ID, "Alice", "alice@test.com");
+        when(securityUtil.resolveCurrentUser()).thenReturn(sender);
+        when(linkService.isPatientMessagingEnabled(SENDER_ID, RECEIVER_ID)).thenReturn(true);
         final Message saved = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hello!");
         when(messageRepo.save(any(Message.class))).thenReturn(saved);
 
-        final ResponseEntity<Message> response = controller.sendMessage(inbound);
+        final ResponseEntity<?> response = controller.sendMessage(inbound);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isSameAs(saved);

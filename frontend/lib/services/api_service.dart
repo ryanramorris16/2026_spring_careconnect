@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
@@ -73,6 +74,18 @@ class ApiService {
   // Method to dispose of resources
   static void dispose() {
     _httpClient.close();
+  }
+
+  @visibleForTesting
+  static void debugSetHttpClient(http.Client client) {
+    _httpClient.close();
+    _httpClient = client;
+  }
+
+  @visibleForTesting
+  static void debugResetHttpClient() {
+    _httpClient.close();
+    _httpClient = http.Client();
   }
 
   // ========================
@@ -354,6 +367,7 @@ class ApiService {
   static Future<List<int>> getPatientLinkedCaregiverUserIds(
     int patientUserId,
   ) async {
+<<<<<<< HEAD
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
@@ -388,6 +402,19 @@ class ApiService {
     } catch (_) {
       return [];
     }
+=======
+    final links = await getPatientLinkedCaregiverLinks(patientUserId);
+    return links
+        .map((item) {
+          final caregiverUserId = item['caregiverUserId'];
+          if (caregiverUserId is int) return caregiverUserId;
+          if (caregiverUserId is String) return int.tryParse(caregiverUserId);
+          return null;
+        })
+        .whereType<int>()
+        .toSet()
+        .toList();
+>>>>>>> origin/main
   }
 
   static Future<List<Map<String, dynamic>>> getPatientLinkedCaregiverLinks(
@@ -433,10 +460,26 @@ class ApiService {
     }
 
     if (currentUserRole == 'PATIENT') {
+<<<<<<< HEAD
       final linkedCaregiverIds = await getPatientLinkedCaregiverUserIds(
         currentUserId,
       );
       return linkedCaregiverIds.contains(targetUserId);
+=======
+      final linkedCaregiverLinks = await getPatientLinkedCaregiverLinks(
+        currentUserId,
+      );
+      return linkedCaregiverLinks.any((link) {
+        final caregiverRaw = link['caregiverUserId'];
+        final caregiverUserId =
+            caregiverRaw is int ? caregiverRaw : int.tryParse('$caregiverRaw');
+        final enabledRaw = link['patientVideoCallsEnabled'];
+        final isEnabled = enabledRaw is bool
+            ? enabledRaw
+            : '$enabledRaw'.toLowerCase() != 'false';
+        return caregiverUserId == targetUserId && isEnabled;
+      });
+>>>>>>> origin/main
     }
 
     if (currentUserRole == 'CAREGIVER') {
@@ -645,7 +688,12 @@ class ApiService {
   // CAREGIVER MOOD SUMMARY
   // ========================
   static Future<Map<String, dynamic>> getCaregiverMoodSummaries(
+<<<<<<< HEAD
       int caregiverId) async {
+=======
+    int caregiverId,
+  ) async {
+>>>>>>> origin/main
     final headers = {'Content-Type': 'application/json'};
     final url = Uri.parse('${ApiConstants.mood}/caregiver/$caregiverId/moods');
 
@@ -731,10 +779,7 @@ class ApiService {
 
     final url = Uri.parse('${ApiConstants.mood}/$userId/mood');
 
-    final body = jsonEncode({
-      'score': score,
-      'label': label,
-    });
+    final body = jsonEncode({'score': score, 'label': label});
 
     try {
       final response = await _httpClient
@@ -742,7 +787,12 @@ class ApiService {
           .timeout(const Duration(seconds: 30));
 
       print(
+<<<<<<< HEAD
           '🔍 saveMoodScore response: ${response.statusCode} - ${response.body}');
+=======
+        '🔍 saveMoodScore response: ${response.statusCode} - ${response.body}',
+      );
+>>>>>>> origin/main
       return response;
     } catch (e) {
       print('❌ saveMoodScore error: $e');
@@ -840,7 +890,12 @@ class ApiService {
 
   // GET /v1/api/symptoms/patient/{patientId}
   static Future<List<Map<String, dynamic>>> getSymptomsForPatient(
+<<<<<<< HEAD
       int patientId) async {
+=======
+    int patientId,
+  ) async {
+>>>>>>> origin/main
     final headers = await AuthTokenManager.getAuthHeaders();
     final uri = Uri.parse('${ApiConstants.symptoms}/patient/$patientId');
 
@@ -850,7 +905,12 @@ class ApiService {
 
     if (res.statusCode != 200) {
       throw Exception(
+<<<<<<< HEAD
           'getSymptomsForPatient failed: ${res.statusCode} ${res.body}');
+=======
+        'getSymptomsForPatient failed: ${res.statusCode} ${res.body}',
+      );
+>>>>>>> origin/main
     }
     final decoded = jsonDecode(res.body);
     final list = (decoded is Map && decoded['data'] is List)
@@ -859,7 +919,7 @@ class ApiService {
     return list.whereType<Map<String, dynamic>>().toList();
   }
 
-// ✅ NEW - GET /v1/api/symptoms/{id}
+  // ✅ NEW - GET /v1/api/symptoms/{id}
   static Future<Map<String, dynamic>> getSymptomById(int id) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final uri = Uri.parse('${ApiConstants.symptoms}/$id');
@@ -878,7 +938,7 @@ class ApiService {
         : <String, dynamic>{};
   }
 
-// POST /v1/api/symptoms
+  // POST /v1/api/symptoms
   static Future<Map<String, dynamic>> createSymptom({
     required int patientId,
     required String symptomKey,
@@ -903,8 +963,16 @@ class ApiService {
     };
 
     final res = await _httpClient
+<<<<<<< HEAD
         .post(Uri.parse(ApiConstants.symptoms),
             headers: headers, body: jsonEncode(payload))
+=======
+        .post(
+          Uri.parse(ApiConstants.symptoms),
+          headers: headers,
+          body: jsonEncode(payload),
+        )
+>>>>>>> origin/main
         .timeout(const Duration(seconds: 20));
 
     if (res.statusCode != 201 && res.statusCode != 200) {
@@ -917,7 +985,7 @@ class ApiService {
         : <String, dynamic>{};
   }
 
-// PUT /v1/api/symptoms/{id}
+  // PUT /v1/api/symptoms/{id}
   static Future<Map<String, dynamic>> updateSymptom({
     required int id,
     String? symptomKey,
@@ -940,8 +1008,16 @@ class ApiService {
     };
 
     final res = await _httpClient
+<<<<<<< HEAD
         .put(Uri.parse('${ApiConstants.symptoms}/$id'),
             headers: headers, body: jsonEncode(payload))
+=======
+        .put(
+          Uri.parse('${ApiConstants.symptoms}/$id'),
+          headers: headers,
+          body: jsonEncode(payload),
+        )
+>>>>>>> origin/main
         .timeout(const Duration(seconds: 20));
 
     if (res.statusCode != 200) {
@@ -954,7 +1030,7 @@ class ApiService {
         : <String, dynamic>{};
   }
 
-// DELETE /v1/api/symptoms/{id}
+  // DELETE /v1/api/symptoms/{id}
   static Future<void> deleteSymptom(int id) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final res = await _httpClient
@@ -1135,9 +1211,13 @@ class ApiService {
   static Future<Map<String, dynamic>> getPatientData(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http.get(
+<<<<<<< HEAD
       Uri.parse(
         '${ApiConstants.familyMembers}/patients/$patientId',
       ),
+=======
+      Uri.parse('${ApiConstants.familyMembers}/patients/$patientId'),
+>>>>>>> origin/main
       headers: headers,
     );
 
@@ -1178,9 +1258,13 @@ class ApiService {
   static Future<bool> hasAccessToPatient(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http.get(
+<<<<<<< HEAD
       Uri.parse(
         '${ApiConstants.familyMembers}/patients/$patientId/access',
       ),
+=======
+      Uri.parse('${ApiConstants.familyMembers}/patients/$patientId/access'),
+>>>>>>> origin/main
       headers: headers,
     );
 
@@ -1240,9 +1324,13 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     final response = await http
         .get(
+<<<<<<< HEAD
           Uri.parse(
             '${ApiConstants.familyMembers}/patients/$patientId/status',
           ),
+=======
+          Uri.parse('${ApiConstants.familyMembers}/patients/$patientId/status'),
+>>>>>>> origin/main
           headers: headers,
         )
         .timeout(
@@ -1286,6 +1374,7 @@ class ApiService {
     );
   }
 
+<<<<<<< HEAD
   static Future<http.Response> getPatientCompleteProfile(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
@@ -1296,6 +1385,8 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
+=======
+>>>>>>> origin/main
   static Future<List<Map<String, dynamic>>> getPatientFamilyMembers(
     int patientId,
   ) async {
@@ -1317,6 +1408,7 @@ class ApiService {
     }
     return const [];
   }
+<<<<<<< HEAD
 
   static Future<int> deleteCallTelemetryDev(String callId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
@@ -1340,6 +1432,8 @@ class ApiService {
 
     return 0;
   }
+=======
+>>>>>>> origin/main
 
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
@@ -1463,6 +1557,7 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
+<<<<<<< HEAD
   // ========================
   // AUDIT LOG
   // ========================
@@ -1487,6 +1582,16 @@ class ApiService {
     final uri = Uri.parse('${ApiConstants.clients}/$clientId/audit-log')
         .replace(queryParameters: query.isEmpty ? null : query);
     return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 30));
+=======
+  static Future<http.Response> getPatientCompleteProfile(int patientId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    return await _httpClient
+        .get(
+          Uri.parse('${ApiConstants.patients}/$patientId/profile'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
+>>>>>>> origin/main
   }
 
   /// Update patient profile
@@ -2178,12 +2283,25 @@ class ApiService {
   }
 
   static Future<http.Response> getPatientMedicationsForPatient(
+<<<<<<< HEAD
       int patientId) async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final uri =
           Uri.parse('${ApiConstants.patientsV3}/$patientId/medications');
       return await _httpClient.get(uri, headers: headers).timeout(
+=======
+    int patientId,
+  ) async {
+    try {
+      final headers = await AuthTokenManager.getAuthHeaders();
+      final uri = Uri.parse(
+        '${ApiConstants.patientsV3}/$patientId/medications',
+      );
+      return await _httpClient
+          .get(uri, headers: headers)
+          .timeout(
+>>>>>>> origin/main
             const Duration(seconds: 10),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -2204,11 +2322,15 @@ class ApiService {
       );
 
       return await _httpClient
+<<<<<<< HEAD
           .post(
             uri,
             headers: headers,
             body: jsonEncode(medicationData),
           )
+=======
+          .post(uri, headers: headers, body: jsonEncode(medicationData))
+>>>>>>> origin/main
           .timeout(
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
@@ -2229,7 +2351,13 @@ class ApiService {
         '${ApiConstants.patientsV3}/$patientId/medications/$medicationId',
       );
 
+<<<<<<< HEAD
       return await _httpClient.delete(uri, headers: headers).timeout(
+=======
+      return await _httpClient
+          .delete(uri, headers: headers)
+          .timeout(
+>>>>>>> origin/main
             const Duration(seconds: 15),
             onTimeout: () => http.Response('{"error": "Request timeout"}', 408),
           );
@@ -2375,7 +2503,13 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> addAllergy(
+<<<<<<< HEAD
       final Map<String, dynamic> allergyData, final int patientId) async {
+=======
+    final Map<String, dynamic> allergyData,
+    final int patientId,
+  ) async {
+>>>>>>> origin/main
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
@@ -2385,6 +2519,7 @@ class ApiService {
       'severity': allergyData['severity'],
       'reaction': allergyData['reaction'],
       'notes': allergyData['note'],
+<<<<<<< HEAD
       'isActive': true
     });
 
@@ -2399,21 +2534,42 @@ class ApiService {
     final queuedOffline = ApiServiceOffline.isQueuedOfflineResponse(response);
     if ((response.statusCode >= 200 && response.statusCode < 300) ||
         queuedOffline) {
+=======
+      'isActive': true,
+    });
+
+    final response = await _httpClient
+        .post(Uri.parse(ApiConstants.allergies), headers: headers, body: body)
+        .timeout(const Duration(seconds: 20));
+
+    final queuedOffline = ApiServiceOffline.isQueuedOfflineResponse(response);
+    if ((response.statusCode >= 200 && response.statusCode < 300) || queuedOffline) {
+>>>>>>> origin/main
       final decoded = jsonDecode(response.body);
       if (queuedOffline) {
         return <String, dynamic>{
           'queued': true,
+<<<<<<< HEAD
           'requestId':
               decoded is Map<String, dynamic> ? decoded['requestId'] : null,
+=======
+          'requestId': decoded is Map<String, dynamic> ? decoded['requestId'] : null,
+>>>>>>> origin/main
         };
       }
       if (decoded is Map<String, dynamic>) {
         return Map<String, dynamic>.from(decoded['data'] ?? decoded);
       }
       return <String, dynamic>{};
+<<<<<<< HEAD
     } else {
       throw HttpException("Failed to add allergy for patient.");
     }
+=======
+    }
+
+    throw HttpException("Failed to add allergy for patient.");
+>>>>>>> origin/main
   }
 
   static Future<bool> removeAllergy(int allergyId) async {
@@ -2428,8 +2584,12 @@ class ApiService {
   }
 
   static Future<List<Map<String, dynamic>>> getCallTelemetry(
+<<<<<<< HEAD
     String callId,
   ) async {
+=======
+      String callId) async {
+>>>>>>> origin/main
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
       final response = await _httpClient
@@ -2508,6 +2668,10 @@ class ApiService {
     }
   }
 
+<<<<<<< HEAD
+=======
+  /// Returns the latest recording record for [callId], or null if none exists.
+>>>>>>> origin/main
   static Future<Map<String, dynamic>?> getCallRecording(String callId) async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
@@ -2525,6 +2689,10 @@ class ApiService {
     return null;
   }
 
+<<<<<<< HEAD
+=======
+  /// Returns a presigned playback URL for the recording of [callId], or null.
+>>>>>>> origin/main
   static Future<String?> getCallRecordingPlaybackUrl(String callId) async {
     try {
       final headers = await AuthTokenManager.getAuthHeaders();
@@ -2598,6 +2766,45 @@ class ApiService {
     }
   }
 
+<<<<<<< HEAD
+=======
+  static Future<Map<String, dynamic>> deleteCallTelemetryDev(
+      String callId) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient
+        .delete(Uri.parse('${ApiConstants.callsV3}/$callId/telemetry'),
+            headers: headers)
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode != 200) {
+      String details = '';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          final message =
+              (decoded['message'] ?? decoded['error'] ?? '').toString().trim();
+          if (message.isNotEmpty) {
+            details = ' - $message';
+          }
+        }
+      } catch (_) {
+        // keep default message
+      }
+      throw HttpException(
+        'Failed to delete call telemetry (${response.statusCode})$details',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+    return {};
+  }
+
+  /// DEV ONLY — purges all recordings from S3 and the call_recordings table.
+  /// Returns a summary map with deletedS3Objects and deletedDbRows.
+>>>>>>> origin/main
   static Future<Map<String, dynamic>> deletePatientCallHistoryDev(
     int patientUserId,
   ) async {
@@ -2621,7 +2828,13 @@ class ApiService {
             details = ' - $message';
           }
         }
+<<<<<<< HEAD
       } catch (_) {}
+=======
+      } catch (_) {
+        // keep default message
+      }
+>>>>>>> origin/main
       throw HttpException(
         'Failed to delete patient call history (${response.statusCode})$details',
       );
@@ -2632,6 +2845,28 @@ class ApiService {
       return Map<String, dynamic>.from(decoded);
     }
     return {};
+<<<<<<< HEAD
+=======
+  }
+
+  static Future<Map<String, dynamic>> purgeAllRecordingsDev() async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    final response = await _httpClient
+        .delete(
+          Uri.parse('${ApiConstants.callsV3}/recordings'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 60));
+
+    if (response.statusCode != 200) {
+      throw HttpException(
+        'Failed to purge recordings (${response.statusCode}): ${response.body}',
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    return {};
+>>>>>>> origin/main
   }
 }
 

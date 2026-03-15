@@ -166,7 +166,7 @@ class SubscriptionControllerTest {
 
     @Test
     void syncAllCustomerSubscriptions_success_returnsOk() throws Exception {
-        when(subscriptionService.syncAllSubscriptionsForCustomer("cus_1")).thenReturn(List.of());
+        when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(null)).thenReturn(List.of());
 
         final ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_1");
 
@@ -175,7 +175,7 @@ class SubscriptionControllerTest {
 
     @Test
     void syncAllCustomerSubscriptions_exception_returnsBadRequest() throws Exception {
-        when(subscriptionService.syncAllSubscriptionsForCustomer("cus_bad")).thenThrow(new RuntimeException("fail"));
+        when(subscriptionEnrichmentService.getEnrichedUserSubscriptions(null)).thenThrow(new RuntimeException("fail"));
 
         final ResponseEntity<?> response = controller.syncAllCustomerSubscriptions("cus_bad");
 
