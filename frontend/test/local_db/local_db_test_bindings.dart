@@ -1,4 +1,3 @@
-// test/test_support/local_db_test_bindings.dart
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -85,7 +84,7 @@ class LocalDbTestBindings {
   static Future<void> uninstall() async {
     if (!_installed) return;
 
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+    await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_secureStorageChannel, null);
 
     if (_previousPathProvider != null) {
