@@ -68,10 +68,10 @@ class ActivityControllerTest {
     }
 
     @Test
-    @DisplayName("redirects unauthenticated request (302 to login)")
+    @DisplayName("returns 401 for unauthenticated request")
     void unauthenticated_redirectsToLogin() throws Exception {
         mockMvc.perform(get("/v1/api/activities"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

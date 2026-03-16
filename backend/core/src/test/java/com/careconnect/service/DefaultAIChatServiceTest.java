@@ -115,6 +115,15 @@ class DefaultAIChatServiceTest {
                 responseSanitizationService, langChainGovernanceService,
                 cacheService, securityAuditService, documentProcessingService);
 
+        // Set @Value fields that are not injected via constructor
+        java.lang.reflect.Field providerField = DefaultAIChatService.class.getDeclaredField("provider");
+        providerField.setAccessible(true);
+        providerField.set(service, "deepseek");
+
+        java.lang.reflect.Field modelNameField = DefaultAIChatService.class.getDeclaredField("configuredModelName");
+        modelNameField.setAccessible(true);
+        modelNameField.set(service, "deepseek-chat");
+
         // Build fixtures
         patient = new Patient();
 

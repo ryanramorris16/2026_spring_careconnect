@@ -4,6 +4,7 @@ import com.careconnect.dto.FileUploadResponse;
 import com.careconnect.dto.UserFileDTO;
 import com.careconnect.model.Patient;
 import com.careconnect.model.User;
+import com.careconnect.repository.MessageRepository;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.Role;
@@ -41,6 +42,7 @@ class FileControllerTest {
     @Mock private FileManagementService fileManagementService;
     @Mock private UserRepository userRepository;
     @Mock private PatientRepository patientRepository;
+    @Mock private MessageRepository messageRepository;
     @Mock private CaregiverService caregiverService;
     @Mock private PatientService patientService;
     @Mock private Authentication authentication;
