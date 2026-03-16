@@ -4,7 +4,6 @@ package com.careconnect.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,10 +18,11 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 //Service configured to hit the configured LLM via OpenRouter for unlimited free tier 
-@Slf4j
+
 @Service
 @ConditionalOnProperty(name = "careconnect.openrouter.enabled", havingValue = "true", matchIfMissing = true)
 public class OpenRouterService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(OpenRouterService.class);
 
     @Value("${openrouter.api.key:}")
     private String apiKey;

@@ -1,7 +1,8 @@
 package com.careconnect.model.schedule;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -15,7 +16,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "scheduled_visits")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduledVisit {
@@ -115,4 +117,18 @@ public class ScheduledVisit {
     public boolean isCancelled() {
         return "Cancelled".equals(this.status);
     }
+
+    // Explicit getters added due to Lombok processing issue
+    public Long getId() { return id; }
+    public Long getCaregiverId() { return caregiverId; }
+    public Long getPatientId() { return patientId; }
+    public String getServiceType() { return serviceType; }
+    public java.time.LocalDate getScheduledDate() { return scheduledDate; }
+    public java.time.LocalTime getScheduledTime() { return scheduledTime; }
+    public Integer getDurationMinutes() { return durationMinutes; }
+    public String getPriority() { return priority; }
+    public String getNotes() { return notes; }
+    public String getStatus() { return status; }
+    public java.time.LocalDateTime getCreatedAt() { return createdAt; }
+    public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
 }

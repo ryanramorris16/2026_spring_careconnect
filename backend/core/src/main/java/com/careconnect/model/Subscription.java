@@ -1,12 +1,13 @@
 package com.careconnect.model;
 
 
-import com.careconnect.model.Plan;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.Instant;
+
 
 @Entity
 @Table(name = "subscriptions")
@@ -35,6 +36,13 @@ public class Subscription {
     private String status; // ACTIVE, CANCELLED, etc.
     private Instant startedAt;
     private Instant currentPeriodEnd;
+    @Enumerated(EnumType.STRING)
+    private BillingPlatform platform;
+
+    private String externalSubscriptionId;
+
+    private Instant lastValidatedAt;
+    // Platform-agnostic fields (stored above)
     
     // Explicit getter methods for compatibility
     public Long getId() { return id; }

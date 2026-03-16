@@ -27,12 +27,6 @@
         <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
         <dependency-check.failBuild>false</dependency-check.failBuild>
         <!-- SonarQube Configuration -->
-        <sonar.projectKey>careconnect-backend</sonar.projectKey>
-        <sonar.projectName>CareConnect Backend</sonar.projectName>
-        <sonar.language>java</sonar.language>
-        <sonar.sources>src/main</sonar.sources>
-        <sonar.tests>src/test</sonar.tests>
-        <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
     </properties>
 
     <dependencyManagement>
@@ -52,7 +46,6 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>textract</artifactId>
-            <version>2.25.10</version>
         </dependency>
 
         <!-- Spring Boot Starter Web -->
@@ -83,11 +76,17 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!--Spring AOP for RBAC annotation-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+        
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
+            <version>1.18.38</version>
             <scope>provided</scope>
         </dependency>
 
@@ -115,13 +114,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- H2 Database (for testing) -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -169,8 +161,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>chimesdkmeetings</artifactId>
         </dependency>
-
-        <!-- Adding Bedrock -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>chimesdkmediapipelines</artifactId>
@@ -186,7 +176,16 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bedrockruntime</artifactId>
-            <version>2.25.10</version>
+        </dependency>
+
+        <!-- SES and SNS for notifications -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sns</artifactId>
         </dependency>
 
         <!-- OpenAPI UI -->
@@ -241,6 +240,9 @@
             <artifactId>jjwt-api</artifactId>
             <version>0.11.5</version>
         </dependency>
+
+        <!-- add jacoco plugin dependency for coverage reporting -->
+        <!-- none needed as it's a plugin, not a dependency -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
@@ -379,6 +381,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <!-- Always-on build plugins -->
@@ -396,25 +404,55 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>17</source>
+                    <target>17</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.34</version>
+                            <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
+             <!-- Surefire plugin for tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                </configuration>
+            </plugin>
+            <!-- JaCoCo Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Checkstyle plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.3.1</version>
-                <!-- DISABLED FOR DEVELOPMENT: Comment out to re-enable -->
-                <!-- executions>
+                <executions>
                     <execution>
                         <id>validate</id>
                         <phase>validate</phase>
@@ -422,11 +460,12 @@
                             <goal>check</goal>
                         </goals>
                     </execution>
-                </executions -->
+                </executions>
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>false</failsOnError>
+                    <consoleOutput>false</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                    <violationSeverity>error</violationSeverity>
                     <linkXRef>false</linkXRef>
                 </configuration>
                 <dependencies>
@@ -476,21 +515,9 @@
                 </executions>
                 <configuration>
                     <failOnViolation>true</failOnViolation>
-                    <targetJdk>17</targetJdk>
                     <rulesets>
                         <ruleset>rulesets/java/quickstart.xml</ruleset>
                     </rulesets>
-                </configuration>
-            </plugin>
-
-            <!-- SonarQube Scanner Maven Plugin -->
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.10.0.2594</version>
-                <configuration>
-                    <skip>false</skip>
-                    <skipDesign>false</skipDesign>
                 </configuration>
             </plugin>
 
@@ -763,6 +790,54 @@
                                     </descriptors>
                                     <attach>false</attach>
                                 </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <!-- Re-enable jar creation -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.4.2</version>
+                        <executions>
+                            <execution>
+                                <id>default-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Re-enable Spring Boot repackage -->
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>repackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>repackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Skip the Lambda zip assembly -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>3.7.1</version>
+                        <executions>
+                            <execution>
+                                <id>zip-assembly</id>
+                                <phase>none</phase>
                             </execution>
                         </executions>
                     </plugin>

@@ -37,3 +37,8 @@ doc/api/
 .flutter-plugins
 .flutter-plugins-dependencies
 **/.DS_Store
+
+
+.venv/
+__pycache__/
+.idea/

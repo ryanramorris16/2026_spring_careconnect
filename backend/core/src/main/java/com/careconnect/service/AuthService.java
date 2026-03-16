@@ -178,6 +178,16 @@ public class AuthService {
         switch (user.getRole()) {
             case PATIENT -> {
                 if (request instanceof PatientRegistration regReq) {
+                    // Store address on User for tax calculations
+                    if (regReq.getAddress() != null) {
+                        user.setAddressLine1(regReq.getAddress().line1());
+                        user.setAddressLine2(regReq.getAddress().line2());
+                        user.setCity(regReq.getAddress().city());
+                        user.setState(regReq.getAddress().state());
+                        user.setPostalCode(regReq.getAddress().zip());
+                        user.setCountry("US"); // Default for MVP
+                    }
+
                     // Save user first to get the ID
                     User savedUser = userRepository.save(user);
 
@@ -203,6 +213,16 @@ public class AuthService {
             }
             case CAREGIVER -> {
                 if (request instanceof CaregiverRegistration regReq) {
+                    // Store address on User for tax calculations
+                    if (regReq.getAddress() != null) {
+                        user.setAddressLine1(regReq.getAddress().line1());
+                        user.setAddressLine2(regReq.getAddress().line2());
+                        user.setCity(regReq.getAddress().city());
+                        user.setState(regReq.getAddress().state());
+                        user.setPostalCode(regReq.getAddress().zip());
+                        user.setCountry("US"); // Default for MVP
+                    }
+
                     // Save user first to get the ID
                     User savedUser = userRepository.save(user);
 

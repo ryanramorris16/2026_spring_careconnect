@@ -3,12 +3,9 @@ package com.careconnect.config;
 import com.careconnect.security.JwtAuthenticationFilter;
 import com.careconnect.security.JwtTokenProvider;
 import jakarta.servlet.http.HttpServletResponse;
-
-import java.beans.BeanProperty;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -19,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.context.annotation.Profile;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,13 +23,15 @@ import java.util.concurrent.TimeUnit;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-        @Bean
-        @Order(0)
-        @Profile("dev")
-        SecurityFilterChain devChain(
-                HttpSecurity http,
-                CorsConfigurationSource corsConfigurationSource
-        ) throws Exception {
+    private static final String ROLE_ADMIN = "ADMIN";
+
+    @Bean
+    @Order(0)
+    @Profile("dev")
+    SecurityFilterChain devChain(
+            HttpSecurity http,
+            CorsConfigurationSource corsConfigurationSource
+    ) throws Exception {
 
         return http
                 .securityMatcher("/v1/api/dev/**")
@@ -48,26 +46,22 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // allow telemetry event submission
                         .requestMatchers(HttpMethod.POST, "/v1/api/dev/telemetry").permitAll()
-
-                        // restrict global telemetry controls and inspection
-                        .requestMatchers(HttpMethod.PUT, "/v1/api/dev/telemetry/enabled").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/enabled").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/recent").hasRole("ADMIN")
-
+                        .requestMatchers(HttpMethod.PUT, "/v1/api/dev/telemetry/enabled").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/enabled").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/v1/api/dev/telemetry/recent").hasRole(ROLE_ADMIN)
                         .anyRequest().denyAll()
                 )
                 .build();
-        }
+    }
 
     @Bean
     @Order(1)
-    SecurityFilterChain apiChain(HttpSecurity http,
-                                 JwtTokenProvider jwt,
-                                 UserDetailsService uds,
-                                 CorsConfigurationSource corsConfigurationSource) throws Exception {
+    SecurityFilterChain apiChain(
+            HttpSecurity http,
+            JwtTokenProvider jwt,
+            UserDetailsService uds,
+            CorsConfigurationSource corsConfigurationSource) throws Exception {
 
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwt, uds);
 
@@ -87,10 +81,14 @@ public class SecurityConfig {
                         (req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Basic Authentication Required")))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
-                        .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
+                        .authenticationEntryPoint((req, res, e) ->
+                                res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                        .accessDeniedHandler((req, res, e) ->
+                                res.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
                 )
                 .authorizeHttpRequests(auth -> auth
+
+                        /* ---------- Swagger / API docs ------------------------ */
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -102,39 +100,38 @@ public class SecurityConfig {
                                 "/swagger-ui/index.html",
                                 "/api-docs/**",
                                 "/configuration/ui",
-                                "/configuration/security",
-                                // Adding Bedrock
-                                "/api/bedrock/**",
-                                "/v1/api/ai/**",
-                                "/auth/**",
-                                "/v1/api/ai-chat/**",
-                                "v1/api/test/**",
-                                "/v1/api/invoices/**"
+                                "/configuration/security"
                         ).permitAll()
 
-                        /* ---------- public API endpoints ------------------------ */
+                        /* ---------- Public API endpoints ---------------------- */
                         .requestMatchers(
                                 "/v1/api/auth/**",
                                 "/api/v1/auth/**",
                                 "/api/auth/**",
                                 "/v1/api/users/reset-password",
                                 "/v1/api/users/setup-password",
+                                "/v1/api/email-test/**",
                                 "/v1/api/test/**",
-                                "/v1/api/subscriptions/webhook/**", // Stripe webhook callbacks (no JWT)
+                                "/v1/api/billing/quote",
+                                "/v1/api/billing/pay/**",
+                                "/v1/api/address/**",
                                 "/oauth/**",
-                                // Keep websocket handshake public for Team A call notifications/signaling.
                                 "/ws/**"
                         ).permitAll()
 
-                        /* ---------- public static assets ------------------------ */
+                        /* ---------- Public static assets ---------------------- */
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        /* ---------- Admin-only endpoints ------------------------------- */
-                        .requestMatchers("/v1/api/debug/**").hasRole("ADMIN")
-                        .requestMatchers("/v1/api/email-test/**").hasRole("ADMIN")
+                        /* ---------- Admin-only endpoints ---------------------- */
+                        .requestMatchers("/v1/api/debug/**").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/v1/api/email-test/**").hasRole(ROLE_ADMIN)
 
-                        /* ---------- Require JWT for these APIs ------------------------ */
+                        /* ---------- Authenticated endpoints ------------------- */
+                        .requestMatchers("/v1/api/subscriptions/**").authenticated()
+                        .requestMatchers("/v3/api/subscriptions/**").authenticated()
+                        .requestMatchers("/v1/api/invoices/**").authenticated()
+                        .requestMatchers("/v1/api/notification-settings/**").authenticated()
                         .requestMatchers("/v1/api/patients/**").authenticated()
                         .requestMatchers("/v1/api/caregivers/**").authenticated()
                         .requestMatchers("/v1/api/allergies/**").authenticated()
@@ -147,11 +144,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/tasks/**").authenticated()
                         .requestMatchers("/v2/api/tasks/**").authenticated()
                         .requestMatchers("/v1/api/messages/**").authenticated()
-                        .requestMatchers("/v1/api/invoices/**").authenticated()
-                        .requestMatchers("/v1/api/subscriptions/**").authenticated()
                         .requestMatchers("/v1/api/evv/**").authenticated()
                         .requestMatchers("/v1/api/notifications/**").authenticated()
-                        .requestMatchers("/v1/api/notification-settings/**").authenticated()
                         .requestMatchers("/v1/api/friends/**").authenticated()
                         .requestMatchers("/v1/api/connection-requests/**").authenticated()
                         .requestMatchers("/v1/api/feed/**").authenticated()
@@ -173,13 +167,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/gamification/**").authenticated()
                         .requestMatchers("/api/websocket/**").authenticated()
                         .requestMatchers("/api/email-credentials/**").authenticated()
-                        // Team A call lifecycle endpoints are under /api/v3/calls/**.
                         .requestMatchers("/api/v3/calls/**").authenticated()
-                        // Broad catch-all for remaining versioned API paths.
                         .requestMatchers("/v1/api/**", "/v2/api/**", "/v3/api/**").authenticated()
                         .requestMatchers("/api/**").authenticated()
 
-                        /* ---------- Everything else: deny (safer default) ------------- */
+                        /* ---------- Everything else: deny --------------------- */
                         .anyRequest().denyAll()
                 )
                 .build();

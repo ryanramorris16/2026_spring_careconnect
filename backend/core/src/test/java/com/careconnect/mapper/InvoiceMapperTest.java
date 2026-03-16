@@ -150,55 +150,55 @@ class InvoiceMapperTest {
     @Test
     void parseStatus_pending_returnsPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("pending")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.pending);
+                .isEqualTo(PaymentStatus.PENDING);
     }
 
     @Test
     void parseStatus_overdue_returnsOverdue() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("overdue")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.overdue);
+                .isEqualTo(PaymentStatus.OVERDUE);
     }
 
     @Test
     void parseStatus_pendingInsurance_returnsPendingInsurance() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("pendingInsurance")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.pendingInsurance);
+                .isEqualTo(PaymentStatus.PENDING_INSURANCE);
     }
 
     @Test
     void parseStatus_sent_returnsSent() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("sent")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.sent);
+                .isEqualTo(PaymentStatus.SENT);
     }
 
     @Test
     void parseStatus_paid_returnsPaid() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("paid")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.paid);
+                .isEqualTo(PaymentStatus.PAID);
     }
 
     @Test
     void parseStatus_partialPayment_returnsPartialPayment() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("partialPayment")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.partialPayment);
+                .isEqualTo(PaymentStatus.PARTIAL_PAYMENT);
     }
 
     @Test
     void parseStatus_rejectedInsurance_returnsRejectedInsurance() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("rejectedInsurance")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.rejectedInsurance);
+                .isEqualTo(PaymentStatus.REJECTED_INSURANCE);
     }
 
     @Test
     void parseStatus_null_defaultsToPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto(null)).getPaymentStatus())
-                .isEqualTo(PaymentStatus.pending);
+                .isEqualTo(PaymentStatus.PENDING);
     }
 
     @Test
     void parseStatus_unknown_defaultsToPending() throws Exception {
         assertThat(InvoiceMapper.toEntity(minimalDto("UNKNOWN_STATUS")).getPaymentStatus())
-                .isEqualTo(PaymentStatus.pending);
+                .isEqualTo(PaymentStatus.PENDING);
     }
 
     // ─── joinCsv branches ────────────────────────────────────────────────────
@@ -477,7 +477,7 @@ class InvoiceMapperTest {
         assertThat(e.getInvoiceNumber()).isEqualTo("2024-001");
         assertThat(e.getProviderName()).isEqualTo("Provider A");
         assertThat(e.getPatientName()).isEqualTo("John Doe");
-        assertThat(e.getPaymentStatus()).isEqualTo(PaymentStatus.paid);
+        assertThat(e.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(e.isBilledToInsurance()).isTrue();
         assertThat(e.getTotalCharges()).isEqualByComparingTo(BigDecimal.valueOf(200.0));
         assertThat(e.getSupportedMethodsCsv()).isEqualTo("card,check");
@@ -505,7 +505,7 @@ class InvoiceMapperTest {
         assertThat(dto.provider.name).isEqualTo("Provider A");
         assertThat(dto.patient).isNotNull();
         assertThat(dto.patient.name).isEqualTo("John Doe");
-        assertThat(dto.paymentStatus).isEqualTo(PaymentStatus.paid.name());
+        assertThat(dto.paymentStatus).isEqualTo(PaymentStatus.PAID.name());
         assertThat(dto.billedToInsurance).isTrue();
         assertThat(dto.amounts).isNotNull();
         assertThat(dto.amounts.totalCharges).isEqualTo(200.0);
@@ -886,7 +886,7 @@ class InvoiceMapperTest {
         e.setStatementDate(OffsetDateTime.parse("2024-01-01T00:00:00Z"));
         e.setDueDate(OffsetDateTime.parse("2024-01-31T00:00:00Z"));
         e.setPaidDate(OffsetDateTime.parse("2024-01-15T00:00:00Z"));
-        e.setPaymentStatus(PaymentStatus.paid);
+        e.setPaymentStatus(PaymentStatus.PAID);
         e.setBilledToInsurance(true);
         e.setTotalCharges(BigDecimal.valueOf(200.0));
         e.setTotalAdjustments(BigDecimal.valueOf(20.0));

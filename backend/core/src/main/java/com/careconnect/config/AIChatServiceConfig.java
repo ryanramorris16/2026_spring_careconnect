@@ -1,10 +1,8 @@
 package com.careconnect.config;
 
 import com.careconnect.service.security.SecurityAuditService;
-import com.careconnect.service.ai.BedrockChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import software.amazon.awssdk.regions.Region;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,10 +12,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 @Configuration
-//@ConditionalOnProperty(name = "careconnect.ai.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "careconnect.ai.enabled", havingValue = "true", matchIfMissing = false)
 public class AIChatServiceConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(AIChatServiceConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AIChatServiceConfig.class);
     private static final String MASKED_KEY_DISPLAY = "****";
 
     private final SecurityAuditService securityAuditService;
@@ -32,9 +30,6 @@ public class AIChatServiceConfig {
     @Value("${careconnect.ai.api.url:https://api.openai.com/v1}")
     private String apiUrl;
 
-    @Value("${aws.region}")
-    private String region;
-
     @Value("${careconnect.ai.model.name:gpt-4o-mini}")
     private String modelName;
 
@@ -43,45 +38,31 @@ public class AIChatServiceConfig {
 
     public AIChatServiceConfig(SecurityAuditService securityAuditService) {
         this.securityAuditService = securityAuditService;
-        
-        log.info("AIChatServiceConfig LOADED");     //added for debugging
-        log.info("AIChatServiceConfig initialized. AI ChatModel configuration is active.");
+        LOG.info("AIChatServiceConfig initialized. AI ChatModel configuration is active.");
     }
 
     @Bean
     public ChatModel chatModel() {
+        LOG.info("Creating LangChain4j ChatModel bean for provider {}", provider);
+        validateConfiguration();
 
-        log.info("Creating LangChain4j ChatModel bean for provider {}", provider);
-
-        log.info("  - Provider: {}", provider);
-        log.info("  - Model: {}", modelName);
-        log.info("  - Temperature: {}", temperature);
+        // Log config without secrets
+        LOG.info("  - Provider: {}", provider);
+        LOG.info("  - API Key: {}", MASKED_KEY_DISPLAY);
+        LOG.info("  - Base URL: {}", apiUrl);
+        LOG.info("  - Model: {}", modelName);
+        LOG.info("  - Temperature: {}", temperature);
 
         try {
-
-            if ("deepseek".equalsIgnoreCase(provider)) {
-
-                log.info("Initializing DeepSeek via OpenAI-compatible API");
-
-                return OpenAiChatModel.builder()
+            // Any OpenAI-spec provider works by swapping baseUrl and apiKey
+            return OpenAiChatModel.builder()
                     .apiKey(apiKey)
                     .baseUrl(apiUrl)
                     .modelName(modelName)
                     .temperature(temperature)
                     .build();
-            }
-
-            if ("bedrock".equalsIgnoreCase(provider)) {
-
-                log.info("Initializing AWS Bedrock via SDK");
-
-                return new BedrockChatModel(region, modelName, temperature);
-            }
-
-            throw new IllegalStateException("unsupported AI provider: " + provider);
-
         } catch (Exception e) {
-            log.error("Failed to create ChatModel: {}", e.getMessage());
+            LOG.error("Failed to create ChatModel: {}", e.getMessage());
             throw new IllegalStateException("AI configuration failed", e);
         }
     }
@@ -104,20 +85,20 @@ public class AIChatServiceConfig {
         // URL must be HTTPS
         if (!apiUrl.startsWith("https://")) {
             String warning = "API URL should use HTTPS for security: " + apiUrl;
-            log.warn(warning);
+            LOG.warn(warning);
             securityAuditService.logConfigurationValidationError(provider, "API_URL_SECURITY", warning);
         }
 
         // Basic key length sanity check
         if (apiKey.length() < 20) {
             String warning = "API key appears to be too short. Please verify configuration";
-            log.warn(warning);
+            LOG.warn(warning);
         }
 
         // Temperature sanity check
         if (temperature < 0.0 || temperature > 2.0) {
             String warning = "Temperature is out of expected range [0.0, 2.0]: " + temperature;
-            log.warn(warning);
+            LOG.warn(warning);
         }
     }
 }

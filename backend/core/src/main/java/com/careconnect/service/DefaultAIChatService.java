@@ -29,9 +29,9 @@ import dev.langchain4j.exception.AuthenticationException;
 @Service
 @Primary
 @ConditionalOnProperty(
-    name = "careconnect.ai.provider",
-    havingValue = "deepseek",
-    matchIfMissing = true
+    name = "careconnect.ai.enabled",
+    havingValue = "true",
+    matchIfMissing = false
 )
 
 public class DefaultAIChatService implements AIChatService {

@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/package_model.dart';
 import '../../../payments/models/subscription_plan_model.dart';
-import 'stripe_checkout_page.dart';
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:care_connect_app/widgets/common_drawer.dart';
 import 'package:care_connect_app/widgets/app_bar_helper.dart';
@@ -11,8 +12,7 @@ import 'package:care_connect_app/widgets/responsive_container.dart';
 
 class SelectPackagePage extends StatefulWidget {
   final String? userId;
-  final String? stripeCustomerId;
-  const SelectPackagePage({super.key, this.userId, this.stripeCustomerId});
+  const SelectPackagePage({super.key, this.userId});
 
   @override
   State<SelectPackagePage> createState() => _SelectPackagePageState();
@@ -80,7 +80,7 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
     }
   }
 
-  // Convert SubscriptionPlan to PackageModel for compatibility with StripeCheckoutPage
+  // Convert SubscriptionPlan to PackageModel
   PackageModel _convertToPackageModel(SubscriptionPlan plan) {
     return PackageModel(
       id: plan.id,
@@ -170,16 +170,21 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
             ),
           ),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StripeCheckoutPage(
-                  package: _convertToPackageModel(plan),
-                  userId: widget.userId,
-                  stripeCustomerId: widget.stripeCustomerId,
-                ),
-              ),
-            );
+            final tierId = plan.id;
+            final userIdInt = widget.userId != null ? int.tryParse(widget.userId!) : null;
+            if (kIsWeb) {
+              context.go('/web-pay', extra: {
+                'tierId': int.tryParse(tierId) ?? 0,
+                'tier': plan.nickname,
+                'userId': userIdInt,
+              });
+            } else {
+              context.go('/native-billing', extra: {
+                'tierId': int.tryParse(tierId) ?? 0,
+                'tier': plan.nickname,
+                'userId': userIdInt,
+              });
+            }
           },
           child: const Text('SELECT'),
         ),
