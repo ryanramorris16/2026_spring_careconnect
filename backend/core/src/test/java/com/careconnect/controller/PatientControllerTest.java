@@ -52,6 +52,7 @@ class PatientControllerTest {
     @MockitoBean private UserRepository userRepository;
     @MockitoBean private MoodPainLogService moodPainLogService;
     @MockitoBean private MedicationService medicationService;
+    @MockitoBean private PatientRiskService patientRiskService;
     @MockitoBean private SecurityUtil securityUtil;
     @MockitoBean private AuthorizationService authorizationService;
 

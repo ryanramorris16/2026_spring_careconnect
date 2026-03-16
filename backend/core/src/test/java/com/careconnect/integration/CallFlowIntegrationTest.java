@@ -15,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -68,9 +70,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * TDD IDs covered: CALL-001, CALL-018, CHIME-001..006, CHIME-009, SENT-001, SENT-004, SENT-006, SENT-007
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "spring.autoconfigure.exclude=" +
+                        "org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration"
+        }
+)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(com.careconnect.config.CareconnectTestConfig.class)
+@TestPropertySource(properties = {
+        "aws.region=us-east-1",
+        "careconnect.ai.provider=mock",
+        "careconnect.ai.api.key=stub-test-key-for-integration",
+        "careconnect.cors_allowed=*",
+        "frontend.base-url=http://localhost:3000",
+        "email.crypto.secret=careconnect-test-secret-32bytes!",
+        "alexa.oauth.client-id=stub",
+        "alexa.oauth.client-secret=stub",
+        "aws.s3.bucket-name=stub-bucket",
+        "spring.security.oauth2.client.provider.fitbit.authorization-uri=https://www.fitbit.com/oauth2/authorize",
+        "spring.security.oauth2.client.provider.fitbit.token-uri=https://api.fitbit.com/oauth2/token",
+        "spring.security.oauth2.client.provider.fitbit.user-info-uri=https://api.fitbit.com/1/user/-/profile.json",
+        "spring.security.oauth2.client.provider.fitbit.user-name-attribute=user_id",
+        "spring.security.oauth2.client.provider.google.authorization-uri=https://accounts.google.com/o/oauth2/v2/auth",
+        "spring.security.oauth2.client.provider.google.token-uri=https://oauth2.googleapis.com/token",
+        "spring.security.oauth2.client.provider.google.user-info-uri=https://www.googleapis.com/oauth2/v3/userinfo"
+})
 @DisplayName("Call Flow Integration Tests")
 class CallFlowIntegrationTest {
 
@@ -94,6 +122,53 @@ class CallFlowIntegrationTest {
     // Conditional services that are disabled in test profile but required by injected dependents
     @MockitoBean
     private OpenRouterService openRouterService;
+
+    @MockitoBean
+    private dev.langchain4j.model.chat.ChatModel chatModel;
+
+    @MockitoBean
+    private com.careconnect.service.AIChatService aiChatService;
+
+    // Conditional services whose @ConditionalOnProperty excludes them under test profile,
+    // but unconditional controllers still require injection.
+    @MockitoBean
+    private com.careconnect.service.invoice.TextractService textractService;
+
+    @MockitoBean
+    private com.careconnect.service.invoice.LlmExtractionService llmExtractionService;
+
+    @MockitoBean
+    private com.careconnect.service.StripeService stripeService;
+
+    @MockitoBean
+    private com.careconnect.service.SubscriptionService subscriptionService;
+
+    @MockitoBean
+    private com.careconnect.service.DeepSeekService deepSeekService;
+
+    @MockitoBean
+    private com.careconnect.service.AiSymptomService aiSymptomService;
+
+    @MockitoBean
+    private com.careconnect.service.AiAllergyService aiAllergyService;
+
+    @MockitoBean
+    private com.careconnect.service.S3StorageService s3StorageService;
+
+    @MockitoBean
+    private com.careconnect.service.ParameterStoreService parameterStoreService;
+
+    @MockitoBean
+    private software.amazon.awssdk.services.textract.TextractClient textractClient;
+
+    @MockitoBean
+    private software.amazon.awssdk.services.ssm.SsmClient ssmClient;
+
+    @MockitoBean
+    private software.amazon.awssdk.services.sts.StsClient stsClient;
+
+    @MockitoBean
+    private software.amazon.awssdk.services.iam.IamClient iamClient;
 
     // ── Spring-managed beans ─────────────────────────────────────────────────────
 

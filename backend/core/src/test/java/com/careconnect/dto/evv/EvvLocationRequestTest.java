@@ -203,6 +203,7 @@ class EvvLocationRequestTest {
                 .role(EvvLocationRole.CHECK_OUT)
                 .type(EvvLocationType.PATIENT_ADDRESS)
                 .coords(null)
+                .noGpsReason(com.careconnect.model.evv.NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .build();
 
         // Should not throw

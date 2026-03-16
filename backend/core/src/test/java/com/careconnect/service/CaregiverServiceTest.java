@@ -63,6 +63,9 @@ class CaregiverServiceTest {
     @Mock
     private SubscriptionRepository subscriptionRepository;
 
+    @Mock
+    private PatientRiskService patientRiskService;
+
     @InjectMocks
     private CaregiverService caregiverService;
 
@@ -865,7 +868,7 @@ class CaregiverServiceTest {
             fmUser.setRole(Role.FAMILY_MEMBER);
 
             when(users.findById(3L)).thenReturn(Optional.of(fmUser));
-            when(familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(3L, 20L, LocalDateTime.now())).thenReturn(true);
+            when(familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(eq(3L), eq(20L), any(LocalDateTime.class))).thenReturn(true);
 
             assertTrue(caregiverService.hasAccessToPatient(3L, 20L));
         }
@@ -956,6 +959,8 @@ class CaregiverServiceTest {
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
                     .thenReturn(List.of(linkResponse));
+            when(patientRiskService.getFlaggedRisksForPatient(20L))
+                    .thenReturn(List.of());
 
             final PatientWithLinkDto result = caregiverService.getPatientWithLinkById(10L, 20L);
 
