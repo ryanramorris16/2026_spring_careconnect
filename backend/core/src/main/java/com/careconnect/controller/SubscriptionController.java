@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.List;
 import com.careconnect.model.Subscription;
 import com.careconnect.model.Plan;
-import com.careconnect.model.User;
 import com.careconnect.repository.PlanRepository;
 import com.careconnect.repository.SubscriptionRepository;
 import com.careconnect.dto.PlanDTO;
@@ -12,15 +11,13 @@ import com.careconnect.dto.SubscriptionResponseDTO;
 import com.careconnect.service.SubscriptionEnrichmentService;
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
-import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
-import com.careconnect.util.SecurityUtil;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/api/subscriptions")
+@RequestMapping("/v3/api/subscriptions")
 public class SubscriptionController {
 
     private static final String ERROR_KEY = "error";
@@ -28,26 +25,20 @@ public class SubscriptionController {
     private final SubscriptionEnrichmentService subscriptionEnrichmentService;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
-    private final SecurityUtil securityUtil;
-    private final AuthorizationService authorizationService;
 
     public SubscriptionController(
         SubscriptionEnrichmentService subscriptionEnrichmentService,
         PlanRepository planRepository,
-        SubscriptionRepository subscriptionRepository,
-        SecurityUtil securityUtil,
-        AuthorizationService authorizationService
+        SubscriptionRepository subscriptionRepository
     ) {
         this.subscriptionEnrichmentService = subscriptionEnrichmentService;
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
-        this.securityUtil = securityUtil;
-        this.authorizationService = authorizationService;
     }
 
     /**
      * Resolves a subscription ID string to a numeric database ID.
-     * Accepts either a numeric ID or an external/Stripe subscription ID string.
+     * Accepts either a numeric ID or an external subscription ID string.
      */
     private Long resolveSubscriptionId(String id) {
         try {
@@ -80,11 +71,9 @@ public class SubscriptionController {
         return ResponseEntity.ok(dtos);
     }
 
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Object> cancelSubscription(@PathVariable String id) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
         try {
             Long subscriptionId = resolveSubscriptionId(id);
             if (subscriptionId == null) {
@@ -110,8 +99,6 @@ public class SubscriptionController {
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/user/{userId}")
     public ResponseEntity<Object> getUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireSelfOrAdmin(currentUser, userId);
         try {
             List<SubscriptionResponseDTO> subscriptionDTOs = subscriptionEnrichmentService.getEnrichedUserSubscriptions(userId);
             return ResponseEntity.ok(subscriptionDTOs);
@@ -123,8 +110,6 @@ public class SubscriptionController {
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/user/{userId}/active")
     public ResponseEntity<Object> getUserActiveSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireSelfOrAdmin(currentUser, userId);
         try {
             List<SubscriptionResponseDTO> subscriptionDTOs = subscriptionEnrichmentService.getEnrichedActiveUserSubscriptions(userId);
             return ResponseEntity.ok(subscriptionDTOs);

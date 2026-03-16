@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -20,6 +21,11 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
+@ConditionalOnProperty(
+    name = "careconnect.ai.enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 @RestController
 @RequestMapping("/v1/api/ai-chat")
 @RequiredArgsConstructor

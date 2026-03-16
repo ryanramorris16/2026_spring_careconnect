@@ -2,7 +2,6 @@ package com.careconnect.controller;
 
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
-
 import com.careconnect.model.Plan;
 import com.careconnect.model.User;
 import com.careconnect.repository.PlanRepository;
@@ -15,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,22 +26,25 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DebugController {
 
+    private static final String MESSAGE_KEY = "message";
+    private static final String PREMIUM_PLAN_NAME = "Premium Plan";
+    private static final String STANDARD_PLAN_NAME = "Standard Plan";
+    private static final String ERROR_KEY = "error";
+
     private final PlanRepository planRepository;
     private final SubscriptionEnrichmentService subscriptionEnrichmentService;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
-    
+
     @Value("${subscription.premium-price-ids:price_1RmqWxELoozGI1YxQql5rsvN}")
     private String premiumPriceIds;
-    
+
     @Value("${subscription.standard-price-ids:price_standard}")
     private String standardPriceIds;
 
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
     @GetMapping("/plans")
-    public ResponseEntity<?> getAllPlans() throws UnauthorizedException {
+    public ResponseEntity<Map<String, Object>> getAllPlans() throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdmin(currentUser);
         List<Plan> plans = planRepository.findAll();
@@ -52,40 +53,32 @@ public class DebugController {
             "count", plans.size()
         ));
     }
-    
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
-    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/plans/match")
-    public ResponseEntity<?> matchPlanToPrice() throws UnauthorizedException {
+    public ResponseEntity<Map<String, Object>> matchPlanToPrice() throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdmin(currentUser);
-        // This is the price ID from your subscription
         String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
-        
-        // Try to find by exact code match
+
         Plan exactPlan = planRepository.findByCode(priceId);
-        
-        // Try to find by amount (3000 cents = Premium Plan)
-        List<Plan> premiumPlans = planRepository.findByName("Premium Plan");
+
+        List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
         Plan premiumPlan = premiumPlans.isEmpty() ? null : premiumPlans.get(0);
-        
-        // Also check Standard Plan
-        List<Plan> standardPlans = planRepository.findByName("Standard Plan");
+
+        List<Plan> standardPlans = planRepository.findByName(STANDARD_PLAN_NAME);
         Plan standardPlan = standardPlans.isEmpty() ? null : standardPlans.get(0);
-        
-        // Try to manually create a mapping
+
         Plan manualMapping = new Plan();
         manualMapping.setCode(priceId);
-        manualMapping.setName("Premium Plan");
+        manualMapping.setName(PREMIUM_PLAN_NAME);
         manualMapping.setPriceCents(3000);
         manualMapping.setBillingPeriod("MONTH");
         manualMapping.setIsActive(true);
-        
-        // Check if the price ID is in the configured mappings
+
         boolean isPremiumPriceId = Arrays.asList(premiumPriceIds.split(",")).contains(priceId);
         boolean isStandardPriceId = Arrays.asList(standardPriceIds.split(",")).contains(priceId);
-        
+
         return ResponseEntity.ok(Map.of(
             "priceId", priceId,
             "exactMatch", exactPlan != null ? exactPlan : "No match found",
@@ -98,69 +91,58 @@ public class DebugController {
             "configuredStandardPriceIds", standardPriceIds
         ));
     }
-    
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
-    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/plans/create-mapping")
-    public ResponseEntity<?> createPriceMapping() throws UnauthorizedException {
+    public ResponseEntity<Map<String, Object>> createPriceMapping() throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdmin(currentUser);
         String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
-        
-        // Check if mapping already exists
+
         Plan existingPlan = planRepository.findByCode(priceId);
         if (existingPlan != null) {
             return ResponseEntity.ok(Map.of(
-                "message", "Mapping already exists",
+                MESSAGE_KEY, "Mapping already exists",
                 "plan", existingPlan
             ));
         }
-        
-        // Find or create Premium Plan
-        List<Plan> premiumPlans = planRepository.findByName("Premium Plan");
-        Plan premiumPlan;
-        
+
+        List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
+
         if (!premiumPlans.isEmpty()) {
-            premiumPlan = premiumPlans.get(0);
-            // Create a new plan with the same details but different code
+            Plan premiumPlan = premiumPlans.get(0);
             Plan newPlan = new Plan();
             newPlan.setCode(priceId);
             newPlan.setName(premiumPlan.getName());
             newPlan.setPriceCents(premiumPlan.getPriceCents());
             newPlan.setBillingPeriod(premiumPlan.getBillingPeriod());
             newPlan.setIsActive(true);
-            
+
             Plan savedPlan = planRepository.save(newPlan);
-            
             return ResponseEntity.ok(Map.of(
-                "message", "Created new plan mapping based on existing Premium Plan",
+                MESSAGE_KEY, "Created new plan mapping based on existing Premium Plan",
                 "originalPlan", premiumPlan,
                 "newPlan", savedPlan
             ));
         } else {
-            // Create new Premium Plan
             Plan newPlan = new Plan();
             newPlan.setCode(priceId);
-            newPlan.setName("Premium Plan");
+            newPlan.setName(PREMIUM_PLAN_NAME);
             newPlan.setPriceCents(3000);
             newPlan.setBillingPeriod("MONTH");
             newPlan.setIsActive(true);
-            
+
             Plan savedPlan = planRepository.save(newPlan);
-            
             return ResponseEntity.ok(Map.of(
-                "message", "Created new Premium Plan",
+                MESSAGE_KEY, "Created new Premium Plan",
                 "plan", savedPlan
             ));
         }
     }
-    
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
-    
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/config")
-    public ResponseEntity<?> getConfiguration() throws UnauthorizedException {
+    public ResponseEntity<Map<String, Object>> getConfiguration() throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdmin(currentUser);
         return ResponseEntity.ok(Map.of(
@@ -170,45 +152,17 @@ public class DebugController {
             "standardPriceIdsList", Arrays.asList(standardPriceIds.split(","))
         ));
     }
-    
-    /**
-     * Debug endpoint to check subscription data for a user
-     */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
     @GetMapping("/subscriptions/user/{userId}")
-    public ResponseEntity<?> getEnrichedUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
+    public ResponseEntity<Object> getEnrichedUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdmin(currentUser);
         try {
             return ResponseEntity.ok(subscriptionEnrichmentService.getEnrichedUserSubscriptions(userId));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to get subscriptions: " + e.getMessage()
-            ));
-        }
-    }
-    
-    /**
-     * Create missing plan mappings for a user's subscriptions.
-     * This endpoint is separate from the normal subscription retrieval to avoid
-     * read-only transaction errors.
-     */
-    @RequirePermission(Permission.CREATE_TASKS)
-
-    @PostMapping("/subscriptions/user/{userId}/create-mappings")
-    public ResponseEntity<?> createMissingSubscriptionPlanMappings(@PathVariable Long userId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        try {
-            // This runs in a writable transaction
-            subscriptionEnrichmentService.createMissingPlanMappings(userId);
-            return ResponseEntity.ok(Map.of(
-                "message", "Successfully created missing plan mappings for user " + userId
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "Failed to create plan mappings: " + e.getMessage()
+                ERROR_KEY, "Failed to get subscriptions: " + e.getMessage()
             ));
         }
     }

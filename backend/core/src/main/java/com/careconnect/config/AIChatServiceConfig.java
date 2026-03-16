@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 @Configuration
-@ConditionalOnProperty(name = "careconnect.ai.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "careconnect.ai.enabled", havingValue = "true", matchIfMissing = false)
 public class AIChatServiceConfig {
 
     private static final Logger LOG = LoggerFactory.getLogger(AIChatServiceConfig.class);
