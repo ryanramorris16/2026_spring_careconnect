@@ -5,9 +5,18 @@ import '../../services/user_role_storage_service.dart';
 import '../../providers/user_provider.dart';
 import 'main_screen_config.dart';
 
-/// Navigation helper that works with stored user data instead of URL parameters
+const List<String> _patientTabNames = ['home', 'health', 'messages', 'profile'];
+const List<String> _caregiverTabNames = [
+  'patients',
+  'tasks',
+  'analytics',
+  'messages',
+  'profile',
+];
+
+/// Navigation helper that works with stored user data instead of URL parameters.
 class NavigationHelper {
-  /// Navigate to the main screen using stored user data
+  /// Navigates to the main screen using the currently stored user data.
   static Future<void> navigateToMainScreen(
     BuildContext context, {
     int? tabIndex,
@@ -24,10 +33,11 @@ class NavigationHelper {
 
     // Build the dashboard URL without role parameter
     String dashboardUrl = '/dashboard';
+    final role = userData.role.toUpperCase();
 
     if (tabIndex != null) {
       // Convert tab index to tab name based on role
-      String? tabName = _getTabNameFromIndex(userData.role, tabIndex);
+      final tabName = _getTabNameFromIndex(role, tabIndex);
       if (tabName != null) {
         dashboardUrl += '?tab=$tabName';
       }
@@ -42,7 +52,7 @@ class NavigationHelper {
     }
   }
 
-  /// Navigate to a specific tab in the main screen
+  /// Navigates to a specific tab in the main screen.
   static Future<void> navigateToTab(
     BuildContext context,
     String tabName,
@@ -61,7 +71,7 @@ class NavigationHelper {
     }
   }
 
-  /// Get MainScreenConfig based on stored user data
+  /// Returns the [MainScreenConfig] for the currently stored user data.
   static Future<MainScreenConfig?> getMainScreenConfig() async {
     final userData = await UserRoleStorageService.instance.getUserData();
 
@@ -69,7 +79,9 @@ class NavigationHelper {
       return null;
     }
 
-    switch (userData.role.toUpperCase()) {
+    final role = userData.role.toUpperCase();
+
+    switch (role) {
       case 'PATIENT':
         return MainScreenConfig.forPatient(
           userId: userData.userId,
@@ -101,10 +113,10 @@ class NavigationHelper {
 
   /// Check if user is authenticated
   static Future<bool> isAuthenticated() async {
-    return await UserRoleStorageService.instance.isLoggedIn();
+      return await UserRoleStorageService.instance.isLoggedIn();
   }
 
-  /// Logout and clear stored data
+  /// Logs out the current user and clears stored state.
   static Future<void> logout(BuildContext context) async {
     await UserRoleStorageService.instance.clearUserData();
 
@@ -117,76 +129,40 @@ class NavigationHelper {
     }
   }
 
-  /// Helper method to convert tab index to tab name based on role
+  /// Returns the tab name for a tab index based on the provided user role.
   static String? _getTabNameFromIndex(String role, int tabIndex) {
-    if (role.toUpperCase() == 'PATIENT') {
-      switch (tabIndex) {
-        case 0:
-          return 'home';
-        case 1:
-          return 'health';
-        case 2:
-          return 'messages';
-        case 3:
-          return 'profile';
-        default:
-          return null;
-      }
-    } else {
-      switch (tabIndex) {
-        case 0:
-          return 'patients';
-        case 1:
-          return 'tasks';
-        case 2:
-          return 'analytics';
-        case 3:
-          return 'messages';
-        case 4:
-          return 'profile';
-        default:
-          return null;
-      }
+    final tabNames = _getTabNamesForRole(role);
+
+    if (tabIndex < 0 || tabIndex >= tabNames.length) {
+      return null;
     }
+
+    return tabNames[tabIndex];
   }
 
-  /// Get tab index from tab name
+  /// Returns the tab index for a tab name based on the provided user role.
   static int? getTabIndexFromName(String role, String tabName) {
-    if (role.toUpperCase() == 'PATIENT') {
-      switch (tabName.toLowerCase()) {
-        case 'home':
-          return 0;
-        case 'health':
-          return 1;
-        case 'messages':
-          return 2;
-        case 'profile':
-          return 3;
-        default:
-          return null;
-      }
-    } else {
-      switch (tabName.toLowerCase()) {
-        case 'patients':
-          return 0;
-        case 'tasks':
-          return 1;
-        case 'analytics':
-          return 2;
-        case 'messages':
-          return 3;
-        case 'profile':
-          return 4;
-        default:
-          return null;
-      }
+    final normalizedRole = role.toUpperCase();
+    final normalizedTabName = tabName.toLowerCase();
+    final tabNames = _getTabNamesForRole(normalizedRole);
+    final index = tabNames.indexOf(normalizedTabName);
+
+    if (index == -1) {
+      return null;
     }
+
+    return index;
+  }
+
+  static List<String> _getTabNamesForRole(String role) {
+    final normalizedRole = role.toUpperCase();
+    return normalizedRole == 'PATIENT' ? _patientTabNames : _caregiverTabNames;
   }
 }
 
-/// Extension methods for BuildContext to make navigation easier
+/// Extension methods on [BuildContext] for common navigation helper actions.
 extension NavigationContextExtension on BuildContext {
-  /// Navigate to main screen using stored user data
+  /// Navigates to the main screen using stored user data.
   Future<void> navigateToMainScreen({
     int? tabIndex,
     bool clearHistory = false,
@@ -198,12 +174,12 @@ extension NavigationContextExtension on BuildContext {
     );
   }
 
-  /// Navigate to a specific tab
+  /// Navigates to a specific dashboard tab.
   Future<void> navigateToTab(String tabName) async {
     await NavigationHelper.navigateToTab(this, tabName);
   }
 
-  /// Logout user
+  /// Logs out the current user.
   Future<void> logoutUser() async {
     await NavigationHelper.logout(this);
   }
