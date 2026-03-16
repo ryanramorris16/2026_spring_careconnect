@@ -21,7 +21,7 @@ import '../widgets/mood_history_card.dart';
 
 // Health tab
 import '../widgets/current_medications_card.dart';
-
+// Recent Activity tab
 // Virtual Check-in history
 // Virtual Check-In domain entities
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in.dart';
@@ -37,6 +37,12 @@ import '../widgets/recent_symptom_card.dart' as sympt;
 import '../../../../services/api_service.dart';
 import '../../../health/medication-tracker/models/medication-model.dart';
 import '../../../../providers/user_provider.dart';
+import 'package:care_connect_app/features/activities/presentation/pages/adl_iadl_management_screen.dart';
+import 'package:care_connect_app/features/activities/presentation/pages/behavioral_incident_screens.dart';
+import 'package:care_connect_app/features/dashboards/dashboards_screen.dart';
+import 'package:care_connect_app/features/evv/presentation/pages/incident_report_screens.dart';
+import 'incident_report_history_screen.dart';
+import '../../../audit/audit_log_screen.dart';
 import '../../../../widgets/post_call_telemetry_summary_screen.dart';
 
 class PatientDetailsPage extends StatefulWidget {
@@ -60,11 +66,14 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   bool _isLoadingMedications = false;
   String? _medicationError;
 
+  Map<String, dynamic>? _patientProfile;
   bool _isLoadingPatient = false;
   String? _patientError;
+  bool _isLoadingProfile = false;
+  String? _profileError;
 
   String _patientName = 'Patient';
-  String _mrn = 'ID-—';
+  String _mrn = 'ID--';
   int _age = 0;
   String _sex = 'Unknown';
   String _currentMoodLabel = 'Unknown';
@@ -104,6 +113,23 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   int _dizziness = 0;
   int _fatigue = 0;
   String _lastReportedPain = 'not available';
+
+  final _likesController = TextEditingController();
+  final _dislikesController = TextEditingController();
+  final _habitsController = TextEditingController();
+  final _phobiasController = TextEditingController();
+  String? _preferredCommunicationMethod; // verbal | visual | written | gesture
+  bool _isSavingPersonalization = false;
+  bool _isEditingPersonalization = false;
+
+  // Known Risks
+  List<Map<String, dynamic>> _riskTypes = [];
+  Map<int, int> _riskIdByTypeId = {}; // riskTypeId -> patient_risk id (for DELETE)
+  bool _isLoadingRisks = false;
+  String? _risksError;
+  bool _isEditingRisks = false;
+  Set<int> _editingCheckedTypeIds = {}; // while editing, which risk type ids are checked
+  bool _isSavingRisks = false;
 
   Future<void> _startVideoCall(String patientName) async {
     final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -268,6 +294,17 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
   void initState() {
     super.initState();
     _loadPatientData();
+    _fetchRiskTypes();
+    _fetchPatientRisks();
+  }
+
+  @override
+  void dispose() {
+    _likesController.dispose();
+    _dislikesController.dispose();
+    _habitsController.dispose();
+    _phobiasController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPatientData() async {
@@ -275,6 +312,8 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     if (patientIdInt == null) {
       setState(() {
         _patientError = 'Invalid patient ID';
+        _isLoadingProfile = false;
+        _profileError = 'Invalid patient ID';
       });
       return;
     }
@@ -282,6 +321,8 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     setState(() {
       _isLoadingPatient = true;
       _patientError = null;
+      _isLoadingProfile = true;
+      _profileError = null;
     });
 
     try {
@@ -315,6 +356,11 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
       final profilePayload = _extractProfilePayload(profileResp);
       final detailsPayload = _extractResponseMap(detailsResp);
 
+      if (profilePayload.isNotEmpty) {
+        _patientProfile = profilePayload;
+        _populatePersonalizationControllers(profilePayload);
+      }
+
       final moodUserId = _resolveMoodUserId(
         detailsPayload: detailsPayload,
         profilePayload: profilePayload,
@@ -338,15 +384,418 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
         patientUserId: moodUserId,
         telemetryData: telemetryData,
       );
+      _profileError = null;
     } catch (e) {
       _patientError = 'Error loading patient details: $e';
+      if (_patientProfile == null) {
+        _profileError = 'Error loading patient profile: $e';
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isLoadingPatient = false;
+          _isLoadingProfile = false;
         });
       }
     }
+  }
+
+  Future<void> _fetchPatientProfile() async {
+    setState(() {
+      _isLoadingProfile = true;
+      _profileError = null;
+    });
+
+    final patientIdInt = int.tryParse(widget.patientId);
+    if (patientIdInt == null) {
+      setState(() {
+        _isLoadingProfile = false;
+        _profileError = 'Invalid patient ID';
+      });
+      return;
+    }
+
+    try {
+      final resp = await ApiService.getPatientProfile(patientIdInt);
+      if (resp.statusCode != 200) {
+        setState(() {
+          _isLoadingProfile = false;
+          _profileError = 'Failed to load patient profile: ${resp.statusCode}';
+        });
+        return;
+      }
+
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+
+      setState(() {
+        _patientProfile = data;
+        _isLoadingProfile = false;
+      });
+
+      _populatePersonalizationControllers(data);
+    } catch (e) {
+      setState(() {
+        _isLoadingProfile = false;
+        _profileError = 'Error loading patient profile: $e';
+      });
+    }
+  }
+
+  void _populatePersonalizationControllers(Map<String, dynamic> data) {
+    // Support both camelCase and snake_case keys until backend is consistent.
+    String? readString(String camel, String snake) {
+      final v = data[camel] ?? data[snake];
+      if (v == null) return null;
+      return v.toString();
+    }
+
+    _likesController.text = readString('likes', 'likes') ?? '';
+    _dislikesController.text = readString('dislikes', 'dislikes') ?? '';
+    _habitsController.text = readString('habits', 'habits') ?? '';
+    _phobiasController.text = readString('phobias', 'phobias') ?? '';
+
+    final pref = readString(
+      'preferredCommunicationMethod',
+      'preferred_communication_method',
+    );
+    final normalized = pref?.trim().toLowerCase();
+    const allowed = {'verbal', 'visual', 'written', 'gesture'};
+    setState(() {
+      _preferredCommunicationMethod =
+          allowed.contains(normalized) ? normalized : null;
+    });
+  }
+
+  Future<void> _savePersonalization() async {
+    final patientIdInt = int.tryParse(widget.patientId);
+    if (patientIdInt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid patient ID')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingPersonalization = true);
+    try {
+      // Preserve existing fields by starting from the fetched profile map.
+      final payload = <String, dynamic>{...?_patientProfile};
+
+      payload['likes'] = _likesController.text.trim();
+      payload['dislikes'] = _dislikesController.text.trim();
+      payload['habits'] = _habitsController.text.trim();
+      payload['phobias'] = _phobiasController.text.trim();
+      payload['preferredCommunicationMethod'] = _preferredCommunicationMethod;
+
+      final resp = await ApiService.updatePatientProfile(patientIdInt, payload);
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        final updated = (body['data'] ?? body) as Map<String, dynamic>;
+        setState(() {
+          _patientProfile = updated;
+        });
+        _populatePersonalizationControllers(updated);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Personalization saved')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Save failed: ${resp.statusCode}'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Save failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingPersonalization = false;
+          _isEditingPersonalization = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildPersonalizationCard() {
+    final theme = Theme.of(context);
+
+    if (_isLoadingProfile) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Loading personalization...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_profileError != null) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Personalization',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _profileError!,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _fetchPatientProfile,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final canEdit = widget.isCaregiver;
+
+    InputDecoration deco(String label) => InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          isDense: true,
+        );
+
+    Widget row({
+      required IconData icon,
+      required String label,
+      required TextEditingController controller,
+    }) {
+      if (_isEditingPersonalization && canEdit) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 10, right: 8),
+              child: Icon(icon,
+                  size: 20, color: theme.colorScheme.primary.withOpacity(0.8)),
+            ),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                enabled: true,
+                maxLines: 2,
+                decoration: deco(label),
+              ),
+            ),
+          ],
+        );
+      } else {
+        final value = controller.text.trim();
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 8),
+              child: Icon(icon,
+                  size: 20, color: theme.colorScheme.primary.withOpacity(0.8)),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value.isEmpty ? 'Not set' : value,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Personalization',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                    if (canEdit)
+                      ElevatedButton.icon(
+                        onPressed: _isSavingPersonalization
+                            ? null
+                            : () {
+                                if (_isEditingPersonalization) {
+                                  _savePersonalization();
+                                } else {
+                                  setState(() {
+                                    _isEditingPersonalization = true;
+                                  });
+                                }
+                              },
+                        icon: _isSavingPersonalization
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _isEditingPersonalization
+                                    ? Icons.check
+                                    : Icons.edit,
+                              ),
+                        label: Text(
+                          _isEditingPersonalization ? 'Save' : 'Edit',
+                        ),
+                      ),
+              ],
+            ),
+            const SizedBox(height: 12),
+                row(
+                  icon: Icons.thumb_up_alt_outlined,
+                  label: 'Likes',
+                  controller: _likesController,
+                ),
+                const SizedBox(height: 12),
+                row(
+                  icon: Icons.thumb_down_alt_outlined,
+                  label: 'Dislikes',
+                  controller: _dislikesController,
+                ),
+                const SizedBox(height: 12),
+                row(
+                  icon: Icons.repeat_rounded,
+                  label: 'Habits',
+                  controller: _habitsController,
+                ),
+                const SizedBox(height: 12),
+                row(
+                  icon: Icons.warning_amber_outlined,
+                  label: 'Phobias',
+                  controller: _phobiasController,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, right: 8),
+                      child: Icon(
+                        Icons.chat_bubble_outline,
+                        size: 20,
+                        color: theme.colorScheme.primary.withOpacity(0.8),
+                      ),
+                    ),
+                    Expanded(
+                      child: _isEditingPersonalization && canEdit
+                          ? DropdownButtonFormField<String>(
+                              value: _preferredCommunicationMethod,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'verbal',
+                                  child: Text('Verbal'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'visual',
+                                  child: Text('Visual'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'written',
+                                  child: Text('Written'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'gesture',
+                                  child: Text('Gesture'),
+                                ),
+                              ],
+                              onChanged: (v) => setState(
+                                () => _preferredCommunicationMethod = v,
+                              ),
+                              decoration:
+                                  deco('Preferred communication method'),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Preferred communication method',
+                                  style:
+                                      theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  (_preferredCommunicationMethod ?? '')
+                                          .isEmpty
+                                      ? 'Not set'
+                                      : _preferredCommunicationMethod!
+                                          .substring(0, 1)
+                                          .toUpperCase() +
+                                          _preferredCommunicationMethod!
+                                              .substring(1),
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
+          ],
+        ),
+      ),
+    );
   }
 
   Map<String, dynamic> _extractResponseMap(http.Response response) {
@@ -1092,6 +1541,646 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     }
   }
 
+  Future<void> _fetchRiskTypes() async {
+    setState(() { _isLoadingRisks = true; _risksError = null; });
+    try {
+      final resp = await ApiService.getRiskTypes();
+      if (resp.statusCode == 200) {
+        final list = (jsonDecode(resp.body) as List<dynamic>)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        setState(() { _riskTypes = list; });
+      } else {
+        setState(() { _risksError = 'Failed to load risk types'; });
+      }
+    } catch (e) {
+      setState(() { _risksError = 'Error: $e'; });
+    }
+    if (mounted) setState(() { _isLoadingRisks = false; });
+  }
+
+  Future<void> _fetchPatientRisks() async {
+    final patientIdInt = int.tryParse(widget.patientId);
+    if (patientIdInt == null) return;
+    try {
+      final resp = await ApiService.getPatientRisks(patientIdInt);
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(resp.body) as List<dynamic>;
+        final map = <int, int>{};
+        for (final e in list) {
+          final m = e as Map<String, dynamic>;
+          final rtId = m['riskTypeId'] is int ? m['riskTypeId'] as int : int.tryParse(m['riskTypeId'].toString());
+          final id = m['id'] is int ? m['id'] as int : int.tryParse(m['id'].toString());
+          if (rtId != null && id != null) map[rtId] = id;
+        }
+        setState(() { _riskIdByTypeId = map; });
+      }
+    } catch (_) {}
+  }
+
+  /// Flagged risk names for the persistent alert banner (derived from _riskTypes + _riskIdByTypeId).
+  List<String> get _flaggedRiskNames {
+    final names = <String>[];
+    for (final rt in _riskTypes) {
+      final id = rt['id'] is int ? rt['id'] as int : int.tryParse(rt['id'].toString());
+      if (id != null && _riskIdByTypeId.containsKey(id)) {
+        final name = rt['name']?.toString();
+        if (name != null && name.isNotEmpty) names.add(name);
+      }
+    }
+    return names;
+  }
+
+  /// Persistent risk alert banner at top of patient profile when client has flagged risks.
+  Widget _buildRiskBanner() {
+    final names = _flaggedRiskNames;
+    if (names.isEmpty) return const SizedBox.shrink();
+    final text = 'Known Risks: ${names.join(', ')}';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      color: Colors.red.shade700,
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 24),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tappable card in In-home: "Dashboards" → opens dashboards hub (Competency Trends, etc.).
+  Widget _buildDashboardsCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => DashboardsScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.dashboard_outlined, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Dashboards',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View competency trends and other reports',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Read-only Audit Log viewer for supervisors/caregivers.
+  Widget _buildAuditLogCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => AuditLogScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.fact_check_outlined, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Audit Log',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View read-only history of caregiver-entered records',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tappable card in the Health tab: "ADL/IADL management" → opens hub to manage ADL & IADL.
+  Widget _buildAdlIadlManagementCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => AdlIadlManagementScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.self_improvement, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'ADL / IADL management',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Log and manage daily living activities for this client',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBehaviorLogCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => BehavioralIncidentFormScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.report_problem_outlined, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Log Behavior',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Document behavioral incidents during visits',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBehaviorHistoryCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => BehavioralIncidentHistoryScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.history, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Behavioral history',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View prior behavioral incident logs',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIncidentReportsCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => IncidentReportWizardScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.report, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'File incident report',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Record structured medical or risk incidents',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIncidentHistoryCard(String patientName) {
+    final theme = Theme.of(context);
+    final clientId = int.tryParse(widget.patientId);
+    if (clientId == null) return const SizedBox.shrink();
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => IncidentReportHistoryScreen(
+                clientId: clientId,
+                clientName: patientName,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.history, color: theme.colorScheme.primary, size: 28),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Incident report history',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'View structured incident reports for this client',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKnownRisksCard() {
+    final theme = Theme.of(context);
+    final canEdit = widget.isCaregiver;
+
+    if (_isLoadingRisks && _riskTypes.isEmpty) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _risksError != null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Known Risks', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(_risksError!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+                  ],
+                )
+              : const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    // View mode: show only selected risks + Edit button
+    if (!_isEditingRisks) {
+      final selectedNames = <String>[];
+      for (final rt in _riskTypes) {
+        final id = rt['id'] is int ? rt['id'] as int : int.tryParse(rt['id'].toString());
+        if (id != null && _riskIdByTypeId.containsKey(id)) {
+          selectedNames.add(rt['name']?.toString() ?? '');
+        }
+      }
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: theme.colorScheme.primary, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Known Risks',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (canEdit)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _isEditingRisks = true;
+                          _editingCheckedTypeIds = _riskIdByTypeId.keys.toSet();
+                        });
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (selectedNames.isEmpty)
+                Text('No risks flagged.', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant))
+              else
+                ...selectedNames.map((name) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 18, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(name, style: theme.textTheme.bodyMedium)),
+                    ],
+                  ),
+                )),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Edit mode: all checkboxes + Save button
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: theme.colorScheme.primary, size: 22),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Known Risks',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (canEdit)
+                  ElevatedButton.icon(
+                    onPressed: _isSavingRisks ? null : () => _saveKnownRisks(),
+                    icon: _isSavingRisks
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.check, size: 18),
+                    label: const Text('Save'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_riskTypes.isEmpty && !_isLoadingRisks)
+              Text('No risk types available.', style: theme.textTheme.bodySmall)
+            else
+              ..._riskTypes.map((rt) {
+                final id = rt['id'] is int ? rt['id'] as int : int.tryParse(rt['id'].toString());
+                final name = rt['name']?.toString() ?? '';
+                if (id == null) return const SizedBox.shrink();
+                final isChecked = _editingCheckedTypeIds.contains(id);
+                return CheckboxListTile(
+                  value: isChecked,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value == true) {
+                        _editingCheckedTypeIds.add(id);
+                      } else {
+                        _editingCheckedTypeIds.remove(id);
+                      }
+                    });
+                  },
+                  title: Text(name),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveKnownRisks() async {
+    final patientIdInt = int.tryParse(widget.patientId);
+    if (patientIdInt == null || !widget.isCaregiver) return;
+
+    setState(() => _isSavingRisks = true);
+    try {
+      final toAdd = _editingCheckedTypeIds.where((id) => !_riskIdByTypeId.containsKey(id)).toList();
+      final toRemove = _riskIdByTypeId.keys.where((id) => !_editingCheckedTypeIds.contains(id)).toList();
+
+      for (final riskTypeId in toAdd) {
+        final res = await ApiService.flagPatientRisk(patientIdInt, riskTypeId);
+        if (res.statusCode != 201 && res.statusCode != 200) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add risk: ${res.statusCode}')));
+          return;
+        }
+      }
+      for (final riskTypeId in toRemove) {
+        final riskId = _riskIdByTypeId[riskTypeId];
+        if (riskId != null) {
+          final res = await ApiService.unflagPatientRisk(patientIdInt, riskId);
+          if (res.statusCode != 204 && res.statusCode != 200) {
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to remove risk: ${res.statusCode}')));
+            return;
+          }
+        }
+      }
+
+      await _fetchPatientRisks();
+      if (mounted) {
+        setState(() {
+          _isEditingRisks = false;
+          _isSavingRisks = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Known risks saved')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSavingRisks = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+      }
+    }
+  }
+
   /// Build the medications section with loading/error handling
   Widget _buildMedicationsSection() {
     if (_isLoadingMedications) {
@@ -1158,7 +2247,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
         : 'Patient Details';
 
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: _DetailsAppBar(title: _patientName, subtitle: subtitlePrefix),
         body: _isLoadingPatient
@@ -1197,6 +2286,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
               )
             : Column(
                 children: [
+                  _buildRiskBanner(),
                   PatientHeaderCard(
                     fullName: _patientName,
                     mrn: _mrn,
@@ -1241,6 +2331,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                               relationship: _emergencyRelationship,
                               phone: _emergencyPhone,
                             ),
+                            _buildPersonalizationCard(),
                             if (_canDeleteCallHistoryInThisBuild)
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(
@@ -1327,6 +2418,8 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                         ListView(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           children: [
+                            _buildKnownRisksCard(),
+                            const SizedBox(height: 8),
                             PainLevelCard(
                               lastReportedText: _lastReportedPain,
                               currentPain: _currentPain,
@@ -1340,6 +2433,34 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                             ),
                             const SizedBox(height: 8),
                             _buildMedicationsSection(),
+                          ],
+                        ),
+
+                        // In-home
+                        ListView(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          children: [
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildAdlIadlManagementCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildBehaviorLogCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildIncidentReportsCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildDashboardsCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildBehaviorHistoryCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null)
+                              _buildIncidentHistoryCard(_patientName),
+                            const SizedBox(height: 8),
+                            if (int.tryParse(widget.patientId) != null &&
+                                widget.isCaregiver)
+                              _buildAuditLogCard(_patientName),
                           ],
                         ),
 
@@ -1480,6 +2601,7 @@ class _TabsStrip extends StatelessWidget {
               text: 'Health',
               icon: Icon(Icons.health_and_safety_outlined, size: 18),
             ),
+            Tab(text: 'In-home', icon: Icon(Icons.home_outlined, size: 18)),
             Tab(
               text: 'Virtual Check-In',
               icon: Icon(Icons.video_call_outlined, size: 18),

@@ -25,7 +25,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-
         // Required by flutter_appauth / flutter_web_auth_2 Android manifest entries.
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.care_connect_app"
     }

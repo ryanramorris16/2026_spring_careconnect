@@ -34,9 +34,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class InvoiceControllerTest {
 
+    @Mock private InvoiceService invoiceService;
     @Mock private TextractService textractService;
     @Mock private LlmExtractionService llmExtractionService;
-    @Mock private InvoiceService invoiceService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
 
@@ -44,12 +44,12 @@ class InvoiceControllerTest {
 
     // Helper: controller with all services wired
     private InvoiceController controller() throws Exception {
-        return new InvoiceController(textractService, llmExtractionService, invoiceService, objectMapper, securityUtil, authorizationService);
+        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
     }
 
     // Helper: controller with textract=null (AWS disabled)
     private InvoiceController controllerNoTextract() throws Exception {
-        return new InvoiceController(null, null, invoiceService, objectMapper, securityUtil, authorizationService);
+        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
     }
 
     // ─── list ─────────────────────────────────────────────────────────────────
