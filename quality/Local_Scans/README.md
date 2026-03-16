@@ -81,13 +81,15 @@ Every run produces:
 
 | Output | Location | Description |
 |--------|----------|-------------|
-| HTML report | Opened automatically in browser | Full findings report with severity breakdown |
+| HTML report | Opened automatically in browser | Interactive findings report with filtering |
 | ZIP archive | `~/Downloads/<timestamp>-<sha>-local-quality-report.zip` | HTML report + raw tool outputs |
 
 The report includes:
 - Pass/fail status per tool
 - Severity breakdown (Critical, High, Medium, Low, Info)
 - Full findings table per tool (file, line, rule, message)
+- **Interactive filtering** — filter by severity, search by file/rule/message, toggle tools on/off
+- Back-to-summary navigation links
 
 ---
 
@@ -104,14 +106,23 @@ quality/Local_Scans/
 │   └── pre-commit           Registered via git config core.hooksPath
 ├── report/                  Report generation modules
 │   ├── generate_report.py   Entry point — reads artifacts, builds HTML
-│   ├── report_html.py       HTML report builder
+│   ├── report_html.py       Thin shim — delegates to render_report package
+│   ├── render_report/       Modular HTML report package
+│   │   ├── __init__.py
+│   │   ├── report_builder.py    Main assembly entry point
+│   │   ├── report_sections.py   Tool sections and summary table
+│   │   ├── report_rows.py       Finding rows and summary rows with toggles
+│   │   ├── report_badges.py     Severity badges, status indicators
+│   │   ├── report_controls.py   Filter bar and legend HTML constants
+│   │   ├── report_scripts.py    Client-side JavaScript filtering
+│   │   ├── report_styles.py     CSS string
+│   │   └── report_constants.py  Tool names, IDs, category map, severity colors
 │   ├── report_parsers.py    Raw artifact parsers
 │   └── open_report.py       Opens report in browser
 ├── tools/                   Pre-committed tool binaries and JARs
 │   ├── checkstyle-10.12.4-all.jar
 │   ├── pmd-bin-6.55.0/
 │   └── spotbugs-4.9.3/
-├── Static_Analysis_Reports/ Local scan output history
 ├── run-local-checks.sh      Entry point (Mac / Linux)
 └── run-local-checks.bat     Entry point (Windows)
 ```
