@@ -4,6 +4,7 @@ class MessageDto {
   final int receiverId;
   final String content;
   final DateTime timestamp;
+  final bool queuedOffline;
   final int? attachmentId;
   final String? attachmentName;
   final String? attachmentContentType;
@@ -19,6 +20,7 @@ class MessageDto {
     required this.receiverId,
     required this.content,
     required this.timestamp,
+    this.queuedOffline = false,
     this.attachmentId,
     this.attachmentName,
     this.attachmentContentType,
@@ -32,6 +34,7 @@ class MessageDto {
       receiverId: (json['receiverId'] as num).toInt(),
       content: json['content'] as String? ?? '',
       timestamp: DateTime.parse(json['timestamp'] as String),
+      queuedOffline: json['queuedOffline'] == true,
       attachmentId: (json['attachmentId'] as num?)?.toInt(),
       attachmentName: json['attachmentName'] as String?,
       attachmentContentType: json['attachmentContentType'] as String?,
