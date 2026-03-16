@@ -64,11 +64,12 @@ class NavigationMigrationHelper {
     String? userRole,
   }) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final role = userRole ?? userProvider.user?.role ?? 'PATIENT';
+    final role = (userRole ?? userProvider.user?.role ?? 'PATIENT').toUpperCase();
+    final normalizedTab = tabName.toLowerCase();
 
     int? tabIndex;
-    if (role.toUpperCase() == 'PATIENT') {
-      switch (tabName.toLowerCase()) {
+    if (role == 'PATIENT') {
+      switch (normalizedTab) {
         case 'home':
         case 'dashboard':
           tabIndex = 0;
@@ -88,7 +89,7 @@ class NavigationMigrationHelper {
           break;
       }
     } else {
-      switch (tabName.toLowerCase()) {
+      switch (normalizedTab) {
         case 'patients':
         case 'dashboard':
         case 'home':
