@@ -75,7 +75,6 @@ class MessageControllerTest {
 
         final User sender = makeUser(SENDER_ID, "Alice", "alice@test.com");
         when(securityUtil.resolveCurrentUser()).thenReturn(sender);
-        when(linkService.isPatientMessagingEnabled(SENDER_ID, RECEIVER_ID)).thenReturn(true);
         final Message saved = makeMessage(1L, SENDER_ID, RECEIVER_ID, "Hello!");
         when(messageRepo.save(any(Message.class))).thenReturn(saved);
 

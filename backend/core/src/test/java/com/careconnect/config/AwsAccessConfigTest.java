@@ -3,6 +3,7 @@ package com.careconnect.config;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -33,6 +34,8 @@ class AwsAccessConfigTest {
         // without hitting EC2 metadata or environment variables that may not exist in CI.
         System.setProperty("aws.region", "us-east-1");
         config = new AwsAccessConfig();
+        // Simulate Spring @Value injection for the awsRegion field
+        ReflectionTestUtils.setField(config, "awsRegion", "us-east-1");
     }
 
     @AfterEach

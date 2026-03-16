@@ -4,6 +4,7 @@ import com.careconnect.dto.evv.EvvLocationRequest;
 import com.careconnect.dto.evv.EvvLocationResponse;
 import com.careconnect.model.evv.EvvLocationRole;
 import com.careconnect.model.evv.EvvLocationType;
+import com.careconnect.model.evv.NoGpsReason;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.evv.EvvLocationService;
 import com.careconnect.util.SecurityUtil;
@@ -42,12 +43,13 @@ class EvvLocationControllerTest {
 
     // ── shared helpers ────────────────────────────────────────────────────────
 
-    /** PATIENT_ADDRESS type — validate() passes without coords. */
+    /** PATIENT_ADDRESS type — validate() passes without coords but needs noGpsReason. */
     private EvvLocationRequest patientAddressRequest() throws Exception {
         return EvvLocationRequest.builder()
                 .evvRecordId(EVV_RECORD_ID)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
+                .noGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .build();
     }
 

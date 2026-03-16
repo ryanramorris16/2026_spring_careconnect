@@ -7,6 +7,7 @@ import com.careconnect.model.Address;
 import com.careconnect.model.Patient;
 import com.careconnect.model.evv.EvvLocationRole;
 import com.careconnect.model.evv.EvvLocationType;
+import com.careconnect.model.evv.NoGpsReason;
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.model.evv.EvvRecordLocation;
 import com.careconnect.repository.PatientRepository;
@@ -197,6 +198,7 @@ class EvvLocationServiceTest {
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
+                .noGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .build();
 
         when(evvRecordRepository.findById(1L)).thenReturn(Optional.of(evvRecord));
@@ -236,6 +238,7 @@ class EvvLocationServiceTest {
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
+                .noGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .build();
 
         when(evvRecordRepository.findById(1L)).thenReturn(Optional.of(evvRecord));
@@ -283,6 +286,7 @@ class EvvLocationServiceTest {
                 .evvRecordId(1L)
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
+                .noGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .build();
 
         when(evvRecordRepository.findById(1L)).thenReturn(Optional.of(evvRecord));
@@ -295,6 +299,7 @@ class EvvLocationServiceTest {
                 .role(EvvLocationRole.CHECK_IN)
                 .type(EvvLocationType.PATIENT_ADDRESS)
                 .addressSnapshotJson(java.util.Map.of("line1", "123 Main St", "city", "Washington"))
+                .noGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED)
                 .createdAt(OffsetDateTime.now())
                 .build();
 

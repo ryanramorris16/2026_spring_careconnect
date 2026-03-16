@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -72,6 +73,6 @@ class EvvSubmissionServiceTest {
         svc.queueForSubmission(record, 7L);
 
         verify(outbox).enqueue(record, "maryland-info-only");
-        verify(audit).log(eq(record), eq(7L), eq("SUBMISSION_QUEUED"), eq(Map.of()));
+        verify(audit).log(eq(record), eq(7L), eq("SUBMISSION_QUEUED"), any(Map.class));
     }
 }

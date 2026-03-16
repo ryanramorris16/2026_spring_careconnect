@@ -79,9 +79,9 @@ class RiskTypeControllerTest {
     }
 
     @Test
-    @DisplayName("redirects unauthenticated request (302 to login)")
-    void unauthenticated_redirectsToLogin() throws Exception {
+    @DisplayName("unauthenticated request returns 401")
+    void unauthenticated_returnsUnauthorized() throws Exception {
         mockMvc.perform(get("/v1/api/risk-types"))
-                .andExpect(status().is3xxRedirection());
+                .andExpect(status().isUnauthorized());
     }
 }

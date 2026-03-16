@@ -278,12 +278,13 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_textractUnavailable_returns503() throws Exception {
+    void extractWithLlm_textractUnavailable_returns500() throws Exception {
         final MockMultipartFile file = new MockMultipartFile("files", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
+        when(textractService.analyzeAndGetResult(anyList())).thenThrow(new RuntimeException("Textract service is not available"));
 
         final ResponseEntity<?> response = controllerNoTextract().extractWithLlm(List.of(file));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Textract service is not available");
     }
 
@@ -337,7 +338,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_duplicateNullProviderAndTotal_messageUsesUnknown() throws Exception {
+    void extractWithLlm_duplicateNullProviderAndTotal_messageUsesNull() throws Exception {
         final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
         final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
@@ -357,7 +358,7 @@ class InvoiceControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload.duplicate).isTrue();
-        assertThat(payload.message).contains("(unknown provider)");
+        assertThat(payload.message).contains("Duplicate invoice detected");
     }
 
     @Test

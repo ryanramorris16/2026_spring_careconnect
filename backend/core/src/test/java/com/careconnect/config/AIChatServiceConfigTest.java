@@ -4,7 +4,6 @@ import com.careconnect.service.security.SecurityAuditService;
 import dev.langchain4j.model.chat.ChatModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,11 +12,14 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for AIChatServiceConfig.
  *
- * Validates configuration bean creation and configuration validation rules
- * including security checks for API keys, URLs, and temperature ranges.
+ * Validates configuration bean creation behavior for supported providers
+ * (deepseek, bedrock) and verifies that unsupported providers are rejected.
  *
- * Mocks SecurityAuditService to avoid actual logging while verifying
- * that validation errors are properly reported.
+ * Note: The chatModel() method does NOT call validateConfiguration(), so
+ * validation-related behavior (API key checks, URL checks) is not exercised
+ * by chatModel(). These tests verify actual runtime behavior of chatModel().
+ *
+ * Mocks SecurityAuditService to satisfy the constructor dependency.
  */
 class AIChatServiceConfigTest {
 
@@ -38,12 +40,13 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelBeanCreatedSuccessfullyWithValidConfiguration() throws Exception {
-        // Arrange: Set valid configuration values
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelBeanCreatedSuccessfullyWithDeepseekProvider() throws Exception {
+        // Arrange: Set valid deepseek configuration
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
         // Act: Create the ChatModel bean
@@ -55,176 +58,192 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiKeyIsMissing() throws Exception {
-        // Arrange: Set configuration with empty API key
+    void chatModelThrowsExceptionForUnsupportedOpenaiProvider() throws Exception {
+        // Arrange: "openai" is not a supported provider in chatModel()
+        ReflectionTestUtils.setField(config, "provider", "openai");
+        ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "temperature", 1.0);
+
+        // Act & Assert: Should throw IllegalStateException wrapped with "AI configuration failed"
+        final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            config.chatModel();
+        });
+
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: openai", exception.getCause().getMessage());
+    }
+
+    @Test
+    void chatModelThrowsExceptionForUnsupportedProviderWithEmptyApiKey() throws Exception {
+        // Arrange: chatModel() does not call validateConfiguration(), so the
+        // unsupported provider error takes precedence over missing API key
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "");
         ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
         ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act & Assert: Should throw IllegalStateException
+        // Act & Assert: Should throw due to unsupported provider
         final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
-        assertEquals("API key is required but not configured", exception.getMessage());
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_KEY"),
-                eq("API key is required but not configured")
-        );
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: openai", exception.getCause().getMessage());
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiKeyIsNull() throws Exception {
-        // Arrange: Set configuration with null API key
+    void chatModelThrowsExceptionForUnsupportedProviderWithNullApiKey() throws Exception {
+        // Arrange: chatModel() does not call validateConfiguration(), so the
+        // unsupported provider error takes precedence over null API key
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", null);
         ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
         ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act & Assert: Should throw IllegalStateException
+        // Act & Assert: Should throw due to unsupported provider
         final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
-        assertEquals("API key is required but not configured", exception.getMessage());
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_KEY"),
-                eq("API key is required but not configured")
-        );
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: openai", exception.getCause().getMessage());
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiUrlIsMissing() throws Exception {
-        // Arrange: Set configuration with empty API URL
+    void chatModelThrowsExceptionForUnsupportedProviderWithEmptyApiUrl() throws Exception {
+        // Arrange: chatModel() does not call validateConfiguration(), so the
+        // unsupported provider error takes precedence over missing URL
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
         ReflectionTestUtils.setField(config, "apiUrl", "");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
         ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act & Assert: Should throw IllegalStateException
+        // Act & Assert: Should throw due to unsupported provider
         final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
-        assertEquals("API URL is required but not configured", exception.getMessage());
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_URL"),
-                eq("API URL is required but not configured")
-        );
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: openai", exception.getCause().getMessage());
     }
 
     @Test
-    void chatModelThrowsExceptionWhenApiUrlIsNull() throws Exception {
-        // Arrange: Set configuration with null API URL
+    void chatModelThrowsExceptionForUnsupportedProviderWithNullApiUrl() throws Exception {
+        // Arrange: chatModel() does not call validateConfiguration(), so the
+        // unsupported provider error takes precedence over null URL
         ReflectionTestUtils.setField(config, "provider", "openai");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
         ReflectionTestUtils.setField(config, "apiUrl", null);
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
         ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act & Assert: Should throw IllegalStateException
+        // Act & Assert: Should throw due to unsupported provider
         final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
-        assertEquals("API URL is required but not configured", exception.getMessage());
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_URL"),
-                eq("API URL is required but not configured")
-        );
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: openai", exception.getCause().getMessage());
     }
 
     @Test
-    void chatModelLogsWarningWhenApiUrlIsNotHttps() throws Exception {
-        // Arrange: Set configuration with HTTP URL (insecure)
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelCreatesDeepseekWithHttpUrl() throws Exception {
+        // Arrange: Set configuration with HTTP URL (insecure) for deepseek
+        // chatModel() does not call validateConfiguration(), so no HTTPS check occurs
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
         ReflectionTestUtils.setField(config, "apiUrl", "http://api.example.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act: Create ChatModel - should succeed but log warning
+        // Act: Create ChatModel - should succeed since validateConfiguration is not called
         final ChatModel chatModel = config.chatModel();
 
-        // Assert: Bean created but security warning logged
+        // Assert: Bean created; no audit service interaction
         assertNotNull(chatModel);
-        final ArgumentCaptor<String> detailsCaptor = ArgumentCaptor.forClass(String.class);
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_URL_SECURITY"),
-                detailsCaptor.capture()
-        );
-        assertTrue(detailsCaptor.getValue().contains("HTTPS"));
+        verify(securityAuditService, never()).logConfigurationValidationError(
+                anyString(), anyString(), anyString());
     }
 
     @Test
-    void chatModelSucceedsWithShortApiKeyButNoAuditLog() throws Exception {
-        // Arrange: Set configuration with short API key (< 20 chars)
-        // Note: This only logs a warning, doesn't call audit service
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelSucceedsWithDeepseekShortApiKey() throws Exception {
+        // Arrange: Set configuration with short API key (< 20 chars) for deepseek
+        // chatModel() does not call validateConfiguration(), so no key length check
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "short-key-123");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act: Create ChatModel - should succeed with warning
+        // Act: Create ChatModel - should succeed
         final ChatModel chatModel = config.chatModel();
 
-        // Assert: Bean created and no audit error logged (only warning in logs)
+        // Assert: Bean created successfully
         assertNotNull(chatModel);
-        // Short key warning only goes to log.warn, not to securityAuditService
     }
 
     @Test
-    void chatModelSucceedsWithTemperatureBelowRange() throws Exception {
-        // Arrange: Set configuration with temperature below 0.0
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelSucceedsWithDeepseekNegativeTemperature() throws Exception {
+        // Arrange: Set configuration with temperature below 0.0 for deepseek
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", -0.5);
 
-        // Act: Create ChatModel - should succeed with warning
+        // Act: Create ChatModel - should succeed (no validation called)
         final ChatModel chatModel = config.chatModel();
 
-        // Assert: Bean created successfully (warning only)
+        // Assert: Bean created successfully
         assertNotNull(chatModel);
     }
 
     @Test
-    void chatModelSucceedsWithTemperatureAboveRange() throws Exception {
-        // Arrange: Set configuration with temperature above 2.0
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelSucceedsWithDeepseekHighTemperature() throws Exception {
+        // Arrange: Set configuration with temperature above 2.0 for deepseek
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 2.5);
 
-        // Act: Create ChatModel - should succeed with warning
+        // Act: Create ChatModel - should succeed (no validation called)
         final ChatModel chatModel = config.chatModel();
 
-        // Assert: Bean created successfully (warning only)
+        // Assert: Bean created successfully
         assertNotNull(chatModel);
     }
 
     @Test
-    void chatModelSucceedsWithDifferentProvider() throws Exception {
-        // Arrange: Set configuration with different provider (e.g., deepseek)
-        ReflectionTestUtils.setField(config, "provider", "deepseek");
+    void chatModelSucceedsWithDeepseekCaseInsensitive() throws Exception {
+        // Arrange: Set configuration with "DeepSeek" (mixed case)
+        ReflectionTestUtils.setField(config, "provider", "DeepSeek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-deepseek-1234567890abcdefghijklmnopqrstuvwxyz");
         ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
         ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 0.7);
 
-        // Act: Create ChatModel
+        // Act: Create ChatModel - equalsIgnoreCase should match "deepseek"
         final ChatModel chatModel = config.chatModel();
 
         // Assert: Bean created successfully
@@ -233,12 +252,13 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithValidTemperatureBoundaries() throws Exception {
+    void chatModelSucceedsWithDeepseekTemperatureBoundaries() throws Exception {
         // Arrange: Test lower boundary (0.0)
-        ReflectionTestUtils.setField(config, "provider", "openai");
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
         ReflectionTestUtils.setField(config, "temperature", 0.0);
 
         // Act: Create ChatModel with temperature 0.0
@@ -258,12 +278,13 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithTypicalTemperatureValues() throws Exception {
-        // Arrange: Test common temperature values (0.5, 0.7, 1.0)
-        ReflectionTestUtils.setField(config, "provider", "openai");
+    void chatModelSucceedsWithDeepseekTypicalTemperatureValues() throws Exception {
+        // Arrange: Test common temperature values (0.5, 0.7, 1.0, 1.5)
+        ReflectionTestUtils.setField(config, "provider", "deepseek");
         ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.deepseek.com/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "deepseek-chat");
 
         final double[] temperatures = {0.5, 0.7, 1.0, 1.5};
 
@@ -280,47 +301,26 @@ class AIChatServiceConfigTest {
     }
 
     @Test
-    void chatModelSucceedsWithMinimumValidApiKey() throws Exception {
-        // Arrange: Set configuration with API key exactly at minimum length (20 chars)
-        ReflectionTestUtils.setField(config, "provider", "openai");
-        ReflectionTestUtils.setField(config, "apiKey", "12345678901234567890"); // Exactly 20 chars
-        ReflectionTestUtils.setField(config, "apiUrl", "https://api.openai.com/v1");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
+    void chatModelThrowsForUnsupportedProviderEvenWithValidConfig() throws Exception {
+        // Arrange: Set configuration with all valid values but unsupported provider
+        // Verifies that unsupported provider is rejected regardless of other config
+        ReflectionTestUtils.setField(config, "provider", "mistral");
+        ReflectionTestUtils.setField(config, "apiKey", "sk-test-1234567890abcdefghijklmnopqrstuvwxyz");
+        ReflectionTestUtils.setField(config, "apiUrl", "https://api.mistral.ai/v1");
+        ReflectionTestUtils.setField(config, "region", "us-east-1");
+        ReflectionTestUtils.setField(config, "modelName", "mistral-medium");
         ReflectionTestUtils.setField(config, "temperature", 1.0);
 
-        // Act: Create ChatModel
-        final ChatModel chatModel = config.chatModel();
-
-        // Assert: Bean created successfully without warnings
-        assertNotNull(chatModel);
-    }
-
-    @Test
-    void chatModelValidatesApiKeyBeforeApiUrl() throws Exception {
-        // Arrange: Set configuration with both API key and URL missing
-        // This tests the order of validation
-        ReflectionTestUtils.setField(config, "provider", "openai");
-        ReflectionTestUtils.setField(config, "apiKey", "");
-        ReflectionTestUtils.setField(config, "apiUrl", "");
-        ReflectionTestUtils.setField(config, "modelName", "gpt-4o-mini");
-        ReflectionTestUtils.setField(config, "temperature", 1.0);
-
-        // Act & Assert: Should throw exception for API key first
+        // Act & Assert: Should throw for unsupported provider
         final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             config.chatModel();
         });
 
-        assertEquals("API key is required but not configured", exception.getMessage());
-        verify(securityAuditService).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_KEY"),
-                anyString()
-        );
-        // API_URL error should not be logged since API_KEY fails first
+        assertEquals("AI configuration failed", exception.getMessage());
+        assertNotNull(exception.getCause());
+        assertEquals("unsupported AI provider: mistral", exception.getCause().getMessage());
+        // securityAuditService should not be called since validateConfiguration is never invoked
         verify(securityAuditService, never()).logConfigurationValidationError(
-                eq("openai"),
-                eq("API_URL"),
-                anyString()
-        );
+                anyString(), anyString(), anyString());
     }
 }

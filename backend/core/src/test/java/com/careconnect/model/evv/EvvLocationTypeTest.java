@@ -10,7 +10,8 @@ class EvvLocationTypeTest {
     void values_containsAllExpected() throws Exception {
         assertThat(EvvLocationType.values()).containsExactly(
                 EvvLocationType.GPS,
-                EvvLocationType.PATIENT_ADDRESS
+                EvvLocationType.PATIENT_ADDRESS,
+                EvvLocationType.MANUAL
         );
     }
 

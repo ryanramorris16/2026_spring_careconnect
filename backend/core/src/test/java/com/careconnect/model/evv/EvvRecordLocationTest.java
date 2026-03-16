@@ -1,5 +1,6 @@
 package com.careconnect.model.evv;
 
+import com.careconnect.model.evv.NoGpsReason;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -136,6 +137,7 @@ class EvvRecordLocationTest {
         final Map<String, Object> snapshot = new HashMap<>();
         snapshot.put("street", "1 Main St");
         loc.setAddressSnapshotJson(snapshot);
+        loc.setNoGpsReason(NoGpsReason.HOME_VISIT_ADDRESS_USED);
 
         loc.validate(); // should not throw
     }

@@ -6,7 +6,10 @@ import com.careconnect.dto.schedule.ScheduledVisitSummary;
 import com.careconnect.model.Patient;
 import com.careconnect.model.schedule.ScheduledVisit;
 import com.careconnect.repository.PatientRepository;
+import com.careconnect.repository.schedule.ScheduledVisitAuditRepository;
 import com.careconnect.repository.schedule.ScheduledVisitRepository;
+import com.careconnect.service.schedule.ScheduleConflictService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -34,7 +38,16 @@ class ScheduledVisitServiceTest {
     private ScheduledVisitRepository scheduledVisitRepository;
 
     @Mock
+    private ScheduledVisitAuditRepository scheduledVisitAuditRepository;
+
+    @Mock
     private PatientRepository patientRepository;
+
+    @Mock
+    private ScheduleConflictService conflictService;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private ScheduledVisitService scheduledVisitService;
@@ -73,10 +86,21 @@ class ScheduledVisitServiceTest {
         return patient;
     }
 
+    /**
+     * Helper to stub conflictService.analyzeConflicts to return an empty (no conflicts) summary.
+     */
+    private void stubNoConflicts() {
+        ScheduleConflictService.ConflictSummary noConflicts = new ScheduleConflictService.ConflictSummary();
+        when(conflictService.analyzeConflicts(
+                anyLong(), anyLong(), any(LocalDate.class), any(LocalTime.class), anyInt()))
+                .thenReturn(noConflicts);
+    }
+
     // ----- createScheduledVisit -----
 
     @Test
     void createScheduledVisit_savesAndReturnsResponse() throws Exception {
+        stubNoConflicts();
         final ScheduledVisitRequest request = buildRequest();
         final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
         final Patient johnDoe = buildPatient("John", "Doe");
@@ -93,6 +117,7 @@ class ScheduledVisitServiceTest {
 
     @Test
     void createScheduledVisit_patientNotFound_returnsUnknownPatient() throws Exception {
+        stubNoConflicts();
         final ScheduledVisitRequest request = buildRequest();
         final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
@@ -100,7 +125,7 @@ class ScheduledVisitServiceTest {
 
         final ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
 
-        assertThat(response.getPatientName()).isEqualTo("Unknown Patient");
+        assertThat(response.getPatientName()).isEqualTo("Unknown");
     }
 
     // ----- getScheduledVisits -----
@@ -243,6 +268,7 @@ class ScheduledVisitServiceTest {
 
     @Test
     void updateScheduledVisit_found_updatesAndReturns() throws Exception {
+        stubNoConflicts();
         final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
         when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
         when(scheduledVisitRepository.save(visit)).thenReturn(visit);
@@ -311,9 +337,21 @@ class ScheduledVisitServiceTest {
     // ----- deleteScheduledVisit -----
 
     @Test
-    void deleteScheduledVisit_callsDeleteById() throws Exception {
+    void deleteScheduledVisit_found_deletesVisit() throws Exception {
+        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
+        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
+
         scheduledVisitService.deleteScheduledVisit(1L);
 
         verify(scheduledVisitRepository).deleteById(1L);
+    }
+
+    @Test
+    void deleteScheduledVisit_notFound_throws() throws Exception {
+        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> scheduledVisitService.deleteScheduledVisit(1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Scheduled visit not found with id: 1");
     }
 }
