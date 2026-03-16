@@ -28,5 +28,35 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     });
+
+    testWidgets('shows AppBar with CarConnect title', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('CarConnect'), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows caregiver notified message', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Your caregiver has been notified.'), findsOneWidget);
+    });
+
+    testWidgets('shows Back button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Back'), findsOneWidget);
+    });
+
+    testWidgets('shows ElevatedButton', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('shows Center widget', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
   });
 }

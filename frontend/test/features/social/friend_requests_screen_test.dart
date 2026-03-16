@@ -54,5 +54,15 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(ListTile), findsNothing);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows Center while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
   });
 }

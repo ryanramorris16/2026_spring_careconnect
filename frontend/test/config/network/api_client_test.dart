@@ -31,5 +31,23 @@ void main() {
       final b = ApiClient();
       expect(identical(a, b), isTrue);
     });
+
+    test('returns same instance on multiple calls', () {
+      final instances = List.generate(3, (_) => ApiClient());
+      expect(instances.every((i) => identical(i, instances.first)), isTrue);
+    });
+  });
+
+  group('ApiException additional', () {
+    test('stores null-like empty message', () {
+      final e = ApiException('', 0);
+      expect(e.message, '');
+      expect(e.statusCode, 0);
+    });
+
+    test('toString returns non-empty string', () {
+      final e = ApiException('test', 200);
+      expect(e.toString().isNotEmpty, isTrue);
+    });
   });
 }

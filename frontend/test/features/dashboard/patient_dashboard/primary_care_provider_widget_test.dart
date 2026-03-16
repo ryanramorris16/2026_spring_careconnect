@@ -42,5 +42,35 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.text('HealthFirst Clinic'), findsOneWidget);
     });
+
+    testWidgets('shows "Your Primary Care Provider" heading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Your Primary Care Provider'), findsOneWidget);
+    });
+
+    testWidgets('shows CircleAvatar with initials', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(CircleAvatar), findsOneWidget);
+    });
+
+    testWidgets('shows phone number', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('555-1234'), findsOneWidget);
+    });
+
+    testWidgets('shows email address', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('jsmith@health.com'), findsOneWidget);
+    });
+
+    testWidgets('shows Contact Information heading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Contact Information'), findsOneWidget);
+    });
+
+    testWidgets('shows Contact Provider button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Contact Provider'), findsOneWidget);
+    });
   });
 }

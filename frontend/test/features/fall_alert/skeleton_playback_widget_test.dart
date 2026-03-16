@@ -28,5 +28,31 @@ void main() {
       await tester.pump();
       expect(find.byType(Scaffold), findsOneWidget);
     });
+
+    testWidgets('shows error icon when sampleResponse is empty', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      // _parseAndLoadData() catches the error, _isLoading=false, _frames empty → error icon
+      expect(find.byIcon(Icons.error), findsOneWidget);
+    });
+
+    testWidgets('does NOT show CircularProgressIndicator after parse error',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows Center widget for error state', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('shows Icon widget in error state', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(Icon), findsOneWidget);
+    });
   });
 }

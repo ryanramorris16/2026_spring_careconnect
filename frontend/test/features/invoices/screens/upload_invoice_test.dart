@@ -29,5 +29,35 @@ void main() {
       await tester.pump();
       expect(find.textContaining('Upload'), findsWidgets);
     });
+
+    testWidgets('shows SafeArea in body', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(SafeArea), findsWidgets);
+    });
+
+    testWidgets('shows ListView', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(ListView), findsWidgets);
+    });
+
+    testWidgets('shows Take Photo option', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Take Photo'), findsOneWidget);
+    });
+
+    testWidgets('shows Manual Entry option', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Manual Entry'), findsOneWidget);
+    });
+
+    testWidgets('shows Secure Storage card', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Secure Storage'), findsOneWidget);
+    });
   });
 }

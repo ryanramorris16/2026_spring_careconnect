@@ -7,9 +7,41 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:care_connect_app/features/payments/presentation/pages/payment_cancel_page.dart';
+import 'package:care_connect_app/providers/user_provider.dart';
+
+import '../../mock_user_provider.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
+
+Widget _wrapWithRouter({
+  bool? isRegistration,
+  UserProvider? provider,
+}) {
+  final p = provider ?? MockUserProvider(mockUser: null);
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => ChangeNotifierProvider<UserProvider>.value(
+          value: p,
+          child: PaymentCancelPage(isRegistration: isRegistration),
+        ),
+      ),
+      GoRoute(
+        path: '/select-package',
+        builder: (context, state) => const Scaffold(body: Text('Select Package')),
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const Scaffold(body: Text('Login')),
+      ),
+    ],
+  );
+  return MaterialApp.router(routerConfig: router);
+}
 
 void main() {
   group('PaymentCancelPage – default (isRegistration=false)', () {
@@ -90,6 +122,64 @@ void main() {
         find.textContaining('registration is not complete'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('PaymentCancelPage – navigation (isRegistration=true)', () {
+    testWidgets('Try Payment Again navigates to /select-package', (tester) async {
+      await tester.pumpWidget(_wrapWithRouter(isRegistration: true));
+      await tester.pump();
+      await tester.tap(find.text('Try Payment Again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Select Package'), findsOneWidget);
+    });
+
+    testWidgets('Skip for Now navigates to /login with null user', (tester) async {
+      await tester.pumpWidget(_wrapWithRouter(
+        isRegistration: true,
+        provider: MockUserProvider(mockUser: null),
+      ));
+      await tester.pump();
+      await tester.tap(find.text('Skip for Now (Go to Login)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Login'), findsOneWidget);
+    });
+
+    testWidgets('Skip for Now navigates to /login with named user', (tester) async {
+      await tester.pumpWidget(_wrapWithRouter(
+        isRegistration: true,
+        provider: MockUserProvider(
+          mockUser: MockUser(name: 'Alice', role: 'CAREGIVER'),
+        ),
+      ));
+      await tester.pump();
+      await tester.tap(find.text('Skip for Now (Go to Login)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Login'), findsOneWidget);
+    });
+  });
+
+  group('PaymentCancelPage – layout details', () {
+    testWidgets('shows SafeArea', (tester) async {
+      await tester.pumpWidget(_wrap(const PaymentCancelPage()));
+      expect(find.byType(SafeArea), findsWidgets);
+    });
+
+    testWidgets('shows TextButton for secondary action', (tester) async {
+      await tester.pumpWidget(_wrap(const PaymentCancelPage()));
+      expect(find.byType(TextButton), findsOneWidget);
+    });
+
+    testWidgets('isRegistration defaults to false', (tester) async {
+      await tester.pumpWidget(_wrap(const PaymentCancelPage()));
+      expect(find.text('Return to Dashboard'), findsOneWidget);
+      expect(find.text('Go to Home'), findsOneWidget);
+    });
+
+    testWidgets('shows cancel icon with correct size', (tester) async {
+      await tester.pumpWidget(_wrap(const PaymentCancelPage()));
+      final icon = tester.widget<Icon>(find.byIcon(Icons.cancel_outlined));
+      expect(icon.size, 80);
     });
   });
 }

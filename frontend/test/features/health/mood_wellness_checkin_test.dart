@@ -46,5 +46,97 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
+
+    testWidgets('shows "How are you feeling today?" heading', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.text('How are you feeling today?'), findsOneWidget);
+    });
+
+    testWidgets('shows "Pain Level:" heading', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Pain Level:'), findsOneWidget);
+    });
+
+    testWidgets('shows two Slider widgets (mood and pain)', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Slider), findsNWidgets(2));
+    });
+
+    testWidgets('shows mood emoji text for default value 5', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.textContaining('Mood:'), findsOneWidget);
+    });
+
+    testWidgets('shows pain emoji text for default value 5', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.textContaining('Pain:'), findsOneWidget);
+    });
+
+    testWidgets('shows notes TextField', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('shows hint text in notes field', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Write about your day or feelings here... (optional)'),
+          findsOneWidget);
+    });
+
+    testWidgets('shows "Would you like to share anything else?" label',
+        (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Would you like to share anything else?'), findsOneWidget);
+    });
+
+    testWidgets('shows Submit button', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Submit'), findsOneWidget);
+    });
+
+    testWidgets('shows ElevatedButton for submit', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+  });
+
+  group('MoodWellnessCheckIn – interaction', () {
+    testWidgets('can enter text in notes field', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(find.byType(TextField), 'Feeling great today');
+      expect(find.text('Feeling great today'), findsOneWidget);
+    });
+
+    testWidgets('Submit button is enabled initially', (tester) async {
+      _setLargeViewport(tester);
+      addTearDown(tester.view.resetPhysicalSize);
+      await tester.pumpWidget(_wrap());
+      final button = tester.widget<ElevatedButton>(
+        find.byType(ElevatedButton),
+      );
+      expect(button.onPressed, isNotNull);
+    });
   });
 }

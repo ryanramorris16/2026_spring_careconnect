@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// =============================
-/// FakeFilePicker — no abstract inheritance issues
+/// FakeFilePicker -- no abstract inheritance issues
 /// =============================
 class FakeFilePicker {
   FilePickerResult? result;
@@ -90,7 +90,32 @@ END:VEVENT
     await tester.tap(find.text('Choose File'));
     await tester.pumpAndSettle();
 
-    // Verify UI didn’t crash
+    // Verify UI didn't crash
     expect(find.text('Import ICS'), findsOneWidget);
+  });
+
+  testWidgets('renders Import ICS button text', (tester) async {
+    await tester.pumpWidget(buildWidget({1: 'John'}));
+    expect(find.text('Import ICS'), findsOneWidget);
+  });
+
+  testWidgets('renders ElevatedButton', (tester) async {
+    await tester.pumpWidget(buildWidget({1: 'John'}));
+    expect(find.byType(ElevatedButton), findsWidgets);
+  });
+
+  testWidgets('tapping Import ICS opens dialog', (tester) async {
+    await tester.pumpWidget(buildWidget({1: 'John', 2: 'Jane'}));
+    await tester.tap(find.text('Import ICS'));
+    await tester.pumpAndSettle();
+    // The dialog should show Choose File button
+    expect(find.text('Choose File'), findsOneWidget);
+  });
+
+  testWidgets('dialog shows patient dropdown', (tester) async {
+    await tester.pumpWidget(buildWidget({1: 'John', 2: 'Jane'}));
+    await tester.tap(find.text('Import ICS'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DropdownButtonFormField<int>), findsOneWidget);
   });
 }

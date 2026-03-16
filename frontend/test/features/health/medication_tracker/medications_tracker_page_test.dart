@@ -44,5 +44,30 @@ void main() {
       await tester.pump();
       expect(find.textContaining('Patient ID not found'), findsOneWidget);
     });
+
+    testWidgets('shows error_outline icon on error', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    });
+
+    testWidgets('shows Retry button on error', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('shows refresh icon on Retry button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+    });
+
+    testWidgets('does NOT show CircularProgressIndicator after error',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
   });
 }

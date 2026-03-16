@@ -39,5 +39,45 @@ void main() {
       );
       expect(model.priceCents, 99900);
     });
+
+    test('name stores empty string', () {
+      final model = PackageModel(
+        name: '',
+        description: 'desc',
+        priceCents: 100,
+        id: 'id',
+      );
+      expect(model.name, '');
+    });
+
+    test('description stores empty string', () {
+      final model = PackageModel(
+        name: 'Plan',
+        description: '',
+        priceCents: 100,
+        id: 'id',
+      );
+      expect(model.description, '');
+    });
+
+    test('id stores correctly', () {
+      final model = PackageModel(
+        name: 'Plan',
+        description: 'desc',
+        priceCents: 100,
+        id: 'custom-id-123',
+      );
+      expect(model.id, 'custom-id-123');
+    });
+
+    test('negative priceCents stores correctly', () {
+      final model = PackageModel(
+        name: 'Refund',
+        description: 'Refund item',
+        priceCents: -500,
+        id: 'pkg-refund',
+      );
+      expect(model.priceCents, -500);
+    });
   });
 }

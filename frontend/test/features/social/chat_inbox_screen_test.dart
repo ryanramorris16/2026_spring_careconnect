@@ -57,5 +57,20 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(ListView), findsNothing);
     });
+
+    testWidgets('shows Scaffold', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar or title area', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Messages'), findsOneWidget);
+    });
+
+    testWidgets('shows Center while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
   });
 }

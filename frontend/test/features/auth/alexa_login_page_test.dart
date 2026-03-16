@@ -71,5 +71,33 @@ void main() {
       _drainOverflowExceptions(tester);
       expect(find.byType(ElevatedButton), findsWidgets);
     });
+
+    testWidgets('shows AppBar or navigation bar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      _drainOverflowExceptions(tester);
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('shows visibility icon for password toggle', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      _drainOverflowExceptions(tester);
+      expect(find.byIcon(Icons.visibility_off), findsWidgets);
+    });
+
+    testWidgets('shows lock icon for password field', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      _drainOverflowExceptions(tester);
+      expect(find.byIcon(Icons.lock), findsWidgets);
+    });
+
+    testWidgets('shows Column layout', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      _drainOverflowExceptions(tester);
+      expect(find.byType(Column), findsWidgets);
+    });
   });
 }

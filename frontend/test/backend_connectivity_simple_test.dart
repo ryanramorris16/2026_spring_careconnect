@@ -26,15 +26,28 @@ void main() {
     });
 
     test('Environment configuration should be consistent', () {
-      // This test verifies that the environment configuration is working
-      // In a real scenario, this would test against actual environment variables
-
-      // Act
       final baseUrl = getBackendBaseUrl();
-
-      // Assert
       expect(baseUrl, isNotNull);
       expect(baseUrl.length, greaterThan(0));
+    });
+
+    test('base URL starts with http or https', () {
+      final baseUrl = getBackendBaseUrl();
+      expect(
+        baseUrl.startsWith('http://') || baseUrl.startsWith('https://'),
+        isTrue,
+      );
+    });
+
+    test('base URL does not end with slash', () {
+      final baseUrl = getBackendBaseUrl();
+      expect(baseUrl.endsWith('/'), isFalse);
+    });
+
+    test('calling getBackendBaseUrl multiple times returns same result', () {
+      final first = getBackendBaseUrl();
+      final second = getBackendBaseUrl();
+      expect(first, second);
     });
   });
 }

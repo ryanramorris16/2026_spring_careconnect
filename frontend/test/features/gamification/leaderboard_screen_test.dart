@@ -37,5 +37,52 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(ListView), findsNothing);
     });
+
+    testWidgets('shows Scaffold', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows Center widget while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('does NOT show "No leaderboard data" while loading',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('No leaderboard data available.'), findsNothing);
+    });
+
+    testWidgets('does NOT show any Card while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Card), findsNothing);
+    });
+
+    testWidgets('does NOT show any ListTile while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ListTile), findsNothing);
+    });
+
+    testWidgets('AppBar has blue shade 900 background', (tester) async {
+      await tester.pumpWidget(_wrap());
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(appBar.backgroundColor, Colors.blue.shade900);
+    });
+
+    testWidgets('does NOT show CircleAvatar while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(CircleAvatar), findsNothing);
+    });
+
+    testWidgets('does NOT show person icon while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byIcon(Icons.person), findsNothing);
+    });
   });
 }

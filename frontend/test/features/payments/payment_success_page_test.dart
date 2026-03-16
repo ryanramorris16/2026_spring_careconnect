@@ -21,15 +21,24 @@ class _NullUserProvider extends MockUserProvider {
   UserSession? get user => null;
 }
 
-Widget _wrap() {
-  final provider = _NullUserProvider();
+Widget _wrap({
+  bool? isRegistration,
+  String? sessionId,
+  bool fromPortal = false,
+  UserProvider? provider,
+}) {
+  final p = provider ?? _NullUserProvider();
   final router = GoRouter(
     routes: [
       GoRoute(
         path: '/',
         builder: (context, state) => ChangeNotifierProvider<UserProvider>.value(
-          value: provider,
-          child: const PaymentSuccessPage(),
+          value: p,
+          child: PaymentSuccessPage(
+            isRegistration: isRegistration,
+            sessionId: sessionId,
+            fromPortal: fromPortal,
+          ),
         ),
       ),
       GoRoute(
@@ -54,20 +63,109 @@ Widget _wrap() {
 }
 
 void main() {
-  group('PaymentSuccessPage – initial render', () {
+  group('PaymentSuccessPage – default (non-registration)', () {
     testWidgets('renders without crashing', (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pump();
       expect(find.byType(PaymentSuccessPage), findsOneWidget);
-      // Drain all timers (1s, 2s, 3s, 4s) before test ends
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('shows success content', (tester) async {
+    testWidgets('shows "Payment Successful!" heading', (tester) async {
       await tester.pumpWidget(_wrap());
       await tester.pump();
-      // Payment success page typically shows a checkmark or success message
-      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.text('Payment Successful!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows check_circle icon', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows "Continue to Dashboard" button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Continue to Dashboard'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows subscription updated message', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('subscription has been updated'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows redirect countdown text', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Redirecting'), findsWidgets);
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
+  group('PaymentSuccessPage – isRegistration=true', () {
+    testWidgets('shows "Registration Complete!" heading', (tester) async {
+      await tester.pumpWidget(_wrap(isRegistration: true));
+      await tester.pump();
+      expect(find.text('Registration Complete!'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows "Continue to Login" button', (tester) async {
+      await tester.pumpWidget(_wrap(isRegistration: true));
+      await tester.pump();
+      expect(find.text('Continue to Login'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('shows RichText welcome content', (tester) async {
+      await tester.pumpWidget(_wrap(isRegistration: true));
+      await tester.pump();
+      // _buildWelcomeText uses RichText with TextSpan, not Text widget
+      expect(find.byType(RichText), findsWidgets);
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
+  group('PaymentSuccessPage – with sessionId', () {
+    testWidgets('displays session ID when provided', (tester) async {
+      await tester.pumpWidget(_wrap(sessionId: 'sess_abc123'));
+      await tester.pump();
+      expect(find.textContaining('sess_abc123'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('does not show session ID when null', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Session ID'), findsNothing);
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
+  group('PaymentSuccessPage – fromPortal', () {
+    testWidgets('shows "Return to Subscription Management" when fromPortal', (tester) async {
+      await tester.pumpWidget(_wrap(fromPortal: true));
+      await tester.pump();
+      expect(find.text('Return to Subscription Management'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+    });
+  });
+
+  group('PaymentSuccessPage – with named user', () {
+    testWidgets('renders registration page with named user', (tester) async {
+      final provider = MockUserProvider(
+        mockUser: MockUser(name: 'Alice', role: 'CAREGIVER'),
+      );
+      await tester.pumpWidget(_wrap(isRegistration: true, provider: provider));
+      await tester.pump();
+      // The name is inside a RichText/TextSpan, verify the page renders
+      expect(find.text('Registration Complete!'), findsOneWidget);
+      expect(find.byType(RichText), findsWidgets);
       await tester.pump(const Duration(seconds: 5));
     });
   });

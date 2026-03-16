@@ -74,5 +74,19 @@ void main() {
       await tester.pumpWidget(_wrap(HistorySection(value: invoice)));
       expect(find.byIcon(Icons.history), findsOneWidget);
     });
+
+    testWidgets('shows ListTile for each entry', (tester) async {
+      final invoice = InvoiceFactories.empty().copyWith(
+        history: [_entry(version: 1), _entry(version: 2)],
+      );
+      await tester.pumpWidget(_wrap(HistorySection(value: invoice)));
+      expect(find.byType(ListTile), findsNWidgets(2));
+    });
+
+    testWidgets('renders HistorySection widget type', (tester) async {
+      final invoice = InvoiceFactories.empty();
+      await tester.pumpWidget(_wrap(HistorySection(value: invoice)));
+      expect(find.byType(HistorySection), findsOneWidget);
+    });
   });
 }

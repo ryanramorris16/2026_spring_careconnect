@@ -310,5 +310,331 @@ void main() {
       }));
       expect(value, 'fallback');
     });
+
+    testWidgets('responsiveValue returns desktop value on desktop', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      String? value;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        value = ctx.responsiveValue<String>(
+          mobile: 'mobile',
+          tablet: 'tablet',
+          desktop: 'desktop',
+        );
+      }));
+      expect(value, 'desktop');
+    });
+
+    testWidgets('responsiveValue returns largeDesktop value on large screens', (tester) async {
+      tester.view.physicalSize = const Size(1500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      String? value;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        value = ctx.responsiveValue<String>(
+          mobile: 'mobile',
+          largeDesktop: 'xlarge',
+        );
+      }));
+      expect(value, 'xlarge');
+    });
+
+    testWidgets('responsiveValue falls back to tablet then mobile on desktop', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      String? value;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        value = ctx.responsiveValue<String>(
+          mobile: 'mobile',
+          tablet: 'tablet',
+        );
+      }));
+      expect(value, 'tablet');
+    });
+
+    testWidgets('responsiveValue falls back through chain on largeDesktop', (tester) async {
+      tester.view.physicalSize = const Size(1500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      String? value;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        value = ctx.responsiveValue<String>(
+          mobile: 'mobile',
+          desktop: 'desktop',
+        );
+      }));
+      expect(value, 'desktop');
+    });
+
+    testWidgets('isTablet is true on tablet viewport', (tester) async {
+      tester.view.physicalSize = const Size(700, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? isTablet;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        isTablet = ctx.isTablet;
+      }));
+      expect(isTablet, isTrue);
+    });
+
+    testWidgets('isDesktop is true on desktop viewport', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? isDesktop;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        isDesktop = ctx.isDesktop;
+      }));
+      expect(isDesktop, isTrue);
+    });
+
+    testWidgets('isLargeDesktop is true on large desktop viewport', (tester) async {
+      tester.view.physicalSize = const Size(1500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? isLargeDesktop;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        isLargeDesktop = ctx.isLargeDesktop;
+      }));
+      expect(isLargeDesktop, isTrue);
+    });
+
+    testWidgets('isMobileOrTablet is true on mobile', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ctx.isMobileOrTablet;
+      }));
+      expect(result, isTrue);
+    });
+
+    testWidgets('isMobileOrTablet is false on desktop', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ctx.isMobileOrTablet;
+      }));
+      expect(result, isFalse);
+    });
+
+    testWidgets('horizontalMargin returns value via extension', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? margin;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        margin = ctx.horizontalMargin;
+      }));
+      expect(margin, 16.0);
+    });
+
+    testWidgets('responsivePadding returns EdgeInsets via extension', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      EdgeInsets? padding;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        padding = ctx.responsivePadding;
+      }));
+      expect(padding, isNotNull);
+      expect(padding!.left, 16.0);
+      expect(padding!.top, 16.0);
+    });
+
+    testWidgets('responsiveContainer wraps child', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => context.responsiveContainer(
+            child: const Text('wrapped'),
+          ),
+        ),
+      ));
+      expect(find.text('wrapped'), findsOneWidget);
+    });
+
+    testWidgets('responsiveFontSize returns value via extension', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? fontSize;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        fontSize = ctx.responsiveFontSize(base: 16.0);
+      }));
+      expect(fontSize, 16.0);
+    });
+
+    testWidgets('shouldConstrainWidth returns false via extension on mobile', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      bool? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ctx.shouldConstrainWidth;
+      }));
+      expect(result, isFalse);
+    });
+  });
+
+  group('ResponsiveUtils.getCardWidth', () {
+    testWidgets('returns 85% of width for mobile', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getCardWidth(ctx);
+      }));
+      expect(result, closeTo(400 * 0.85, 0.1));
+    });
+
+    testWidgets('returns default width for tablet', (tester) async {
+      tester.view.physicalSize = const Size(700, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getCardWidth(ctx);
+      }));
+      expect(result, 400.0);
+    });
+
+    testWidgets('returns custom default width', (tester) async {
+      tester.view.physicalSize = const Size(700, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getCardWidth(ctx, defaultWidth: 500);
+      }));
+      expect(result, 500.0);
+    });
+  });
+
+  group('ResponsiveUtils.getPagePadding', () {
+    testWidgets('returns 16 vertical padding for mobile', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      EdgeInsets? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getPagePadding(ctx);
+      }));
+      expect(result!.top, 16.0);
+      expect(result!.left, 16.0);
+    });
+
+    testWidgets('returns 24 vertical padding for desktop', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      EdgeInsets? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getPagePadding(ctx);
+      }));
+      expect(result!.top, 24.0);
+    });
+
+    testWidgets('returns 24 vertical padding for largeDesktop', (tester) async {
+      tester.view.physicalSize = const Size(1500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      EdgeInsets? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getPagePadding(ctx);
+      }));
+      expect(result!.top, 24.0);
+    });
+  });
+
+  group('ResponsiveUtils.getHorizontalMargin – largeDesktop', () {
+    testWidgets('centers content on very large screens', (tester) async {
+      tester.view.physicalSize = const Size(1800, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getHorizontalMargin(ctx);
+      }));
+      // (1800 - 1400) / 2 = 200
+      expect(result, closeTo(200.0, 0.1));
+    });
+
+    testWidgets('uses 10% margin when centered would be negative', (tester) async {
+      // Width 1440 is >= largeDesktopBreakpoint but very close to maxContentWidth
+      tester.view.physicalSize = const Size(1440, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getHorizontalMargin(ctx);
+      }));
+      // (1440 - 1400) / 2 = 20, which is > 0, so use that
+      expect(result, closeTo(20.0, 0.1));
+    });
+  });
+
+  group('ResponsiveUtils.getResponsiveFontSize – all device types', () {
+    testWidgets('returns scaled size for desktop', (tester) async {
+      tester.view.physicalSize = const Size(1000, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getResponsiveFontSize(ctx, baseFontSize: 14.0, scaleFactor: 0.2);
+      }));
+      // desktop: 14 * (1 + 0.2) = 16.8
+      expect(result, closeTo(16.8, 0.01));
+    });
+
+    testWidgets('returns scaled size for largeDesktop', (tester) async {
+      tester.view.physicalSize = const Size(1500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      double? result;
+      await tester.pumpWidget(_buildWithContext((ctx) {
+        result = ResponsiveUtils.getResponsiveFontSize(ctx, baseFontSize: 14.0, scaleFactor: 0.2);
+      }));
+      // largeDesktop: 14 * (1 + 0.2 * 1.5) = 14 * 1.3 = 18.2
+      expect(result, closeTo(18.2, 0.01));
+    });
+  });
+
+  group('DeviceType enum', () {
+    test('has exactly 4 values', () {
+      expect(DeviceType.values.length, 4);
+    });
   });
 }

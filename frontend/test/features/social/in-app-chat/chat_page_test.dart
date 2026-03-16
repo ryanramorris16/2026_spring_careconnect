@@ -29,5 +29,71 @@ void main() {
       await tester.pump();
       expect(find.textContaining('Dr. Smith'), findsOneWidget);
     });
+
+    testWidgets('shows contact role in AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Doctor'), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows back arrow button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    });
+
+    testWidgets('shows phone action button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.phone), findsOneWidget);
+    });
+
+    testWidgets('shows video call action button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.videocam), findsOneWidget);
+    });
+
+    testWidgets('shows more_vert menu button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.more_vert), findsOneWidget);
+    });
+
+    testWidgets('shows person icon in CircleAvatar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.person), findsOneWidget);
+    });
+
+    testWidgets('shows CircleAvatar in AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(CircleAvatar), findsOneWidget);
+    });
+  });
+
+  group('ChatPage – with different contact', () {
+    testWidgets('shows custom contact name', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: ChatPage(contactName: 'Nurse Jane', contactRole: 'Nurse'),
+      ));
+      await tester.pump();
+      expect(find.textContaining('Nurse Jane'), findsOneWidget);
+    });
+
+    testWidgets('shows custom contact role', (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: ChatPage(contactName: 'Nurse Jane', contactRole: 'Nurse'),
+      ));
+      await tester.pump();
+      expect(find.text('Nurse'), findsOneWidget);
+    });
   });
 }

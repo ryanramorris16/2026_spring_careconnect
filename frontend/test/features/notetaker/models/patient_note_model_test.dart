@@ -83,5 +83,54 @@ void main() {
       expect(json['createdAt'], '2024-05-10T08:00:00.000');
       expect(json['updatedAt'], '2024-05-10T09:00:00.000');
     });
+
+    test('toJson includes all expected keys', () {
+      final note = PatientNote(
+        id: 'id-1',
+        patientId: 'pat-1',
+        note: 'Test note',
+        aiSummary: 'AI summary',
+        createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 2),
+      );
+      final json = note.toJson();
+      expect(json.containsKey('id'), isTrue);
+      expect(json.containsKey('patientId'), isTrue);
+      expect(json.containsKey('note'), isTrue);
+      expect(json.containsKey('aiSummary'), isTrue);
+      expect(json.containsKey('createdAt'), isTrue);
+      expect(json.containsKey('updatedAt'), isTrue);
+    });
+
+    test('roundtrip: fromJson(toJson) preserves data', () {
+      final original = PatientNote(
+        id: 'rt-1',
+        patientId: 'rt-pat',
+        note: 'Roundtrip test',
+        aiSummary: 'AI roundtrip',
+        createdAt: DateTime(2024, 6, 15, 12, 0),
+        updatedAt: DateTime(2024, 6, 15, 13, 0),
+      );
+      final restored = PatientNote.fromJson(original.toJson());
+      expect(restored.id, original.id);
+      expect(restored.patientId, original.patientId);
+      expect(restored.note, original.note);
+      expect(restored.aiSummary, original.aiSummary);
+    });
+  });
+
+  group('PatientNote constructor', () {
+    test('stores empty strings', () {
+      final note = PatientNote(
+        id: '',
+        patientId: '',
+        note: '',
+        aiSummary: '',
+        createdAt: DateTime(2024, 1, 1),
+        updatedAt: DateTime(2024, 1, 1),
+      );
+      expect(note.id, '');
+      expect(note.note, '');
+    });
   });
 }

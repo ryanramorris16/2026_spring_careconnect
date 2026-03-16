@@ -53,5 +53,24 @@ void main() {
       await tester.pump();
       expect(find.byType(ListTile), findsNothing);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows SnackBar with invalid user message', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump(); // process addPostFrameCallback
+      expect(find.text('Invalid user ID. Please re-login.'), findsOneWidget);
+    });
+
+    testWidgets('shows RefreshIndicator or pull-to-refresh area', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      // The empty state text indicates pull-to-refresh availability
+      expect(find.textContaining('Pull to refresh'), findsOneWidget);
+    });
   });
 }

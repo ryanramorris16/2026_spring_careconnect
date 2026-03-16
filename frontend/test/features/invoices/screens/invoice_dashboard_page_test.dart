@@ -44,5 +44,15 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.text('Active medical invoices'), findsOneWidget);
     });
+
+    testWidgets('shows Text widgets for KPI titles', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Text), findsWidgets);
+    });
+
+    testWidgets('shows Column layout', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Column), findsWidgets);
+    });
   });
 }

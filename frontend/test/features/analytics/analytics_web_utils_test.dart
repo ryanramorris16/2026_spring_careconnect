@@ -39,7 +39,7 @@ List<String> _capturePrint(void Function() fn) {
   Zone.current
       .fork(
         specification: ZoneSpecification(
-          print: (_, _, _, String line) => lines.add(line),
+          print: (self, parent, zone, String line) => lines.add(line),
         ),
       )
       .run(fn);

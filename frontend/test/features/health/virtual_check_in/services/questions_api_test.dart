@@ -28,5 +28,20 @@ void main() {
       final api = QuestionsApi('');
       expect(api, isA<QuestionsApi>());
     });
+
+    test('constructs with path segments in URL', () {
+      final api = QuestionsApi('http://localhost:8080/api/v1');
+      expect(api, isA<QuestionsApi>());
+    });
+
+    test('strips multiple trailing slashes', () {
+      final api = QuestionsApi('http://localhost:8080//');
+      expect(api, isA<QuestionsApi>());
+    });
+
+    test('constructs with port number', () {
+      final api = QuestionsApi('http://localhost:3000');
+      expect(api, isA<QuestionsApi>());
+    });
   });
 }

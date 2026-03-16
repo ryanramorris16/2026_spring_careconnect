@@ -655,6 +655,19 @@ void main() {
       expect(resp.statusCode, 200);
     });
 
+    test('sendConnectionRequest with custom message returns 200', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Sent"}'),
+        () => ApiService.sendConnectionRequest(
+          caregiverId: 1,
+          patientEmail: 'patient@example.com',
+          relationshipType: 'PRIMARY',
+          message: 'Custom connection message',
+        ),
+      );
+      expect(resp.statusCode, 200);
+    });
+
     test('getPendingRequestsByCaregiver returns 200', () async {
       // Pending connection requests are listed for a specific caregiver.
       final resp = await _withSpec(
@@ -687,6 +700,14 @@ void main() {
       final resp = await _withSpec(
         const _FakeSpec(200, '{"data":[]}'),
         () => ApiService.getPatientVitals(1),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('getPatientVitals returns 200 with custom days parameter', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"data":[]}'),
+        () => ApiService.getPatientVitals(1, days: 14),
       );
       expect(resp.statusCode, 200);
     });
@@ -1442,6 +1463,621 @@ void main() {
         ),
       );
       expect(resp.statusCode, 408);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 16 — registerPatient
+  // ──────────────────────────────────────────────────────────────────────────
+  group('registerPatient', () {
+    test('returns 200 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"id":10}'),
+        () => ApiService.registerPatient(
+          'John', 'Doe', 'john@example.com', '555-1234',
+          '1990-01-01', '123 Main St', 'CHILD', 1,
+        ),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('returns 400 on validation failure', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(400, '{"message":"Invalid data"}'),
+        () => ApiService.registerPatient(
+          '', '', '', '', '', '', '', 1,
+        ),
+      );
+      expect(resp.statusCode, 400);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 17 — logout
+  // ──────────────────────────────────────────────────────────────────────────
+  group('logout', () {
+    test('returns response and clears auth data', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Logged out"}'),
+        () => ApiService.logout(),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('returns 401 when session is already expired', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(401, '{"message":"Unauthorized"}'),
+        () => ApiService.logout(),
+      );
+      expect(resp.statusCode, 401);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 18 — getCaregiverMoodSummaries
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getCaregiverMoodSummaries', () {
+    test('returns decoded map on 200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '{"averageMood":3.5}'),
+        () => ApiService.getCaregiverMoodSummaries(1),
+      );
+      expect(result['averageMood'], 3.5);
+    });
+
+    test('returns empty map on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(500, '{"message":"Error"}'),
+        () => ApiService.getCaregiverMoodSummaries(1),
+      );
+      expect(result, isEmpty);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 19 — getActiveMedications
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getActiveMedications', () {
+    test('returns list on 200 with array body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '[{"id":1,"name":"Aspirin"}]'),
+        () => ApiService.getActiveMedications(1),
+      );
+      expect(result.length, 1);
+    });
+
+    test('returns empty list on 200 with non-list body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '{"data":"not a list"}'),
+        () => ApiService.getActiveMedications(1),
+      );
+      expect(result, isEmpty);
+    });
+
+    test('returns empty list on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(500, '{}'),
+        () => ApiService.getActiveMedications(1),
+      );
+      expect(result, isEmpty);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 20 — getTodaysMedications
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getTodaysMedications', () {
+    test('returns list on 200 with array body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '[{"id":1,"name":"Ibuprofen"}]'),
+        () => ApiService.getTodaysMedications(1),
+      );
+      expect(result.length, 1);
+    });
+
+    test('returns empty list on 200 with non-list body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '{"status":"ok"}'),
+        () => ApiService.getTodaysMedications(1),
+      );
+      expect(result, isEmpty);
+    });
+
+    test('returns empty list on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(404, '{}'),
+        () => ApiService.getTodaysMedications(1),
+      );
+      expect(result, isEmpty);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 21 — getAccessiblePatients
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getAccessiblePatients', () {
+    test('returns list of maps on 200', () async {
+      final body = _okJson([
+        {'id': 1, 'name': 'Patient A'},
+        {'id': 2, 'name': 'Patient B'},
+      ]);
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getAccessiblePatients(),
+      );
+      expect(result.length, 2);
+      expect(result.first['name'], 'Patient A');
+    });
+
+    test('throws on 403 access denied', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(403, '{"message":"Forbidden"}'),
+          () => ApiService.getAccessiblePatients(),
+        ),
+        throwsException,
+      );
+    });
+
+    test('throws with error message on other non-200 statuses', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(500, '{"message":"Server error"}'),
+          () => ApiService.getAccessiblePatients(),
+        ),
+        throwsException,
+      );
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 22 — hasAccessToPatient
+  // ──────────────────────────────────────────────────────────────────────────
+  group('hasAccessToPatient', () {
+    test('returns true on 200 with true body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, 'true'),
+        () => ApiService.hasAccessToPatient(1),
+      );
+      expect(result, isTrue);
+    });
+
+    test('returns false on 200 with false body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, 'false'),
+        () => ApiService.hasAccessToPatient(1),
+      );
+      expect(result, isFalse);
+    });
+
+    test('returns false on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(403, '{}'),
+        () => ApiService.hasAccessToPatient(1),
+      );
+      expect(result, isFalse);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 23 — getPatientStatus
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getPatientStatus', () {
+    test('returns map on 200', () async {
+      final body = _okJson({'status': 'stable', 'lastCheckIn': '2025-01-01'});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getPatientStatus(1),
+      );
+      expect(result['status'], 'stable');
+    });
+
+    test('throws on 403', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(403, '{}'),
+          () => ApiService.getPatientStatus(1),
+        ),
+        throwsException,
+      );
+    });
+
+    test('throws on 408 timeout', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(408, '{"error":"Request timeout"}'),
+          () => ApiService.getPatientStatus(1),
+        ),
+        throwsException,
+      );
+    });
+
+    test('throws on other error codes', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(500, '{}'),
+          () => ApiService.getPatientStatus(1),
+        ),
+        throwsException,
+      );
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 24 — Family member methods
+  // ──────────────────────────────────────────────────────────────────────────
+  group('Family member methods', () {
+    test('getFamilyMembers returns response', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '[{"id":1}]'),
+        () => ApiService.getFamilyMembers(1),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('getPatientDetails returns response', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"id":1,"name":"Alice"}'),
+        () => ApiService.getPatientDetails(1),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('addFamilyMember returns 201 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(201, '{"id":5}'),
+        () => ApiService.addFamilyMember(1, {
+          'firstName': 'Jane',
+          'lastName': 'Doe',
+          'relationship': 'SIBLING',
+        }),
+      );
+      expect(resp.statusCode, 201);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 25 — submitMoodAndPainLog
+  // ──────────────────────────────────────────────────────────────────────────
+  group('submitMoodAndPainLog', () {
+    test('returns 200 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Saved"}'),
+        () => ApiService.submitMoodAndPainLog(
+          moodValue: 4,
+          painValue: 2,
+          note: 'Feeling okay',
+          timestamp: DateTime(2025, 1, 15),
+        ),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('returns 400 on invalid input', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(400, '{"message":"Invalid"}'),
+        () => ApiService.submitMoodAndPainLog(
+          moodValue: -1,
+          painValue: -1,
+          note: '',
+          timestamp: DateTime.now(),
+        ),
+      );
+      expect(resp.statusCode, 400);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 26 — getPrimaryCareProvider
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getPrimaryCareProvider', () {
+    test('returns map on 200', () async {
+      final body = _okJson({'name': 'Dr. Smith', 'specialty': 'General'});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getPrimaryCareProvider(1),
+      );
+      expect(result['name'], 'Dr. Smith');
+    });
+
+    test('returns empty map on 200 with non-map body', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '"just a string"'),
+        () => ApiService.getPrimaryCareProvider(1),
+      );
+      expect(result, isEmpty);
+    });
+
+    test('returns empty map on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(404, '{}'),
+        () => ApiService.getPrimaryCareProvider(1),
+      );
+      expect(result, isEmpty);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 27 — Patient medication methods
+  // ──────────────────────────────────────────────────────────────────────────
+  group('Patient medication methods', () {
+    test('getPatientMedicationsForPatient returns 200', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '[{"id":1}]'),
+        () => ApiService.getPatientMedicationsForPatient(1),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('getPatientMedicationsForPatient returns 408 on timeout', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(408, '{"error":"Request timeout"}'),
+        () => ApiService.getPatientMedicationsForPatient(1),
+      );
+      expect(resp.statusCode, 408);
+    });
+
+    test('addPatientMedication returns 201 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(201, '{"id":5}'),
+        () => ApiService.addPatientMedication(1, {
+          'name': 'Aspirin',
+          'dosage': '100mg',
+          'frequency': 'daily',
+        }),
+      );
+      expect(resp.statusCode, 201);
+    });
+
+    test('addPatientMedication returns 408 on timeout', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(408, '{"error":"Request timeout"}'),
+        () => ApiService.addPatientMedication(1, {'name': 'Test'}),
+      );
+      expect(resp.statusCode, 408);
+    });
+
+    test('removePatientMedication returns 200 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Removed"}'),
+        () => ApiService.removePatientMedication(1, 5),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('removePatientMedication returns 408 on timeout', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(408, '{"error":"Request timeout"}'),
+        () => ApiService.removePatientMedication(1, 5),
+      );
+      expect(resp.statusCode, 408);
+    });
+
+    test('deleteMedicationByCaregiver returns 200 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Deleted"}'),
+        () => ApiService.deleteMedicationByCaregiver(1, 5, 2),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('deleteMedicationByCaregiver returns 408 on timeout', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(408, '{"error":"Request timeout"}'),
+        () => ApiService.deleteMedicationByCaregiver(1, 5, 2),
+      );
+      expect(resp.statusCode, 408);
+    });
+
+    test('approveMedication returns 200 on success', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(200, '{"message":"Approved"}'),
+        () => ApiService.approveMedication(1, 5),
+      );
+      expect(resp.statusCode, 200);
+    });
+
+    test('approveMedication returns 408 on timeout', () async {
+      final resp = await _withSpec(
+        const _FakeSpec(408, '{"error":"Request timeout"}'),
+        () => ApiService.approveMedication(1, 5),
+      );
+      expect(resp.statusCode, 408);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 28 — getMoodData and getDailyMoodAverage
+  // ──────────────────────────────────────────────────────────────────────────
+  group('Mood data methods', () {
+    test('getMoodData returns map on 200', () async {
+      final body = _okJson({'mood': 4, 'label': 'Happy'});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getMoodData(1),
+      );
+      expect(result?['mood'], 4);
+    });
+
+    test('getMoodData returns null on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(500, '{}'),
+        () => ApiService.getMoodData(1),
+      );
+      expect(result, isNull);
+    });
+
+    test('getDailyMoodAverage returns map on 200', () async {
+      final body = _okJson({'average': 3.5, 'checkIns': 5});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getDailyMoodAverage(1),
+      );
+      expect(result?['average'], 3.5);
+    });
+
+    test('getDailyMoodAverage returns null on non-200', () async {
+      final result = await _withSpec(
+        const _FakeSpec(404, '{}'),
+        () => ApiService.getDailyMoodAverage(1),
+      );
+      expect(result, isNull);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 29 — createSymptom with optional params
+  // ──────────────────────────────────────────────────────────────────────────
+  group('createSymptom optional params', () {
+    test('createSymptom with symptomValue and clinicalNotes', () async {
+      final body = _okJson({
+        'data': {'id': 20, 'symptomKey': 'pain', 'symptomValue': 'chest'}
+      });
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.createSymptom(
+          patientId: 1,
+          symptomKey: 'pain',
+          symptomValue: 'chest',
+          severity: 5,
+          clinicalNotes: 'Sharp pain in chest area',
+          takenAt: DateTime(2025, 6, 15, 10, 30),
+        ),
+      );
+      expect(result['symptomKey'], 'pain');
+    });
+
+    test('createSymptom with empty clinicalNotes is excluded', () async {
+      final body = _okJson({
+        'data': {'id': 21, 'symptomKey': 'headache'}
+      });
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.createSymptom(
+          patientId: 1,
+          symptomKey: 'headache',
+          severity: 2,
+          clinicalNotes: '   ',
+        ),
+      );
+      expect(result['symptomKey'], 'headache');
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 30 — updateSymptom with optional params
+  // ──────────────────────────────────────────────────────────────────────────
+  group('updateSymptom optional params', () {
+    test('updateSymptom with all optional fields', () async {
+      final body = _okJson({
+        'data': {'id': 5, 'symptomKey': 'cough', 'severity': 3}
+      });
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.updateSymptom(
+          id: 5,
+          symptomKey: 'cough',
+          symptomValue: 'dry',
+          severity: 3,
+          clinicalNotes: 'Persistent dry cough',
+          completed: false,
+          takenAt: DateTime(2025, 7, 1),
+        ),
+      );
+      expect(result['symptomKey'], 'cough');
+    });
+
+    test('updateSymptom returns empty map when data key is absent', () async {
+      final result = await _withSpec(
+        const _FakeSpec(200, '{"status":"ok"}'),
+        () => ApiService.updateSymptom(id: 5, severity: 1),
+      );
+      expect(result, isEmpty);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 31 — getEnhancedPatientProfile additional branches
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getEnhancedPatientProfile branches', () {
+    test('returns decoded map directly when no data key', () async {
+      final body = _okJson({'id': 5, 'bmi': 22.0});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getEnhancedPatientProfile(5),
+      );
+      expect(result?['bmi'], 22.0);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 32 — getPatientDashboard
+  // ──────────────────────────────────────────────────────────────────────────
+  group('getPatientDashboard', () {
+    test('returns map on 200', () async {
+      final body = _okJson({'mood': 4, 'tasks': 3});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getPatientDashboard(1),
+      );
+      expect(result['mood'], 4);
+    });
+
+    test('throws on 403', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(403, '{}'),
+          () => ApiService.getPatientDashboard(1),
+        ),
+        throwsException,
+      );
+    });
+
+    test('throws on other error codes', () async {
+      await expectLater(
+        _withSpec(
+          const _FakeSpec(500, '{}'),
+          () => ApiService.getPatientDashboard(1),
+        ),
+        throwsException,
+      );
+    });
+
+    test('uses custom days parameter', () async {
+      final body = _okJson({'mood': 3, 'days': 7});
+      final result = await _withSpec(
+        _FakeSpec(200, body),
+        () => ApiService.getPatientDashboard(1, days: 7),
+      );
+      expect(result['days'], 7);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Group 34 — ApiConstants additional assertions
+  // ──────────────────────────────────────────────────────────────────────────
+  group('ApiConstants additional', () {
+    test('patient and mood share the same endpoint', () {
+      // Both patient and mood constants point to the same base.
+      expect(ApiConstants.patient, equals(ApiConstants.mood));
+    });
+
+    test('all endpoints start with http', () {
+      // Verify all endpoints are proper URLs.
+      final endpoints = [
+        ApiConstants.auth, ApiConstants.feed, ApiConstants.users,
+        ApiConstants.friends, ApiConstants.analytics, ApiConstants.baseUrl,
+        ApiConstants.familyMembers, ApiConstants.patient, ApiConstants.mood,
+        ApiConstants.patients, ApiConstants.caregivers, ApiConstants.files,
+        ApiConstants.connectionRequests, ApiConstants.subscriptions,
+        ApiConstants.tasks, ApiConstants.allergies, ApiConstants.symptoms,
+        ApiConstants.baseUrlV2, ApiConstants.tasksV2,
+        ApiConstants.aiChat, ApiConstants.aiConfig,
+        ApiConstants.invoices, ApiConstants.evv,
+      ];
+      for (final ep in endpoints) {
+        expect(ep, startsWith('http'));
+      }
     });
   });
 }

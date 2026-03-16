@@ -49,5 +49,41 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(ListTile), findsNothing);
     });
+
+    testWidgets('shows comment input TextField', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('shows "Add a comment..." hint text', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Add a comment...'), findsOneWidget);
+    });
+
+    testWidgets('shows Send button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Send'), findsOneWidget);
+    });
+
+    testWidgets('shows ElevatedButton for Send', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('shows Divider between comments and input', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('can enter text in comment field', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(find.byType(TextField), 'Nice post!');
+      expect(find.text('Nice post!'), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar with blue background', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
   });
 }

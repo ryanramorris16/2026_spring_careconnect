@@ -19,4 +19,28 @@ void main() {
       await expectLater(web.initializeLocalDbOnStartup(), completes);
     });
   });
+
+  group('stub returns Future<void>', () {
+    test('stub returns a Future', () {
+      final result = stub.initializeLocalDbOnStartup();
+      expect(result, isA<Future<void>>());
+    });
+
+    test('web returns a Future', () {
+      final result = web.initializeLocalDbOnStartup();
+      expect(result, isA<Future<void>>());
+    });
+
+    test('stub can be called multiple times', () async {
+      await stub.initializeLocalDbOnStartup();
+      await stub.initializeLocalDbOnStartup();
+      // No exception means success
+    });
+
+    test('web can be called multiple times', () async {
+      await web.initializeLocalDbOnStartup();
+      await web.initializeLocalDbOnStartup();
+      // No exception means success
+    });
+  });
 }

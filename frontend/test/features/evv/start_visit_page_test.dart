@@ -42,5 +42,20 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(Scaffold), findsOneWidget);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows Center while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('renders with different patientId', (tester) async {
+      await tester.pumpWidget(_wrap(patientId: 99));
+      expect(find.byType(StartVisitPage), findsOneWidget);
+    });
   });
 }

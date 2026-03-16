@@ -31,5 +31,20 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.text('Communication Features Test'), findsOneWidget);
     });
+
+    testWidgets('shows Communication Test title', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Communication Test'), findsOneWidget);
+    });
+
+    testWidgets('shows Column layout', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Column), findsWidgets);
+    });
+
+    testWidgets('shows SingleChildScrollView', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(SingleChildScrollView), findsWidgets);
+    });
   });
 }

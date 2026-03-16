@@ -124,5 +124,137 @@ void main() {
           _wrap(const CaregiverShiftSchedulingScreen()));
       expect(find.byIcon(Icons.access_time), findsWidgets);
     });
+
+    testWidgets('tapping start time tile opens time picker', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      // Tap the first "No time selected" text (start time ListTile)
+      await tester.tap(find.text('No time selected').first);
+      await tester.pumpAndSettle();
+      // TimePicker dialog should appear — look for the dialog
+      expect(find.byType(TimePickerDialog), findsOneWidget);
+    });
+
+    testWidgets('selecting start time updates display', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      await tester.tap(find.text('No time selected').first);
+      await tester.pumpAndSettle();
+      // Find and tap the OK/confirm button in the dialog
+      final okFinder = find.widgetWithText(TextButton, 'OK');
+      if (okFinder.evaluate().isNotEmpty) {
+        await tester.tap(okFinder);
+      } else {
+        // Try material 3 style
+        await tester.tap(find.text('OK'));
+      }
+      await tester.pumpAndSettle();
+      // One "No time selected" should remain (end time)
+      expect(find.text('No time selected'), findsOneWidget);
+    });
+
+    testWidgets('tapping end time tile opens time picker', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      await tester.tap(find.text('No time selected').at(1));
+      await tester.pumpAndSettle();
+      expect(find.byType(TimePickerDialog), findsOneWidget);
+    });
+
+    testWidgets('selecting end time updates display', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      await tester.tap(find.text('No time selected').at(1));
+      await tester.pumpAndSettle();
+      final okFinder = find.widgetWithText(TextButton, 'OK');
+      if (okFinder.evaluate().isNotEmpty) {
+        await tester.tap(okFinder);
+      } else {
+        await tester.tap(find.text('OK'));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('No time selected'), findsOneWidget);
+    });
+
+    testWidgets('cancelling time picker does not update time', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      await tester.tap(find.text('No time selected').first);
+      await tester.pumpAndSettle();
+      final cancelFinder = find.widgetWithText(TextButton, 'Cancel');
+      if (cancelFinder.evaluate().isNotEmpty) {
+        await tester.tap(cancelFinder);
+      } else {
+        await tester.tap(find.text('CANCEL'));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('No time selected'), findsNWidgets(2));
+    });
+
+    testWidgets('tapping selected day chip deselects it', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      // Select first chip
+      await tester.tap(find.byType(ChoiceChip).first);
+      await tester.pump();
+      expect(
+        tester.widgetList<ChoiceChip>(find.byType(ChoiceChip)).first.selected,
+        isTrue,
+      );
+      // Deselect it
+      await tester.tap(find.byType(ChoiceChip).first);
+      await tester.pump();
+      expect(
+        tester.widgetList<ChoiceChip>(find.byType(ChoiceChip)).first.selected,
+        isFalse,
+      );
+    });
+
+    testWidgets('can select multiple day chips', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      // Select first and third chips
+      await tester.tap(find.byType(ChoiceChip).at(0));
+      await tester.pump();
+      await tester.tap(find.byType(ChoiceChip).at(2));
+      await tester.pump();
+      final chips = tester.widgetList<ChoiceChip>(find.byType(ChoiceChip)).toList();
+      expect(chips[0].selected, isTrue);
+      expect(chips[1].selected, isFalse);
+      expect(chips[2].selected, isTrue);
+    });
+
+    testWidgets('tapping Save pops the screen', (tester) async {
+      // Wrap with a Navigator so pop() has somewhere to go
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CaregiverShiftSchedulingScreen(),
+              ),
+            ),
+            child: const Text('Go'),
+          ),
+        ),
+      ));
+      // Navigate to the shift screen
+      await tester.tap(find.text('Go'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CaregiverShiftSchedulingScreen), findsOneWidget);
+      // Tap Save
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      // Should have popped back
+      expect(find.byType(CaregiverShiftSchedulingScreen), findsNothing);
+      expect(find.text('Go'), findsOneWidget);
+    });
+
+    testWidgets('shows two Card widgets for time pickers', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CaregiverShiftSchedulingScreen()));
+      expect(find.byType(Card), findsNWidgets(2));
+    });
   });
 }

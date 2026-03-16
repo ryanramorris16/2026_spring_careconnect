@@ -33,5 +33,35 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.text('No files yet'), findsOneWidget);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows photo_library_outlined icon when empty', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byIcon(Icons.photo_library_outlined), findsWidgets);
+    });
+
+    testWidgets('shows "Take photo" button when empty', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Take photo'), findsOneWidget);
+    });
+
+    testWidgets('shows "From gallery" button when empty', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('From gallery'), findsOneWidget);
+    });
+
+    testWidgets('shows camera_alt icon', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byIcon(Icons.camera_alt), findsOneWidget);
+    });
+
+    testWidgets('shows ElevatedButton widgets', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsWidgets);
+    });
   });
 }

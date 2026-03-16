@@ -2,75 +2,125 @@
 // (lib/config/navigation/navigation_helper.dart).
 //
 // Coverage strategy:
-//   getTabIndexFromName — pure static, no platform channel dependency.
-//   getMainScreenConfig — reads from UserRoleStorageService (SharedPreferences
-//                         mock), testable for all role branches.
-//   isAuthenticated     — delegates to UserRoleStorageService.isLoggedIn(),
-//                         testable via SharedPreferences mock.
-//
-//   Branches tested (getTabIndexFromName, PATIENT role):
-//     'home'     → 0
-//     'health'   → 1
-//     'messages' → 2
-//     'profile'  → 3
-//     unknown    → null
-//
-//   Branches tested (getTabIndexFromName, non-PATIENT role, e.g. CAREGIVER):
-//     'patients' → 0
-//     'tasks'    → 1
-//     'analytics'→ 2
-//     'messages' → 3
-//     'profile'  → 4
-//     unknown    → null
-//
-//   Additional branches (getTabIndexFromName):
-//     role comparison is case-insensitive ('patient' == 'PATIENT').
-//     tabName comparison is case-insensitive ('HOME' == 'home').
-//
-//   Branches tested (getMainScreenConfig):
-//     not logged in  → null
-//     PATIENT role   → MainScreenConfig.forPatient
-//     CAREGIVER role → MainScreenConfig.forCaregiver
-//     FAMILY_LINK    → MainScreenConfig.forFamilyMember
-//     ADMIN          → MainScreenConfig with userRole='ADMIN'
-//     unknown role   → null
-//
-//   Branches tested (isAuthenticated):
-//     not logged in → false
-//     logged in     → true
+//   getTabIndexFromName     — pure static, no platform channel dependency.
+//   _getTabNameFromIndex    — private, tested indirectly via navigateToMainScreen.
+//   getMainScreenConfig     — reads from UserRoleStorageService (SharedPreferences
+//                             mock), testable for all role branches.
+//   isAuthenticated         — delegates to UserRoleStorageService.isLoggedIn().
+//   navigateToMainScreen    — widget test with GoRouter to verify navigation.
+//   navigateToTab           — widget test with GoRouter.
+//   logout                  — widget test with GoRouter + UserProvider.
+//   NavigationContextExtension — extension methods on BuildContext.
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:care_connect_app/config/navigation/navigation_helper.dart';
+import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/user_role_storage_service.dart';
 
+/// Records which route was navigated to via GoRouter.
+class _RouteTracker {
+  String? lastRoute;
+  String? lastMethod; // 'go' or 'push'
+}
+
+/// Creates a GoRouter that tracks navigation to /dashboard and /login.
+GoRouter _buildRouter(_RouteTracker tracker, {Widget? homeChild}) {
+  return GoRouter(
+    initialLocation: '/home',
+    routes: [
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => homeChild ?? const SizedBox(),
+      ),
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) {
+          tracker.lastRoute =
+              '/dashboard${state.uri.query.isNotEmpty ? '?${state.uri.query}' : ''}';
+          tracker.lastMethod ??= 'go';
+          return const SizedBox();
+        },
+      ),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) {
+          tracker.lastRoute = '/login';
+          return const SizedBox();
+        },
+      ),
+    ],
+  );
+}
+
 void main() {
-  // ─── PATIENT role ──────────────────────────────────────────────────────────
+  // ─── Setup for tests that need platform channels ──────────────────────────
+
+  late _RouteTracker tracker;
+
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+      (call) async {
+        if (call.method == 'readAll') return <String, String>{};
+        if (call.method == 'containsKey') return false;
+        return null;
+      },
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+      (call) async {
+        if (call.method == 'check') return ['wifi'];
+        return null;
+      },
+    );
+    tracker = _RouteTracker();
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
+      null,
+    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+      null,
+    );
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // getTabIndexFromName — PATIENT role
+  // ═══════════════════════════════════════════════════════════════════════════
 
   group('getTabIndexFromName – PATIENT role', () {
     test('"home" returns 0', () {
-      // Verifies the first patient tab maps to index 0.
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'home'), 0);
     });
 
     test('"health" returns 1', () {
-      // Verifies the health/check-in tab maps to index 1.
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'health'), 1);
     });
 
     test('"messages" returns 2', () {
-      // Verifies the messages tab maps to index 2 for patients.
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'messages'), 2);
     });
 
     test('"profile" returns 3', () {
-      // Verifies the profile tab maps to index 3 for patients.
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'profile'), 3);
     });
 
     test('unknown tab returns null', () {
-      // Verifies that an unrecognised tab name returns null (no match).
       expect(
         NavigationHelper.getTabIndexFromName('PATIENT', 'dashboard'),
         isNull,
@@ -78,22 +128,21 @@ void main() {
     });
 
     test('role matching is case-insensitive', () {
-      // Verifies that lowercase 'patient' is treated the same as 'PATIENT'.
       expect(NavigationHelper.getTabIndexFromName('patient', 'home'), 0);
     });
 
     test('tabName matching is case-insensitive', () {
-      // Verifies that uppercase tab names are normalised to lowercase.
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'HOME'), 0);
       expect(NavigationHelper.getTabIndexFromName('PATIENT', 'HEALTH'), 1);
     });
   });
 
-  // ─── Non-PATIENT roles ─────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // getTabIndexFromName — non-PATIENT roles
+  // ═══════════════════════════════════════════════════════════════════════════
 
   group('getTabIndexFromName – CAREGIVER (non-patient) role', () {
     test('"patients" returns 0', () {
-      // Verifies the patient-list tab maps to index 0 for caregivers.
       expect(
         NavigationHelper.getTabIndexFromName('CAREGIVER', 'patients'),
         0,
@@ -101,12 +150,10 @@ void main() {
     });
 
     test('"tasks" returns 1', () {
-      // Verifies the tasks tab maps to index 1.
       expect(NavigationHelper.getTabIndexFromName('CAREGIVER', 'tasks'), 1);
     });
 
     test('"analytics" returns 2', () {
-      // Verifies the analytics tab maps to index 2.
       expect(
         NavigationHelper.getTabIndexFromName('CAREGIVER', 'analytics'),
         2,
@@ -114,7 +161,6 @@ void main() {
     });
 
     test('"messages" returns 3', () {
-      // Verifies the messages tab maps to index 3 for non-patients.
       expect(
         NavigationHelper.getTabIndexFromName('CAREGIVER', 'messages'),
         3,
@@ -122,7 +168,6 @@ void main() {
     });
 
     test('"profile" returns 4', () {
-      // Verifies the profile tab maps to index 4 for caregivers.
       expect(
         NavigationHelper.getTabIndexFromName('CAREGIVER', 'profile'),
         4,
@@ -130,7 +175,6 @@ void main() {
     });
 
     test('unknown tab returns null', () {
-      // Verifies that an unrecognised tab name returns null.
       expect(
         NavigationHelper.getTabIndexFromName('CAREGIVER', 'home'),
         isNull,
@@ -138,7 +182,6 @@ void main() {
     });
 
     test('role matching is case-insensitive for non-patient', () {
-      // Verifies that 'caregiver' is treated the same as 'CAREGIVER'.
       expect(
         NavigationHelper.getTabIndexFromName('caregiver', 'analytics'),
         2,
@@ -146,7 +189,6 @@ void main() {
     });
 
     test('FAMILY_LINK uses the non-patient branch', () {
-      // Verifies FAMILY_LINK falls into the same branch as CAREGIVER.
       expect(
         NavigationHelper.getTabIndexFromName('FAMILY_LINK', 'tasks'),
         1,
@@ -154,7 +196,6 @@ void main() {
     });
 
     test('ADMIN uses the non-patient branch', () {
-      // Verifies ADMIN falls into the same branch as CAREGIVER.
       expect(
         NavigationHelper.getTabIndexFromName('ADMIN', 'profile'),
         4,
@@ -162,15 +203,12 @@ void main() {
     });
   });
 
-  // ─── getMainScreenConfig ───────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // getMainScreenConfig
+  // ═══════════════════════════════════════════════════════════════════════════
 
   group('getMainScreenConfig', () {
-    // After the first call, UserRoleStorageService caches its SharedPreferences
-    // instance.  Subsequent tests update the stored values through the service
-    // itself (setUserData / clearUserData) so the cache stays consistent.
-
     test('returns null when user is not logged in', () async {
-      // Verifies the not-logged-in guard returns null without building a config.
       SharedPreferences.setMockInitialValues({});
       await UserRoleStorageService.instance.clearUserData();
 
@@ -178,8 +216,34 @@ void main() {
       expect(config, isNull);
     });
 
+    test('returns null when userId is 0', () async {
+      // Directly set values to simulate userId == 0
+      SharedPreferences.setMockInitialValues({
+        'user_role': 'PATIENT',
+        'user_id': 0,
+        'is_logged_in': true,
+      });
+      // The service already has prefs cached, so we set via service
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 0,
+      );
+
+      final config = await NavigationHelper.getMainScreenConfig();
+      expect(config, isNull);
+    });
+
+    test('returns null when userId is negative', () async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: -1,
+      );
+
+      final config = await NavigationHelper.getMainScreenConfig();
+      expect(config, isNull);
+    });
+
     test('returns PATIENT config for PATIENT role', () async {
-      // Verifies the PATIENT switch branch constructs forPatient.
       await UserRoleStorageService.instance.setUserData(
         role: 'PATIENT',
         userId: 5,
@@ -189,23 +253,27 @@ void main() {
       final config = await NavigationHelper.getMainScreenConfig();
       expect(config, isNotNull);
       expect(config!.userRole, 'PATIENT');
+      expect(config.userId, 5);
+      expect(config.patientId, 10);
     });
 
     test('returns CAREGIVER config for CAREGIVER role', () async {
-      // Verifies the CAREGIVER switch branch constructs forCaregiver.
       await UserRoleStorageService.instance.setUserData(
         role: 'CAREGIVER',
         userId: 10,
         caregiverId: 3,
+        patientId: 7,
       );
 
       final config = await NavigationHelper.getMainScreenConfig();
       expect(config, isNotNull);
       expect(config!.userRole, 'CAREGIVER');
+      expect(config.userId, 10);
+      expect(config.caregiverId, 3);
+      expect(config.patientId, 7);
     });
 
     test('returns FAMILY_LINK config for FAMILY_LINK role', () async {
-      // Verifies the FAMILY_LINK switch branch constructs forFamilyMember.
       await UserRoleStorageService.instance.setUserData(
         role: 'FAMILY_LINK',
         userId: 15,
@@ -215,10 +283,11 @@ void main() {
       final config = await NavigationHelper.getMainScreenConfig();
       expect(config, isNotNull);
       expect(config!.userRole, 'FAMILY_LINK');
+      expect(config.userId, 15);
+      expect(config.patientId, 20);
     });
 
     test('returns ADMIN config for ADMIN role', () async {
-      // Verifies the ADMIN switch branch constructs a generic MainScreenConfig.
       await UserRoleStorageService.instance.setUserData(
         role: 'ADMIN',
         userId: 20,
@@ -227,10 +296,12 @@ void main() {
       final config = await NavigationHelper.getMainScreenConfig();
       expect(config, isNotNull);
       expect(config!.userRole, 'ADMIN');
+      expect(config.showAppBar, isTrue);
+      expect(config.appBarTitle, 'Admin Dashboard');
+      expect(config.primaryColor, Colors.red);
     });
 
     test('returns null for unknown role', () async {
-      // Verifies the default switch branch returns null.
       await UserRoleStorageService.instance.setUserData(
         role: 'UNKNOWN_ROLE',
         userId: 25,
@@ -241,11 +312,12 @@ void main() {
     });
   });
 
-  // ─── isAuthenticated ───────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // isAuthenticated
+  // ═══════════════════════════════════════════════════════════════════════════
 
   group('isAuthenticated', () {
     test('returns false when user is not logged in', () async {
-      // Verifies delegation to UserRoleStorageService.isLoggedIn() returns false.
       await UserRoleStorageService.instance.clearUserData();
 
       final result = await NavigationHelper.isAuthenticated();
@@ -253,7 +325,6 @@ void main() {
     });
 
     test('returns true when user is logged in', () async {
-      // Verifies delegation to UserRoleStorageService.isLoggedIn() returns true.
       await UserRoleStorageService.instance.setUserData(
         role: 'PATIENT',
         userId: 5,
@@ -261,6 +332,522 @@ void main() {
 
       final result = await NavigationHelper.isAuthenticated();
       expect(result, isTrue);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // navigateToMainScreen
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  group('navigateToMainScreen', () {
+    testWidgets('redirects to /login when user is not logged in',
+        (tester) async {
+      await UserRoleStorageService.instance.clearUserData();
+
+      final router = _buildRouter(tracker);
+
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      // Grab a context from the widget tree
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/login');
+    });
+
+    testWidgets('navigates to /dashboard without tab when no tabIndex given',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+        patientId: 10,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=health for PATIENT with tabIndex=1',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+        patientId: 10,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 1);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=health');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=home for PATIENT with tabIndex=0',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 0);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=home');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=messages for PATIENT with tabIndex=2',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 2);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=messages');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=profile for PATIENT with tabIndex=3',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 3);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=profile');
+    });
+
+    testWidgets(
+        'navigates to /dashboard without tab for PATIENT with invalid tabIndex',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 99);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=patients for CAREGIVER with tabIndex=0',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 0);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=patients');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=tasks for CAREGIVER with tabIndex=1',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 1);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=tasks');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=analytics for CAREGIVER with tabIndex=2',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 2);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=analytics');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=messages for CAREGIVER with tabIndex=3',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 3);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=messages');
+    });
+
+    testWidgets(
+        'navigates to /dashboard?tab=profile for CAREGIVER with tabIndex=4',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 4);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=profile');
+    });
+
+    testWidgets(
+        'navigates to /dashboard without tab for CAREGIVER with invalid tabIndex',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+        caregiverId: 3,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(context, tabIndex: 99);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard');
+    });
+
+    testWidgets('uses go when clearHistory is true', (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToMainScreen(
+        context,
+        clearHistory: true,
+      );
+      await tester.pumpAndSettle();
+
+      // Verify it navigated to dashboard (go replaces the stack)
+      expect(tracker.lastRoute, '/dashboard');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // navigateToTab
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  group('navigateToTab', () {
+    testWidgets('redirects to /login when user is not logged in',
+        (tester) async {
+      await UserRoleStorageService.instance.clearUserData();
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToTab(context, 'health');
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/login');
+    });
+
+    testWidgets('navigates to /dashboard?tab=<tabName> when logged in',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToTab(context, 'health');
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=health');
+    });
+
+    testWidgets('navigates to correct tab for analytics', (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.navigateToTab(context, 'analytics');
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=analytics');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // logout
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  group('logout', () {
+    testWidgets('clears user data and navigates to /login', (tester) async {
+      // Store some user data first
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+        patientId: 10,
+      );
+
+      final userProvider = UserProvider();
+      final router = _buildRouter(tracker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<UserProvider>.value(
+          value: userProvider,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await NavigationHelper.logout(context);
+      await tester.pumpAndSettle();
+
+      // Verify navigation to /login
+      expect(tracker.lastRoute, '/login');
+
+      // Verify user data was cleared
+      final isLoggedIn = await UserRoleStorageService.instance.isLoggedIn();
+      expect(isLoggedIn, isFalse);
+
+      userProvider.dispose();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NavigationContextExtension
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  group('NavigationContextExtension', () {
+    testWidgets('navigateToMainScreen extension delegates correctly',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.navigateToMainScreen(tabIndex: 1);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=health');
+    });
+
+    testWidgets(
+        'navigateToMainScreen extension with clearHistory delegates correctly',
+        (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.navigateToMainScreen(clearHistory: true);
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard');
+    });
+
+    testWidgets('navigateToTab extension delegates correctly', (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'CAREGIVER',
+        userId: 10,
+      );
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.navigateToTab('messages');
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/dashboard?tab=messages');
+    });
+
+    testWidgets('logoutUser extension delegates correctly', (tester) async {
+      await UserRoleStorageService.instance.setUserData(
+        role: 'PATIENT',
+        userId: 5,
+      );
+
+      final userProvider = UserProvider();
+      final router = _buildRouter(tracker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<UserProvider>.value(
+          value: userProvider,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.logoutUser();
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/login');
+
+      userProvider.dispose();
+    });
+
+    testWidgets(
+        'navigateToMainScreen extension redirects to login when not logged in',
+        (tester) async {
+      await UserRoleStorageService.instance.clearUserData();
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.navigateToMainScreen();
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/login');
+    });
+
+    testWidgets(
+        'navigateToTab extension redirects to login when not logged in',
+        (tester) async {
+      await UserRoleStorageService.instance.clearUserData();
+
+      final router = _buildRouter(tracker);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SizedBox).first);
+
+      await context.navigateToTab('health');
+      await tester.pumpAndSettle();
+
+      expect(tracker.lastRoute, '/login');
     });
   });
 }

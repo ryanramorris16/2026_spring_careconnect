@@ -35,4 +35,51 @@ void main() {
     );
     expect(find.byType(StreamingAsrAndDiarizationScreen), findsOneWidget);
   });
+
+  testWidgets('renders a Center widget', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: StreamingAsrAndDiarizationScreen()),
+      ),
+    );
+    expect(find.byType(Center), findsWidgets);
+  });
+
+  testWidgets('renders a Padding widget', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: StreamingAsrAndDiarizationScreen()),
+      ),
+    );
+    expect(find.byType(Padding), findsWidgets);
+  });
+
+  testWidgets('renders a Text widget', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: StreamingAsrAndDiarizationScreen()),
+      ),
+    );
+    expect(find.byType(Text), findsOneWidget);
+  });
+
+  testWidgets('message mentions Web', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: StreamingAsrAndDiarizationScreen()),
+      ),
+    );
+    expect(find.textContaining('Web'), findsOneWidget);
+  });
+
+  testWidgets('renders without callbacks', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: StreamingAsrAndDiarizationScreen(patientId: 'abc'),
+        ),
+      ),
+    );
+    expect(find.byType(StreamingAsrAndDiarizationScreen), findsOneWidget);
+  });
 }

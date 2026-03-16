@@ -210,5 +210,80 @@ void main() {
       expect(item.subtitle, 'Sub');
       expect(item.ctaLabel, 'Act');
     });
+
+    test('NotificationItem onTapCTA defaults to null', () {
+      const item = NotificationItem(
+        kind: NotificationKind.reminder,
+        title: 'No CTA',
+      );
+      expect(item.onTapCTA, isNull);
+      expect(item.subtitle, isNull);
+      expect(item.ctaLabel, isNull);
+    });
+  });
+
+  group('NotificationsPanel – notification kinds styling', () {
+    testWidgets('renders important notification with warning icon', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [
+          const NotificationItem(kind: NotificationKind.important, title: 'Important item'),
+        ],
+      )));
+      await tester.pump();
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.text('Important item'), findsOneWidget);
+    });
+
+    testWidgets('renders reminder notification', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [_reminder(title: 'Take pills')],
+      )));
+      await tester.pump();
+      expect(find.text('Take pills'), findsOneWidget);
+    });
+
+    testWidgets('renders three notifications', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [
+          _urgent(title: 'Alert 1'),
+          const NotificationItem(kind: NotificationKind.important, title: 'Alert 2'),
+          _reminder(title: 'Alert 3'),
+        ],
+      )));
+      await tester.pump();
+      expect(find.text('Alert 1'), findsOneWidget);
+      expect(find.text('Alert 2'), findsOneWidget);
+      expect(find.text('Alert 3'), findsOneWidget);
+    });
+
+    testWidgets('shows up arrow icon when expanded', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [_urgent()],
+        initiallyExpanded: true,
+      )));
+      expect(find.byIcon(Icons.keyboard_arrow_up), findsOneWidget);
+    });
+
+    testWidgets('shows down arrow icon when collapsed', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [_urgent()],
+        initiallyExpanded: false,
+      )));
+      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+    });
+
+    testWidgets('does not show CTA for empty ctaLabel string', (tester) async {
+      await tester.pumpWidget(_wrap(NotificationsPanel(
+        notifications: [
+          const NotificationItem(
+            kind: NotificationKind.urgent,
+            title: 'Test',
+            ctaLabel: '   ',
+          ),
+        ],
+      )));
+      await tester.pump();
+      expect(find.byType(ElevatedButton), findsNothing);
+    });
   });
 }

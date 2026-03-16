@@ -48,5 +48,37 @@ void main() {
       );
       expect(q.type, CheckInQuestionType.textInput);
     });
+
+    test('required defaults correctly', () {
+      const q = VirtualCheckInQuestion(
+        id: 'q-4',
+        type: CheckInQuestionType.numerical,
+        required: false,
+        text: 'Optional question',
+      );
+      expect(q.required, isFalse);
+      expect(q.id, 'q-4');
+    });
+
+    test('text stores long string', () {
+      const longText = 'This is a very long question text that tests boundary conditions for the model';
+      const q = VirtualCheckInQuestion(
+        id: 'q-5',
+        type: CheckInQuestionType.textInput,
+        required: true,
+        text: longText,
+      );
+      expect(q.text, longText);
+    });
+
+    test('empty id is accepted', () {
+      const q = VirtualCheckInQuestion(
+        id: '',
+        type: CheckInQuestionType.yesNo,
+        required: false,
+        text: 'Test',
+      );
+      expect(q.id, '');
+    });
   });
 }

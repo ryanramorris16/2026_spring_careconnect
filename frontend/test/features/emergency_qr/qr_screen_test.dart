@@ -67,5 +67,68 @@ void main() {
       await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
       expect(find.byIcon(Icons.picture_as_pdf), findsOneWidget);
     });
+
+    testWidgets('shows "Download Emergency PDF" button', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.text('Download Emergency PDF'), findsOneWidget);
+    });
+
+    testWidgets('shows download icon', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.byIcon(Icons.download), findsOneWidget);
+    });
+
+    testWidgets('shows "Share Emergency Info" button', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.text('Share Emergency Info'), findsOneWidget);
+    });
+
+    testWidgets('shows share icon', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.byIcon(Icons.share), findsOneWidget);
+    });
+
+    testWidgets('shows "Print Emergency PDF" button', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.text('Print Emergency PDF'), findsOneWidget);
+    });
+
+    testWidgets('shows print icon', (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      expect(find.byIcon(Icons.print), findsOneWidget);
+    });
+
+    testWidgets('shows multiple ElevatedButtons when emergencyId is set',
+        (tester) async {
+      await tester.pumpWidget(_wrap(emergencyId: 'emg-123'));
+      // View PDF + Download + Share + Print = 4 buttons
+      expect(find.byType(ElevatedButton), findsNWidgets(4));
+    });
+  });
+
+  group('QrScreen – no emergencyId buttons hidden', () {
+    testWidgets('does NOT show Download button without emergencyId',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Download Emergency PDF'), findsNothing);
+    });
+
+    testWidgets('does NOT show Share button without emergencyId',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Share Emergency Info'), findsNothing);
+    });
+
+    testWidgets('does NOT show Print button without emergencyId',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Print Emergency PDF'), findsNothing);
+    });
+
+    testWidgets('shows no ElevatedButton without emergencyId',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsNothing);
+    });
   });
 }

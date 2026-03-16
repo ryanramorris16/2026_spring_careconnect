@@ -22,12 +22,20 @@ void main() {
       expect(CheckInType.values,
           containsAll([CheckInType.routine, CheckInType.followUp, CheckInType.urgent]));
     });
+
+    test('has exactly 3 values', () {
+      expect(CheckInType.values.length, 3);
+    });
   });
 
   group('CheckInStatus enum', () {
     test('has completed, missed, cancelled', () {
       expect(CheckInStatus.values,
           containsAll([CheckInStatus.completed, CheckInStatus.missed, CheckInStatus.cancelled]));
+    });
+
+    test('has exactly 3 values', () {
+      expect(CheckInStatus.values.length, 3);
     });
   });
 
@@ -41,6 +49,12 @@ void main() {
       expect(vc.status, CheckInStatus.completed);
       expect(vc.moodLabel, 'Good');
       expect(vc.summary, 'All vitals normal.');
+    });
+
+    test('stores startedAt and nextCheckIn dates', () {
+      final vc = _basic();
+      expect(vc.startedAt, DateTime(2025, 12, 4, 10, 30));
+      expect(vc.nextCheckIn, DateTime(2025, 12, 11));
     });
 
     test('stores followUp type', () {
@@ -57,6 +71,29 @@ void main() {
       );
       expect(vc.type, CheckInType.followUp);
       expect(vc.status, CheckInStatus.missed);
+    });
+
+    test('stores urgent type with cancelled status', () {
+      final vc = VirtualCheckIn(
+        id: 'vc-3',
+        type: CheckInType.urgent,
+        clinicianName: 'Dr. Lee',
+        startedAt: DateTime(2025, 12, 6),
+        durationMinutes: 5,
+        status: CheckInStatus.cancelled,
+        moodLabel: 'Poor',
+        nextCheckIn: DateTime(2025, 12, 7),
+        summary: 'Cancelled by patient.',
+      );
+      expect(vc.type, CheckInType.urgent);
+      expect(vc.status, CheckInStatus.cancelled);
+      expect(vc.moodLabel, 'Poor');
+      expect(vc.durationMinutes, 5);
+    });
+
+    test('stores clinician name correctly', () {
+      final vc = _basic();
+      expect(vc.clinicianName, 'Dr. Smith');
     });
   });
 }

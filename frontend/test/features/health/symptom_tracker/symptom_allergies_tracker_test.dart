@@ -45,10 +45,47 @@ void main() {
     });
 
     testWidgets('shows error for null patientId', (tester) async {
-      // _resolvePatientId() sets _errorMessage without HTTP when patientId is null.
       await tester.pumpWidget(_wrap());
       await tester.pump();
       expect(find.textContaining('Patient ID not found'), findsOneWidget);
+    });
+
+    testWidgets('shows medical_information_outlined icon', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.medical_information_outlined), findsOneWidget);
+    });
+
+    testWidgets('shows subtitle text about tracking', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Track your health symptoms and medication allergies'),
+          findsOneWidget);
+    });
+
+    testWidgets('shows error_outline icon on error', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    });
+
+    testWidgets('shows Retry button on error', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('shows refresh icon on Retry button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+    });
+
+    testWidgets('shows TabBar with Mental Health and Drug Allergies tabs',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(TabBar), findsOneWidget);
     });
   });
 }

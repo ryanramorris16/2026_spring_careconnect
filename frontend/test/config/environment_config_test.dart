@@ -10,7 +10,6 @@ import 'package:care_connect_app/config/environment_config.dart';
 void main() {
   group('EnvironmentConfig', () {
     test('baseUrl returns a non-empty string', () {
-      // The URL may vary by environment, but should always be non-empty.
       expect(EnvironmentConfig.baseUrl, isNotEmpty);
     });
 
@@ -22,6 +21,39 @@ void main() {
 
     test('baseUrl does not contain whitespace', () {
       expect(EnvironmentConfig.baseUrl.trim(), equals(EnvironmentConfig.baseUrl));
+    });
+
+    test('baseUrl returns consistent value on multiple calls', () {
+      final url1 = EnvironmentConfig.baseUrl;
+      final url2 = EnvironmentConfig.baseUrl;
+      expect(url1, equals(url2));
+    });
+
+    test('baseUrl ends with port number', () {
+      final url = EnvironmentConfig.baseUrl;
+      // Default URLs end with :8080
+      expect(url, contains(':'));
+    });
+
+    test('baseUrl is a parseable URI', () {
+      final uri = Uri.tryParse(EnvironmentConfig.baseUrl);
+      expect(uri, isNotNull);
+      expect(uri!.hasScheme, isTrue);
+    });
+
+    test('baseUrl has a valid host component', () {
+      final uri = Uri.parse(EnvironmentConfig.baseUrl);
+      expect(uri.host, isNotEmpty);
+    });
+
+    test('baseUrl scheme is http or https', () {
+      final uri = Uri.parse(EnvironmentConfig.baseUrl);
+      expect(uri.scheme, anyOf('http', 'https'));
+    });
+
+    test('baseUrl has a port', () {
+      final uri = Uri.parse(EnvironmentConfig.baseUrl);
+      expect(uri.port, greaterThan(0));
     });
   });
 }

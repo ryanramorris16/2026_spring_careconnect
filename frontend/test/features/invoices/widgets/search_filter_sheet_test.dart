@@ -37,5 +37,25 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(Scaffold), findsOneWidget);
     });
+
+    testWidgets('shows search TextField', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(TextField), findsWidgets);
+    });
+
+    testWidgets('shows Apply Filters button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.textContaining('Apply'), findsOneWidget);
+    });
+
+    testWidgets('shows SafeArea', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(SafeArea), findsWidgets);
+    });
+
+    testWidgets('shows sort section', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.textContaining('Sort'), findsWidgets);
+    });
   });
 }

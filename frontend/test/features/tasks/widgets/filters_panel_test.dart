@@ -74,5 +74,23 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.expand_more), findsOneWidget);
     });
+
+    testWidgets('shows Filters text label', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Filters'), findsOneWidget);
+    });
+
+    testWidgets('shows Today button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Today'), findsOneWidget);
+    });
+
+    testWidgets('shows Scaffold', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
   });
 }

@@ -57,5 +57,49 @@ void main() {
       await tester.pump();
       expect(find.text('Use AI Voice'), findsOneWidget);
     });
+
+    testWidgets('shows severity dropdown with default "Mild" value',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Mild (Minor symptoms)'), findsOneWidget);
+    });
+
+    testWidgets('shows TextField widgets for drug and reaction',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(TextField), findsWidgets);
+    });
+
+    testWidgets('shows mic icon for AI Voice button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.mic), findsOneWidget);
+    });
+
+    testWidgets('shows Add Drug Allergy submit button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+  });
+
+  group('AllergyInputForm – text input', () {
+    testWidgets('can enter drug name', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      final drugField = find.byType(TextField).first;
+      await tester.enterText(drugField, 'Penicillin');
+      expect(find.text('Penicillin'), findsOneWidget);
+    });
+
+    testWidgets('can enter reaction description', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      final reactionField = find.byType(TextField).at(1);
+      await tester.enterText(reactionField, 'Rash and swelling');
+      expect(find.text('Rash and swelling'), findsOneWidget);
+    });
   });
 }

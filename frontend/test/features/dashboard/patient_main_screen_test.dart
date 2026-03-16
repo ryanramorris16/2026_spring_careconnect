@@ -46,5 +46,41 @@ void main() {
       await tester.pump();
       expect(find.textContaining('Patient Dashboard'), findsOneWidget);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows "How are you feeling today?" text', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('How are you feeling today?'), findsOneWidget);
+    });
+
+    testWidgets('shows greeting with Patient fallback name', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('Patient'), findsWidgets);
+    });
+
+    testWidgets('shows SafeArea', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(SafeArea), findsWidgets);
+    });
+
+    testWidgets('shows SingleChildScrollView', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(SingleChildScrollView), findsWidgets);
+    });
+
+    testWidgets('shows Divider', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(Divider), findsWidgets);
+    });
   });
 }

@@ -1,7 +1,10 @@
 // Tests for PatientData.fromJson
 // (lib/features/health/caregiver-patient-list/data/patient_api_simple.dart).
 
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:care_connect_app/features/health/caregiver-patient-list/data/patient_api_simple.dart';
 
 Map<String, dynamic> _fullJson() => {
@@ -132,6 +135,91 @@ void main() {
     test('constructs with a base URL', () {
       final api = PatientApiSimple('http://localhost:8080');
       expect(api.baseUrl, 'http://localhost:8080');
+    });
+
+    test('fetchPatient returns PatientData on 200', () async {
+      // Use a simple JSON without emoji to avoid Latin1 encoding issues
+      final simpleJson = {
+        'id': 'p-1',
+        'mrn': 'MRN-001',
+        'fullName': 'Alice Smith',
+        'sex': 'F',
+        'age': 72,
+        'vitals': <String, dynamic>{},
+        'pain': <String, dynamic>{},
+      };
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, '/api/patients/p-1');
+        return http.Response(jsonEncode({'data': simpleJson}), 200);
+      });
+
+      await http.runWithClient(() async {
+        final api = PatientApiSimple('http://localhost:8080');
+        final result = await api.fetchPatient('p-1');
+        expect(result.id, 'p-1');
+        expect(result.fullName, 'Alice Smith');
+        expect(result.age, 72);
+      }, () => mockClient);
+    });
+
+    test('fetchPatient handles response without data wrapper', () async {
+      final simpleJson = {
+        'id': 'p-2',
+        'mrn': 'MRN-002',
+        'fullName': 'Bob Jones',
+        'sex': 'M',
+        'age': 55,
+        'vitals': <String, dynamic>{},
+        'pain': <String, dynamic>{},
+      };
+      final mockClient = MockClient((request) async {
+        return http.Response(jsonEncode(simpleJson), 200);
+      });
+
+      await http.runWithClient(() async {
+        final api = PatientApiSimple('http://localhost:8080');
+        final result = await api.fetchPatient('p-2');
+        expect(result.id, 'p-2');
+      }, () => mockClient);
+    });
+
+    test('fetchPatient throws on non-200 status', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('Not found', 404);
+      });
+
+      await http.runWithClient(() async {
+        final api = PatientApiSimple('http://localhost:8080');
+        expect(
+          () => api.fetchPatient('p-99'),
+          throwsA(isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Load failed: 404'),
+          )),
+        );
+      }, () => mockClient);
+    });
+
+    test('fetchPatient includes query parameters in URL', () async {
+      final simpleJson = {
+        'id': 'p-1',
+        'fullName': 'Test',
+        'sex': 'M',
+        'age': 30,
+        'vitals': <String, dynamic>{},
+        'pain': <String, dynamic>{},
+      };
+      final mockClient = MockClient((request) async {
+        expect(request.url.queryParameters['include'],
+            'medications,symptoms,checkins');
+        return http.Response(jsonEncode({'data': simpleJson}), 200);
+      });
+
+      await http.runWithClient(() async {
+        final api = PatientApiSimple('http://localhost:8080');
+        await api.fetchPatient('p-1');
+      }, () => mockClient);
     });
   });
 }

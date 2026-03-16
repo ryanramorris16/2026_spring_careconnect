@@ -105,5 +105,59 @@ void main() {
       await tester.pumpWidget(_buildApp(provider: provider, observer: observer));
       expect(find.text('Navigate'), findsOneWidget);
     });
+
+    testWidgets('shows ElevatedButton widget', (tester) async {
+      final provider = MockUserProvider(
+        mockUser: MockUser(role: 'PATIENT', patientId: 1),
+      );
+      final observer = _TestObserver();
+
+      await tester.pumpWidget(_buildApp(provider: provider, observer: observer));
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('shows Scaffold wrapping button', (tester) async {
+      final provider = MockUserProvider(
+        mockUser: MockUser(role: 'PATIENT', patientId: 1),
+      );
+      final observer = _TestObserver();
+
+      await tester.pumpWidget(_buildApp(provider: provider, observer: observer));
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('pushes correct route for patient role with different patientId',
+        (tester) async {
+      final provider = MockUserProvider(
+        mockUser: MockUser(role: 'PATIENT', patientId: 99),
+      );
+      final observer = _TestObserver();
+
+      await tester.pumpWidget(_buildApp(provider: provider, observer: observer));
+      await tester.tap(find.text('Navigate'));
+      await tester.pump();
+
+      expect(
+        observer.lastPushed?.settings.name,
+        PatientFallPromptPage.routeName,
+      );
+    });
+
+    testWidgets('pushes correct route for caregiver role with different caregiverId',
+        (tester) async {
+      final provider = MockUserProvider(
+        mockUser: MockUser(role: 'CAREGIVER', caregiverId: 99, patientId: null),
+      );
+      final observer = _TestObserver();
+
+      await tester.pumpWidget(_buildApp(provider: provider, observer: observer));
+      await tester.tap(find.text('Navigate'));
+      await tester.pump();
+
+      expect(
+        observer.lastPushed?.settings.name,
+        AlertDetailsPage.routeName,
+      );
+    });
   });
 }

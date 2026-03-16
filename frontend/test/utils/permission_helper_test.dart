@@ -175,5 +175,48 @@ void main() {
       expect(PermissionHelper.hasPermission('CAREGIVER', 'VIEW_TASKS'), true);
       expect(PermissionHelper.hasPermission('Caregiver', 'View_Tasks'), true);
     });
+
+    test('Unknown role has zero permissions', () {
+      expect(PermissionHelper.getPermissionCount('UNKNOWN'), 0);
+      expect(PermissionHelper.hasPermission('UNKNOWN', 'VIEW_TASKS'), false);
+    });
+
+    test('hasAnyPermission returns false for empty list', () {
+      expect(PermissionHelper.hasAnyPermission('ADMIN', []), false);
+    });
+
+    test('hasAllPermissions returns true for empty list', () {
+      expect(PermissionHelper.hasAllPermissions('PATIENT', []), true);
+    });
+
+    test('FAMILY_LINK shares permissions with CAREGIVER', () {
+      expect(PermissionHelper.getPermissionCount('FAMILY_LINK'), 19);
+      expect(PermissionHelper.hasPermission('FAMILY_LINK', 'CREATE_TASKS'), true);
+      expect(PermissionHelper.hasPermission('FAMILY_LINK', 'DELETE_PATIENTS'), false);
+    });
+
+    test('Patient does not have caregiver permissions', () {
+      expect(PermissionHelper.hasPermission('PATIENT', 'CREATE_PATIENTS'), false);
+      expect(PermissionHelper.hasPermission('PATIENT', 'UPDATE_PATIENTS'), false);
+      expect(PermissionHelper.hasPermission('PATIENT', 'VIEW_ANALYTICS'), false);
+      expect(PermissionHelper.hasPermission('PATIENT', 'EXPORT_REPORTS'), false);
+      expect(PermissionHelper.hasPermission('PATIENT', 'MANAGE_DEVICES'), false);
+    });
+
+    test('hasAnyPermission with mixed permissions', () {
+      // Patient has VIEW_TASKS but not CREATE_TASKS
+      expect(
+        PermissionHelper.hasAnyPermission('PATIENT', ['CREATE_TASKS', 'VIEW_TASKS']),
+        true,
+      );
+    });
+
+    test('hasAllPermissions fails when missing one', () {
+      // Patient has VIEW_TASKS but not CREATE_TASKS
+      expect(
+        PermissionHelper.hasAllPermissions('PATIENT', ['VIEW_TASKS', 'CREATE_TASKS']),
+        false,
+      );
+    });
   });
 }

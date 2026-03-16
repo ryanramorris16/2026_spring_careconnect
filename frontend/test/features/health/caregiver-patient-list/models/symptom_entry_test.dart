@@ -40,5 +40,35 @@ void main() {
       );
       expect(entry.severity, 'Severe');
     });
+
+    test('empty name is accepted', () {
+      final entry = SymptomEntry(
+        id: 'se-4',
+        date: DateTime(2025, 9, 1),
+        name: '',
+        severity: 'Mild',
+      );
+      expect(entry.name, '');
+    });
+
+    test('empty id is accepted', () {
+      final entry = SymptomEntry(
+        id: '',
+        date: DateTime(2025, 9, 2),
+        name: 'Dizziness',
+        severity: 'Moderate',
+      );
+      expect(entry.id, '');
+    });
+
+    test('is a SymptomEntry type', () {
+      final entry = SymptomEntry(
+        id: 'se-5',
+        date: DateTime(2025, 10, 1),
+        name: 'Fatigue',
+        severity: 'Mild',
+      );
+      expect(entry, isA<SymptomEntry>());
+    });
   });
 }

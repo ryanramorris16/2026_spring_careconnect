@@ -60,6 +60,22 @@ void main() {
       await tester.pumpWidget(_wrap());
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
+
+    testWidgets('shows "Search by name or email" label', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Search by name or email'), findsOneWidget);
+    });
+
+    testWidgets('can enter text in search field', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(find.byType(TextField), 'John');
+      expect(find.text('John'), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(AppBar), findsOneWidget);
+    });
   });
 
   group('SearchUserScreen – null user', () {
@@ -73,6 +89,28 @@ void main() {
         ),
       ));
       expect(find.text('User not logged in'), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar with "Search Users" for null user', (tester) async {
+      final nullProvider = _NullUserProvider();
+      await tester.pumpWidget(MaterialApp(
+        home: ChangeNotifierProvider<UserProvider>.value(
+          value: nullProvider,
+          child: const SearchUserScreen(),
+        ),
+      ));
+      expect(find.text('Search Users'), findsOneWidget);
+    });
+
+    testWidgets('does NOT show search TextField for null user', (tester) async {
+      final nullProvider = _NullUserProvider();
+      await tester.pumpWidget(MaterialApp(
+        home: ChangeNotifierProvider<UserProvider>.value(
+          value: nullProvider,
+          child: const SearchUserScreen(),
+        ),
+      ));
+      expect(find.byType(TextField), findsNothing);
     });
   });
 }

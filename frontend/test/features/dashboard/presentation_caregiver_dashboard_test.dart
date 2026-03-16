@@ -60,5 +60,20 @@ void main() {
       await tester.pump(); // settle
       expect(find.text('Login'), findsOneWidget);
     });
+
+    testWidgets('shows Center widget with loading spinner', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('Scaffold present before navigation', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('CaregiverDashboard widget exists in tree', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(CaregiverDashboard), findsOneWidget);
+    });
   });
 }

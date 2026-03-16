@@ -32,5 +32,35 @@ void main() {
       await tester.pump();
       expect(find.text('Yes, Send SOS'), findsOneWidget);
     });
+
+    testWidgets('dialog has Cancel button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('dialog shows error icon', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byIcon(Icons.error), findsOneWidget);
+    });
+
+    testWidgets('dialog shows alert message about caregiver', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.textContaining('caregiver'), findsOneWidget);
+    });
+
+    testWidgets('dialog shows AlertDialog widget', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('dialog has two TextButton actions', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(TextButton), findsNWidgets(2));
+    });
   });
 }

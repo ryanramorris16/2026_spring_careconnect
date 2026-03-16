@@ -76,5 +76,50 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.light_mode), findsOneWidget);
     });
+
+    testWidgets('tapping IconButton toggles to dark mode', (tester) async {
+      await tester.pumpWidget(_wrap(const ThemeToggleSwitch(), themeProvider));
+      await tester.pump();
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      expect(find.text('Dark Mode'), findsOneWidget);
+      expect(find.byIcon(Icons.dark_mode), findsOneWidget);
+    });
+
+    testWidgets('tapping Switch toggles theme (showIcon=false)', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ThemeToggleSwitch(showIcon: false),
+        themeProvider,
+      ));
+      await tester.pump();
+      // Light mode label initially
+      expect(find.text('Light Mode'), findsOneWidget);
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+      expect(find.text('Dark Mode'), findsOneWidget);
+    });
+
+    testWidgets('no label and no icon hides everything except Switch', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ThemeToggleSwitch(showLabel: false, showIcon: false),
+        themeProvider,
+      ));
+      await tester.pump();
+      expect(find.text('Light Mode'), findsNothing);
+      expect(find.text('Dark Mode'), findsNothing);
+      expect(find.byType(IconButton), findsNothing);
+      expect(find.byType(Switch), findsOneWidget);
+    });
+
+    testWidgets('no spacing when showLabel=false', (tester) async {
+      await tester.pumpWidget(_wrap(
+        const ThemeToggleSwitch(showLabel: false, showIcon: true),
+        themeProvider,
+      ));
+      await tester.pump();
+      // Should render icon only, no SizedBox between label and icon
+      expect(find.byType(IconButton), findsOneWidget);
+      expect(find.text('Light Mode'), findsNothing);
+    });
   });
 }

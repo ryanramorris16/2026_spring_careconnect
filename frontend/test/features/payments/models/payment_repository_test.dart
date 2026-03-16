@@ -19,5 +19,36 @@ void main() {
       expect(s1, isA<String>());
       expect(s2, isA<String>());
     });
+
+    test('createPaymentIntent returns dummy_client_secret', () async {
+      final repo = PaymentRepository();
+      final secret = await repo.createPaymentIntent(100);
+      expect(secret, 'dummy_client_secret');
+    });
+
+    test('createPaymentIntent works with zero amount', () async {
+      final repo = PaymentRepository();
+      final secret = await repo.createPaymentIntent(0);
+      expect(secret, isNotEmpty);
+    });
+
+    test('createPaymentIntent works with large amount', () async {
+      final repo = PaymentRepository();
+      final secret = await repo.createPaymentIntent(999999);
+      expect(secret, isA<String>());
+    });
+
+    test('multiple instances return same result', () async {
+      final repo1 = PaymentRepository();
+      final repo2 = PaymentRepository();
+      final s1 = await repo1.createPaymentIntent(100);
+      final s2 = await repo2.createPaymentIntent(200);
+      expect(s1, equals(s2));
+    });
+
+    test('PaymentRepository can be instantiated', () {
+      final repo = PaymentRepository();
+      expect(repo, isNotNull);
+    });
   });
 }

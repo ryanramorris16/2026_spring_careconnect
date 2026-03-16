@@ -2,13 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Backend Connectivity Tests', () {
-    // Define a mock Set-Cookie header for testing
-    const setCookieHeader = 'auth=mock_auth_token; Path=/; HttpOnly';
-    final authCookieMatch = RegExp(r'auth=([^;]+)').firstMatch(setCookieHeader);
+    test('should extract auth token from Set-Cookie header', () {
+      const setCookieHeader = 'auth=mock_auth_token; Path=/; HttpOnly';
+      final authCookieMatch =
+          RegExp(r'auth=([^;]+)').firstMatch(setCookieHeader);
 
-    expect(authCookieMatch, isNotNull);
-    expect(authCookieMatch!.group(1), isNotNull);
-    expect(authCookieMatch.group(1)!.length, greaterThan(20));
+      expect(authCookieMatch, isNotNull);
+      expect(authCookieMatch!.group(1), isNotNull);
+      expect(authCookieMatch.group(1), equals('mock_auth_token'));
+    });
   });
 
   test('API endpoint URLs should be valid', () {

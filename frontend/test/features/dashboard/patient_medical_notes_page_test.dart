@@ -53,5 +53,23 @@ void main() {
       await tester.pump();
       expect(find.text('Caregiver View'), findsOneWidget);
     });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.pump();
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows with different patient name', (tester) async {
+      await tester.pumpWidget(_wrap(patientName: 'John Smith'));
+      await tester.pump();
+      expect(find.textContaining('John Smith'), findsWidgets);
+    });
+
+    testWidgets('shows with different patientId', (tester) async {
+      await tester.pumpWidget(_wrap(patientId: 42));
+      await tester.pump();
+      expect(find.byType(PatientMedicalNotesPage), findsOneWidget);
+    });
   });
 }

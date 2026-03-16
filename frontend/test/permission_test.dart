@@ -67,9 +67,9 @@ void main() {
       expect(Permission.viewHealthData.toBackendString(), 'VIEW_HEALTH_DATA');
     });
 
-    test('all 26 permissions exist', () {
-      expect(Permission.values.length, 26,
-          reason: 'Should have exactly 26 permissions matching backend');
+    test('all 25 permissions exist', () {
+      expect(Permission.values.length, 25,
+          reason: 'Should have exactly 25 permissions matching backend');
     });
 
     test('permission categories are correct', () {

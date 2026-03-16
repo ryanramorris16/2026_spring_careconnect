@@ -53,5 +53,33 @@ void main() {
       await tester.pump();
       expect(find.byType(Dialog), findsOneWidget);
     });
+
+    testWidgets('shows close icon for modal', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(find.byIcon(Icons.close), findsWidgets);
+    });
+
+    testWidgets('shows TextField for message input', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('shows send icon button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(find.byIcon(Icons.send), findsOneWidget);
+    });
+
+    testWidgets('shows hint text in input', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      expect(find.text('Type your message...'), findsOneWidget);
+    });
   });
 }

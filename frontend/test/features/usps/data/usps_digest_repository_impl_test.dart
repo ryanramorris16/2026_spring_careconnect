@@ -92,4 +92,34 @@ void main() {
       expect(result!.digestDateIso, '2025-07-04');
     });
   });
+
+  group('UspsDigestRepositoryImpl constructor', () {
+    test('accepts custom gmail and parser', () {
+      final repo = UspsDigestRepositoryImpl(
+        gmail: _NullGmailService(),
+        gParser: GmailParser(),
+      );
+      expect(repo, isA<UspsDigestRepositoryImpl>());
+    });
+  });
+
+  group('UspsDigestRepositoryImpl.fromGmail result fields', () {
+    test('returns digest with empty mailpieces list', () async {
+      final fakeRaw = GmailRaw('<html></html>', {}, DateTime(2025, 8, 1));
+      final expected = const USPSDigest(
+        digestDateIso: '2025-08-01',
+        mailpieces: [],
+        packages: [],
+      );
+
+      final repo = UspsDigestRepositoryImpl(
+        gmail: _FakeGmailService(fakeRaw),
+        gParser: _FakeGmailParser(expected),
+      );
+
+      final result = await repo.fromGmail();
+      expect(result!.mailpieces, isEmpty);
+      expect(result.packages, isEmpty);
+    });
+  });
 }

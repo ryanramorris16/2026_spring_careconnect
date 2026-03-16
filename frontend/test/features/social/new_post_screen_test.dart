@@ -73,5 +73,61 @@ void main() {
       await tester.pumpWidget(_wrap(loggedIn: false));
       expect(find.text('Create New Post'), findsOneWidget);
     });
+
+    testWidgets('shows back arrow for null user', (tester) async {
+      await tester.pumpWidget(_wrap(loggedIn: false));
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    });
+
+    testWidgets('does NOT show Post button when null user', (tester) async {
+      await tester.pumpWidget(_wrap(loggedIn: false));
+      expect(find.text('Post'), findsNothing);
+    });
+
+    testWidgets('does NOT show TextFormField when null user', (tester) async {
+      await tester.pumpWidget(_wrap(loggedIn: false));
+      expect(find.byType(TextFormField), findsNothing);
+    });
+  });
+
+  group('NewPostScreen – form elements', () {
+    testWidgets('shows TextFormField for post content', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(TextFormField), findsOneWidget);
+    });
+
+    testWidgets('shows content input hint text', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('What\u2019s on your mind?'), findsOneWidget);
+    });
+
+    testWidgets('shows ElevatedButton for Post', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('shows back arrow button', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    });
+
+    testWidgets('Post button is enabled initially', (tester) async {
+      await tester.pumpWidget(_wrap());
+      final button = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('can enter text in content field', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(find.byType(TextFormField), 'Hello world!');
+      expect(find.text('Hello world!'), findsOneWidget);
+    });
+
+    testWidgets('shows SnackBar when posting with empty content', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.tap(find.text('Post'));
+      await tester.pump();
+      expect(find.text('Post content cannot be empty'), findsOneWidget);
+    });
   });
 }

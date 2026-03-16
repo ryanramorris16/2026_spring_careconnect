@@ -122,4 +122,103 @@ void main() {
 
     expect(find.byType(Slider), findsAtLeastNWidgets(1));
   });
+
+  testWidgets('renders widget type', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        const CurrentMoodWidget(
+          moodScore: 5,
+          moodLabel: 'Okay',
+          moodTags: [],
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(CurrentMoodWidget), findsOneWidget);
+  });
+
+  testWidgets('shows Container widget', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        const CurrentMoodWidget(
+          moodScore: 5,
+          moodLabel: 'Okay',
+          moodTags: [],
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(Container), findsWidgets);
+  });
+
+  testWidgets('renders with high mood score', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        const CurrentMoodWidget(
+          moodScore: 10,
+          moodLabel: 'Ecstatic',
+          moodTags: ['Energetic', 'Motivated'],
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('10'), findsAtLeastNWidgets(1));
+    expect(find.textContaining('Ecstatic'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('renders with low mood score', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        const CurrentMoodWidget(
+          moodScore: 1,
+          moodLabel: 'Sad',
+          moodTags: [],
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.textContaining('1'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('renders with empty tags list', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _wrap(
+        const CurrentMoodWidget(
+          moodScore: 5,
+          moodLabel: 'Okay',
+          moodTags: [],
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(CurrentMoodWidget), findsOneWidget);
+  });
 }

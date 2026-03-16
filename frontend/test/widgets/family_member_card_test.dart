@@ -3,6 +3,7 @@
 // Pure StatelessWidget — url_launcher calls only happen on button press.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:care_connect_app/widgets/family_member_card.dart';
 
@@ -26,7 +27,43 @@ FamilyMemberCard _card({
       lastInteraction: lastInteraction,
     );
 
+void _installUrlLauncherMock() {
+  const channels = [
+    'plugins.flutter.io/url_launcher',
+    'plugins.flutter.io/url_launcher_android',
+    'plugins.flutter.io/url_launcher_ios',
+    'plugins.flutter.io/url_launcher_linux',
+    'plugins.flutter.io/url_launcher_macos',
+    'plugins.flutter.io/url_launcher_windows',
+  ];
+  for (final name in channels) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(MethodChannel(name), (call) async {
+      if (call.method == 'canLaunch') return true;
+      if (call.method == 'launch') return true;
+      if (call.method == 'launchUrl') return true;
+      return null;
+    });
+  }
+}
+
+void _removeUrlLauncherMock() {
+  const channels = [
+    'plugins.flutter.io/url_launcher',
+    'plugins.flutter.io/url_launcher_android',
+    'plugins.flutter.io/url_launcher_ios',
+    'plugins.flutter.io/url_launcher_linux',
+    'plugins.flutter.io/url_launcher_macos',
+    'plugins.flutter.io/url_launcher_windows',
+  ];
+  for (final name in channels) {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(MethodChannel(name), null);
+  }
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   group('FamilyMemberCard', () {
     testWidgets('renders without crashing', (tester) async {
       await tester.pumpWidget(_wrap(_card()));
@@ -117,6 +154,139 @@ void main() {
     testWidgets('CircleAvatar shows F when firstName is empty', (tester) async {
       await tester.pumpWidget(_wrap(_card(firstName: '')));
       expect(find.text('F'), findsOneWidget);
+    });
+
+    testWidgets('popup menu shows Send Email when email provided', (tester) async {
+      await tester.pumpWidget(_wrap(_card(email: 'test@test.com')));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      expect(find.text('Send Email'), findsOneWidget);
+    });
+
+    testWidgets('popup menu does NOT show Send Email when email is empty', (tester) async {
+      await tester.pumpWidget(_wrap(_card(email: '')));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      expect(find.text('Send Email'), findsNothing);
+    });
+
+    testWidgets('tapping Edit shows SnackBar', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit feature coming soon'), findsOneWidget);
+    });
+
+    testWidgets('delete confirmation Cancel dismisses dialog', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete Family Member'), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete Family Member'), findsNothing);
+    });
+
+    testWidgets('delete confirmation Delete shows removed SnackBar', (tester) async {
+      await tester.pumpWidget(_wrap(_card(firstName: 'Alice', lastName: 'Smith')));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      // Tap the Delete button in the confirmation dialog
+      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(find.text('Alice Smith removed successfully'), findsOneWidget);
+    });
+
+    testWidgets('shows Call tooltip on phone button', (tester) async {
+      await tester.pumpWidget(_wrap(_card(firstName: 'Dave')));
+      expect(find.byTooltip('Call Dave'), findsOneWidget);
+    });
+
+    testWidgets('shows SMS tooltip on message button', (tester) async {
+      await tester.pumpWidget(_wrap(_card(firstName: 'Dave')));
+      expect(find.byTooltip('Send SMS to Dave'), findsOneWidget);
+    });
+
+    testWidgets('shows Email tooltip when email provided', (tester) async {
+      await tester.pumpWidget(_wrap(_card(firstName: 'Dave', email: 'dave@example.com')));
+      expect(find.byTooltip('Email Dave'), findsOneWidget);
+    });
+
+    testWidgets('does not show email text when email is empty', (tester) async {
+      await tester.pumpWidget(_wrap(_card(email: '')));
+      expect(find.textContaining('Email:'), findsNothing);
+    });
+
+    testWidgets('shows ListTile', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      expect(find.byType(ListTile), findsOneWidget);
+    });
+
+    testWidgets('shows Last Interaction text', (tester) async {
+      await tester.pumpWidget(_wrap(_card(lastInteraction: 'Yesterday')));
+      expect(find.text('Last Interaction: Yesterday'), findsOneWidget);
+    });
+  });
+
+  group('FamilyMemberCard – url_launcher actions', () {
+    setUp(() => _installUrlLauncherMock());
+    tearDown(() => _removeUrlLauncherMock());
+
+    testWidgets('tapping phone icon does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      final phoneButtons = find.byIcon(Icons.phone);
+      await tester.tap(phoneButtons.first);
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
+    });
+
+    testWidgets('tapping message icon does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      final msgButtons = find.byIcon(Icons.message);
+      await tester.tap(msgButtons.first);
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
+    });
+
+    testWidgets('tapping email icon does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card(email: 'test@example.com')));
+      final emailButtons = find.byIcon(Icons.email);
+      await tester.tap(emailButtons.first);
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
+    });
+
+    testWidgets('popup Call action does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Call'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
+    });
+
+    testWidgets('popup Send SMS action does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card()));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send SMS'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
+    });
+
+    testWidgets('popup Send Email action does not crash', (tester) async {
+      await tester.pumpWidget(_wrap(_card(email: 'a@b.com')));
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Send Email'));
+      await tester.pumpAndSettle();
+      expect(find.byType(FamilyMemberCard), findsOneWidget);
     });
   });
 }

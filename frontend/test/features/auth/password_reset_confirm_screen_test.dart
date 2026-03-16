@@ -123,5 +123,77 @@ void main() {
       expect(find.text('Passwords do not match'), findsOneWidget);
       expect(find.text('Please enter a new password'), findsNothing);
     });
+
+    testWidgets('whitespace-only password triggers empty error', (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(_newPasswordField, '   ');
+      await tester.enterText(_confirmPasswordField, '   ');
+      await tester.tap(_submitButton);
+      await tester.pump();
+      expect(find.text('Please enter a new password'), findsOneWidget);
+    });
+
+    testWidgets('exactly 6 char password with match does not show short error',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      await tester.enterText(_newPasswordField, 'abcdef');
+      await tester.enterText(_confirmPasswordField, 'abcdef');
+      await tester.tap(_submitButton);
+      await tester.pump();
+      // Should NOT show the "at least 6 characters" error
+      expect(find.text('Password must be at least 6 characters'), findsNothing);
+      // Should NOT show the "do not match" error
+      expect(find.text('Passwords do not match'), findsNothing);
+      // Should NOT show the empty password error
+      expect(find.text('Please enter a new password'), findsNothing);
+    });
+  });
+
+  group('PasswordResetConfirmScreen – layout & labels', () {
+    testWidgets('shows "Closer Connections. Better Care." subtitle',
+        (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Closer Connections. Better Care.'), findsOneWidget);
+    });
+
+    testWidgets('button text is "Reset Password"', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(
+        find.descendant(
+          of: find.byType(ElevatedButton),
+          matching: find.text('Reset Password'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('password fields are obscured', (tester) async {
+      await tester.pumpWidget(_wrap());
+      // TextFormField wraps a TextField; check obscureText on the inner TextField
+      final textFields = tester.widgetList<TextField>(find.byType(TextField));
+      for (final tf in textFields) {
+        expect(tf.obscureText, isTrue);
+      }
+    });
+
+    testWidgets('page is scrollable via SingleChildScrollView', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
+    testWidgets('has a Container with max width constraint', (tester) async {
+      await tester.pumpWidget(_wrap());
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      final constrained = containers.where(
+        (c) => c.constraints?.maxWidth == 500,
+      );
+      expect(constrained, isNotEmpty);
+    });
+
+    testWidgets('shows Scaffold with AppBar', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
+    });
   });
 }

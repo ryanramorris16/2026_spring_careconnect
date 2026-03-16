@@ -3,10 +3,13 @@
 // Tests BBox, OcrLine, OcrQr, OcrRichResult factory constructors only.
 // OcrService.analyzeImages uses a MethodChannel and is skipped.
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:care_connect_app/features/invoices/services/ocr_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('BBox', () {
     test('stores l, t, w, h', () {
       const b = BBox(l: 1.0, t: 2.0, w: 3.0, h: 4.0);
@@ -133,6 +136,129 @@ void main() {
       expect(result.text, '');
       expect(result.lines, isEmpty);
       expect(result.qrcodes, isEmpty);
+    });
+
+    test('OcrRichResult.from handles empty lines and qrcodes lists', () {
+      final result = OcrRichResult.from({
+        'path': '/b.png',
+        'text': 'some text',
+        'lines': <Map<dynamic, dynamic>>[],
+        'qrcodes': <Map<dynamic, dynamic>>[],
+      });
+      expect(result.text, 'some text');
+      expect(result.lines, isEmpty);
+      expect(result.qrcodes, isEmpty);
+    });
+
+    test('OcrRichResult.from with multiple lines and qrcodes', () {
+      final result = OcrRichResult.from({
+        'path': '/multi.png',
+        'text': 'line1 line2',
+        'lines': [
+          {'text': 'line1', 'box': {'l': 0, 't': 0, 'w': 50, 'h': 10}},
+          {'text': 'line2', 'box': {'l': 0, 't': 15, 'w': 50, 'h': 10}},
+        ],
+        'qrcodes': [
+          {'value': 'QR1', 'box': {'l': 0, 't': 0, 'w': 30, 'h': 30}},
+          {'value': 'QR2', 'box': null},
+        ],
+      });
+      expect(result.lines.length, 2);
+      expect(result.lines[1].text, 'line2');
+      expect(result.qrcodes.length, 2);
+      expect(result.qrcodes[0].box, isNotNull);
+      expect(result.qrcodes[1].box, isNull);
+    });
+  });
+
+  group('BBox – edge cases', () {
+    test('BBox.from with zero values', () {
+      final b = BBox.from({'l': 0, 't': 0, 'w': 0, 'h': 0});
+      expect(b.l, 0.0);
+      expect(b.w, 0.0);
+    });
+
+    test('BBox.from with large values', () {
+      final b = BBox.from({'l': 9999.99, 't': 8888.88, 'w': 7777.77, 'h': 6666.66});
+      expect(b.l, 9999.99);
+      expect(b.h, 6666.66);
+    });
+  });
+
+  group('OcrQr – edge cases', () {
+    test('OcrQr with box stores box correctly', () {
+      const box = BBox(l: 1, t: 2, w: 3, h: 4);
+      final qr = OcrQr(value: 'test', box: box);
+      expect(qr.box, isNotNull);
+      expect(qr.box!.l, 1.0);
+    });
+
+    test('OcrQr.from without box key in map', () {
+      final qr = OcrQr.from({'value': 'nobox'});
+      expect(qr.value, 'nobox');
+      expect(qr.box, isNull);
+    });
+  });
+
+  group('OcrService.analyzeImages – MethodChannel mock', () {
+    const channel = MethodChannel('care_connect/ocr');
+
+    setUp(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'analyze') {
+          return <dynamic>[
+            <dynamic, dynamic>{
+              'path': '/tmp/test.jpg',
+              'text': 'Hello World',
+              'lines': <dynamic>[
+                <dynamic, dynamic>{
+                  'text': 'Hello',
+                  'box': <dynamic, dynamic>{'l': 0, 't': 0, 'w': 50, 'h': 10},
+                },
+                <dynamic, dynamic>{
+                  'text': 'World',
+                  'box': <dynamic, dynamic>{'l': 0, 't': 15, 'w': 50, 'h': 10},
+                },
+              ],
+              'qrcodes': <dynamic>[
+                <dynamic, dynamic>{'value': 'QR123', 'box': null},
+              ],
+            },
+          ];
+        }
+        return null;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('returns parsed OcrRichResult list', () async {
+      final results = await OcrService.analyzeImages([]);
+      expect(results.length, 1);
+      expect(results[0].path, '/tmp/test.jpg');
+      expect(results[0].text, 'Hello World');
+      expect(results[0].lines.length, 2);
+      expect(results[0].lines[0].text, 'Hello');
+      expect(results[0].qrcodes.length, 1);
+      expect(results[0].qrcodes[0].value, 'QR123');
+    });
+
+    test('returns empty list when channel returns null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => null);
+      final results = await OcrService.analyzeImages([]);
+      expect(results, isEmpty);
+    });
+
+    test('returns empty list when channel returns empty list', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => <dynamic>[]);
+      final results = await OcrService.analyzeImages([]);
+      expect(results, isEmpty);
     });
   });
 }

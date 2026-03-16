@@ -253,5 +253,35 @@ void main() {
       expect(find.byKey(const Key("visible-task-text")), findsOneWidget);
       expect(find.text("Check Blood Pressure"), findsOneWidget);
     });
+
+    testWidgets('shows Scaffold after loading', (tester) async {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<UserProvider>(
+              create: (_) => MockUserProvider(),
+            ),
+          ],
+          child: const MaterialApp(home: TestableCalendarAssistantScreen()),
+        ),
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('shows AppBar with Calendar Assistant title', (tester) async {
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<UserProvider>(
+              create: (_) => MockUserProvider(),
+            ),
+          ],
+          child: const MaterialApp(home: TestableCalendarAssistantScreen()),
+        ),
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 1));
+      expect(find.text("Calendar Assistant"), findsOneWidget);
+    });
   });
 }

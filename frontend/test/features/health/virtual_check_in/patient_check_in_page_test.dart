@@ -222,9 +222,11 @@ void main() {
 
       // Select a mood first to enable the button.
       await tester.tap(find.text('😐'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      // Tap Submit.
+      // Scroll to and tap Submit.
+      await tester.ensureVisible(find.text('Submit Check-In'));
+      await tester.pump();
       await tester.tap(find.text('Submit Check-In'));
       await tester.pump();
 

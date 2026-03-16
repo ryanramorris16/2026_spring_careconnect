@@ -42,5 +42,20 @@ void main() {
       await tester.pumpWidget(_wrap(isCaregiver: true));
       expect(find.byType(PatientTasksWidget), findsOneWidget);
     });
+
+    testWidgets('shows Center while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('does NOT show error text while loading', (tester) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.textContaining('Error'), findsNothing);
+    });
+
+    testWidgets('renders with different patientId', (tester) async {
+      await tester.pumpWidget(_wrap(patientId: 99, patientName: 'Bob'));
+      expect(find.byType(PatientTasksWidget), findsOneWidget);
+    });
   });
 }

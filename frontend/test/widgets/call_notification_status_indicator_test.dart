@@ -49,5 +49,27 @@ void main() {
       // (outer pill + inner circle)
       expect(find.byType(Container), findsWidgets);
     });
+
+    testWidgets('shows Text widget for status label', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CallNotificationStatusIndicator(isInitialized: false)));
+      // Should show "Initializing..." text
+      final textWidget = tester.widget<Text>(find.text('Initializing...'));
+      expect(textWidget.style?.fontSize, 12);
+    });
+
+    testWidgets('shows Text widget for connecting label', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CallNotificationStatusIndicator(isInitialized: true)));
+      final textWidget = tester.widget<Text>(find.text('Connecting...'));
+      expect(textWidget.style?.fontSize, 12);
+    });
+
+    testWidgets('status text has fontWeight w500', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const CallNotificationStatusIndicator(isInitialized: true)));
+      final textWidget = tester.widget<Text>(find.text('Connecting...'));
+      expect(textWidget.style?.fontWeight, FontWeight.w500);
+    });
   });
 }

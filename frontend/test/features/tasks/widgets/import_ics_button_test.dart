@@ -99,5 +99,81 @@ void main() {
           _wrap(const ImportIcsButton(patientNames: _patients), width: 400));
       expect(find.byType(ElevatedButton), findsNothing);
     });
+
+    testWidgets('shows "Import ICS" tooltip on compact screen', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients), width: 400));
+      expect(find.byTooltip('Import ICS'), findsOneWidget);
+    });
+  });
+
+  group('ImportIcsButton – dialog', () {
+    testWidgets('tapping wide button opens import dialog', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients)));
+      await tester.tap(find.text('Import ICS'));
+      await tester.pumpAndSettle();
+      expect(find.text('Import ICS'), findsAtLeastNWidgets(1));
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Choose File'), findsOneWidget);
+    });
+
+    testWidgets('tapping compact icon opens import dialog', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients), width: 400));
+      await tester.tap(find.byIcon(Icons.file_upload));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose File'), findsOneWidget);
+    });
+
+    testWidgets('dialog shows patient dropdown', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients)));
+      await tester.tap(find.text('Import ICS'));
+      await tester.pumpAndSettle();
+      expect(find.text('Assign to patient'), findsOneWidget);
+    });
+
+    testWidgets('Cancel dismisses dialog', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients)));
+      await tester.tap(find.text('Import ICS'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose File'), findsNothing);
+    });
+
+    testWidgets('Choose File without selecting patient shows snackbar', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients)));
+      await tester.tap(find.text('Import ICS'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose File'));
+      await tester.pumpAndSettle();
+      expect(find.text('Please select a patient before importing.'), findsOneWidget);
+    });
+  });
+
+  group('ImportIcsButton – boundary width', () {
+    testWidgets('at exactly 500px shows wide button', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients), width: 500));
+      expect(find.text('Import ICS'), findsOneWidget);
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('at 499px shows compact icon button', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: _patients), width: 499));
+      expect(find.byType(IconButton), findsOneWidget);
+      expect(find.text('Import ICS'), findsNothing);
+    });
+
+    testWidgets('renders with empty patient map', (tester) async {
+      await tester.pumpWidget(
+          _wrap(const ImportIcsButton(patientNames: {})));
+      expect(find.byType(ImportIcsButton), findsOneWidget);
+    });
   });
 }

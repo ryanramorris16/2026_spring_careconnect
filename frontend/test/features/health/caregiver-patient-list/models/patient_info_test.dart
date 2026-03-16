@@ -70,4 +70,38 @@ void main() {
       expect(p.fullName, 'Mary Van der Berg');
     });
   });
+
+  group('Patient dates', () {
+    test('lastUpdated is stored correctly', () {
+      final dt = DateTime(2025, 6, 15, 10, 30);
+      final p = Patient(
+        id: 'p-4',
+        firstName: 'A',
+        lastName: 'B',
+        lastUpdated: dt,
+        statusMessage: '',
+        nextCheckIn: DateTime(2025, 6, 22),
+        mood: 'OK',
+        moodEmoji: '😐',
+        isUrgent: false,
+      );
+      expect(p.lastUpdated, dt);
+    });
+
+    test('nextCheckIn is stored correctly', () {
+      final dt = DateTime(2025, 7, 1);
+      final p = Patient(
+        id: 'p-5',
+        firstName: 'C',
+        lastName: 'D',
+        lastUpdated: DateTime(2025, 6, 24),
+        statusMessage: '',
+        nextCheckIn: dt,
+        mood: 'Good',
+        moodEmoji: '🙂',
+        isUrgent: false,
+      );
+      expect(p.nextCheckIn, dt);
+    });
+  });
 }

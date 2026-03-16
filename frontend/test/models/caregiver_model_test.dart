@@ -174,5 +174,137 @@ void main() {
       expect(cg.professionalInfo, isNotNull);
       expect(cg.professionalInfo!.licenseNumber, 'L-99');
     });
+
+    test('handles null values with defaults', () {
+      final cg = CaregiverModel.fromJson({
+        'name': null,
+        'email': null,
+        'userId': null,
+        'role': null,
+        'firstName': null,
+        'lastName': null,
+        'phone': null,
+        'dob': null,
+        'gender': null,
+        'caregiverType': null,
+        'address': null,
+        'professional': null,
+      });
+      expect(cg.name, '');
+      expect(cg.email, '');
+      expect(cg.userId, '');
+      expect(cg.role, 'CAREGIVER');
+      expect(cg.firstName, '');
+      expect(cg.lastName, '');
+      expect(cg.phone, '');
+      expect(cg.dob, '');
+      expect(cg.gender, '');
+      expect(cg.caregiverType, '');
+      expect(cg.professionalInfo, isNull);
+    });
+
+    test('parses nested address from JSON', () {
+      final cg = CaregiverModel.fromJson({
+        'address': {
+          'line1': '10 Elm St',
+          'line2': 'Suite 5',
+          'city': 'Denver',
+          'state': 'CO',
+          'zip': '80201',
+          'phone': '303-555-0000',
+        },
+      });
+      expect(cg.address.line1, '10 Elm St');
+      expect(cg.address.line2, 'Suite 5');
+      expect(cg.address.city, 'Denver');
+      expect(cg.address.state, 'CO');
+      expect(cg.address.zip, '80201');
+      expect(cg.address.phone, '303-555-0000');
+    });
+
+    test('empty address map creates address with null fields', () {
+      final cg = CaregiverModel.fromJson({'address': <String, dynamic>{}});
+      expect(cg.address.line1, isNull);
+      expect(cg.address.line2, isNull);
+      expect(cg.address.city, isNull);
+      expect(cg.address.state, isNull);
+      expect(cg.address.zip, isNull);
+    });
+  });
+
+  group('ProfessionalInfo round-trip', () {
+    test('toJson then fromJson preserves all data', () {
+      final original = ProfessionalInfo(
+        licenseNumber: 'RT-500',
+        issuingState: 'OR',
+        yearsExperience: 25,
+      );
+      final restored = ProfessionalInfo.fromJson(original.toJson());
+      expect(restored.licenseNumber, original.licenseNumber);
+      expect(restored.issuingState, original.issuingState);
+      expect(restored.yearsExperience, original.yearsExperience);
+    });
+
+    test('fromJson with null values produces defaults', () {
+      final info = ProfessionalInfo.fromJson({
+        'licenseNumber': null,
+        'issuingState': null,
+        'yearsExperience': null,
+      });
+      expect(info.licenseNumber, '');
+      expect(info.issuingState, '');
+      expect(info.yearsExperience, 0);
+    });
+  });
+
+  group('CaregiverModel round-trip', () {
+    test('toJson then fromJson preserves data without professionalInfo', () {
+      final original = _caregiver();
+      final restored = CaregiverModel.fromJson(original.toJson());
+
+      expect(restored.name, original.name);
+      expect(restored.email, original.email);
+      expect(restored.userId, original.userId);
+      expect(restored.role, original.role);
+      expect(restored.firstName, original.firstName);
+      expect(restored.lastName, original.lastName);
+      expect(restored.phone, original.phone);
+      expect(restored.dob, original.dob);
+      expect(restored.gender, original.gender);
+      expect(restored.caregiverType, original.caregiverType);
+      expect(restored.address.line1, original.address.line1);
+      expect(restored.address.city, original.address.city);
+      expect(restored.professionalInfo, isNull);
+    });
+
+    test('toJson then fromJson preserves data with professionalInfo', () {
+      final profInfo = ProfessionalInfo(
+        licenseNumber: 'ROUND-TRIP',
+        issuingState: 'TX',
+        yearsExperience: 7,
+      );
+      final original = _caregiver(professionalInfo: profInfo);
+      final restored = CaregiverModel.fromJson(original.toJson());
+
+      expect(restored.professionalInfo, isNotNull);
+      expect(restored.professionalInfo!.licenseNumber,
+          original.professionalInfo!.licenseNumber);
+      expect(restored.professionalInfo!.issuingState,
+          original.professionalInfo!.issuingState);
+      expect(restored.professionalInfo!.yearsExperience,
+          original.professionalInfo!.yearsExperience);
+    });
+  });
+
+  group('CaregiverModel.toJson address serialization', () {
+    test('serializes address fields correctly', () {
+      final json = _caregiver().toJson();
+      final addrJson = json['address'] as Map<String, dynamic>;
+      expect(addrJson['line1'], '1 Main St');
+      expect(addrJson['line2'], '');
+      expect(addrJson['city'], 'Chicago');
+      expect(addrJson['state'], 'IL');
+      expect(addrJson['zip'], '60601');
+    });
   });
 }
