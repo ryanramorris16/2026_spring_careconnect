@@ -31,16 +31,12 @@ public class PermissionAspect {
      * check if the current user has the required permission
      */
     @Before("@annotation(requirePermission)")
-    public void checkPermission(RequirePermission requirePermission) {
+    public void checkPermission(RequirePermission requirePermission) throws UnauthorizedException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
         if (authentication == null || !authentication.isAuthenticated()) {
     log.warn("Unauthenticated access attempt");
-    throw new UnauthorizedException(
-        "User not authenticated",
-        null,
-        null
-    );
+    throw new UnauthorizedException("User not authenticated");
 }
         
         String userEmail = authentication.getName();

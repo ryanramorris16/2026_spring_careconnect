@@ -16,11 +16,11 @@ public class RolePermissionServiceTest {
     // ========== Permission Count Tests ==========
 
     @Test
-    @DisplayName("Admin should have all 26 permissions")
+    @DisplayName("Admin should have all 28 permissions")
     public void testAdminHasAllPermissions() throws Exception {
         Set<Permission> adminPerms = RolePermissionService.getPermissionsForRole(Role.ADMIN);
-        assertEquals(26, adminPerms.size(),
-            "Admin should have all 26 permissions");
+        assertEquals(28, adminPerms.size(),
+            "Admin should have all 28 permissions");
         
         // Verify admin has every permission
         for (Permission p : Permission.values()) {
@@ -30,11 +30,11 @@ public class RolePermissionServiceTest {
     }
 
     @Test
-    @DisplayName("Caregiver should have exactly 19 permissions")
+    @DisplayName("Caregiver should have exactly 21 permissions")
     public void testCaregiverHasCorrectPermissionCount() throws Exception {
         Set<Permission> caregiverPerms = RolePermissionService.getPermissionsForRole(Role.CAREGIVER);
-        assertEquals(19, caregiverPerms.size(),
-            "Caregiver should have exactly 19 permissions");
+        assertEquals(21, caregiverPerms.size(),
+            "Caregiver should have exactly 21 permissions");
     }
 
     @Test
@@ -292,8 +292,8 @@ public class RolePermissionServiceTest {
     @Test
     @DisplayName("getPermissionCount should return correct counts for all roles")
     public void testGetPermissionCount() throws Exception {
-        assertEquals(26, RolePermissionService.getPermissionCount(Role.ADMIN));
-        assertEquals(19, RolePermissionService.getPermissionCount(Role.CAREGIVER));
+        assertEquals(28, RolePermissionService.getPermissionCount(Role.ADMIN));
+        assertEquals(21, RolePermissionService.getPermissionCount(Role.CAREGIVER));
         assertEquals(6, RolePermissionService.getPermissionCount(Role.PATIENT));
         assertEquals(3, RolePermissionService.getPermissionCount(Role.FAMILY_MEMBER));
     }
@@ -358,8 +358,8 @@ public class RolePermissionServiceTest {
         assertNotNull(summary);
         assertEquals(4, summary.size(), "Summary should have 4 roles");
         
-        assertEquals(26, summary.get("Administrator"));
-        assertEquals(19, summary.get("Caregiver"));
+        assertEquals(28, summary.get("Administrator"));
+        assertEquals(21, summary.get("Caregiver"));
         assertEquals(6, summary.get("Patient"));
         assertEquals(3, summary.get("Family Member"));
     }

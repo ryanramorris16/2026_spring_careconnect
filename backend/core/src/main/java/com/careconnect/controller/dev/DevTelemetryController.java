@@ -65,7 +65,7 @@ public class DevTelemetryController {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
         if (o == null) return null;
-        if (o instanceof Map<?, ?> m) return (Map<String, Object>) m;
+        if (o instanceof Map) return (Map<String, Object>) o;
         return null;
     }
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,12 +47,46 @@ class TaskMapperTest {
     }
 
     @Test
-    @DisplayName("parseDays should throw RuntimeException for malformed JSON")
-    void testParseDays_malformedJson() throws Exception {
-        final String badJson = "[true, false, invalid, false]";
+    @DisplayName("parseDays should return null for malformed JSON")
+    void testParseDays_malformedJson() {
+        String badJson = "[true, false, invalid, false]";
+        assertNull(TaskMapper.parseDays(badJson));
+    }
 
-        final RuntimeException ex = assertThrows(RuntimeException.class, () -> TaskMapper.parseDays(badJson));
-        assertTrue(ex.getMessage().contains("Failed to parse daysOfWeek JSON"));
+    @Test
+    @DisplayName("parseDays should parse legacy CSV day names")
+    void testParseDays_legacyCsvDayNames() {
+        String csv = "MON,WED,FRI";
+
+        List<Boolean> result = TaskMapper.parseDays(csv);
+
+        assertNotNull(result);
+        assertEquals(7, result.size());
+        assertEquals(List.of(false, true, false, true, false, true, false), result);
+    }
+
+    @Test
+    @DisplayName("parseDays should parse JSON array of day names")
+    void testParseDays_jsonArrayDayNames() {
+        String json = "[\"sunday\",\"Tuesday\",\"thursday\"]";
+
+        List<Boolean> result = TaskMapper.parseDays(json);
+
+        assertNotNull(result);
+        assertEquals(7, result.size());
+        assertEquals(List.of(true, false, true, false, true, false, false), result);
+    }
+
+    @Test
+    @DisplayName("parseDays should parse double-encoded JSON boolean array")
+    void testParseDays_doubleEncodedJson() {
+        String json = "\"[true,false,true,false,false,true,false]\"";
+
+        List<Boolean> result = TaskMapper.parseDays(json);
+
+        assertNotNull(result);
+        assertEquals(7, result.size());
+        assertEquals(List.of(true, false, true, false, false, true, false), result);
     }
 
     // --------------------------------------------------------------------------
@@ -80,7 +115,7 @@ class TaskMapperTest {
     void testSerializeDays_serializationFailure() throws Exception {
         final List<Boolean> badList = mock(List.class);
         when(badList.size()).thenReturn(1);
-        when(badList.iterator()).thenThrow(new RuntimeException("mock error"));
+        when(badList.get(anyInt())).thenThrow(new RuntimeException("mock error"));
 
         final RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> TaskMapper.serializeDays(badList));

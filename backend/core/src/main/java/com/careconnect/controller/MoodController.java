@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.model.Mood;
 import com.careconnect.service.MoodService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +22,6 @@ public class MoodController {
     @Autowired
     private MoodService moodService;
 
-    @RequirePermission(Permission.CREATE_TASKS)
-
     @Autowired
     private SecurityUtil securityUtil;
 
@@ -46,9 +41,6 @@ public class MoodController {
         Mood savedMood = moodService.saveMood(userId, score, label);
         return ResponseEntity.ok(savedMood);
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/caregiver/{caregiverId}/moods")
     public ResponseEntity<Map<String, Object>> getCaregiverMoodSummaries(@PathVariable Long caregiverId) throws UnauthorizedException {
@@ -76,9 +68,6 @@ public class MoodController {
         data.put("summaries", summaries);
         return ResponseEntity.ok(data);
     }
-
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
 
     @GetMapping("/{userId}/mood")
     public ResponseEntity<List<Mood>> getMoods(@PathVariable Long userId) throws UnauthorizedException {

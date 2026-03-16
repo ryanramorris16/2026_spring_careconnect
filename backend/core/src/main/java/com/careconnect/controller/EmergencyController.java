@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.service.VialOfLifePdfService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,23 +28,17 @@ public class EmergencyController {
     /**
      * Generate and serve a pre-filled Vial of Life PDF for emergency use
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{emergencyId}.pdf")
     @Operation(
         summary = "🚨 Get Emergency PDF",
-        description = """
-            Generate a pre-filled Vial of Life PDF document for emergency responders.
-
-            This endpoint is designed to be accessed via QR codes in emergency situations.
-            It returns an official Vial of Life form pre-populated with the patient's:
-            - Basic information (name, DOB, blood type)
-            - Critical allergies and medical conditions
-            - Current medications
-            - Emergency contact information
-
-            **Security Note:** This endpoint uses emergency ID tokens for access control.
-            """,
+        description = "Generate a pre-filled Vial of Life PDF document for emergency responders.\n\n"
+            + "This endpoint is designed to be accessed via QR codes in emergency situations.\n"
+            + "It returns an official Vial of Life form pre-populated with the patient's:\n"
+            + "- Basic information (name, DOB, blood type)\n"
+            + "- Critical allergies and medical conditions\n"
+            + "- Current medications\n"
+            + "- Emergency contact information\n\n"
+            + "**Security Note:** This endpoint uses emergency ID tokens for access control.\n",
         tags = {"Emergency Information", "🚨 Emergency Response"}
     )
     @ApiResponses({
@@ -83,8 +74,6 @@ public class EmergencyController {
     /**
      * Download emergency PDF (forces download instead of viewing)
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/download/{emergencyId}.pdf")
     @Operation(
         summary = "⬇️ Download Emergency PDF",
@@ -125,8 +114,6 @@ public class EmergencyController {
     /**
      * Health check endpoint for emergency services
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/health")
     @Operation(
         summary = "🏥 Emergency Service Health Check",
@@ -140,8 +127,6 @@ public class EmergencyController {
     /**
      * Debug endpoint to test patient data retrieval
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/debug/{emergencyId}")
     @Operation(
         summary = "🐛 Debug Patient Data",

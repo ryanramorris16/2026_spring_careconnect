@@ -33,7 +33,7 @@ class MedicationControllerTest {
     private static final Long CAREGIVER_ID  = 7L;
 
     private MedicationDTO dto(String name) {
-        final MedicationDTO d = new MedicationDTO(null, null, name, null, null, null, null, null, null, null, null, null, null);
+        final MedicationDTO d = new MedicationDTO(null, null, name, null, null, null, null, null, null, null, null, null, null, null);
         return d;
     }
 

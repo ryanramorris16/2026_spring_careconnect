@@ -1,8 +1,5 @@
 package com.careconnect.controller;
 
-import com.careconnect.security.Permission;
-import com.careconnect.security.RequirePermission;
-
 import com.careconnect.model.Comment;
 import com.careconnect.service.CommentService;
 import com.careconnect.repository.UserRepository;
@@ -38,9 +35,6 @@ public class CommentController {
     @Autowired
     private UserRepository userRepository;
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
-
     @GetMapping("/post/{postId}")
     @Operation(
         summary = "Get comments for a post",
@@ -53,18 +47,7 @@ public class CommentController {
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = Comment.class, type = "array"),
-                examples = @ExampleObject(value = """
-                    [
-                        {
-                            "id": 1,
-                            "postId": 123,
-                            "userId": 456,
-                            "username": "john_doe",
-                            "content": "Great post!",
-                            "createdAt": "2025-01-15T10:30:00Z"
-                        }
-                    ]
-                    """)
+                examples = @ExampleObject(value = "[\n    {\n        \"id\": 1,\n        \"postId\": 123,\n        \"userId\": 456,\n        \"username\": \"john_doe\",\n        \"content\": \"Great post!\",\n        \"createdAt\": \"2025-01-15T10:30:00Z\"\n    }\n]")
             )
         ),
         @ApiResponse(
@@ -84,9 +67,6 @@ public class CommentController {
         List<Comment> comments = commentService.getCommentsForPost(postId);
         return ResponseEntity.ok(comments);
     }
-
-    @RequirePermission(Permission.CREATE_TASKS)
-
 
     @PostMapping("/post/{postId}")
     public ResponseEntity<?> addCommentToPost(
