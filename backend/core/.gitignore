@@ -70,6 +70,7 @@ app.log
 !README.md
 !**/README.md
 !docs/google-oauth-setup.md
+!docs/unit-testing-guide.md
 
 # Keep .env.example
 .env.example
