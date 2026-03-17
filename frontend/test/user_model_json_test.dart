@@ -45,5 +45,44 @@ void main() {
       expect(user.userId, '');
       expect(user.role, '');
     });
+
+    test('UserModel roundtrip preserves data', () {
+      final original = UserModel(
+        name: 'Test User',
+        email: 'test@test.com',
+        userId: '789',
+        role: 'CAREGIVER',
+      );
+      final json = original.toJson();
+      final restored = UserModel.fromJson(json);
+      expect(restored.name, original.name);
+      expect(restored.email, original.email);
+      expect(restored.userId, original.userId);
+      expect(restored.role, original.role);
+    });
+
+    test('UserModel stores PATIENT role', () {
+      final user = UserModel(
+        name: 'Patient',
+        email: 'p@test.com',
+        userId: '1',
+        role: 'PATIENT',
+      );
+      expect(user.role, 'PATIENT');
+    });
+
+    test('UserModel toJson includes all keys', () {
+      final user = UserModel(
+        name: 'N',
+        email: 'e',
+        userId: 'u',
+        role: 'r',
+      );
+      final json = user.toJson();
+      expect(json.containsKey('name'), isTrue);
+      expect(json.containsKey('email'), isTrue);
+      expect(json.containsKey('userId'), isTrue);
+      expect(json.containsKey('role'), isTrue);
+    });
   });
 }

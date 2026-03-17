@@ -69,5 +69,89 @@ void main() {
 
       expect(pressed, isTrue);
     });
+
+    testWidgets('wide screen shows ElevatedButton', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(800, 800)),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 800,
+                  height: 600,
+                  child: AddTaskButton(onPressed: () {}),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ElevatedButton), findsOneWidget);
+    });
+
+    testWidgets('wide screen shows add icon in button', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(800, 800)),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 800,
+                  height: 600,
+                  child: AddTaskButton(onPressed: () {}),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.add), findsOneWidget);
+    });
+
+    testWidgets('compact screen does NOT show Add Task text', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(300, 800)),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 300,
+                  height: 600,
+                  child: AddTaskButton(onPressed: () {}),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Add Task'), findsNothing);
+    });
+
+    testWidgets('renders without crashing', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(600, 800)),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 600,
+                  height: 600,
+                  child: AddTaskButton(onPressed: () {}),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AddTaskButton), findsOneWidget);
+    });
   });
 }

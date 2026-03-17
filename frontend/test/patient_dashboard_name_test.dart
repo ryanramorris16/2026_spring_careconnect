@@ -165,5 +165,107 @@ void main() {
       // Verify role text is also displayed
       expect(find.text('Patient'), findsOneWidget);
     });
+
+    testWidgets('Consumer displays email from user session', (
+      WidgetTester tester,
+    ) async {
+      final mockUserProvider = MockUserProvider();
+      final mockUser = UserSession(
+        id: 1,
+        email: 'jane@example.com',
+        role: 'PATIENT',
+        token: 'test_token',
+        name: 'Jane',
+        patientId: 1,
+      );
+
+      when(mockUserProvider.user).thenReturn(mockUser);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<UserProvider>.value(
+              value: mockUserProvider,
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, child) {
+                  return Text(userProvider.user?.email ?? '');
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('jane@example.com'), findsOneWidget);
+    });
+
+    testWidgets('Consumer displays role from user session', (
+      WidgetTester tester,
+    ) async {
+      final mockUserProvider = MockUserProvider();
+      final mockUser = UserSession(
+        id: 1,
+        email: 'test@example.com',
+        role: 'CAREGIVER',
+        token: 'test_token',
+        name: 'Caregiver User',
+        patientId: null,
+      );
+
+      when(mockUserProvider.user).thenReturn(mockUser);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<UserProvider>.value(
+              value: mockUserProvider,
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, child) {
+                  return Text(userProvider.user?.role ?? '');
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('CAREGIVER'), findsOneWidget);
+    });
+
+    testWidgets('Consumer displays user id correctly', (
+      WidgetTester tester,
+    ) async {
+      final mockUserProvider = MockUserProvider();
+      final mockUser = UserSession(
+        id: 42,
+        email: 'test@example.com',
+        role: 'PATIENT',
+        token: 'test_token',
+        name: 'Test User',
+        patientId: 42,
+      );
+
+      when(mockUserProvider.user).thenReturn(mockUser);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<UserProvider>.value(
+              value: mockUserProvider,
+              child: Consumer<UserProvider>(
+                builder: (context, userProvider, child) {
+                  return Text('ID: ${userProvider.user?.id}');
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('ID: 42'), findsOneWidget);
+    });
   });
 }

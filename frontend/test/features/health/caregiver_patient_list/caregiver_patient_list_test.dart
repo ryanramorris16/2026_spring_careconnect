@@ -18,6 +18,7 @@
 //     setting _isLoading=false with an empty list.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,8 +66,23 @@ Widget _withCaregiverId(Widget widget) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const connectivityChannel =
+      MethodChannel('dev.fluttercommunity.plus/connectivity');
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    // Mock connectivity_plus channel to prevent MissingPluginException
+    // when UserProvider._initConnectivity() runs.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(connectivityChannel, (call) async {
+      if (call.method == 'check') return ['wifi'];
+      return null;
+    });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(connectivityChannel, null);
   });
 
   group('CaregiverPatientList', () {
@@ -121,6 +137,30 @@ void main() {
 
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows AppBar', (tester) async {
+      await tester.pumpWidget(
+        _withNullCaregiverId(const CaregiverPatientList()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('shows search icon in TextField', (tester) async {
+      await tester.pumpWidget(
+        _withNullCaregiverId(const CaregiverPatientList()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.search), findsOneWidget);
+    });
+
+    testWidgets('shows CaregiverPatientList widget type', (tester) async {
+      await tester.pumpWidget(
+        _withNullCaregiverId(const CaregiverPatientList()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CaregiverPatientList), findsOneWidget);
     });
   });
 }
