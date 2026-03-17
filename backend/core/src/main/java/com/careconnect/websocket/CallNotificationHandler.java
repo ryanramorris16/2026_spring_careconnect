@@ -3,6 +3,8 @@ package com.careconnect.websocket;
 import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.JwtTokenProvider;
+import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.service.CallTelemetryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,15 +22,35 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CallNotificationHandler extends TextWebSocketHandler {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CallNotificationHandler.class);
     // Helper to get display name for a user
-    private String getUserDisplayName(User user) {
+    private String getUserDisplayName(User user, String preferredName) {
+        if (preferredName != null) {
+            String trimmed = preferredName.trim();
+            if (!trimmed.isEmpty() && !looksLikeEmail(trimmed)) {
+                return trimmed;
+            }
+        }
         if (user.getName() != null && !user.getName().isEmpty()) {
             return user.getName();
         }
-        return user.getEmail();
+        if (user.getRole() != null) {
+            String roleName = user.getRole().name().toLowerCase();
+            return Character.toUpperCase(roleName.charAt(0)) + roleName.substring(1);
+        }
+        return "Participant";
+    }
+
+    private String getUserDisplayName(User user) {
+        return getUserDisplayName(user, null);
+    }
+
+    private boolean looksLikeEmail(String value) {
+        return value.contains("@") && value.contains(".");
     }
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final CallTelemetryService callTelemetryService;
+    private final CaregiverPatientLinkService caregiverPatientLinkService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Store active connections: userId -> WebSocketSession
@@ -52,12 +74,14 @@ public class CallNotificationHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        String type = "unknown";
+        Map<String, Object> payload = Map.of();
         try {
-            Map<String, Object> payload = objectMapper.readValue(
+            payload = objectMapper.readValue(
                 message.getPayload(),
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
             );
-            String type = (String) payload.get("type");
+            type = String.valueOf(payload.getOrDefault("type", "unknown"));
 
             log.info("Received WebSocket message: {} from session: {}", type, session.getId());
 
@@ -86,13 +110,65 @@ public class CallNotificationHandler extends TextWebSocketHandler {
                 case "heartbeat":
                     handleHeartbeat(session, payload);
                     break;
+                case "sentiment-channel-state":
+                    handleSentimentChannelState(session, payload);
+                    break;
                 default:
                     log.warn("Unknown message type: {}", type);
                     sendErrorMessage(session, "Unknown message type: " + type);
             }
+
+            recordTelemetry(type, session, payload, "SUCCESS", null);
         } catch (Exception e) {
+            recordTelemetry(type, session, payload, "ERROR", e.getMessage());
             log.error("Error handling WebSocket message from session {}", session.getId(), e);
             sendErrorMessage(session, "Error processing message: " + e.getMessage());
+        }
+    }
+
+    private void recordTelemetry(
+            String type,
+            WebSocketSession session,
+            Map<String, Object> payload,
+            String status,
+            String errorMessage
+    ) {
+        User actor = sessionUsers.get(session.getId());
+        Long actorUserId = actor != null ? actor.getId() : null;
+        Long targetUserId = parseLong(payload.get("recipientId"));
+
+        if (targetUserId == null) {
+            targetUserId = parseLong(payload.get("senderId"));
+        }
+        if (targetUserId == null) {
+            targetUserId = parseLong(payload.get("otherPartyId"));
+        }
+
+        String eventType = "WS_" + type.replace('-', '_').toUpperCase();
+        String callId = payload.get("callId") == null ? null : String.valueOf(payload.get("callId"));
+
+        callTelemetryService.recordWebSocketEvent(
+                callId,
+                eventType,
+                actorUserId,
+                targetUserId,
+                payload,
+                status,
+                errorMessage
+        );
+    }
+
+    private Long parseLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.parseLong(value.toString());
+        } catch (NumberFormatException ignored) {
+            return null;
         }
     }
 
@@ -174,12 +250,68 @@ public class CallNotificationHandler extends TextWebSocketHandler {
         String callId = (String) payload.get("callId");
         Boolean isVideoCall = (Boolean) payload.getOrDefault("isVideoCall", true);
         String callType = (String) payload.getOrDefault("callType", "general");
+        String callerName = payload.get("callerName") == null
+            ? null
+            : String.valueOf(payload.get("callerName"));
         
         // Validate recipient exists
         User recipient = userRepository.findById(Long.parseLong(recipientId)).orElse(null);
         if (recipient == null) {
             sendErrorMessage(session, "Recipient not found");
             return;
+        }
+
+        // CALL-017: patients may not call other patients
+        if (sender.getRole() == com.careconnect.security.Role.PATIENT
+                && recipient.getRole() == com.careconnect.security.Role.PATIENT) {
+            Map<String, Object> errorResponse = Map.of(
+                    "type", "call-invitation-failed",
+                    "callId", callId,
+                    "reason", "Patient-to-patient calls are not permitted",
+                    "recipientId", recipientId,
+                    "recipientRole", recipient.getRole().name(),
+                    "recipientName", getUserDisplayName(recipient)
+            );
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
+            return;
+        }
+
+        // CALL-016: patient must have an active link with the caregiver
+        if (sender.getRole() == com.careconnect.security.Role.PATIENT
+                && recipient.getRole() == com.careconnect.security.Role.CAREGIVER) {
+            boolean linked = caregiverPatientLinkService.hasAccessToPatient(
+                    recipient.getId(),
+                    sender.getId()
+            );
+            if (!linked) {
+                Map<String, Object> errorResponse = Map.of(
+                        "type", "call-invitation-failed",
+                        "callId", callId,
+                        "reason", "No active caregiver-patient link",
+                        "recipientId", recipientId,
+                        "recipientRole", recipient.getRole().name(),
+                        "recipientName", getUserDisplayName(recipient)
+                );
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
+                return;
+            }
+
+            boolean patientCallsEnabled = caregiverPatientLinkService.isPatientVideoCallsEnabled(
+                    recipient.getId(),
+                    sender.getId()
+            );
+            if (!patientCallsEnabled) {
+                Map<String, Object> errorResponse = Map.of(
+                        "type", "call-invitation-failed",
+                        "callId", callId,
+                        "reason", "Caregiver disabled patient-initiated calls",
+                        "recipientId", recipientId,
+                        "recipientRole", recipient.getRole().name(),
+                        "recipientName", getUserDisplayName(recipient)
+                );
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
+                return;
+            }
         }
         
         // Find recipient session
@@ -190,7 +322,7 @@ public class CallNotificationHandler extends TextWebSocketHandler {
             Map<String, Object> callNotification = Map.of(
                 "type", "incoming-video-call",
                 "senderId", sender.getId(),
-                "senderName", getUserDisplayName(sender),
+                "senderName", getUserDisplayName(sender, callerName),
                 "senderEmail", sender.getEmail(),
                 "senderRole", sender.getRole().name(),
                 "callId", callId,
@@ -206,6 +338,7 @@ public class CallNotificationHandler extends TextWebSocketHandler {
                 "type", "call-invitation-sent",
                 "callId", callId,
                 "recipientId", recipientId,
+                "recipientRole", recipient.getRole().name(),
                 "recipientName", getUserDisplayName(recipient),
                 "status", "delivered"
             );
@@ -218,7 +351,9 @@ public class CallNotificationHandler extends TextWebSocketHandler {
                 "type", "call-invitation-failed",
                 "callId", callId,
                 "reason", "Recipient not online",
-                "recipientId", recipientId
+                "recipientId", recipientId,
+                "recipientRole", recipient.getRole().name(),
+                "recipientName", getUserDisplayName(recipient)
             );
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorResponse)));
             
@@ -371,6 +506,49 @@ public class CallNotificationHandler extends TextWebSocketHandler {
             "timestamp", System.currentTimeMillis()
         );
         session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+    }
+
+    private void handleSentimentChannelState(WebSocketSession session, Map<String, Object> payload) throws Exception {
+        User user = sessionUsers.get(session.getId());
+        if (user == null) {
+            sendErrorMessage(session, "User not authenticated");
+            return;
+        }
+
+        String channel = payload.get("channel") == null ? "" : String.valueOf(payload.get("channel")).trim().toLowerCase();
+        if (!("text".equals(channel) || "voice".equals(channel) || "video".equals(channel))) {
+            sendErrorMessage(session, "Invalid channel: " + channel);
+            return;
+        }
+
+        String callId = payload.get("callId") == null ? "" : String.valueOf(payload.get("callId"));
+        String otherPartyId = payload.get("otherPartyId") == null ? "" : String.valueOf(payload.get("otherPartyId"));
+        boolean muted = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("muted", false)));
+        String captureMode = payload.get("captureMode") == null ? null : String.valueOf(payload.get("captureMode"));
+
+        if (otherPartyId.isBlank()) {
+            sendErrorMessage(session, "otherPartyId is required");
+            return;
+        }
+
+        WebSocketSession otherSession = userSessions.get(otherPartyId);
+        if (otherSession != null && otherSession.isOpen()) {
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("type", "sentiment-channel-state");
+            response.put("callId", callId);
+            response.put("channel", channel);
+            response.put("muted", muted);
+            response.put("status", muted ? "MUTED" : "AWAITING");
+            response.put("notes", muted ? "Channel Muted" : "Awaiting " + channel + " sentiment sample.");
+            response.put("changedBy", user.getId());
+            response.put("changedByName", getUserDisplayName(user));
+            if (captureMode != null && !captureMode.isBlank()) {
+                response.put("captureMode", captureMode);
+            }
+            response.put("timestamp", System.currentTimeMillis());
+
+            otherSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+        }
     }
 
     private void sendErrorMessage(WebSocketSession session, String errorMessage) {

@@ -34,7 +34,7 @@ class UserAIConfigDTOTest {
 
         assertThat(dto.getOpenaiModel()).isEqualTo("gpt-4");
         assertThat(dto.getDeepseekModel()).isEqualTo("deepseek-chat");
-        assertThat(dto.getMaxTokens()).isEqualTo(2000);
+        assertThat(dto.getMaxTokens()).isEqualTo(200);
         assertThat(dto.getTemperature()).isEqualTo(0.7);
         assertThat(dto.getConversationHistoryLimit()).isEqualTo(20);
         assertThat(dto.getIncludeVitalsByDefault()).isTrue();

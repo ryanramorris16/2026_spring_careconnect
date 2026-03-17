@@ -3,26 +3,82 @@ package com.careconnect.service;
 import com.careconnect.dto.FirebaseNotificationRequest;
 import com.careconnect.dto.NotificationResponse;
 import com.careconnect.model.DeviceToken;
+import com.careconnect.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link NotificationService}.
+ *
+ * All external dependencies (AWS SES/SNS, repositories) are mocked so tests
+ * exercise only the notification orchestration logic.  Users with ID 1-3 are
+ * pre-stubbed in setUp() with email and phone so that notification channels
+ * are available for all tests.
+ */
+@ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
 
+    @Mock
+    private com.careconnect.notifications.SesService sesService;
+    @Mock
+    private com.careconnect.notifications.SnsService snsService;
+    @Mock
+    private com.careconnect.repository.DeviceTokenRepository deviceTokenRepository;
+    @Mock
+    private com.careconnect.repository.NotificationSettingRepository notificationSettingRepository;
+    @Mock
+    private com.careconnect.repository.UserRepository userRepository;
+
+    @InjectMocks
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() throws Exception {
-        MockitoAnnotations.openMocks(this);
-        notificationService = new NotificationService();
+        // Pre-stub users 1-3 so that sendNotificationToUser, sendVitalAlert,
+        // sendMedicationReminder, sendEmergencyAlert, and registerDeviceToken
+        // can look them up without throwing.
+        for (long id = 1; id <= 3; id++) {
+            User user = new User();
+            user.setId(id);
+            user.setEmail("user" + id + "@example.com");
+            user.setPhone("+1555000000" + id);
+            user.setName("Test User" + id);
+            lenient().when(userRepository.findById(id)).thenReturn(Optional.of(user));
+        }
+
+        // SES / SNS stubs — return a stable message ID for assertions
+        lenient().when(sesService.sendEmail(anyString(), anyString(), any(), anyString()))
+                .thenReturn("ses-msg-id");
+        lenient().when(sesService.sendMedicationReminder(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn("ses-med-id");
+        lenient().when(snsService.publishSms(anyString(), anyString()))
+                .thenReturn("sns-sms-id");
+        lenient().when(snsService.sendVitalAlertSms(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenReturn("sns-vital-id");
+        lenient().when(snsService.sendMedicationReminderSms(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn("sns-med-id");
+        lenient().when(snsService.sendEmergencyAlertSms(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn("sns-emerg-id");
+
+        // No registered device tokens by default
+        lenient().when(deviceTokenRepository.findByUserIdAndIsActiveTrue(anyLong()))
+                .thenReturn(Collections.emptyList());
     }
 
     // ========== sendNotification tests ==========
@@ -43,9 +99,9 @@ class NotificationServiceTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals("dummy-message-id", response.getMessageId());
-        assertEquals("Notification sent successfully", response.getMessage());
-        assertNotNull(response.getTimestamp());
+        // Non-phone tokens receive a push-placeholder message ID
+        assertNotNull(response.getMessageId());
+        assertTrue(response.getMessageId().startsWith("push-placeholder-"));
     }
 
     @Test
@@ -70,7 +126,7 @@ class NotificationServiceTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals("dummy-message-id", response.getMessageId());
+        assertNotNull(response.getMessageId());
     }
 
     @Test
@@ -85,17 +141,18 @@ class NotificationServiceTest {
 
         assertNotNull(response);
         assertTrue(response.isSuccess());
-        assertEquals("dummy-message-id", response.getMessageId());
+        assertNotNull(response.getMessageId());
     }
 
     @Test
-    @DisplayName("sendNotification_nullRequest_returnsSuccessResponse")
-    void sendNotification_nullRequest_returnsSuccessResponse() throws Exception {
+    @DisplayName("sendNotification_nullRequest_returnsFailureResponse")
+    void sendNotification_nullRequest_returnsFailureResponse() throws Exception {
+        // Null request causes an NPE inside sendNotification, caught by the
+        // try/catch which returns a failure response.
         final NotificationResponse response = notificationService.sendNotification(null);
 
         assertNotNull(response);
-        assertTrue(response.isSuccess());
-        assertEquals("dummy-message-id", response.getMessageId());
+        assertFalse(response.isSuccess());
     }
 
     // ========== sendBulkNotifications tests ==========
@@ -115,7 +172,7 @@ class NotificationServiceTest {
         assertFalse(responses.isEmpty());
         assertEquals(1, responses.size());
         assertTrue(responses.get(0).isSuccess());
-        assertEquals("dummy-message-id", responses.get(0).getMessageId());
+        assertNotNull(responses.get(0).getMessageId());
     }
 
     @Test
@@ -143,13 +200,13 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse")
-    void sendBulkNotifications_emptyRequestList_returnsListWithSuccessResponse() throws Exception {
+    @DisplayName("sendBulkNotifications_emptyRequestList_returnsEmptyList")
+    void sendBulkNotifications_emptyRequestList_returnsEmptyList() throws Exception {
+        // An empty input list produces an empty output list via stream().map()
         final List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of());
 
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
+        assertTrue(responses.isEmpty());
     }
 
     // ========== sendNotificationToUser tests ==========
@@ -164,9 +221,7 @@ class NotificationServiceTest {
 
         assertNotNull(responses);
         assertFalse(responses.isEmpty());
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
-        assertEquals("dummy-message-id", responses.get(0).getMessageId());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -177,7 +232,7 @@ class NotificationServiceTest {
 
         assertNotNull(responses);
         assertFalse(responses.isEmpty());
-        assertTrue(responses.get(0).isSuccess());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -189,8 +244,8 @@ class NotificationServiceTest {
                 3L, "Emergency", "Fall detected", "EMERGENCY", data);
 
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     // ========== sendVitalAlert tests ==========
@@ -202,13 +257,11 @@ class NotificationServiceTest {
                 notificationService.sendVitalAlert(1L, "HEART_RATE", "120", "HIGH");
 
         assertNotNull(future);
-        assertTrue(future.isDone());
 
         final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
-        assertEquals("dummy-message-id", responses.get(0).getMessageId());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -219,7 +272,8 @@ class NotificationServiceTest {
 
         assertNotNull(future);
         final List<NotificationResponse> responses = future.get();
-        assertTrue(responses.get(0).isSuccess());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -231,7 +285,7 @@ class NotificationServiceTest {
         assertNotNull(future);
         final List<NotificationResponse> responses = future.get();
         assertFalse(responses.isEmpty());
-        assertTrue(responses.get(0).isSuccess());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     // ========== sendMedicationReminder tests ==========
@@ -243,13 +297,11 @@ class NotificationServiceTest {
                 notificationService.sendMedicationReminder(1L, "Aspirin", "100mg", "08:00 AM");
 
         assertNotNull(future);
-        assertTrue(future.isDone());
 
         final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
-        assertEquals("dummy-message-id", responses.get(0).getMessageId());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -260,7 +312,8 @@ class NotificationServiceTest {
 
         assertNotNull(future);
         final List<NotificationResponse> responses = future.get();
-        assertTrue(responses.get(0).isSuccess());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -283,13 +336,11 @@ class NotificationServiceTest {
                 notificationService.sendEmergencyAlert(1L, "FALL_DETECTED", "Living Room");
 
         assertNotNull(future);
-        assertTrue(future.isDone());
 
         final List<NotificationResponse> responses = future.get();
         assertNotNull(responses);
-        assertEquals(1, responses.size());
-        assertTrue(responses.get(0).isSuccess());
-        assertEquals("dummy-message-id", responses.get(0).getMessageId());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -300,7 +351,8 @@ class NotificationServiceTest {
 
         assertNotNull(future);
         final List<NotificationResponse> responses = future.get();
-        assertTrue(responses.get(0).isSuccess());
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     @Test
@@ -312,7 +364,7 @@ class NotificationServiceTest {
         assertNotNull(future);
         final List<NotificationResponse> responses = future.get();
         assertFalse(responses.isEmpty());
-        assertTrue(responses.get(0).isSuccess());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
     }
 
     // ========== registerDeviceToken tests ==========
@@ -339,9 +391,11 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("registerDeviceToken_nullParams_completesWithoutException")
-    void registerDeviceToken_nullParams_completesWithoutException() throws Exception {
-        assertDoesNotThrow(() ->
+    @DisplayName("registerDeviceToken_nullUserId_throwsBecauseUserNotFound")
+    void registerDeviceToken_nullUserId_throwsBecauseUserNotFound() throws Exception {
+        // Production calls userRepository.findById(null).orElseThrow() which
+        // throws because no user matches a null ID.
+        assertThrows(Exception.class, () ->
                 notificationService.registerDeviceToken(null, null, null, null));
     }
 

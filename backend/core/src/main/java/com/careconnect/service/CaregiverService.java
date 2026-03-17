@@ -2,6 +2,7 @@ package com.careconnect.service;
 
 import com.careconnect.model.Caregiver;
 import com.careconnect.model.Patient;
+import com.careconnect.model.Address;
 import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.dto.CaregiverRegistration;
@@ -24,7 +25,7 @@ import com.careconnect.dto.ProfessionalInfoDto;
 import com.careconnect.dto.AddressDto;
 import com.careconnect.dto.PatientWithLinkDto;
 import com.careconnect.dto.PatientSummaryDTO;
-import com.careconnect.model.Address;
+import com.careconnect.dto.PatientRiskResponseDto;
 import com.careconnect.model.Plan;
 import com.careconnect.model.Subscription;
 import com.careconnect.repository.FamilyMemberLinkRepository;
@@ -40,13 +41,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
 public class CaregiverService {
     
-    private static final Logger log = LoggerFactory.getLogger(CaregiverService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CaregiverService.class);
 
     @Autowired
     private CaregiverRepository caregiverRepository;
@@ -80,6 +82,9 @@ public class CaregiverService {
     
     @Autowired
     private SubscriptionRepository subscriptionRepository;
+
+    @Autowired
+    private PatientRiskService patientRiskService;
     
     // public List<Patient> getPatientsByCaregiver(Long caregiverId, String email, String name) {
     //     // Get caregiver user
@@ -150,7 +155,7 @@ public List<PatientWithLinkDto> getPatientsByCaregiver(Long caregiverId, String 
                             .address(patient.getAddress())
                             .relationship(patient.getRelationship())
                             .build();
-                        return new PatientWithLinkDto(summary, link);
+                        return new PatientWithLinkDto(summary, link, List.of());
                     }
                 }
                 return null;
@@ -286,7 +291,7 @@ public Patient registerPatient(PatientRegistration reg) {
                     "id", "cus_mock_" + System.currentTimeMillis(),
                     "success", true
                 );
-                log.info("Development mode: Using mock Stripe customer creation");
+                LOG.info("Development mode: Using mock Stripe customer creation");
             }
         } catch (Exception e) {
             throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -358,7 +363,7 @@ public Patient registerPatient(PatientRegistration reg) {
                             "id", "sub_mock_" + System.currentTimeMillis(),
                             "success", true
                         );
-                        log.info("Development mode: Using mock Stripe subscription creation");
+                        LOG.info("Development mode: Using mock Stripe subscription creation");
                     }
                     
                     // Save subscription information to database
@@ -419,7 +424,11 @@ public boolean hasAccessToPatient(Long userId, Long patientId) {
             
         case FAMILY_MEMBER:
             // Similar check for family members
-            return familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(userId, patientId);
+            return familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(
+                userId,
+                patientId,
+                LocalDateTime.now()
+            );
             
         case ADMIN:
             return true;
@@ -489,6 +498,9 @@ public PatientWithLinkDto getPatientWithLinkById(Long caregiverId, Long patientI
         .address(patient.getAddress())
         .relationship(patient.getRelationship())
         .build();
-    return new PatientWithLinkDto(summary, linkOpt.get());
+    List<PatientRiskResponseDto> risks = patientRiskService.getFlaggedRisksForPatient(patientId).stream()
+        .map(PatientRiskResponseDto::from)
+        .toList();
+    return new PatientWithLinkDto(summary, linkOpt.get(), risks);
 }
 }

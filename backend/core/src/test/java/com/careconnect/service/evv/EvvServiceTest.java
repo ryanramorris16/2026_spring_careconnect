@@ -12,7 +12,9 @@ import com.careconnect.model.evv.EvvLocationType;
 import com.careconnect.model.evv.EvvOfflineQueue;
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.model.schedule.ScheduledVisit;
+import com.careconnect.model.User;
 import com.careconnect.repository.PatientRepository;
+import com.careconnect.repository.UserRepository;
 import com.careconnect.repository.evv.EvvCorrectionRepository;
 import com.careconnect.repository.evv.EvvOfflineQueueRepository;
 import com.careconnect.repository.evv.EvvRecordRepository;
@@ -47,6 +49,7 @@ class EvvServiceTest {
     @Mock private EvvCorrectionRepository correctionRepository;
     @Mock private EvvOfflineQueueRepository offlineQueueRepository;
     @Mock private PatientRepository patientRepository;
+    @Mock private UserRepository userRepository;
     @Mock private EvvLocationService locationService;
     @Mock private AuditLogger audit;
     @Mock private ScheduledVisitRepository scheduledVisitRepository;
@@ -119,6 +122,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
 
@@ -141,6 +145,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -168,6 +173,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
 
@@ -186,6 +192,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -213,6 +220,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -238,6 +246,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -264,6 +273,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -289,6 +299,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
 
@@ -307,6 +318,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(locationService.saveLocation(any())).thenReturn(
@@ -335,6 +347,7 @@ class EvvServiceTest {
         visit.setStatus("Scheduled");
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(scheduledVisitRepository.findById(20L)).thenReturn(Optional.of(visit));
@@ -356,6 +369,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(scheduledVisitRepository.findById(99L)).thenReturn(Optional.empty());
@@ -377,6 +391,7 @@ class EvvServiceTest {
         final EvvRecord saved = buildSavedRecord(1L, patient);
 
         when(patientRepository.findById(5L)).thenReturn(Optional.of(patient));
+        when(userRepository.findById(10L)).thenReturn(Optional.of(User.builder().id(10L).name("Test Caregiver").build()));
         when(recordRepository.save(any(EvvRecord.class))).thenReturn(saved);
         doNothing().when(audit).log(any(), any(), any(), any());
         when(scheduledVisitRepository.findById(20L)).thenThrow(new RuntimeException("DB error"));

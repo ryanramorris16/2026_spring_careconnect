@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,6 +62,9 @@ class CaregiverServiceTest {
 
     @Mock
     private SubscriptionRepository subscriptionRepository;
+
+    @Mock
+    private PatientRiskService patientRiskService;
 
     @InjectMocks
     private CaregiverService caregiverService;
@@ -120,7 +124,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -144,7 +149,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -169,7 +175,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -194,7 +201,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -214,7 +222,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -243,7 +252,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
@@ -858,7 +868,7 @@ class CaregiverServiceTest {
             fmUser.setRole(Role.FAMILY_MEMBER);
 
             when(users.findById(3L)).thenReturn(Optional.of(fmUser));
-            when(familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(3L, 20L)).thenReturn(true);
+            when(familyMemberLinkRepository.existsByFamilyMemberUserIdAndPatientId(eq(3L), eq(20L), any(LocalDateTime.class))).thenReturn(true);
 
             assertTrue(caregiverService.hasAccessToPatient(3L, 20L));
         }
@@ -943,11 +953,14 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     2L, "John Doe", "patient@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))
                     .thenReturn(List.of(linkResponse));
+            when(patientRiskService.getFlaggedRisksForPatient(20L))
+                    .thenReturn(List.of());
 
             final PatientWithLinkDto result = caregiverService.getPatientWithLinkById(10L, 20L);
 
@@ -988,7 +1001,8 @@ class CaregiverServiceTest {
             final CaregiverPatientLinkResponse linkResponse = new CaregiverPatientLinkResponse(
                     1L, 1L, "Jane Smith", "caregiver@test.com",
                     99L, "Other Patient", "other@test.com",
-                    "ACTIVE", "PERMANENT", null, null, null, "Jane Smith", true, false
+                    "ACTIVE", "PERMANENT", false, false, LocalDateTime.now(), null,
+                    "", "Test", true, false
             );
 
             when(caregiverPatientLinkService.getPatientsByCaregiver(1L))

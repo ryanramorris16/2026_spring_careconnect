@@ -81,7 +81,7 @@ class FamilyMemberControllerTest {
          * Covers: userRepository.findById() returns empty
          * → orElseThrow fires AppException(UNAUTHORIZED)
          */
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> controller.getAccessiblePatients())
                 .isInstanceOf(AppException.class)
@@ -98,7 +98,7 @@ class FamilyMemberControllerTest {
         final User nonFamily = new User();
         nonFamily.setId(USER_ID);
         nonFamily.setRole(Role.PATIENT);
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(nonFamily));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(nonFamily));
 
         assertThatThrownBy(() -> controller.getAccessiblePatients())
                 .isInstanceOf(AppException.class)
@@ -116,7 +116,7 @@ class FamilyMemberControllerTest {
          */
         final User user = makeFamilyMemberUser();
         final List<PatientDataResponse> patients = List.of();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.getAccessiblePatients(USER_ID)).thenReturn(patients);
 
         final ResponseEntity<List<PatientDataResponse>> response = controller.getAccessiblePatients();
@@ -134,7 +134,7 @@ class FamilyMemberControllerTest {
          */
         final User user = makeFamilyMemberUser();
         final PatientDataResponse patientData = mock(PatientDataResponse.class);
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.getPatientData(USER_ID, PATIENT_ID)).thenReturn(patientData);
 
         final ResponseEntity<PatientDataResponse> response = controller.getPatientData(PATIENT_ID);
@@ -151,7 +151,7 @@ class FamilyMemberControllerTest {
          * Covers: successful delegation to familyMemberService.hasAccessToPatient().
          */
         final User user = makeFamilyMemberUser();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
 
         final ResponseEntity<Boolean> response = controller.hasAccessToPatient(PATIENT_ID);
@@ -169,7 +169,7 @@ class FamilyMemberControllerTest {
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
          */
         final User user = makeFamilyMemberUser();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
         assertThatThrownBy(() -> controller.getPatientDashboard(PATIENT_ID, 30))
@@ -186,7 +186,7 @@ class FamilyMemberControllerTest {
          */
         final User user = makeFamilyMemberUser();
         final DashboardDTO dashboard = mock(DashboardDTO.class);
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(analyticsService.getDashboard(PATIENT_ID, Period.ofDays(30))).thenReturn(dashboard);
 
@@ -205,7 +205,7 @@ class FamilyMemberControllerTest {
          * → throws AppException(FORBIDDEN, "Access denied to patient data")
          */
         final User user = makeFamilyMemberUser();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(false);
 
         assertThatThrownBy(() -> controller.getPatientVitals(PATIENT_ID, 7))
@@ -222,7 +222,7 @@ class FamilyMemberControllerTest {
          */
         final User user = makeFamilyMemberUser();
         final List<VitalSampleDTO> vitals = List.of();
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(USER_ID.toString())).thenReturn(Optional.of(user));
         when(familyMemberService.hasAccessToPatient(USER_ID, PATIENT_ID)).thenReturn(true);
         when(analyticsService.getVitals(PATIENT_ID, Period.ofDays(7))).thenReturn(vitals);
 

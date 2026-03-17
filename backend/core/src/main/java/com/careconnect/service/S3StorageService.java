@@ -4,6 +4,8 @@ import com.careconnect.dto.S3Props;
 import com.careconnect.dto.UserFileDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +28,7 @@ import java.util.UUID;
 @ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = true)
 public class S3StorageService implements StorageService {
 
+    private static final Logger log = LoggerFactory.getLogger(S3StorageService.class);
     private final S3Client s3;
     private final S3Props props;
 

@@ -2,7 +2,7 @@ package com.careconnect.careconnect_backend;
 
 import com.careconnect.CareconnectBackendApplication;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.mockito.MockedConstruction;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -19,13 +19,13 @@ class CareconnectBackendApplicationTests {
 
 	@Test
 	void main_callsSpringApplicationRun() {
-		try (MockedStatic<SpringApplication> springApp = mockStatic(SpringApplication.class)) {
-			springApp.when(() -> SpringApplication.run(any(Class.class), any(String[].class)))
-					.thenReturn(null);
+		try (MockedConstruction<SpringApplication> construction =
+				     mockConstruction(SpringApplication.class)) {
 
 			CareconnectBackendApplication.main(new String[]{});
 
-			springApp.verify(() -> SpringApplication.run(CareconnectBackendApplication.class, new String[]{}));
+			assertThat(construction.constructed()).hasSize(1);
+			verify(construction.constructed().get(0)).run(new String[]{});
 		}
 	}
 }

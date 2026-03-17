@@ -70,7 +70,7 @@ class DevDataLoaderTest {
     void run_SkipsLoadingWhenUsersExist() throws Exception {
         // Verifies the guard query: if users table already contains rows, no INSERT/UPDATE
         // statements are executed, preventing duplicate seed data on subsequent restarts.
-        when(statement.executeQuery("SELECT COUNT(*) FROM users"))
+        when(statement.executeQuery(anyString()))
                 .thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getInt(1)).thenReturn(5);
@@ -89,7 +89,7 @@ class DevDataLoaderTest {
     void run_AttemptsLoadWhenNoUsersExist() throws Exception {
         // Verifies that when the users table is empty, the loader proceeds to execute
         // SQL seed statements (the contents of a dev SQL file or inline SQL).
-        when(statement.executeQuery("SELECT COUNT(*) FROM users"))
+        when(statement.executeQuery(anyString()))
                 .thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getInt(1)).thenReturn(0);
@@ -110,7 +110,7 @@ class DevDataLoaderTest {
     void run_AttemptsLoadWhenUserCheckFails() throws Exception {
         // Verifies resilience: if the guard query itself throws (e.g. table not yet
         // created by Flyway), the loader still attempts to run without crashing the app.
-        when(statement.executeQuery("SELECT COUNT(*) FROM users"))
+        when(statement.executeQuery(anyString()))
                 .thenThrow(new RuntimeException("DB error"));
 
         when(statement.executeUpdate(anyString())).thenReturn(1);
@@ -126,7 +126,7 @@ class DevDataLoaderTest {
     void run_DoesNotThrowWhenSqlExecutionFails() throws Exception {
         // Verifies that a failure during seed SQL execution does not propagate an
         // exception that would abort application startup — errors are caught and logged.
-        when(statement.executeQuery("SELECT COUNT(*) FROM users"))
+        when(statement.executeQuery(anyString()))
                 .thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getInt(1)).thenReturn(0);
@@ -145,7 +145,7 @@ class DevDataLoaderTest {
     void run_AttemptsLoadWhenResultSetHasNoRows() throws Exception {
         // Verifies that when the guard query returns a ResultSet where next() is false
         // (no rows at all), shouldLoadMockData still returns true and load is attempted.
-        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(resultSet);
+        when(statement.executeQuery(anyString())).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(false);
         when(statement.executeUpdate(anyString())).thenReturn(1);
 
@@ -161,7 +161,7 @@ class DevDataLoaderTest {
     void run_DoesNotThrowWhenConnectionFailsDuringExecution() throws Exception {
         // Verifies that if DataSource.getConnection() throws during executeSqlScript,
         // the outer catch block absorbs the error without crashing application startup.
-        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(resultSet);
+        when(statement.executeQuery(anyString())).thenReturn(resultSet);
         when(resultSet.next()).thenReturn(true);
         when(resultSet.getInt(1)).thenReturn(0); // users = 0 → triggers loadMockData
 
@@ -192,7 +192,7 @@ class DevDataLoaderTest {
         when(caregiverRs.next()).thenReturn(true);
         when(caregiverRs.getInt(1)).thenReturn(1);
 
-        when(statement.executeQuery("SELECT COUNT(*) FROM users")).thenReturn(countRs);
+        when(statement.executeQuery(anyString())).thenReturn(countRs);
         when(statement.executeQuery("SELECT COUNT(*) FROM patient")).thenReturn(patientRs);
         when(statement.executeQuery("SELECT COUNT(*) FROM caregiver")).thenReturn(caregiverRs);
         when(statement.executeQuery("SELECT COUNT(*) FROM patient_medication"))

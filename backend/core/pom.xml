@@ -27,13 +27,6 @@
         <dependency-check.skipUpdate>false</dependency-check.skipUpdate>
         <dependency-check.failBuild>false</dependency-check.failBuild>
         <!-- SonarQube Configuration -->
-        <sonar.projectKey>careconnect-backend</sonar.projectKey>
-        <sonar.projectName>CareConnect Backend</sonar.projectName>
-        <sonar.language>java</sonar.language>
-        <sonar.sources>src/main</sonar.sources>
-        <sonar.tests>src/test</sonar.tests>
-        <sonar.exclusions>**/config/**,**/dto/**</sonar.exclusions>
-        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>
@@ -93,7 +86,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version>
+            <version>1.18.38</version>
             <scope>provided</scope>
         </dependency>
 
@@ -163,6 +156,36 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apigatewaymanagementapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>chimesdkmeetings</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>chimesdkmediapipelines</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>iam</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockruntime</artifactId>
+        </dependency>
+
+        <!-- SES and SNS for notifications -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sns</artifactId>
         </dependency>
 
         <!-- OpenAPI UI -->
@@ -381,13 +404,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>17</source>
+                    <target>17</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.34</version>
+                            <version>1.18.38</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -498,17 +521,6 @@
                 </configuration>
             </plugin>
 
-            <!-- SonarQube Scanner Maven Plugin -->
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>3.10.0.2594</version>
-                <configuration>
-                    <skip>false</skip>
-                    <skipDesign>false</skipDesign>
-                </configuration>
-            </plugin>
-
             <!-- OWASP Dependency-Check plugin -->
             <plugin>
                 <groupId>org.owasp</groupId>
@@ -530,6 +542,24 @@
                     <nvdApiMaxRetries>10</nvdApiMaxRetries>
                     <nvdApiRetryDelay>12000</nvdApiRetryDelay>
                 </configuration>
+            </plugin>
+
+            <!-- JaCoCo code coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

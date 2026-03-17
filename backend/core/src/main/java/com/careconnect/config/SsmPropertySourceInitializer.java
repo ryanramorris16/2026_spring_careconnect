@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class SsmPropertySourceInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SsmPropertySourceInitializer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SsmPropertySourceInitializer.class);
     private static final String SSM_PARAMETER_PREFIX = "/careconnect/prod/";
     private static final String PROPERTY_SOURCE_NAME = "ssmPropertySource";
 
@@ -83,11 +83,11 @@ public class SsmPropertySourceInitializer implements ApplicationContextInitializ
         String awsEnabled = environment.getProperty("careconnect.aws.enabled", "true");
 
         if (!isProduction || !"true".equalsIgnoreCase(awsEnabled)) {
-            logger.info("SSM PropertySource not initialized - not in production mode or AWS disabled");
+            LOGGER.info("SSM PropertySource not initialized - not in production mode or AWS disabled");
             return;
         }
 
-        logger.info("Initializing SSM Parameter Store property source for production...");
+        LOGGER.info("Initializing SSM Parameter Store property source for production...");
 
         try {
             // Create SSM client
@@ -104,16 +104,16 @@ public class SsmPropertySourceInitializer implements ApplicationContextInitializ
             if (!ssmProperties.isEmpty()) {
                 PropertySource<?> ssmPropertySource = new MapPropertySource(PROPERTY_SOURCE_NAME, ssmProperties);
                 environment.getPropertySources().addFirst(ssmPropertySource);
-                logger.info("SSM PropertySource initialized with {} parameters", ssmProperties.size());
+                LOGGER.info("SSM PropertySource initialized with {} parameters", ssmProperties.size());
             } else {
-                logger.warn("No SSM parameters loaded - application may use environment variable fallbacks");
+                LOGGER.warn("No SSM parameters loaded - application may use environment variable fallbacks");
             }
 
             // Close SSM client
             ssmClient.close();
 
         } catch (Exception e) {
-            logger.error("Failed to initialize SSM PropertySource - falling back to environment variables", e);
+            LOGGER.error("Failed to initialize SSM PropertySource - falling back to environment variables", e);
             // Don't fail application startup, just log the error and continue
         }
     }
@@ -126,7 +126,7 @@ public class SsmPropertySourceInitializer implements ApplicationContextInitializ
             String springPropertyName = PARAMETER_MAPPING.get(parameterName);
 
             if (springPropertyName == null) {
-                logger.warn("No Spring property mapping found for SSM parameter: {}", parameterName);
+                LOGGER.warn("No Spring property mapping found for SSM parameter: {}", parameterName);
                 continue;
             }
 
@@ -140,10 +140,10 @@ public class SsmPropertySourceInitializer implements ApplicationContextInitializ
                 String value = response.parameter().value();
 
                 properties.put(springPropertyName, value);
-                logger.info("Loaded SSM parameter: {} -> {}", fullParameterName, springPropertyName);
+                LOGGER.info("Loaded SSM parameter: {} -> {}", fullParameterName, springPropertyName);
 
             } catch (Exception e) {
-                logger.warn("Could not load SSM parameter: {} - will use environment variable fallback if available",
+                LOGGER.warn("Could not load SSM parameter: {} - will use environment variable fallback if available",
                         fullParameterName);
             }
         }

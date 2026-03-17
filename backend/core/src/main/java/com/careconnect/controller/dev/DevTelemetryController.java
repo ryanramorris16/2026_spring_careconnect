@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -64,8 +65,8 @@ public class DevTelemetryController {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
-        if (o == null) return null;
-        if (o instanceof Map) return (Map<String, Object>) o;
-        return null;
+        if (o == null) return Collections.emptyMap();
+        if (o instanceof Map<?, ?> m) return (Map<String, Object>) m;
+        return Collections.emptyMap();
     }
 }

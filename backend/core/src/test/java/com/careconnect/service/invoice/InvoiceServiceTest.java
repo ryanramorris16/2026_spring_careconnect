@@ -86,7 +86,7 @@ class InvoiceServiceTest {
         inv.setProviderAddress("");
         inv.setProviderPhone("");
         inv.setPatientName("");
-        inv.setPaymentStatus(PaymentStatus.pending);
+        inv.setPaymentStatus(PaymentStatus.PENDING);
         inv.setStatementDate(OffsetDateTime.now(ZoneOffset.UTC));
         inv.setDueDate(OffsetDateTime.now(ZoneOffset.UTC));
         inv.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
@@ -182,7 +182,7 @@ class InvoiceServiceTest {
         existing.setCreatedBy("original-user");
 
         final Invoice rebuilt = minimalSavedInvoice("upd-id");
-        rebuilt.setPaymentStatus(PaymentStatus.sent);
+        rebuilt.setPaymentStatus(PaymentStatus.SENT);
 
         when(repo.findById("upd-id")).thenReturn(Optional.of(existing));
         when(repo.save(any(Invoice.class))).thenReturn(rebuilt);
@@ -329,20 +329,20 @@ class InvoiceServiceTest {
         final String csv = "pending,overdue,pendingInsurance,sent,paid,partialPayment,rejectedInsurance";
         final Set<PaymentStatus> result = InvoiceService.parseStatuses(csv);
         assertThat(result).containsExactlyInAnyOrder(
-                PaymentStatus.pending,
-                PaymentStatus.overdue,
-                PaymentStatus.pendingInsurance,
-                PaymentStatus.sent,
-                PaymentStatus.paid,
-                PaymentStatus.partialPayment,
-                PaymentStatus.rejectedInsurance
+                PaymentStatus.PENDING,
+                PaymentStatus.OVERDUE,
+                PaymentStatus.PENDING_INSURANCE,
+                PaymentStatus.SENT,
+                PaymentStatus.PAID,
+                PaymentStatus.PARTIAL_PAYMENT,
+                PaymentStatus.REJECTED_INSURANCE
         );
     }
 
     @Test
     void parseStatuses_unknownStatus_mapsToPending() throws Exception {
         final Set<PaymentStatus> result = InvoiceService.parseStatuses("unknownXYZ");
-        assertThat(result).containsExactly(PaymentStatus.pending);
+        assertThat(result).containsExactly(PaymentStatus.PENDING);
     }
 
     // ─── recordPayment ────────────────────────────────────────────────────────
@@ -368,7 +368,7 @@ class InvoiceServiceTest {
         invoice.setAmountDue(BigDecimal.valueOf(100.00));
 
         final Invoice saved = minimalSavedInvoice("pay-id");
-        saved.setPaymentStatus(PaymentStatus.paid);
+        saved.setPaymentStatus(PaymentStatus.PAID);
         saved.setPaidDate(OffsetDateTime.now(ZoneOffset.UTC));
 
         when(repo.findById("pay-id")).thenReturn(Optional.of(invoice));
@@ -383,7 +383,7 @@ class InvoiceServiceTest {
         final InvoiceDto result = service.recordPayment("pay-id", pdto, "admin");
 
         assertThat(result).isNotNull();
-        verify(repo).save(argThat(inv -> PaymentStatus.paid.equals(inv.getPaymentStatus())));
+        verify(repo).save(argThat(inv -> PaymentStatus.PAID.equals(inv.getPaymentStatus())));
     }
 
     @Test
@@ -393,7 +393,7 @@ class InvoiceServiceTest {
         invoice.setAmountDue(BigDecimal.valueOf(200.00));
 
         final Invoice saved = minimalSavedInvoice("partial-id");
-        saved.setPaymentStatus(PaymentStatus.partialPayment);
+        saved.setPaymentStatus(PaymentStatus.PARTIAL_PAYMENT);
 
         when(repo.findById("partial-id")).thenReturn(Optional.of(invoice));
         when(repo.save(any(Invoice.class))).thenReturn(saved);
@@ -407,7 +407,7 @@ class InvoiceServiceTest {
         final InvoiceDto result = service.recordPayment("partial-id", pdto, "admin");
 
         assertThat(result).isNotNull();
-        verify(repo).save(argThat(inv -> PaymentStatus.partialPayment.equals(inv.getPaymentStatus())));
+        verify(repo).save(argThat(inv -> PaymentStatus.PARTIAL_PAYMENT.equals(inv.getPaymentStatus())));
     }
 
     @Test
@@ -417,7 +417,7 @@ class InvoiceServiceTest {
         invoice.setAmountDue(BigDecimal.valueOf(50.00));
 
         final Invoice saved = minimalSavedInvoice("createdby-id");
-        saved.setPaymentStatus(PaymentStatus.paid);
+        saved.setPaymentStatus(PaymentStatus.PAID);
 
         when(repo.findById("createdby-id")).thenReturn(Optional.of(invoice));
         when(repo.save(any(Invoice.class))).thenReturn(saved);
@@ -482,7 +482,7 @@ class InvoiceServiceTest {
         invoice.addPayment(toDelete);
 
         final Invoice saved = minimalSavedInvoice("dpay-full");
-        saved.setPaymentStatus(PaymentStatus.paid);
+        saved.setPaymentStatus(PaymentStatus.PAID);
 
         when(repo.findById("dpay-full")).thenReturn(Optional.of(invoice));
         when(repo.save(any(Invoice.class))).thenReturn(saved);
@@ -490,7 +490,7 @@ class InvoiceServiceTest {
         final InvoiceDto result = service.deletePayment("dpay-full", "del-pay");
 
         assertThat(result).isNotNull();
-        verify(repo).save(argThat(inv -> PaymentStatus.paid.equals(inv.getPaymentStatus())));
+        verify(repo).save(argThat(inv -> PaymentStatus.PAID.equals(inv.getPaymentStatus())));
     }
 
     @Test
@@ -514,7 +514,7 @@ class InvoiceServiceTest {
         invoice.addPayment(pay2);
 
         final Invoice saved = minimalSavedInvoice("dpay-partial");
-        saved.setPaymentStatus(PaymentStatus.partialPayment);
+        saved.setPaymentStatus(PaymentStatus.PARTIAL_PAYMENT);
 
         when(repo.findById("dpay-partial")).thenReturn(Optional.of(invoice));
         when(repo.save(any(Invoice.class))).thenReturn(saved);
@@ -522,7 +522,7 @@ class InvoiceServiceTest {
         final InvoiceDto result = service.deletePayment("dpay-partial", "pay-2");
 
         assertThat(result).isNotNull();
-        verify(repo).save(argThat(inv -> PaymentStatus.partialPayment.equals(inv.getPaymentStatus())));
+        verify(repo).save(argThat(inv -> PaymentStatus.PARTIAL_PAYMENT.equals(inv.getPaymentStatus())));
     }
 
     @Test
@@ -539,7 +539,7 @@ class InvoiceServiceTest {
         invoice.addPayment(pay1);
 
         final Invoice saved = minimalSavedInvoice("dpay-pending");
-        saved.setPaymentStatus(PaymentStatus.pending);
+        saved.setPaymentStatus(PaymentStatus.PENDING);
 
         when(repo.findById("dpay-pending")).thenReturn(Optional.of(invoice));
         when(repo.save(any(Invoice.class))).thenReturn(saved);
@@ -547,7 +547,7 @@ class InvoiceServiceTest {
         final InvoiceDto result = service.deletePayment("dpay-pending", "only-pay");
 
         assertThat(result).isNotNull();
-        verify(repo).save(argThat(inv -> PaymentStatus.pending.equals(inv.getPaymentStatus())));
+        verify(repo).save(argThat(inv -> PaymentStatus.PENDING.equals(inv.getPaymentStatus())));
     }
 
     // ─── findDuplicateByProviderAndTotal ─────────────────────────────────────

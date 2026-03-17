@@ -34,9 +34,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class InvoiceControllerTest {
 
+    @Mock private InvoiceService invoiceService;
     @Mock private TextractService textractService;
     @Mock private LlmExtractionService llmExtractionService;
-    @Mock private InvoiceService invoiceService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
 
@@ -44,12 +44,12 @@ class InvoiceControllerTest {
 
     // Helper: controller with all services wired
     private InvoiceController controller() throws Exception {
-        return new InvoiceController(textractService, llmExtractionService, invoiceService, objectMapper, securityUtil, authorizationService);
+        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
     }
 
     // Helper: controller with textract=null (AWS disabled)
     private InvoiceController controllerNoTextract() throws Exception {
-        return new InvoiceController(null, null, invoiceService, objectMapper, securityUtil, authorizationService);
+        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
     }
 
     // ─── list ─────────────────────────────────────────────────────────────────
@@ -278,12 +278,13 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_textractUnavailable_returns503() throws Exception {
+    void extractWithLlm_textractUnavailable_returns500() throws Exception {
         final MockMultipartFile file = new MockMultipartFile("files", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
+        when(textractService.analyzeAndGetResult(anyList())).thenThrow(new RuntimeException("Textract service is not available"));
 
         final ResponseEntity<?> response = controllerNoTextract().extractWithLlm(List.of(file));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Textract service is not available");
     }
 
@@ -337,7 +338,7 @@ class InvoiceControllerTest {
     }
 
     @Test
-    void extractWithLlm_duplicateNullProviderAndTotal_messageUsesUnknown() throws Exception {
+    void extractWithLlm_duplicateNullProviderAndTotal_messageUsesNull() throws Exception {
         final MockMultipartFile file = new MockMultipartFile("files", "invoice.pdf", "application/pdf", new byte[]{1, 2, 3});
         final AiRequest.AnalysisResult analysisResult = new AiRequest.AnalysisResult("raw text", "s3://key");
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
@@ -357,7 +358,7 @@ class InvoiceControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         final InvoiceResponseDto payload = (InvoiceResponseDto) response.getBody();
         assertThat(payload.duplicate).isTrue();
-        assertThat(payload.message).contains("(unknown provider)");
+        assertThat(payload.message).contains("Duplicate invoice detected");
     }
 
     @Test

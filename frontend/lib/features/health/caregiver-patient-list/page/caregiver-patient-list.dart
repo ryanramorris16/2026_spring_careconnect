@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:care_connect_app/features/auth/presentation/pages/sign_up_screen.dart';
 import 'package:care_connect_app/features/health/caregiver-patient-list/models/patient-info.dart';
 import 'package:care_connect_app/features/health/caregiver-patient-list/widgets/patient-info-card.dart';
+import 'package:care_connect_app/features/social/presentation/pages/chat_room_screen.dart';
 import 'package:care_connect_app/widgets/default_app_header.dart';
 import 'package:care_connect_app/features/health/caregiver-patient-list/page/patient_details_page.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
@@ -42,6 +43,9 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
 
   /// Loading state indicator for async operations
   bool _isLoading = false;
+
+  static const String _unknownMoodLabel = 'Unknown';
+  static const String _unknownMoodEmoji = '😐';
 
   /// Initializes the widget state.
   ///
@@ -96,7 +100,17 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
       if (response.statusCode == 200) {
         print(response.body);
         final List<dynamic> data = jsonDecode(response.body);
-        final patients = data.map((json) => _patientFromJson(json)).toList();
+        final rows = data.whereType<Map<String, dynamic>>().toList();
+        final moodByUserId = await _loadLatestMoodByPatientUserId(rows);
+        final unreadByUserId =
+            await _loadInboxUnreadByUserId(userProvider.user!.id);
+
+        if (!mounted) return;
+
+        final patients = rows
+            .map((json) => _patientFromJson(json, moodByUserId,
+                unreadByUserId: unreadByUserId))
+            .toList();
 
         setState(() {
           _allPatients = patients;
@@ -122,22 +136,137 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
   }
 
   /// Converts API JSON response to Patient model
-  Patient _patientFromJson(Map<String, dynamic> json) {
+  Patient _patientFromJson(
+    Map<String, dynamic> json,
+    Map<int, _MoodSnapshot> moodByUserId, {
+    Map<int, bool> unreadByUserId = const {},
+  }) {
     final patient = json['patient'] ?? {};
     final link = json['link'] ?? {};
+    final patientUserId = _safeInt(link['patientUserId']);
+    final moodSnapshot =
+        patientUserId == null ? null : moodByUserId[patientUserId];
 
     return Patient(
       id: patient['id']?.toString() ?? '',
+      patientUserId: patientUserId,
       firstName: patient['firstName'] ?? '',
       lastName: patient['lastName'] ?? '',
       lastUpdated: DateTime.now(), // TODO: Use actual lastUpdated from API
       statusMessage: link['notes'] ?? 'No status available',
-      nextCheckIn: DateTime.now().add(const Duration(days: 1)), // TODO: Use actual check-in date
-      mood: 'Good', // TODO: Fetch actual mood from patient data
-      moodEmoji: '😊', // TODO: Map mood to emoji
+      nextCheckIn: DateTime.now().add(
+        const Duration(days: 1),
+      ), // TODO: Use actual check-in date
+      mood: moodSnapshot?.label ?? _unknownMoodLabel,
+      moodEmoji: moodSnapshot?.emoji ?? _unknownMoodEmoji,
       isUrgent: false, // TODO: Determine urgency based on patient status
-      messageCount: 0, // TODO: Fetch actual unread message count
+      messageCount:
+          (patientUserId != null && (unreadByUserId[patientUserId] ?? false))
+              ? 1
+              : 0,
     );
+  }
+
+  Future<Map<int, _MoodSnapshot>> _loadLatestMoodByPatientUserId(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final userIds = rows
+        .map(
+          (row) => _safeInt(
+            (row['link'] as Map<String, dynamic>?)?['patientUserId'],
+          ),
+        )
+        .whereType<int>()
+        .toSet()
+        .toList();
+
+    if (userIds.isEmpty) {
+      return const {};
+    }
+
+    final results = await Future.wait(
+      userIds.map((userId) async {
+        try {
+          final moods = await ApiService.getMoodHistory(userId);
+          final latest = moods.isNotEmpty && moods.first is Map<String, dynamic>
+              ? moods.first as Map<String, dynamic>
+              : const <String, dynamic>{};
+
+          final score = _safeInt(latest['score']) ?? 0;
+          final label = _firstNonEmpty([
+            latest['label'],
+            _moodLabelFromScore(score),
+          ]);
+
+          return MapEntry(
+            userId,
+            _MoodSnapshot(label: label, emoji: _moodEmojiFromLabel(label)),
+          );
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+
+    final map = <int, _MoodSnapshot>{};
+    for (final entry in results) {
+      if (entry != null) {
+        map[entry.key] = entry.value;
+      }
+    }
+    return map;
+  }
+
+  int? _safeInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  String _firstNonEmpty(List<dynamic> candidates) {
+    for (final candidate in candidates) {
+      final value = candidate?.toString().trim() ?? '';
+      if (value.isNotEmpty && value.toLowerCase() != 'null') {
+        return value;
+      }
+    }
+    return '';
+  }
+
+  String _moodLabelFromScore(int score) {
+    if (score >= 8) return 'Excellent';
+    if (score >= 6) return 'Good';
+    if (score >= 4) return 'Fair';
+    if (score >= 1) return 'Poor';
+    return _unknownMoodLabel;
+  }
+
+  String _moodEmojiFromLabel(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('excellent') || l.contains('great')) return '😄';
+    if (l.contains('good') || l.contains('happy')) return '🙂';
+    if (l.contains('fair') || l.contains('neutral')) return '😐';
+    if (l.contains('poor') || l.contains('sad')) return '😟';
+    return _unknownMoodEmoji;
+  }
+
+  /// Fetches the inbox for [userId] and returns a map of peerId → hasUnread.
+  Future<Map<int, bool>> _loadInboxUnreadByUserId(int userId) async {
+    try {
+      final data = await ApiService.getInbox(userId);
+      final result = <int, bool>{};
+      for (final entry in data) {
+        if (entry is Map<String, dynamic>) {
+          final peerId = (entry['peerId'] as num?)?.toInt();
+          final hasUnread = entry['hasUnread'] as bool? ?? false;
+          if (peerId != null) {
+            result[peerId] = hasUnread;
+          }
+        }
+      }
+      return result;
+    } catch (_) {
+      return const {};
+    }
   }
 
   /// Handles search text changes and filters the patient list.
@@ -395,7 +524,6 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
     }
   }
 
-
   /// Builds the main UI for the caregiver patient list screen.
   ///
   /// Creates a scaffold with:
@@ -534,44 +662,66 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
                       ),
                     )
                   : _filteredPatients.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No patients found',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredPatients.length,
-                      itemBuilder: (context, index) {
-                        final patient = _filteredPatients[index];
-                        return PatientCard(
-                          patient: patient,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => PatientDetailsPage(
-                                  patientId: patient.id,
-                                  isCaregiver: true,   // or patient: patient
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No patients found',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _filteredPatients.length,
+                          itemBuilder: (context, index) {
+                            final patient = _filteredPatients[index];
+                            return PatientCard(
+                              patient: patient,
+                              onMessageTap: () {
+                                final peerUserId = patient.patientUserId;
+                                if (peerUserId == null || peerUserId <= 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Unable to open chat for this patient.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatRoomScreen(
+                                      peerUserId: peerUserId,
+                                      peerName: patient.fullName,
+                                    ),
+                                  ),
+                                );
+                              },
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => PatientDetailsPage(
+                                      patientId: patient.id,
+                                      isCaregiver: true, // or patient: patient
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-              ),
+                        ),
             ),
           ],
         ),
@@ -626,4 +776,11 @@ class _CaregiverPatientList extends State<CaregiverPatientList> {
       ),
     );
   }
+}
+
+class _MoodSnapshot {
+  final String label;
+  final String emoji;
+
+  const _MoodSnapshot({required this.label, required this.emoji});
 }

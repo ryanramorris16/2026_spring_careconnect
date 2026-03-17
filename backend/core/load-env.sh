@@ -51,6 +51,7 @@ echo "Optional environment variables (not set, using defaults from application-d
 optional_vars=(
     "STRIPE_SECRET_KEY"
     "DEEPSEEK_API_KEY"
+    "DEEPSEEK_OPENROUTER_API_KEY"
     "OPENAI_API_KEY"
     "AWS_ACCESS_KEY_ID"
     "AWS_SECRET_ACCESS_KEY"
@@ -59,6 +60,11 @@ optional_vars=(
     "FITBIT_TOKEN_URI"
     "FITBIT_USERINFO_URI"
     "STRIPE_API_URL"
+    "GOOGLE_CLIENT_ID"
+    "GOOGLE_CLIENT_SECRET"
+    "APPLE_SHARED_SECRET"
+    "GOOGLE_ACCESS_TOKEN"
+    "GOOGLE_SERVICE_ACCOUNT_FILE"
 )
 
 unset_count=0

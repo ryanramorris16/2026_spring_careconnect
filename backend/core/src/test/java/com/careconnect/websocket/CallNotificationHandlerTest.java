@@ -4,15 +4,26 @@ import com.careconnect.model.User;
 import com.careconnect.repository.UserRepository;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
+import com.careconnect.service.CaregiverPatientLinkService;
+import com.careconnect.service.CallTelemetryService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.mockito.InjectMocks;
+
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,14 +32,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CallNotificationHandlerTest {
 
-    @Mock UserRepository     userRepository;
-    @Mock JwtTokenProvider   jwtTokenProvider;
-    @Mock WebSocketSession   session;
-    @Mock WebSocketSession   recipientSession;
-    @Mock User               user;
-    @Mock User               recipientUser;
+    @Mock UserRepository                  userRepository;
+    @Mock JwtTokenProvider                jwtTokenProvider;
+    @Mock CallTelemetryService            callTelemetryService;
+    @Mock CaregiverPatientLinkService     caregiverPatientLinkService;
+    @Mock WebSocketSession                session;
+    @Mock WebSocketSession                recipientSession;
+    @Mock User                            user;
+    @Mock User                            recipientUser;
 
     @InjectMocks CallNotificationHandler handler;
 
@@ -494,5 +508,6 @@ class CallNotificationHandlerTest {
         handler.sendSMSNotification("1", Map.of("type", "sms"));
 
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
+
     }
 }

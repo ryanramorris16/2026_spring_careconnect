@@ -41,7 +41,7 @@ class ScheduledVisitTest {
         final ScheduledVisit sv = new ScheduledVisit(
                 1L, 10L, 20L, "PERSONAL_CARE", date, time, 90,
                 "High", "Bring wheelchair", "Scheduled",
-                now, now, "admin", "admin");
+                now, now, false, null, "admin", "admin");
 
         assertThat(sv.getId()).isEqualTo(1L);
         assertThat(sv.getCaregiverId()).isEqualTo(10L);

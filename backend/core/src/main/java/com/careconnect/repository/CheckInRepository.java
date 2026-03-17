@@ -4,5 +4,5 @@ import com.careconnect.model.CheckIn;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
-  List<CheckIn> findByPatient_IdOrderByCreatedAtDesc(Long patientId);
+  List<CheckIn> findByPatientIdOrderByCreatedAtDesc(Long patientId);
 }

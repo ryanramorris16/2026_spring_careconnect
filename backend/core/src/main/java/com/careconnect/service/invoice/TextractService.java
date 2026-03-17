@@ -2,7 +2,6 @@ package com.careconnect.service.invoice;
 
 import com.careconnect.dto.chat.AiRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -27,9 +26,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
-@ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = true)
+
+@ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = false)
 public class TextractService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(TextractService.class);
 
     private final TextractClient textractClient;
     private final S3Client s3Client;

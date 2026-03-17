@@ -1,4 +1,3 @@
-import 'package:care_connect_app/features/calls/presentation/pages/jitsi_meeting_screen.dart';
 import 'package:care_connect_app/features/dashboard/caregiver-dashboard/pages/caregiver-dashboard.dart';
 import 'package:care_connect_app/features/fall_alert/pages/mock_alert_lab_page.dart';
 import 'package:care_connect_app/features/fall_alert/pages/alert_details_page_patient.dart';
@@ -43,10 +42,11 @@ import '../../features/payments/presentation/pages/subscription_management_page.
 import '../../features/dashboard/presentation/pages/add_patient_screen.dart';
 import '../../features/auth/presentation/pages/password_reset_page.dart';
 import '../../features/auth/presentation/pages/reset_password_screen.dart'; // ADD THIS IMPORT
-import '../../features/payments/models/package_model.dart';
 import '../../features/social/presentation/pages/main_feed_screen.dart';
 import '../../features/gamification/presentation/pages/gamification_screen.dart';
-import '../../features/payments/presentation/pages/stripe_checkout_page.dart';
+import '../../features/payments/presentation/pages/native_billing_page.dart';
+import '../../features/payments/presentation/pages/web_pay_page.dart';
+import '../../features/payments/presentation/pages/subscription_tier_selection_page.dart';
 import '../../features/analytics/analytics_page.dart';
 import '../../features/payments/presentation/pages/payment_success_page.dart';
 import '../../features/payments/presentation/pages/payment_cancel_page.dart';
@@ -342,17 +342,10 @@ final GoRouter appRouter = GoRouter(
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final user = userProvider.user;
         final userId = state.uri.queryParameters['userId'];
-        final stripeCustomerId = state.uri.queryParameters['stripeCustomerId'];
 
-        // If we have userId and stripeCustomerId, this is part of the registration flow
-        // Or if user is a patient, show the original select package page
-        // Otherwise show the subscription management page for existing caregivers
-        if ((userId != null && stripeCustomerId != null) ||
+        if (userId != null ||
             (user != null && user.role.toUpperCase() == 'PATIENT')) {
-          return SelectPackagePage(
-            userId: userId,
-            stripeCustomerId: stripeCustomerId,
-          );
+          return SelectPackagePage(userId: userId);
         } else {
           return const SubscriptionManagementPage();
         }
@@ -395,15 +388,42 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/stripe-checkout',
+      redirect: (_, __) => '/select-package',
+    ),
+    GoRoute(
+      path: '/native-billing',
       builder: (context, state) {
-        final pkg = state.extra as PackageModel;
-        // Get userId and stripeCustomerId from query parameters if available
-        final userId = state.uri.queryParameters['userId'];
-        final stripeCustomerId = state.uri.queryParameters['stripeCustomerId'];
-        return StripeCheckoutPage(
-          package: pkg,
+        final extra = state.extra as Map<String, dynamic>?;
+        final tierId = extra?['tierId'] as int? ?? 0;
+        final tier = extra?['tier'] as String?;
+        final userId = extra?['userId'] as int?;
+        return NativeBillingPage(tierId: tierId, tier: tier, userId: userId);
+      },
+    ),
+    GoRoute(
+      path: '/select-subscription-tier',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String?;
+        final userState = extra?['state'] as String?;
+        return SubscriptionTierSelectionPage(email: email, userState: userState);
+      },
+    ),
+    GoRoute(
+      path: '/web-pay',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final tierId = extra?['tierId'] as int?;
+        final tier = extra?['tier'] as String?;
+        final email = extra?['email'] as String?;
+        final userId = extra?['userId'] as int?;
+        final userState = extra?['state'] as String?;
+        return WebPayPage(
+          tierId: tierId ?? 0,
+          tier: tier,
+          email: email,
           userId: userId,
-          stripeCustomerId: stripeCustomerId,
+          state: userState,
         );
       },
     ),
@@ -522,85 +542,6 @@ final GoRouter appRouter = GoRouter(
         return OAuthCallbackPage(token: token, user: user, error: error);
       },
     ),
-    GoRoute(
-      path: '/video-call',
-      builder: (context, state) {
-        final patientIdStr = state.uri.queryParameters['patientId'];
-        final patientName = state.uri.queryParameters['patientName'];
-
-        if (patientIdStr == null || patientName == null) {
-          // Instead of showing an error screen, redirect back to dashboard
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          final userRole = userProvider.user?.role;
-
-          // Show error message but stay logged in
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Missing patient information for video call'),
-              ),
-            );
-
-            // Redirect to appropriate dashboard based on role
-            if (userRole != null) {
-              Future.delayed(const Duration(milliseconds: 500), () {
-                context.go('/dashboard');
-              });
-            }
-          });
-
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Redirecting...'),
-              backgroundColor: const Color(0xFF14366E),
-            ),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final patientId = int.tryParse(patientIdStr);
-        if (patientId == null) {
-          // Handle invalid patient ID
-          final userProvider = Provider.of<UserProvider>(
-            context,
-            listen: false,
-          );
-          final userRole = userProvider.user?.role;
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Invalid patient ID for video call'),
-              ),
-            );
-
-            if (userRole != null) {
-              Future.delayed(const Duration(milliseconds: 500), () {
-                context.go('/dashboard');
-              });
-            }
-          });
-
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Redirecting...'),
-              backgroundColor: const Color(0xFF14366E),
-            ),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        // Import and use JitsiMeetingScreen here
-        // Create a unique room name based on patientId and current timestamp
-        final roomName =
-            "patient_${patientId}_${DateTime.now().millisecondsSinceEpoch}";
-
-        return JitsiMeetingScreen(roomName: roomName);
-      },
-    ),
     GoRoute(path: '/wearables', builder: (_, __) => const WearablesScreen()),
     GoRoute(
       path: '/home-monitoring',
@@ -660,6 +601,8 @@ final GoRouter appRouter = GoRouter(
         final locationType = state.uri.queryParameters['locationType'] ?? '';
         final latitude = double.tryParse(state.uri.queryParameters['latitude'] ?? '');
         final longitude = double.tryParse(state.uri.queryParameters['longitude'] ?? '');
+        final noGpsReason = state.uri.queryParameters['noGpsReason'];
+        final accuracyM = double.tryParse(state.uri.queryParameters['accuracyM'] ?? '');
         
         if (patientId == null || serviceType.isEmpty || locationType.isEmpty) {
           return const Scaffold(
@@ -673,6 +616,8 @@ final GoRouter appRouter = GoRouter(
           locationType: locationType,
           latitude: latitude,
           longitude: longitude,
+          noGpsReason: noGpsReason,
+          accuracyM: accuracyM,
         );
       },
     ),
@@ -686,6 +631,9 @@ final GoRouter appRouter = GoRouter(
         final longitude = double.tryParse(state.uri.queryParameters['longitude'] ?? '');
         final notes = state.uri.queryParameters['notes'] ?? '';
         final duration = int.tryParse(state.uri.queryParameters['duration'] ?? '0') ?? 0;
+        final checkinNoGpsReason = state.uri.queryParameters['checkinNoGpsReason'];
+        final checkinAccuracyM = double.tryParse(state.uri.queryParameters['checkinAccuracyM'] ?? '');
+        final scheduledVisitId = int.tryParse(state.uri.queryParameters['scheduledVisitId'] ?? '');
         
         if (patientId == null || serviceType.isEmpty || locationType.isEmpty) {
           return const Scaffold(
@@ -701,6 +649,9 @@ final GoRouter appRouter = GoRouter(
           longitude: longitude,
           notes: notes,
           duration: duration,
+          checkinNoGpsReason: checkinNoGpsReason,
+          checkinAccuracyM: checkinAccuracyM,
+          scheduledVisitId: scheduledVisitId,
         );
       },
     ),
@@ -717,6 +668,11 @@ final GoRouter appRouter = GoRouter(
         final checkoutLongitude = double.tryParse(state.uri.queryParameters['checkoutLongitude'] ?? '');
         final notes = state.uri.queryParameters['notes'] ?? '';
         final duration = int.tryParse(state.uri.queryParameters['duration'] ?? '0') ?? 0;
+        final checkinNoGpsReason = state.uri.queryParameters['checkinNoGpsReason'];
+        final checkoutNoGpsReason = state.uri.queryParameters['checkoutNoGpsReason'];
+        final checkinAccuracyM = double.tryParse(state.uri.queryParameters['checkinAccuracyM'] ?? '');
+        final checkoutAccuracyM = double.tryParse(state.uri.queryParameters['checkoutAccuracyM'] ?? '');
+        final scheduledVisitId = int.tryParse(state.uri.queryParameters['scheduledVisitId'] ?? '');
         
         if (patientId == null || serviceType.isEmpty || checkinLocationType.isEmpty || checkoutLocationType.isEmpty) {
           return const Scaffold(
@@ -735,6 +691,11 @@ final GoRouter appRouter = GoRouter(
           checkoutLongitude: checkoutLongitude,
           notes: notes,
           duration: duration,
+          checkinNoGpsReason: checkinNoGpsReason,
+          checkoutNoGpsReason: checkoutNoGpsReason,
+          checkinAccuracyM: checkinAccuracyM,
+          checkoutAccuracyM: checkoutAccuracyM,
+          scheduledVisitId: scheduledVisitId,
         );
       },
     ),
@@ -843,10 +804,46 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // Video Call Test Route
+    // Team A Chime + Bedrock sentiment test route
     GoRoute(
-      path: '/video-call-test',
-      builder: (_, __) => const VideoCallTestPage(),
+      path: '/video-call-chime',
+      builder: (context, state) {
+        final userId = state.uri.queryParameters['userId'] ?? '1';
+        final callId = state.uri.queryParameters['callId'] ??
+            'chime_call_${DateTime.now().millisecondsSinceEpoch}';
+        final recipientId = state.uri.queryParameters['recipientId'];
+        final isVideoEnabled =
+            (state.uri.queryParameters['video'] ?? 'true').toLowerCase() !=
+                'false';
+        final isAudioEnabled =
+            (state.uri.queryParameters['audio'] ?? 'true').toLowerCase() !=
+                'false';
+        final isInitiator =
+            (state.uri.queryParameters['initiator'] ?? 'false').toLowerCase() ==
+                'true';
+
+        return HybridVideoCallWidget(
+          userId: userId,
+          callId: callId,
+          recipientId: recipientId,
+          userRole: state.uri.queryParameters['userRole'],
+          isVideoEnabled: isVideoEnabled,
+          isAudioEnabled: isAudioEnabled,
+          isInitiator: isInitiator,
+          userName: state.uri.queryParameters['userName'],
+          recipientName: state.uri.queryParameters['recipientName'],
+          returnPatientDetailsId:
+              state.uri.queryParameters['returnPatientDetailsId'],
+          forcePatientDetailsOnExit:
+              (state.uri.queryParameters['forcePatientDetailsOnExit'] ?? 'false')
+                      .toLowerCase() ==
+                  'true',
+          returnAsCaregiver:
+              (state.uri.queryParameters['returnAsCaregiver'] ?? 'false')
+                      .toLowerCase() ==
+                  'true',
+        );
+      },
     ),
 
     //Adding Calendar Assistant route

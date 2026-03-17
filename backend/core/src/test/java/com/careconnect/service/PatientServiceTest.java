@@ -135,7 +135,7 @@ class PatientServiceTest {
         final CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 200L, "Jane Caregiver", "jane@test.com",
                 100L, "John Doe", "john@test.com",
-                "ACTIVE", "PRIMARY", LocalDateTime.now(), null, null, "system", true, false);
+                "ACTIVE", "PRIMARY", false, false, LocalDateTime.now(), null, null, "system", true, false);
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(caregiverPatientLinkService.getCaregiversByPatient(100L)).thenReturn(List.of(link));
@@ -153,7 +153,7 @@ class PatientServiceTest {
         final CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 999L, "Missing", "missing@test.com",
                 100L, "John Doe", "john@test.com",
-                "ACTIVE", "PRIMARY", LocalDateTime.now(), null, null, "system", true, false);
+                "ACTIVE", "PRIMARY", false, false, LocalDateTime.now(), null, null, "system", true, false);
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(caregiverPatientLinkService.getCaregiversByPatient(100L)).thenReturn(List.of(link));
@@ -173,7 +173,7 @@ class PatientServiceTest {
         final CaregiverPatientLinkResponse link = new CaregiverPatientLinkResponse(
                 1L, 200L, "Jane", "jane@test.com",
                 100L, "John Doe", "john@test.com",
-                "ACTIVE", "PRIMARY", LocalDateTime.now(), null, null, "system", true, false);
+                "ACTIVE", "PRIMARY", false, false, LocalDateTime.now(), null, null, "system", true, false);
 
         when(patientRepository.findById(1L)).thenReturn(Optional.of(patient));
         when(caregiverPatientLinkService.getCaregiversByPatient(100L)).thenReturn(List.of(link));
@@ -466,7 +466,7 @@ class PatientServiceTest {
         final CaregiverPatientLinkResponse caregiverLink = new CaregiverPatientLinkResponse(
                 5L, 200L, "Caregiver", "cg@test.com",
                 100L, "John Doe", "john@test.com",
-                "ACTIVE", "PRIMARY", nowLocal, null, null, "system", true, false);
+                "ACTIVE", "PRIMARY", false, false, nowLocal, null, null, "system", true, false);
 
         final FamilyMemberLinkResponse familyLink = new FamilyMemberLinkResponse(
                 10L, 300L, "Family Member", "fm@test.com",

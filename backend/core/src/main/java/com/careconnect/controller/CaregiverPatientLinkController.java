@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/api/caregiver-patient-links")
@@ -141,14 +142,18 @@ public class CaregiverPatientLinkController {
     }
 
     // 7. Get all caregivers linked to a patient
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
+    @RequirePermission(Permission.VIEW_MESSAGES)
     @GetMapping("/patients/{patientId}/caregivers")
     public ResponseEntity<List<CaregiverPatientLinkResponse>> getCaregiversByPatient(@PathVariable Long patientId) {
         User currentUser = getCurrentUser();
-        
-        // Patient can see their own caregivers, admins can see all
-        if (currentUser.getRole() != Role.ADMIN && !currentUser.getId().equals(patientId)) {
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isSelfPatient = currentUser.getId().equals(patientId);
+        boolean isLinkedCaregiver = currentUser.getRole() == Role.CAREGIVER
+                && linkService.hasAccessToPatient(currentUser.getId(), patientId);
+
+        // Admins, the patient, or caregivers actively linked to the patient can view this list
+        if (!isAdmin && !isSelfPatient && !isLinkedCaregiver) {
             throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
         }
 
@@ -196,5 +201,47 @@ public class CaregiverPatientLinkController {
 
         linkService.cleanupExpiredLinks();
         return ResponseEntity.ok().build();
+    }
+
+    // 11. Caregiver toggle: allow/disallow patient-initiated video calls for this link
+    @PostMapping("/{linkId}/patient-video-calls")
+    public ResponseEntity<CaregiverPatientLinkResponse> setPatientVideoCalls(
+            @PathVariable Long linkId,
+            @RequestBody Map<String, Object> request
+    ) {
+        User currentUser = getCurrentUser();
+        Object enabledRaw = request.get("enabled");
+        boolean enabled = enabledRaw instanceof Boolean
+                ? (Boolean) enabledRaw
+                : Boolean.parseBoolean(String.valueOf(enabledRaw));
+
+        CaregiverPatientLinkResponse response = linkService.setPatientVideoCallsEnabled(
+                linkId,
+                enabled,
+                currentUser.getId(),
+                currentUser.getRole()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    // 12. Caregiver toggle: allow/disallow patient-initiated messaging for this link
+    @PostMapping("/{linkId}/patient-messaging")
+    public ResponseEntity<CaregiverPatientLinkResponse> setPatientMessaging(
+            @PathVariable Long linkId,
+            @RequestBody Map<String, Object> request
+    ) {
+        User currentUser = getCurrentUser();
+        Object enabledRaw = request.get("enabled");
+        boolean enabled = enabledRaw instanceof Boolean
+                ? (Boolean) enabledRaw
+                : Boolean.parseBoolean(String.valueOf(enabledRaw));
+
+        CaregiverPatientLinkResponse response = linkService.setPatientMessagingEnabled(
+                linkId,
+                enabled,
+                currentUser.getId(),
+                currentUser.getRole()
+        );
+        return ResponseEntity.ok(response);
     }
 }

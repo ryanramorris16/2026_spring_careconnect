@@ -31,7 +31,7 @@ class InboxMessageDtoTest {
     void allArgsConstructor_setsAllFields() throws Exception {
         final LocalDateTime ts = LocalDateTime.of(2026, 3, 15, 9, 0);
 
-        final InboxMessageDto dto = new InboxMessageDto(1L, 2L, "Alice Smith", "alice@example.com", "Hello!", ts);
+        final InboxMessageDto dto = new InboxMessageDto(1L, 2L, "Alice Smith", "alice@example.com", "CAREGIVER", "Hello!", ts, false);
 
         assertThat(dto.getMessageId()).isEqualTo(1L);
         assertThat(dto.getPeerId()).isEqualTo(2L);
