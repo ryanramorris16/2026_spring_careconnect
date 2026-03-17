@@ -18,10 +18,11 @@ class PatientMedicalNotesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = userProvider.user;
+    final role = user?.role.toUpperCase();
     final isCaregiver =
-        user?.role.toUpperCase() == 'CAREGIVER' ||
-        user?.role.toUpperCase() == 'FAMILY_LINK' ||
-        user?.role.toUpperCase() == 'ADMIN';
+        role == 'CAREGIVER' ||
+        role == 'FAMILY_LINK' ||
+        role == 'ADMIN';
 
     return Scaffold(
       appBar: AppBar(
