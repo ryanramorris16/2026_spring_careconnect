@@ -113,8 +113,8 @@ void main() {
 
       // The login-required message should NOT appear.
       expect(find.text('Please log in to view messages'), findsNothing);
-      // A Scaffold should be present.
-      expect(find.byType(Scaffold), findsOneWidget);
+      // A Scaffold should be present (may have nested Scaffolds from child widgets).
+      expect(find.byType(Scaffold), findsAtLeastNWidgets(1));
     });
   });
 

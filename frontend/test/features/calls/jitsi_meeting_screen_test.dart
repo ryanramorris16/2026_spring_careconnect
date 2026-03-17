@@ -76,5 +76,21 @@ void main() {
 
       expect(find.byType(AppBar), findsOneWidget);
     });
+
+    testWidgets('shows Center widget in body', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: JitsiMeetingScreen(roomName: 'room-1')),
+      );
+      await tester.pump();
+      expect(find.byType(Center), findsWidgets);
+    });
+
+    testWidgets('shows Text widget in body', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: JitsiMeetingScreen(roomName: 'room-1')),
+      );
+      await tester.pump();
+      expect(find.byType(Text), findsWidgets);
+    });
   });
 }

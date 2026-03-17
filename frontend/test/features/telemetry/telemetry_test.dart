@@ -1,60 +1,165 @@
+// Tests for Telemetry (lib/features/telemetry/telemetry.dart).
+//
+// Coverage strategy:
+//   Telemetry uses top-level http.get/post/put calls, interceptable via
+//   http.runWithClient + MockClient. TelemetrySettings uses SharedPreferences
+//   which is mocked via setMockInitialValues.
+//
+//   Methods tested:
+//     getBackendEnabled — 200 enabled, 200 disabled, non-200, exception
+//     setBackendEnabled — 200 enabled, 200 disabled, non-200, exception
+//     event             — enabled path, disabled path, guardrails blocked
+
 import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
-// import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:care_connect_app/features/telemetry/telemetry.dart';
-import 'package:care_connect_app/features/telemetry/telemetry_settings.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Telemetry Orchestrator', () {
-    late MockClient mockClient;
+  setUp(() {
+    // Not opted out, so local check passes.
+    SharedPreferences.setMockInitialValues({'telemetry_opted_out': false});
+  });
 
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-      // Reset static state between tests if possible, 
-      // or ensure tests account for persistence.
+  // ─── getBackendEnabled ──────────────────────────────────────────────────
+
+  group('Telemetry.getBackendEnabled', () {
+    test('200 with enabled=true returns true', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.getBackendEnabled(),
+        () => MockClient((_) async =>
+            http.Response(jsonEncode({'enabled': true}), 200)),
+      );
+      expect(result, isTrue);
     });
 
-    test('event() drops if user is opted out locally', () async {
-      await TelemetrySettings.setOptedOut(true);
-      
-      // We use a mock client that should NOT be called
-      mockClient = MockClient((request) async => fail('Should not hit network'));
-      
-      // Since Telemetry uses a static http call, in a real app you'd 
-      // inject the client. For this static class, we rely on the logic gate.
-      await Telemetry.event('button_tap', {'id': '123'});
-      // Verification: If it didn't crash/fail the test, the gate worked.
+    test('200 with enabled=false returns false', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.getBackendEnabled(),
+        () => MockClient((_) async =>
+            http.Response(jsonEncode({'enabled': false}), 200)),
+      );
+      expect(result, isFalse);
     });
 
-    test('isEnabled() handles backend cache and TTL', () async {
-      int callCount = 0;
-      // Provide a custom implementation for the http calls
-      // Note: In a production app, you'd refactor Telemetry to accept an http.Client.
-      // If Telemetry uses static global http, we test the logic via the public methods.
+    test('non-200 returns true (fail open)', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.getBackendEnabled(),
+        () => MockClient((_) async => http.Response('error', 500)),
+      );
+      expect(result, isTrue);
     });
 
-    test('event() sends correct payload when all gates pass', () async {
-      // 1. Setup local consent
-      await TelemetrySettings.setOptedOut(false);
+    test('exception returns true (fail open)', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.getBackendEnabled(),
+        () => MockClient((_) async => throw Exception('network')),
+      );
+      expect(result, isTrue);
+    });
+  });
 
-      // 2. Logic check for Sanitization
-      // Use a whitelisted event from TelemetryGuardrails
-      final eventName = 'button_tap'; 
-      final props = {'element': 'login_btn'};
+  // ─── setBackendEnabled ──────────────────────────────────────────────────
 
-      await Telemetry.event(eventName, props);
-      // Verify behavior via debug logs or by refactoring to allow a MockClient
+  group('Telemetry.setBackendEnabled', () {
+    test('200 with enabled=true returns true', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.setBackendEnabled(true),
+        () => MockClient((_) async =>
+            http.Response(jsonEncode({'enabled': true}), 200)),
+      );
+      expect(result, isTrue);
     });
 
-    test('sanitize() rejection stops the flow', () async {
-      await TelemetrySettings.setOptedOut(false);
-      // 'illegal_event' is not in the whitelist
-      await Telemetry.event('illegal_event', {'data': 'bad'});
-      // Success is indicated by no network call (or debug print)
+    test('200 with enabled=false returns false', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.setBackendEnabled(false),
+        () => MockClient((_) async =>
+            http.Response(jsonEncode({'enabled': false}), 200)),
+      );
+      expect(result, isFalse);
+    });
+
+    test('non-200 returns the requested value', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.setBackendEnabled(true),
+        () => MockClient((_) async => http.Response('error', 500)),
+      );
+      expect(result, isTrue);
+    });
+
+    test('exception returns the requested value', () async {
+      final result = await http.runWithClient(
+        () => Telemetry.setBackendEnabled(false),
+        () => MockClient((_) async => throw Exception('fail')),
+      );
+      expect(result, isFalse);
+    });
+  });
+
+  // ─── event ──────────────────────────────────────────────────────────────
+
+  group('Telemetry.event', () {
+    test('sends event when enabled and allowed', () async {
+      String? capturedBody;
+      await http.runWithClient(
+        () async {
+          // First enable the backend
+          await Telemetry.setBackendEnabled(true);
+          // Then send an event (allowed event name)
+          await Telemetry.event('screen_view', {'screen': 'home'});
+        },
+        () => MockClient((req) async {
+          if (req.method == 'POST' && req.url.path.contains('telemetry') && !req.url.path.contains('enabled')) {
+            capturedBody = req.body;
+          }
+          return http.Response(jsonEncode({'enabled': true}), 200);
+        }),
+      );
+      // The event should have been sent (POST body captured)
+      expect(capturedBody, isNotNull);
+      final decoded = jsonDecode(capturedBody!);
+      expect(decoded['eventName'], 'screen_view');
+    });
+
+    test('blocks event not in allowed list', () async {
+      bool postCalled = false;
+      await http.runWithClient(
+        () async {
+          await Telemetry.setBackendEnabled(true);
+          await Telemetry.event('not_allowed_event', {'key': 'val'});
+        },
+        () => MockClient((req) async {
+          if (req.method == 'POST' && !req.url.path.contains('enabled')) {
+            postCalled = true;
+          }
+          return http.Response(jsonEncode({'enabled': true}), 200);
+        }),
+      );
+      expect(postCalled, isFalse);
+    });
+
+    test('does not send when opted out locally', () async {
+      SharedPreferences.setMockInitialValues({'telemetry_opted_out': true});
+      bool postCalled = false;
+      await http.runWithClient(
+        () async {
+          await Telemetry.event('screen_view', {'screen': 'home'});
+        },
+        () => MockClient((req) async {
+          if (req.method == 'POST' && !req.url.path.contains('enabled')) {
+            postCalled = true;
+          }
+          return http.Response(jsonEncode({'enabled': true}), 200);
+        }),
+      );
+      expect(postCalled, isFalse);
     });
   });
 }

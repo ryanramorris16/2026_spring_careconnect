@@ -42,5 +42,24 @@ void main() {
       final result = FileUploadResult(filePath: '', isTemporary: false);
       expect(result.filePath, '');
     });
+
+    test('stores path with special characters', () {
+      final result = FileUploadResult(
+        filePath: '/tmp/file name (1).pdf',
+        isTemporary: true,
+      );
+      expect(result.filePath, '/tmp/file name (1).pdf');
+    });
+
+    test('stores long file path', () {
+      final longPath = '/a' * 200 + '/file.txt';
+      final result = FileUploadResult(filePath: longPath, isTemporary: false);
+      expect(result.filePath, longPath);
+    });
+
+    test('is a FileUploadResult type', () {
+      final result = FileUploadResult(filePath: '/test', isTemporary: true);
+      expect(result, isA<FileUploadResult>());
+    });
   });
 }

@@ -33,12 +33,18 @@
 //     user is not caregiver → returns true without network call.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/subscription_service.dart';
+
+// The flutter_secure_storage plugin registers under this channel.  Stubbing it
+// avoids a hang when AuthTokenManager methods are called in tests.
+const MethodChannel _secureStorageChannel =
+    MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
 // ─── Provider helpers ─────────────────────────────────────────────────────────
 
@@ -97,11 +103,42 @@ Widget _withAdminUser(Widget child) {
   );
 }
 
+/// Creates a UserProvider seeded with a CAREGIVER session.
+Widget _withCaregiverUser(Widget child) {
+  final provider = UserProvider();
+  provider.setUser(UserSession(
+    id: 10,
+    email: 'cg@example.com',
+    role: 'CAREGIVER',
+    token: 'tok',
+    name: 'Test Caregiver',
+  ));
+  return ChangeNotifierProvider<UserProvider>.value(
+    value: provider,
+    child: MaterialApp(
+      onUnknownRoute: (_) => MaterialPageRoute(
+        builder: (_) => const Scaffold(body: Text('unknown')),
+      ),
+      home: child,
+    ),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    // Intercept flutter_secure_storage channel calls and return null.
+    // This simulates empty storage so AuthTokenManager.getUserSession() → null,
+    // causing getCurrentSubscription() to throw "User ID not found".
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, (_) async => null);
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, null);
   });
 
   // ─── showPremiumRequiredDialog ────────────────────────────────────────────
@@ -426,5 +463,170 @@ void main() {
       expect(result, isTrue);
     });
 
+  });
+
+  // ─── Caregiver paths (hasPremiumSubscription) ─────────────────────────────
+  // When the caregiver branch is reached, ApiService.getCurrentSubscription()
+  // is called.  In the test environment there is no stored auth token / user
+  // session, so the call throws (MissingPluginException or "User ID not
+  // found"), which is caught by the try/catch in hasPremiumSubscription and
+  // results in `false`.
+
+  group('SubscriptionService.hasPremiumSubscription — caregiver paths', () {
+    testWidgets('returns false for caregiver when API call throws', (
+      tester,
+    ) async {
+      // Exercises the catch block: caregiver user → API throws → false.
+      late Future<bool> future;
+      await tester.pumpWidget(
+        _withCaregiverUser(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () {
+                future = SubscriptionService.hasPremiumSubscription(ctx);
+              },
+              child: const Text('Test'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Test'));
+      await tester.pumpAndSettle();
+      final result = await future;
+
+      expect(result, isFalse);
+    });
+  });
+
+  // ─── Caregiver paths (canUseAIAssistant) ──────────────────────────────────
+
+  group('SubscriptionService.canUseAIAssistant — caregiver paths', () {
+    testWidgets('returns false for caregiver when no API available', (
+      tester,
+    ) async {
+      // Caregiver → delegates to hasPremiumSubscription → API throws → false.
+      late Future<bool> future;
+      await tester.pumpWidget(
+        _withCaregiverUser(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () {
+                future = SubscriptionService.canUseAIAssistant(ctx);
+              },
+              child: const Text('Test'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Test'));
+      await tester.pumpAndSettle();
+      final result = await future;
+
+      expect(result, isFalse);
+    });
+  });
+
+  // ─── Caregiver paths (canUseVideoCalls) ───────────────────────────────────
+
+  group('SubscriptionService.canUseVideoCalls — caregiver paths', () {
+    testWidgets('returns false for caregiver when no API available', (
+      tester,
+    ) async {
+      // Caregiver → delegates to hasPremiumSubscription → API throws → false.
+      late Future<bool> future;
+      await tester.pumpWidget(
+        _withCaregiverUser(
+          Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () {
+                future = SubscriptionService.canUseVideoCalls(ctx);
+              },
+              child: const Text('Test'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Test'));
+      await tester.pumpAndSettle();
+      final result = await future;
+
+      expect(result, isFalse);
+    });
+  });
+
+  // ─── Caregiver paths (checkPremiumAccessWithDialog) ───────────────────────
+
+  group('SubscriptionService.checkPremiumAccessWithDialog — caregiver paths', () {
+    testWidgets(
+      'shows premium dialog and returns false for caregiver without premium',
+      (tester) async {
+        // Caregiver → hasPremiumSubscription returns false (API throws) →
+        // showPremiumRequiredDialog is called → returns false.
+        late Future<bool> future;
+        await tester.pumpWidget(
+          _withCaregiverUser(
+            Builder(
+              builder: (ctx) => ElevatedButton(
+                onPressed: () {
+                  future =
+                      SubscriptionService.checkPremiumAccessWithDialog(
+                    ctx,
+                    'AI Chat',
+                  );
+                },
+                child: const Text('Test'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Test'));
+        await tester.pumpAndSettle();
+        final result = await future;
+
+        // The premium required dialog should be visible.
+        expect(find.text('Premium Feature'), findsOneWidget);
+        expect(find.textContaining('AI Chat'), findsWidgets);
+
+        // The method should have returned false.
+        expect(result, isFalse);
+
+        // Dismiss the dialog so the test tears down cleanly.
+        await tester.tap(find.text('Maybe Later'));
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets(
+      'returns true immediately for null user (not a caregiver)',
+      (tester) async {
+        // null user → isCaregiver != true → returns true without API call.
+        bool? result;
+        await tester.pumpWidget(
+          _withNullUser(
+            Builder(
+              builder: (ctx) => ElevatedButton(
+                onPressed: () async {
+                  result =
+                      await SubscriptionService.checkPremiumAccessWithDialog(
+                    ctx,
+                    'Some Feature',
+                  );
+                },
+                child: const Text('Test'),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Test'));
+        await tester.pump();
+
+        expect(result, isTrue);
+      },
+    );
   });
 }

@@ -928,6 +928,49 @@ void main() {
       expect(result['userId'], '0');
     });
   });
+
+  group('getCurrentUser', () {
+    test('returns null when no session is stored', () async {
+      // Verifies that getCurrentUser returns null when secureStorage has no
+      // user_session entry.
+      final result = await AuthService.getCurrentUser();
+      expect(result, isNull);
+    });
+
+    test('returns UserSession when session data exists', () async {
+      // Verifies that getCurrentUser correctly deserializes stored session
+      // data into a UserSession object with the expected field values.
+      secureStorage['user_session'] = jsonEncode(<String, dynamic>{
+        'id': 42,
+        'email': 'current@example.com',
+        'role': 'PATIENT',
+        'token': 'stored-jwt-token',
+        'name': 'Current User',
+        'emailVerified': true,
+        'patientId': 7,
+      });
+
+      final result = await AuthService.getCurrentUser();
+
+      expect(result, isNotNull);
+      expect(result!.id, 42);
+      expect(result.email, 'current@example.com');
+      expect(result.role, 'PATIENT');
+      expect(result.token, 'stored-jwt-token');
+      expect(result.name, 'Current User');
+      expect(result.emailVerified, isTrue);
+      expect(result.patientId, 7);
+    });
+
+    test('returns null on malformed session data', () async {
+      // Verifies that getCurrentUser catches JSON decode errors from
+      // malformed data and returns null instead of throwing.
+      secureStorage['user_session'] = 'not-valid-json{{{';
+
+      final result = await AuthService.getCurrentUser();
+      expect(result, isNull);
+    });
+  });
 }
 
 /// Rewrites all outgoing `package:http` requests to the local fake server while

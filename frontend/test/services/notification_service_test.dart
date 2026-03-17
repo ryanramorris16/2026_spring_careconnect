@@ -43,5 +43,11 @@ void main() {
       NotificationService.dispose();
       expect(NotificationService.channel, isNull);
     });
+
+    test('dispose can be called multiple times', () {
+      NotificationService.dispose();
+      NotificationService.dispose();
+      expect(NotificationService.isConnected, isFalse);
+    });
   });
 }

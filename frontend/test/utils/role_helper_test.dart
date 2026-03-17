@@ -84,5 +84,25 @@ void main() {
       expect(RoleHelper.getLoginRoute('PATIENT'), '/login/patient');
       expect(RoleHelper.getLoginRoute('FAMILY_MEMBER'), '/login/patient');
     });
+
+    test('getRoleDisplayName returns raw role for unknown role', () {
+      expect(RoleHelper.getRoleDisplayName('UNKNOWN'), 'UNKNOWN');
+      expect(RoleHelper.getRoleDisplayName('foo'), 'foo');
+    });
+
+    test('getRoleColorValue returns grey for unknown role', () {
+      expect(RoleHelper.getRoleColorValue('UNKNOWN'), 0xFF616161);
+    });
+
+    test('getLoginRoute returns /login for unknown role', () {
+      expect(RoleHelper.getLoginRoute('UNKNOWN'), '/login');
+    });
+
+    test('FAMILY_LINK gets same color as CAREGIVER', () {
+      expect(
+        RoleHelper.getRoleColorValue('FAMILY_LINK'),
+        RoleHelper.getRoleColorValue('CAREGIVER'),
+      );
+    });
   });
 }

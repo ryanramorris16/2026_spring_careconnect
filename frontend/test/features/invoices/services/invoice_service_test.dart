@@ -84,7 +84,7 @@ Map<String, dynamic> _invoiceJson({
       'dates': {
         'statementDate': '2025-03-01T00:00:00.000Z',
         'dueDate': '2025-04-01T00:00:00.000Z',
-        'paidDate': ?paidDate,
+        if (paidDate != null) 'paidDate': paidDate,
       },
       'paymentStatus': paymentStatus,
       'billedToInsurance': billedToInsurance,
@@ -109,9 +109,9 @@ Map<String, dynamic> _invoiceJson({
           'address': '1 Clinic Rd',
           'reference': 'INV-001',
         },
-      'documentLink': ?documentLink,
-      'aiSummary': ?aiSummary,
-      'recommendedActions': ?recommendedActions,
+      if (documentLink != null) 'documentLink': documentLink,
+      if (aiSummary != null) 'aiSummary': aiSummary,
+      if (recommendedActions != null) 'recommendedActions': recommendedActions,
     };
 
 /// Returns an [Invoice] domain object suitable as input to service write

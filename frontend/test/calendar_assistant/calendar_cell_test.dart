@@ -153,5 +153,39 @@ void main() {
       // Verify it still shows the day label
       expect(find.text('19'), findsOneWidget);
     });
+
+    testWidgets('renders Container widget', (tester) async {
+      final date = DateTime(2025, 10, 15);
+      await tester.pumpWidget(
+        buildTestable(
+          CalendarCell(
+            date: date,
+            events: const [],
+            isToday: false,
+            isInMonth: true,
+            isWeekend: false,
+            isSelected: false,
+          ),
+        ),
+      );
+      expect(find.byType(Container), findsWidgets);
+    });
+
+    testWidgets('renders empty events without dots', (tester) async {
+      final date = DateTime(2025, 10, 20);
+      await tester.pumpWidget(
+        buildTestable(
+          CalendarCell(
+            date: date,
+            events: const [],
+            isToday: false,
+            isInMonth: true,
+            isWeekend: false,
+            isSelected: false,
+          ),
+        ),
+      );
+      expect(find.text('20'), findsOneWidget);
+    });
   });
 }
