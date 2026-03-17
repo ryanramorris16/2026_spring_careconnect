@@ -64,9 +64,10 @@ class PaymentStatusTest {
 
     @Test
     void name_returnsCorrectString() throws Exception {
-        assertThat(PaymentStatus.PENDING.name()).isEqualTo("pending");
-        assertThat(PaymentStatus.PAID.name()).isEqualTo("paid");
-        assertThat(PaymentStatus.OVERDUE.name()).isEqualTo("overdue");
+        // Java enum name() returns the exact constant identifier (uppercase)
+        assertThat(PaymentStatus.PENDING.name()).isEqualTo("PENDING");
+        assertThat(PaymentStatus.PAID.name()).isEqualTo("PAID");
+        assertThat(PaymentStatus.OVERDUE.name()).isEqualTo("OVERDUE");
     }
 
     @Test
