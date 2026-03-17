@@ -519,4 +519,110 @@ class CareConnectWebSocketHandlerTest {
                         + "\"message\":\"hello\",\"conversationId\":\"conv1\"}"));
         verify(targetSession, atLeast(1)).sendMessage(any(TextMessage.class));
     }
+
+    // ─── getUserDisplayName — empty name falls back to email ────────────────
+
+    @Test
+    void aiChatNotification_senderNameEmpty_usesEmailAsFallback() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("");
+        authenticate(targetSession, "s2", targetUser, 2L, "t@t.com", "tok2");
+        when(targetSession.isOpen()).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"ai-chat-notification\",\"targetUserId\":\"2\","
+                        + "\"message\":\"hello\",\"conversationId\":\"conv1\"}"));
+        verify(targetSession, atLeast(1)).sendMessage(any(TextMessage.class));
+    }
+
+    // ─── isUserOnline — session present but closed ──────────────────────────
+
+    @Test
+    void isUserOnline_sessionPresentButClosed_returnsFalse() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(session.isOpen()).thenReturn(false);
+        assertThat(handler.isUserOnline("1")).isFalse();
+    }
+
+    // ─── broadcastToAllUsers — closed session ───────────────────────────────
+
+    @Test
+    void broadcastToAllUsers_closedSession_skips() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(session.isOpen()).thenReturn(false);
+
+        handler.broadcastToAllUsers(Map.of("type", "broadcast"));
+
+        // Only the auth message was sent
+        verify(session, atMost(1)).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void broadcastToAllUsers_multipleSessions_sendsToAllOpen() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(session.isOpen()).thenReturn(true);
+        authenticate(targetSession, "s2", targetUser, 2L, "t@t.com", "tok2");
+        when(targetSession.isOpen()).thenReturn(true);
+
+        handler.broadcastToAllUsers(Map.of("type", "broadcast"));
+
+        verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
+        verify(targetSession, atLeast(2)).sendMessage(any(TextMessage.class));
+    }
+
+    // ─── sendRealTimeUpdate — session null ──────────────────────────────────
+
+    @Test
+    void sendRealTimeUpdate_noSessionRegistered_skips() throws Exception {
+        handler.sendRealTimeUpdate("42", Map.of("type", "update"));
+        verifyNoInteractions(session);
+    }
+
+    // ─── sendEmailVerificationNotification — case insensitive ───────────────
+
+    @Test
+    void sendEmailVerificationNotification_uppercaseEmail_matchesLowerCase() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"subscribe-email-verification\",\"email\":\"V@V.COM\"}"));
+        when(session.isOpen()).thenReturn(true);
+
+        handler.sendEmailVerificationNotification("v@v.com");
+
+        verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void sendEmailVerificationNotification_sessionClosed_doesNotSend() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"subscribe-email-verification\",\"email\":\"c@c.com\"}"));
+        when(session.isOpen()).thenReturn(false);
+
+        handler.sendEmailVerificationNotification("c@c.com");
+
+        // Only the subscription confirmation was sent
+        verify(session, atMost(1)).sendMessage(any(TextMessage.class));
+    }
+
+    // ─── getOnlineUsersCount — empty ────────────────────────────────────────
+
+    @Test
+    void getOnlineUsersCount_noUsers_returnsZero() throws Exception {
+        assertThat(handler.getOnlineUsersCount()).isZero();
+    }
+
+    // ─── afterConnectionClosed — multiple users ─────────────────────────────
+
+    @Test
+    void afterConnectionClosed_removeOnlyTargetUser() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        authenticate(targetSession, "s2", targetUser, 2L, "t@t.com", "tok2");
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        assertThat(handler.isUserOnline("1")).isFalse();
+        // User 2 should still be tracked
+        assertThat(handler.getOnlineUsersCount()).isGreaterThanOrEqualTo(1);
+    }
 }
