@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'bottom_nav_config.dart';
 
 class MainScreenConfig {
+  static const String rolePatient = 'PATIENT';
+  static const String roleCaregiver = 'CAREGIVER';
+  static const String roleFamilyLink = 'FAMILY_LINK';
+
   final String userRole;
   final int userId;
   final int? patientId;
@@ -75,7 +79,7 @@ class MainScreenConfig {
     Color? primaryColor,
   }) {
     return MainScreenConfig(
-      userRole: 'PATIENT',
+      userRole: rolePatient,
       userId: userId,
       patientId: patientId,
       customNavItems: customNavItems,
@@ -91,7 +95,7 @@ class MainScreenConfig {
     Color? primaryColor,
   }) {
     return MainScreenConfig(
-      userRole: 'CAREGIVER',
+      userRole: roleCaregiver,
       userId: userId,
       caregiverId: caregiverId,
       patientId: patientId,
@@ -107,7 +111,7 @@ class MainScreenConfig {
     Color? primaryColor,
   }) {
     return MainScreenConfig(
-      userRole: 'FAMILY_LINK',
+      userRole: roleFamilyLink,
       userId: userId,
       patientId: patientId,
       customNavItems: customNavItems,
