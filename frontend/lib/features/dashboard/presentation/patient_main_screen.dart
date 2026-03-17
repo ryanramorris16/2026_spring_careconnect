@@ -149,31 +149,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [ if (_isOfflineMode)
-  Container(
-    width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 16),
-    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-    decoration: BoxDecoration(
-      color: Colors.orange.shade700,
-      borderRadius: BorderRadius.circular(8),
-    ),
-    child: Row(
-      children: const [
-        Icon(Icons.cloud_off, color: Colors.white),
-        SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            "Offline Mode Active — Data is being saved locally and is Awaiting Sync.",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
+                            children: [
                               Text(
                                 'Medication Tracker',
                                 style: Theme.of(context).textTheme.titleSmall
