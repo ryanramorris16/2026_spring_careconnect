@@ -42,6 +42,7 @@ import com.careconnect.security.Role;
 import com.careconnect.util.SecurityUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
@@ -61,9 +62,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * in isolation.  Security filters are disabled with
  * {@code @AutoConfigureMockMvc(addFilters = false)} to keep tests focused on
  * request routing and response shaping rather than authentication concerns.
+ *
+ * <p>{@code @TestPropertySource} sets {@code careconnect.ai.enabled=true} so
+ * that the controller's {@code @ConditionalOnProperty} guard is satisfied and
+ * the bean is registered in the MVC slice.
  */
 @WebMvcTest(AIChatController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@TestPropertySource(properties = "careconnect.ai.enabled=true")
 class AIChatControllerTest {
 
     @Autowired

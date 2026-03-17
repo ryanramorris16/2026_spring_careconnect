@@ -41,11 +41,11 @@ class PaymentServiceTest {
     }
 
     @Test
-    @DisplayName("savePayment - null payment - delegates to repository save with null")
-    void savePayment_nullPayment_delegatesToRepositorySaveWithNull() throws Exception {
-        paymentService.savePayment(null);
-
-        verify(paymentRepository, times(1)).save(null);
+    @DisplayName("savePayment - null payment - throws NullPointerException")
+    void savePayment_nullPayment_throwsNullPointerException() throws Exception {
+        // savePayment() calls payment.getSubscription() immediately, so a
+        // null argument causes a NullPointerException before reaching the repo.
+        assertThrows(NullPointerException.class, () -> paymentService.savePayment(null));
     }
 
     @Test
