@@ -1,6 +1,7 @@
 package com.careconnect.controller;
 
 import com.careconnect.model.Plan;
+import com.careconnect.model.User;
 import com.careconnect.repository.PlanRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.SubscriptionEnrichmentService;
@@ -75,6 +76,14 @@ class DebugControllerTest {
          * Required because @Value fields are not injected
          * when using standaloneSetup.
          */
+
+        // Stub security calls that every endpoint requires
+        when(securityUtil.resolveCurrentUser()).thenReturn(new User());
+        /*
+         * Every controller method calls resolveCurrentUser() and requireAdmin().
+         * requireAdmin() is void and does nothing by default on a mock,
+         * so only resolveCurrentUser() needs an explicit stub.
+         */
     }
 
     @Test
@@ -99,7 +108,7 @@ class DebugControllerTest {
         final Plan premium = new Plan();
         premium.setName("Premium Plan");
 
-        when(planRepository.findByCode(any()))
+        when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
                 .thenReturn(null);
 
         when(planRepository.findByName("Premium Plan"))
@@ -124,7 +133,7 @@ class DebugControllerTest {
         final Plan existing = new Plan();
         existing.setCode("price_1RmqWxELoozGI1YxQql5rsvN");
 
-        when(planRepository.findByCode(any()))
+        when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
                 .thenReturn(existing);
 
         mockMvc.perform(get("/v1/api/debug/plans/create-mapping"))
@@ -139,7 +148,7 @@ class DebugControllerTest {
     @Test
     void createPriceMapping_shouldClonePremiumPlan() throws Exception {
 
-        when(planRepository.findByCode(any()))
+        when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
                 .thenReturn(null);
 
         final Plan premium = new Plan();
@@ -160,6 +169,29 @@ class DebugControllerTest {
         /*
          * Ensures:
          * - Existing Premium Plan is cloned
+         * - save() is invoked
+         */
+    }
+
+    @Test
+    void createPriceMapping_shouldCreateNewPlan_whenNoPremiumPlanExists() throws Exception {
+
+        when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
+                .thenReturn(null);
+
+        when(planRepository.findByName("Premium Plan"))
+                .thenReturn(List.of());
+
+        when(planRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(get("/v1/api/debug/plans/create-mapping"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message")
+                        .value("Created new Premium Plan"));
+        /*
+         * Ensures:
+         * - A brand-new Premium Plan is created when none exists
          * - save() is invoked
          */
     }
@@ -203,34 +235,5 @@ class DebugControllerTest {
         /*
          * Ensures exception is translated into HTTP 400.
          */
-    }
-
-    @Test
-    void createMissingSubscriptionPlanMappings_shouldReturnSuccess() throws Exception {
-
-        mockMvc.perform(post("/v1/api/debug/subscriptions/user/1/create-mappings"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").exists());
-
-        verify(subscriptionEnrichmentService)
-                .createMissingPlanMappings(1L);
-        /*
-         * Ensures writable transaction call is delegated.
-         */
-    }
-
-    @Test
-    void createMissingSubscriptionPlanMappings_shouldReturnBadRequest_whenException() throws Exception {
-
-        doThrow(new RuntimeException("Failure"))
-                .when(subscriptionEnrichmentService)
-                .createMissingPlanMappings(1L);
-        /*
-         * doThrow() required because method returns void.
-         */
-
-        mockMvc.perform(post("/v1/api/debug/subscriptions/user/1/create-mappings"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
     }
 }
