@@ -421,4 +421,469 @@ class NotificationServiceTest {
         assertDoesNotThrow(() ->
                 notificationService.unregisterDeviceToken(""));
     }
+
+    // ========== Additional coverage tests ==========
+
+    // --- sendNotification: phone number token path ---
+
+    @Test
+    @DisplayName("sendNotification_phoneNumberToken_sendsSmsViaSns")
+    void sendNotification_phoneNumberToken_sendsSmsViaSns() throws Exception {
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+                .title("SMS Title")
+                .body("SMS Body")
+                .targetToken("+15551234567")
+                .build();
+
+        final NotificationResponse response = notificationService.sendNotification(request);
+
+        assertNotNull(response);
+        assertTrue(response.isSuccess());
+        assertEquals("sns-sms-id", response.getMessageId());
+        verify(snsService).publishSms("+15551234567", "SMS Body");
+    }
+
+    @Test
+    @DisplayName("sendNotification_phoneNumberToken_snsThrows_returnsFailure")
+    void sendNotification_phoneNumberToken_snsThrows_returnsFailure() throws Exception {
+        when(snsService.publishSms(eq("+15559999999"), anyString()))
+                .thenThrow(new RuntimeException("SNS send failed"));
+
+        final FirebaseNotificationRequest request = FirebaseNotificationRequest.builder()
+                .title("Fail Title")
+                .body("Fail Body")
+                .targetToken("+15559999999")
+                .build();
+
+        final NotificationResponse response = notificationService.sendNotification(request);
+
+        assertNotNull(response);
+        assertFalse(response.isSuccess());
+    }
+
+    // --- sendNotificationToUser: user not found ---
+
+    @Test
+    @DisplayName("sendNotificationToUser_userNotFound_throwsIllegalArgument")
+    void sendNotificationToUser_userNotFound_throwsIllegalArgument() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () ->
+                notificationService.sendNotificationToUser(
+                        999L, "Title", "Body", "GENERAL", null));
+    }
+
+    // --- sendNotificationToUser: notification settings disable channels ---
+
+    @Test
+    @DisplayName("sendNotificationToUser_emergencyDisabled_skipsEmergencyNotification")
+    void sendNotificationToUser_emergencyDisabled_skipsEmergencyNotification() {
+        com.careconnect.model.NotificationSetting settings =
+                com.careconnect.model.NotificationSetting.builder()
+                        .userId(1L)
+                        .emergency(false)
+                        .sms(true)
+                        .build();
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.of(settings));
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Emergency", "Help!", "EMERGENCY", null);
+
+        // Both email and SMS should be skipped for EMERGENCY type when emergency=false
+        assertTrue(responses.isEmpty());
+        verify(sesService, never()).sendEmail(anyString(), anyString(), any(), anyString());
+        verify(snsService, never()).publishSms(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("sendNotificationToUser_vitalAlertDisabled_skipsVitalNotification")
+    void sendNotificationToUser_vitalAlertDisabled_skipsVitalNotification() {
+        com.careconnect.model.NotificationSetting settings =
+                com.careconnect.model.NotificationSetting.builder()
+                        .userId(1L)
+                        .significantVitals(false)
+                        .sms(true)
+                        .build();
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.of(settings));
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Vital Alert", "Heart rate high", "VITAL_ALERT", null);
+
+        assertTrue(responses.isEmpty());
+    }
+
+    @Test
+    @DisplayName("sendNotificationToUser_smsDisabled_skipsSms")
+    void sendNotificationToUser_smsDisabled_skipsSms() {
+        com.careconnect.model.NotificationSetting settings =
+                com.careconnect.model.NotificationSetting.builder()
+                        .userId(1L)
+                        .sms(false)
+                        .emergency(true)
+                        .significantVitals(true)
+                        .build();
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.of(settings));
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "General", "Test", "GENERAL", null);
+
+        // Email should be sent (shouldSendEmail returns true for GENERAL), SMS should be skipped
+        assertEquals(1, responses.size());
+        assertTrue(responses.get(0).isSuccess());
+        verify(sesService).sendEmail(anyString(), anyString(), any(), anyString());
+        verify(snsService, never()).publishSms(anyString(), anyString());
+    }
+
+    // --- sendNotificationToUser: email failure ---
+
+    @Test
+    @DisplayName("sendNotificationToUser_emailThrows_addsFailureResponse")
+    void sendNotificationToUser_emailThrows_addsFailureResponse() {
+        when(sesService.sendEmail(anyString(), anyString(), any(), anyString()))
+                .thenThrow(new RuntimeException("SES down"));
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.empty());
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Title", "Body", "GENERAL", null);
+
+        // Should have failure for email + success for SMS
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendNotificationToUser_smsThrows_addsFailureResponse")
+    void sendNotificationToUser_smsThrows_addsFailureResponse() {
+        when(snsService.publishSms(anyString(), anyString()))
+                .thenThrow(new RuntimeException("SNS down"));
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.empty());
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(Collections.emptyList());
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Title", "Body", "GENERAL", null);
+
+        assertFalse(responses.isEmpty());
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    // --- sendNotificationToUser: push notifications with device tokens ---
+
+    @Test
+    @DisplayName("sendNotificationToUser_androidDeviceToken_sendsPushViaSms")
+    void sendNotificationToUser_androidDeviceToken_sendsPushViaSms() {
+        DeviceToken androidToken = DeviceToken.builder()
+                .id(10L)
+                .deviceType(DeviceToken.DeviceType.ANDROID)
+                .fcmToken("fcm-android-token")
+                .deviceId("device-1")
+                .build();
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.empty());
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(List.of(androidToken));
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Push Title", "Push Body", "GENERAL", null);
+
+        // Email + SMS + push (SMS for Android)
+        assertNotNull(responses);
+        assertTrue(responses.size() >= 2);
+    }
+
+    @Test
+    @DisplayName("sendNotificationToUser_iosDeviceToken_doesNotSendPushViaSms")
+    void sendNotificationToUser_iosDeviceToken_doesNotSendPushViaSms() {
+        DeviceToken iosToken = DeviceToken.builder()
+                .id(11L)
+                .deviceType(DeviceToken.DeviceType.IOS)
+                .fcmToken("fcm-ios-token")
+                .deviceId("device-2")
+                .build();
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.empty());
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(List.of(iosToken));
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Push Title", "Push Body", "GENERAL", null);
+
+        // Email + SMS only (iOS push not sent via SMS fallback)
+        assertNotNull(responses);
+        assertEquals(2, responses.size());
+    }
+
+    @Test
+    @DisplayName("sendNotificationToUser_pushThrows_addsFailureResponse")
+    void sendNotificationToUser_pushThrows_addsFailureResponse() {
+        DeviceToken androidToken = DeviceToken.builder()
+                .id(12L)
+                .deviceType(DeviceToken.DeviceType.ANDROID)
+                .fcmToken("fcm-token")
+                .deviceId("device-3")
+                .build();
+
+        // SMS is called for both the SMS channel and the Android push fallback.
+        // First call succeeds (SMS channel), second throws (push channel).
+        when(snsService.publishSms(anyString(), anyString()))
+                .thenReturn("sns-sms-id")
+                .thenThrow(new RuntimeException("Push failed"));
+
+        when(notificationSettingRepository.findByUserId(1L))
+                .thenReturn(Optional.empty());
+        when(deviceTokenRepository.findByUserIdAndIsActiveTrue(1L))
+                .thenReturn(List.of(androidToken));
+
+        List<NotificationResponse> responses = notificationService.sendNotificationToUser(
+                1L, "Push Title", "Push Body", "GENERAL", null);
+
+        assertNotNull(responses);
+        // Should contain at least one failure (from push channel)
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    // --- sendVitalAlert: patient not found ---
+
+    @Test
+    @DisplayName("sendVitalAlert_patientNotFound_returnsFailure")
+    void sendVitalAlert_patientNotFound_returnsFailure() throws Exception {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        List<NotificationResponse> responses =
+                notificationService.sendVitalAlert(999L, "HR", "120", "HIGH").get();
+
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertFalse(responses.get(0).isSuccess());
+    }
+
+    @Test
+    @DisplayName("sendVitalAlert_patientNoPhoneNoEmail_returnsEmptyResponses")
+    void sendVitalAlert_patientNoPhoneNoEmail_returnsEmptyResponses() throws Exception {
+        User noContactUser = new User();
+        noContactUser.setId(4L);
+        noContactUser.setName("No Contact");
+        noContactUser.setPhone(null);
+        noContactUser.setEmail(null);
+
+        when(userRepository.findById(4L)).thenReturn(Optional.of(noContactUser));
+
+        List<NotificationResponse> responses =
+                notificationService.sendVitalAlert(4L, "HR", "120", "HIGH").get();
+
+        assertNotNull(responses);
+        assertTrue(responses.isEmpty());
+    }
+
+    @Test
+    @DisplayName("sendVitalAlert_smsThrows_addsFailureResponse")
+    void sendVitalAlert_smsThrows_addsFailureResponse() throws Exception {
+        when(snsService.sendVitalAlertSms(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("SNS down"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendVitalAlert(1L, "HR", "120", "HIGH").get();
+
+        assertNotNull(responses);
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendVitalAlert_emailThrows_addsFailureResponse")
+    void sendVitalAlert_emailThrows_addsFailureResponse() throws Exception {
+        when(sesService.sendEmail(anyString(), anyString(), any(), anyString()))
+                .thenThrow(new RuntimeException("SES down"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendVitalAlert(1L, "HR", "120", "HIGH").get();
+
+        assertNotNull(responses);
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    // --- sendMedicationReminder: patient not found ---
+
+    @Test
+    @DisplayName("sendMedicationReminder_patientNotFound_returnsFailure")
+    void sendMedicationReminder_patientNotFound_returnsFailure() throws Exception {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        List<NotificationResponse> responses =
+                notificationService.sendMedicationReminder(999L, "Med", "10mg", "8AM").get();
+
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertFalse(responses.get(0).isSuccess());
+    }
+
+    @Test
+    @DisplayName("sendMedicationReminder_smsThrows_addsFailure")
+    void sendMedicationReminder_smsThrows_addsFailure() throws Exception {
+        when(snsService.sendMedicationReminderSms(anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("SNS error"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendMedicationReminder(1L, "Med", "10mg", "8AM").get();
+
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendMedicationReminder_emailThrows_addsFailure")
+    void sendMedicationReminder_emailThrows_addsFailure() throws Exception {
+        when(sesService.sendMedicationReminder(anyString(), anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("SES error"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendMedicationReminder(1L, "Med", "10mg", "8AM").get();
+
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendMedicationReminder_patientNoContact_returnsEmptyResponses")
+    void sendMedicationReminder_patientNoContact_returnsEmptyResponses() throws Exception {
+        User noContactUser = new User();
+        noContactUser.setId(4L);
+        noContactUser.setName("No Contact");
+        noContactUser.setPhone(null);
+        noContactUser.setEmail(null);
+
+        when(userRepository.findById(4L)).thenReturn(Optional.of(noContactUser));
+
+        List<NotificationResponse> responses =
+                notificationService.sendMedicationReminder(4L, "Med", "10mg", "8AM").get();
+
+        assertTrue(responses.isEmpty());
+    }
+
+    // --- sendEmergencyAlert: patient not found ---
+
+    @Test
+    @DisplayName("sendEmergencyAlert_patientNotFound_returnsFailure")
+    void sendEmergencyAlert_patientNotFound_returnsFailure() throws Exception {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        List<NotificationResponse> responses =
+                notificationService.sendEmergencyAlert(999L, "FALL", "Room 1").get();
+
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertFalse(responses.get(0).isSuccess());
+    }
+
+    @Test
+    @DisplayName("sendEmergencyAlert_smsThrows_addsFailure")
+    void sendEmergencyAlert_smsThrows_addsFailure() throws Exception {
+        when(snsService.sendEmergencyAlertSms(anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("SNS error"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendEmergencyAlert(1L, "FALL", "Room 1").get();
+
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendEmergencyAlert_emailThrows_addsFailure")
+    void sendEmergencyAlert_emailThrows_addsFailure() throws Exception {
+        when(sesService.sendEmail(anyString(), anyString(), any(), anyString()))
+                .thenThrow(new RuntimeException("SES error"));
+
+        List<NotificationResponse> responses =
+                notificationService.sendEmergencyAlert(1L, "FALL", "Room 1").get();
+
+        assertTrue(responses.stream().anyMatch(r -> !r.isSuccess()));
+    }
+
+    @Test
+    @DisplayName("sendEmergencyAlert_patientNoContact_returnsEmptyResponses")
+    void sendEmergencyAlert_patientNoContact_returnsEmptyResponses() throws Exception {
+        User noContactUser = new User();
+        noContactUser.setId(4L);
+        noContactUser.setName("No Contact");
+        noContactUser.setPhone(null);
+        noContactUser.setEmail(null);
+
+        when(userRepository.findById(4L)).thenReturn(Optional.of(noContactUser));
+
+        List<NotificationResponse> responses =
+                notificationService.sendEmergencyAlert(4L, "FALL", "Room 1").get();
+
+        assertTrue(responses.isEmpty());
+    }
+
+    // --- registerDeviceToken: verifies save is called ---
+
+    @Test
+    @DisplayName("registerDeviceToken_validInput_savesDeviceToken")
+    void registerDeviceToken_validInput_savesDeviceToken() {
+        notificationService.registerDeviceToken(1L, "fcm-token", "device-id", DeviceToken.DeviceType.ANDROID);
+
+        verify(deviceTokenRepository).save(any(DeviceToken.class));
+    }
+
+    // --- unregisterDeviceToken: token found and deleted ---
+
+    @Test
+    @DisplayName("unregisterDeviceToken_tokenFound_deletesToken")
+    void unregisterDeviceToken_tokenFound_deletesToken() {
+        DeviceToken token = DeviceToken.builder()
+                .id(1L)
+                .fcmToken("fcm-token-abc")
+                .build();
+
+        when(deviceTokenRepository.findByFcmTokenAndIsActiveTrue("fcm-token-abc"))
+                .thenReturn(Optional.of(token));
+
+        notificationService.unregisterDeviceToken("fcm-token-abc");
+
+        verify(deviceTokenRepository).delete(token);
+    }
+
+    @Test
+    @DisplayName("unregisterDeviceToken_tokenNotFound_doesNotDelete")
+    void unregisterDeviceToken_tokenNotFound_doesNotDelete() {
+        when(deviceTokenRepository.findByFcmTokenAndIsActiveTrue("nonexistent"))
+                .thenReturn(Optional.empty());
+
+        notificationService.unregisterDeviceToken("nonexistent");
+
+        verify(deviceTokenRepository, never()).delete(any(DeviceToken.class));
+    }
+
+    // --- sendBulkNotifications: phone number tokens in bulk ---
+
+    @Test
+    @DisplayName("sendBulkNotifications_phoneTokens_sendsSmsBulk")
+    void sendBulkNotifications_phoneTokens_sendsSmsBulk() {
+        FirebaseNotificationRequest r1 = FirebaseNotificationRequest.builder()
+                .title("T1").body("B1").targetToken("+15551111111").build();
+        FirebaseNotificationRequest r2 = FirebaseNotificationRequest.builder()
+                .title("T2").body("B2").targetToken("+15552222222").build();
+
+        List<NotificationResponse> responses = notificationService.sendBulkNotifications(List.of(r1, r2));
+
+        assertEquals(2, responses.size());
+        assertTrue(responses.stream().allMatch(NotificationResponse::isSuccess));
+        verify(snsService, times(2)).publishSms(anyString(), anyString());
+    }
 }

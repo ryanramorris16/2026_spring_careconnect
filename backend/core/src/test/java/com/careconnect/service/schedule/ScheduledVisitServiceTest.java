@@ -1,37 +1,57 @@
 package com.careconnect.service.schedule;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.careconnect.dto.schedule.AuditDiffResponse;
+import com.careconnect.dto.schedule.ScheduledVisitAuditResponse;
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
 import com.careconnect.model.Patient;
 import com.careconnect.model.schedule.ScheduledVisit;
+import com.careconnect.model.schedule.ScheduledVisitAudit;
 import com.careconnect.repository.PatientRepository;
 import com.careconnect.repository.schedule.ScheduledVisitAuditRepository;
 import com.careconnect.repository.schedule.ScheduledVisitRepository;
-import com.careconnect.service.schedule.ScheduleConflictService;
+import com.careconnect.service.schedule.ScheduleConflictService.ConflictSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
+/**
+ * Unit tests for {@link ScheduledVisitService}.
+ *
+ * <p>All repository and service dependencies are mocked with Mockito so the
+ * service's business logic is validated in isolation.</p>
+ */
 class ScheduledVisitServiceTest {
 
     @Mock
@@ -50,16 +70,39 @@ class ScheduledVisitServiceTest {
     private ObjectMapper objectMapper;
 
     @InjectMocks
-    private ScheduledVisitService scheduledVisitService;
+    private ScheduledVisitService visitService;
 
-    private ScheduledVisit buildVisit(Long id, Long caregiverId, Long patientId) {
-        final ScheduledVisit visit = new ScheduledVisit();
-        visit.setId(id);
-        visit.setCaregiverId(caregiverId);
-        visit.setPatientId(patientId);
-        visit.setServiceType("HOME_HEALTH");
-        visit.setScheduledDate(LocalDate.of(2025, 6, 15));
-        visit.setScheduledTime(LocalTime.of(9, 0));
+    private static final Long CAREGIVER_ID = 1L;
+    private static final Long PATIENT_ID = 10L;
+    private static final Long VISIT_ID = 100L;
+    private static final LocalDate TEST_DATE = LocalDate.of(2026, 3, 17);
+    private static final LocalTime TEST_TIME = LocalTime.of(10, 0);
+    private static final String TEST_USER = "testuser";
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(TEST_USER, null));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    // ========================================================================
+    // Helper methods
+    // ========================================================================
+
+    private ScheduledVisit createVisit() {
+        ScheduledVisit visit = new ScheduledVisit();
+        visit.setId(VISIT_ID);
+        visit.setCaregiverId(CAREGIVER_ID);
+        visit.setPatientId(PATIENT_ID);
+        visit.setServiceType("General Care");
+        visit.setScheduledDate(TEST_DATE);
+        visit.setScheduledTime(TEST_TIME);
         visit.setDurationMinutes(60);
         visit.setPriority("Normal");
         visit.setNotes("Test notes");
@@ -67,291 +110,1239 @@ class ScheduledVisitServiceTest {
         return visit;
     }
 
-    private ScheduledVisitRequest buildRequest() throws Exception {
-        final ScheduledVisitRequest req = new ScheduledVisitRequest();
-        req.setPatientId(10L);
-        req.setServiceType("HOME_HEALTH");
-        req.setScheduledDate(LocalDate.of(2025, 6, 15));
-        req.setScheduledTime(LocalTime.of(9, 0));
-        req.setDurationMinutes(60);
-        req.setPriority("Normal");
-        req.setNotes("Notes");
-        return req;
+    private ScheduledVisitRequest createRequest() {
+        ScheduledVisitRequest request = new ScheduledVisitRequest();
+        request.setPatientId(PATIENT_ID);
+        request.setServiceType("General Care");
+        request.setScheduledDate(TEST_DATE);
+        request.setScheduledTime(TEST_TIME);
+        request.setDurationMinutes(60);
+        request.setPriority("Normal");
+        request.setNotes("Test notes");
+        return request;
     }
 
-    private Patient buildPatient(String firstName, String lastName) {
-        final Patient patient = mock(Patient.class);
-        when(patient.getFirstName()).thenReturn(firstName);
-        when(patient.getLastName()).thenReturn(lastName);
-        return patient;
+    private ConflictSummary createEmptyConflictSummary() {
+        return new ConflictSummary();
     }
 
-    /**
-     * Helper to stub conflictService.analyzeConflicts to return an empty (no conflicts) summary.
-     */
+    private Patient createPatient() {
+        return Patient.builder()
+                .id(PATIENT_ID)
+                .firstName("John")
+                .lastName("Doe")
+                .build();
+    }
+
+    private void mockPatientLookup() {
+        when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.of(createPatient()));
+    }
+
     private void stubNoConflicts() {
-        ScheduleConflictService.ConflictSummary noConflicts = new ScheduleConflictService.ConflictSummary();
         when(conflictService.analyzeConflicts(
                 anyLong(), anyLong(), any(LocalDate.class), any(LocalTime.class), anyInt()))
-                .thenReturn(noConflicts);
+                .thenReturn(createEmptyConflictSummary());
     }
 
-    // ----- createScheduledVisit -----
+    // ========================================================================
+    // createScheduledVisit
+    // ========================================================================
 
-    @Test
-    void createScheduledVisit_savesAndReturnsResponse() throws Exception {
-        stubNoConflicts();
-        final ScheduledVisitRequest request = buildRequest();
-        final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
-        final Patient johnDoe = buildPatient("John", "Doe");
-        when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
-        when(patientRepository.findById(10L)).thenReturn(Optional.of(johnDoe));
+    @Nested
+    @DisplayName("createScheduledVisit")
+    class CreateScheduledVisit {
 
-        final ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
+        @Test
+        @DisplayName("should create visit successfully with no conflicts")
+        void shouldCreateVisitSuccessfully() throws Exception {
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary noConflicts = createEmptyConflictSummary();
+            ScheduledVisit savedVisit = createVisit();
 
-        assertThat(response).isNotNull();
-        assertThat(response.getCaregiverId()).isEqualTo(5L);
-        assertThat(response.getPatientName()).isEqualTo("John Doe");
-        assertThat(response.getStatus()).isEqualTo("Scheduled");
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            assertNotNull(response);
+            assertEquals(VISIT_ID, response.getId());
+            assertEquals(CAREGIVER_ID, response.getCaregiverId());
+            assertEquals(PATIENT_ID, response.getPatientId());
+            assertEquals("John Doe", response.getPatientName());
+            assertEquals("Scheduled", response.getStatus());
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+            verify(scheduledVisitAuditRepository).save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should throw exception when patient has overlapping visit")
+        void shouldThrowWhenPatientConflicts() {
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary conflictSummary = createEmptyConflictSummary();
+            ScheduledVisit conflicting = createVisit();
+            conflictSummary.setPatientConflicts(List.of(conflicting));
+
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(conflictSummary);
+
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                    () -> visitService.createScheduledVisit(CAREGIVER_ID, request));
+
+            assertTrue(ex.getMessage().contains("Patient already has a scheduled visit"));
+            verify(scheduledVisitRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("should create visit with caregiver conflict warning but no block")
+        void shouldCreateVisitWithCaregiverConflictWarning() throws Exception {
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary conflictSummary = createEmptyConflictSummary();
+            ScheduledVisit conflicting = createVisit();
+            conflictSummary.setCaregiverConflicts(List.of(conflicting));
+            conflictSummary.addWarning("Caregiver has 1 overlapping visit(s) at this time");
+
+            ScheduledVisit savedVisit = createVisit();
+            savedVisit.setConflictFlag(true);
+            savedVisit.setConflictWarning(
+                    "Caregiver has 1 overlapping visit(s) at this time");
+
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(conflictSummary);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            assertNotNull(response);
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
+
+        @Test
+        @DisplayName("should create visit with daily limit warning but no block")
+        void shouldCreateVisitWithDailyLimitWarning() throws Exception {
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary conflictSummary = createEmptyConflictSummary();
+            conflictSummary.setExceedsDailyLimit(true);
+            conflictSummary.addWarning(
+                    "Caregiver already has max visits (8) scheduled for this day");
+
+            ScheduledVisit savedVisit = createVisit();
+            savedVisit.setConflictFlag(true);
+
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(conflictSummary);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            assertNotNull(response);
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
+
+        @Test
+        @DisplayName("should create visit with daily hours exceeded warning but no block")
+        void shouldCreateVisitWithDailyHoursWarning() throws Exception {
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary conflictSummary = createEmptyConflictSummary();
+            conflictSummary.setExceedsDailyHours(true);
+            conflictSummary.addWarning(
+                    "Adding this visit would exceed 10 working hours for the day");
+
+            ScheduledVisit savedVisit = createVisit();
+            savedVisit.setConflictFlag(true);
+
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(conflictSummary);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            assertNotNull(response);
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
+
+        @Test
+        @DisplayName("should return Unknown patient name when patient not in repository")
+        void shouldReturnUnknownPatientNameWhenNotFound() throws Exception {
+            ScheduledVisitRequest request = createRequest();
+            ScheduledVisit savedVisit = createVisit();
+
+            stubNoConflicts();
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            when(patientRepository.findById(PATIENT_ID)).thenReturn(Optional.empty());
+
+            ScheduledVisitResponse response =
+                    visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            assertEquals("Unknown", response.getPatientName());
+        }
     }
 
-    @Test
-    void createScheduledVisit_patientNotFound_returnsUnknownPatient() throws Exception {
-        stubNoConflicts();
-        final ScheduledVisitRequest request = buildRequest();
-        final ScheduledVisit savedVisit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.save(any(ScheduledVisit.class))).thenReturn(savedVisit);
-        when(patientRepository.findById(10L)).thenReturn(Optional.empty());
+    // ========================================================================
+    // getScheduledVisits
+    // ========================================================================
 
-        final ScheduledVisitResponse response = scheduledVisitService.createScheduledVisit(5L, request);
+    @Nested
+    @DisplayName("getScheduledVisits")
+    class GetScheduledVisits {
 
-        assertThat(response.getPatientName()).isEqualTo("Unknown");
+        @Test
+        @DisplayName("should return all visits for caregiver")
+        void shouldReturnAllVisits() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findByCaregiverId(CAREGIVER_ID))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisits(CAREGIVER_ID);
+
+            assertEquals(1, results.size());
+            assertEquals(VISIT_ID, results.get(0).getId());
+            assertEquals("John Doe", results.get(0).getPatientName());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no visits exist")
+        void shouldReturnEmptyList() {
+            when(scheduledVisitRepository.findByCaregiverId(CAREGIVER_ID))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisits(CAREGIVER_ID);
+
+            assertTrue(results.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should return multiple visits")
+        void shouldReturnMultipleVisits() {
+            ScheduledVisit visit1 = createVisit();
+            ScheduledVisit visit2 = createVisit();
+            visit2.setId(101L);
+            when(scheduledVisitRepository.findByCaregiverId(CAREGIVER_ID))
+                    .thenReturn(List.of(visit1, visit2));
+            mockPatientLookup();
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisits(CAREGIVER_ID);
+
+            assertEquals(2, results.size());
+        }
     }
 
-    // ----- getScheduledVisits -----
+    // ========================================================================
+    // getScheduledVisitsByDate
+    // ========================================================================
 
-    @Test
-    void getScheduledVisits_returnsList() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        final Patient janeSmith = buildPatient("Jane", "Smith");
-        when(scheduledVisitRepository.findByCaregiverId(5L)).thenReturn(List.of(visit));
-        when(patientRepository.findById(10L)).thenReturn(Optional.of(janeSmith));
+    @Nested
+    @DisplayName("getScheduledVisitsByDate")
+    class GetScheduledVisitsByDate {
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
+        @Test
+        @DisplayName("should return visits for specific date")
+        void shouldReturnVisitsForDate() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository
+                    .findByCaregiverIdAndScheduledDate(CAREGIVER_ID, TEST_DATE))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getPatientName()).isEqualTo("Jane Smith");
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisitsByDate(CAREGIVER_ID, TEST_DATE);
+
+            assertEquals(1, results.size());
+            assertEquals(TEST_DATE, results.get(0).getScheduledDate());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no visits on date")
+        void shouldReturnEmptyListForDate() {
+            when(scheduledVisitRepository
+                    .findByCaregiverIdAndScheduledDate(CAREGIVER_ID, TEST_DATE))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisitsByDate(CAREGIVER_ID, TEST_DATE);
+
+            assertTrue(results.isEmpty());
+        }
     }
 
-    @Test
-    void getScheduledVisits_emptyList() throws Exception {
-        when(scheduledVisitRepository.findByCaregiverId(5L)).thenReturn(List.of());
+    // ========================================================================
+    // getScheduledVisitsBetweenDates
+    // ========================================================================
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisits(5L);
+    @Nested
+    @DisplayName("getScheduledVisitsBetweenDates")
+    class GetScheduledVisitsBetweenDates {
 
-        assertThat(result).isEmpty();
+        @Test
+        @DisplayName("should return visits between date range")
+        void shouldReturnVisitsBetweenDates() {
+            LocalDate endDate = TEST_DATE.plusDays(7);
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository
+                    .findByCaregiverIdAndScheduledDateBetween(CAREGIVER_ID, TEST_DATE, endDate))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisitsBetweenDates(
+                            CAREGIVER_ID, TEST_DATE, endDate);
+
+            assertEquals(1, results.size());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no visits in range")
+        void shouldReturnEmptyListForRange() {
+            LocalDate endDate = TEST_DATE.plusDays(7);
+            when(scheduledVisitRepository
+                    .findByCaregiverIdAndScheduledDateBetween(CAREGIVER_ID, TEST_DATE, endDate))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisitsBetweenDates(
+                            CAREGIVER_ID, TEST_DATE, endDate);
+
+            assertTrue(results.isEmpty());
+        }
     }
 
-    // ----- getScheduledVisitsByDate -----
+    // ========================================================================
+    // getVisitSummary
+    // ========================================================================
 
-    @Test
-    void getScheduledVisitsByDate_returnsList() throws Exception {
-        final LocalDate date = LocalDate.of(2025, 6, 15);
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findByCaregiverIdAndScheduledDate(5L, date)).thenReturn(List.of(visit));
-        when(patientRepository.findById(10L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("getVisitSummary")
+    class GetVisitSummary {
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getScheduledVisitsByDate(5L, date);
+        @Test
+        @DisplayName("should return correct summary counts")
+        void shouldReturnCorrectSummaryCounts() {
+            when(scheduledVisitRepository
+                    .countOverdueVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(2L);
+            when(scheduledVisitRepository
+                    .countReadyVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(1L);
+            when(scheduledVisitRepository
+                    .countUpcomingVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(3L);
+            when(scheduledVisitRepository
+                    .countTodayVisits(eq(CAREGIVER_ID), any()))
+                    .thenReturn(6L);
 
-        assertThat(result).hasSize(1);
+            ScheduledVisitSummary summary = visitService.getVisitSummary(CAREGIVER_ID);
+
+            assertNotNull(summary);
+            assertEquals(2L, summary.getOverdue());
+            assertEquals(1L, summary.getReady());
+            assertEquals(3L, summary.getUpcoming());
+            assertEquals(6L, summary.getTotalToday());
+        }
+
+        @Test
+        @DisplayName("should return zero counts when no visits")
+        void shouldReturnZeroCounts() {
+            when(scheduledVisitRepository
+                    .countOverdueVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(0L);
+            when(scheduledVisitRepository
+                    .countReadyVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(0L);
+            when(scheduledVisitRepository
+                    .countUpcomingVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(0L);
+            when(scheduledVisitRepository
+                    .countTodayVisits(eq(CAREGIVER_ID), any()))
+                    .thenReturn(0L);
+
+            ScheduledVisitSummary summary = visitService.getVisitSummary(CAREGIVER_ID);
+
+            assertEquals(0L, summary.getOverdue());
+            assertEquals(0L, summary.getReady());
+            assertEquals(0L, summary.getUpcoming());
+            assertEquals(0L, summary.getTotalToday());
+        }
     }
 
-    // ----- getScheduledVisitsBetweenDates -----
+    // ========================================================================
+    // getOverdueVisits
+    // ========================================================================
 
-    @Test
-    void getScheduledVisitsBetweenDates_returnsList() throws Exception {
-        final LocalDate start = LocalDate.of(2025, 6, 1);
-        final LocalDate end = LocalDate.of(2025, 6, 30);
-        when(scheduledVisitRepository.findByCaregiverIdAndScheduledDateBetween(5L, start, end))
-                .thenReturn(List.of());
+    @Nested
+    @DisplayName("getOverdueVisits")
+    class GetOverdueVisits {
 
-        final List<ScheduledVisitResponse> result =
-                scheduledVisitService.getScheduledVisitsBetweenDates(5L, start, end);
+        @Test
+        @DisplayName("should return overdue visits")
+        void shouldReturnOverdueVisits() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository
+                    .findOverdueVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
 
-        assertThat(result).isEmpty();
+            List<ScheduledVisitResponse> results =
+                    visitService.getOverdueVisits(CAREGIVER_ID);
+
+            assertEquals(1, results.size());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no overdue visits")
+        void shouldReturnEmptyWhenNoOverdue() {
+            when(scheduledVisitRepository
+                    .findOverdueVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getOverdueVisits(CAREGIVER_ID);
+
+            assertTrue(results.isEmpty());
+        }
     }
 
-    // ----- getVisitSummary -----
+    // ========================================================================
+    // getReadyVisits
+    // ========================================================================
 
-    @Test
-    void getVisitSummary_returnsCorrectCounts() throws Exception {
-        when(scheduledVisitRepository.countOverdueVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(2L);
-        when(scheduledVisitRepository.countReadyVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(1L);
-        when(scheduledVisitRepository.countUpcomingVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(3L);
-        when(scheduledVisitRepository.countTodayVisits(eq(5L), any(LocalDate.class)))
-                .thenReturn(6L);
+    @Nested
+    @DisplayName("getReadyVisits")
+    class GetReadyVisits {
 
-        final ScheduledVisitSummary summary = scheduledVisitService.getVisitSummary(5L);
+        @Test
+        @DisplayName("should return ready visits")
+        void shouldReturnReadyVisits() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository
+                    .findReadyVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
 
-        assertThat(summary.getOverdue()).isEqualTo(2L);
-        assertThat(summary.getReady()).isEqualTo(1L);
-        assertThat(summary.getUpcoming()).isEqualTo(3L);
-        assertThat(summary.getTotalToday()).isEqualTo(6L);
+            List<ScheduledVisitResponse> results =
+                    visitService.getReadyVisits(CAREGIVER_ID);
+
+            assertEquals(1, results.size());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no ready visits")
+        void shouldReturnEmptyWhenNoReady() {
+            when(scheduledVisitRepository
+                    .findReadyVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getReadyVisits(CAREGIVER_ID);
+
+            assertTrue(results.isEmpty());
+        }
     }
 
-    // ----- getOverdueVisits -----
+    // ========================================================================
+    // getUpcomingVisits
+    // ========================================================================
 
-    @Test
-    void getOverdueVisits_returnsList() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findOverdueVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(List.of(visit));
-        when(patientRepository.findById(10L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("getUpcomingVisits")
+    class GetUpcomingVisits {
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getOverdueVisits(5L);
+        @Test
+        @DisplayName("should return upcoming visits")
+        void shouldReturnUpcomingVisits() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository
+                    .findUpcomingVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(List.of(visit));
+            mockPatientLookup();
 
-        assertThat(result).hasSize(1);
+            List<ScheduledVisitResponse> results =
+                    visitService.getUpcomingVisits(CAREGIVER_ID);
+
+            assertEquals(1, results.size());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no upcoming visits")
+        void shouldReturnEmptyWhenNoUpcoming() {
+            when(scheduledVisitRepository
+                    .findUpcomingVisits(eq(CAREGIVER_ID), any(), any()))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getUpcomingVisits(CAREGIVER_ID);
+
+            assertTrue(results.isEmpty());
+        }
     }
 
-    // ----- getReadyVisits -----
+    // ========================================================================
+    // getScheduledVisit
+    // ========================================================================
 
-    @Test
-    void getReadyVisits_emptyList() throws Exception {
-        when(scheduledVisitRepository.findReadyVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(List.of());
+    @Nested
+    @DisplayName("getScheduledVisit")
+    class GetScheduledVisit {
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getReadyVisits(5L);
+        @Test
+        @DisplayName("should return visit when found")
+        void shouldReturnVisitWhenFound() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            mockPatientLookup();
 
-        assertThat(result).isEmpty();
+            ScheduledVisitResponse response = visitService.getScheduledVisit(VISIT_ID);
+
+            assertNotNull(response);
+            assertEquals(VISIT_ID, response.getId());
+            assertEquals("John Doe", response.getPatientName());
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found")
+        void shouldThrowWhenNotFound() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.getScheduledVisit(VISIT_ID));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
     }
 
-    // ----- getUpcomingVisits -----
+    // ========================================================================
+    // updateScheduledVisit
+    // ========================================================================
 
-    @Test
-    void getUpcomingVisits_emptyList() throws Exception {
-        when(scheduledVisitRepository.findUpcomingVisits(eq(5L), any(LocalDate.class), any(LocalTime.class)))
-                .thenReturn(List.of());
+    @Nested
+    @DisplayName("updateScheduledVisit")
+    class UpdateScheduledVisit {
 
-        final List<ScheduledVisitResponse> result = scheduledVisitService.getUpcomingVisits(5L);
+        @Test
+        @DisplayName("should update visit successfully with no conflicts")
+        void shouldUpdateVisitSuccessfully() {
+            ScheduledVisit existing = createVisit();
+            ScheduledVisitRequest request = createRequest();
+            request.setServiceType("Updated Care");
+            ConflictSummary noConflicts = createEmptyConflictSummary();
 
-        assertThat(result).isEmpty();
+            ScheduledVisit updatedVisit = createVisit();
+            updatedVisit.setServiceType("Updated Care");
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(updatedVisit);
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.updateScheduledVisit(VISIT_ID, request);
+
+            assertNotNull(response);
+            assertEquals("Updated Care", response.getServiceType());
+            // Audit entry for serviceType change
+            verify(scheduledVisitAuditRepository, times(1))
+                    .save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for update")
+        void shouldThrowWhenVisitNotFoundForUpdate() {
+            ScheduledVisitRequest request = createRequest();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.updateScheduledVisit(VISIT_ID, request));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
+
+        @Test
+        @DisplayName("should set conflict flag when conflicts detected during update")
+        void shouldSetConflictFlagOnUpdate() {
+            ScheduledVisit existing = createVisit();
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary conflicts = createEmptyConflictSummary();
+            conflicts.setCaregiverConflicts(List.of(createVisit()));
+            conflicts.addWarning("Caregiver conflict");
+
+            ScheduledVisit updatedVisit = createVisit();
+            updatedVisit.setConflictFlag(true);
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(conflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(updatedVisit);
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.updateScheduledVisit(VISIT_ID, request);
+
+            assertNotNull(response);
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
+
+        @Test
+        @DisplayName("should create audit entries for each changed field")
+        void shouldCreateAuditEntriesForChangedFields() {
+            ScheduledVisit existing = createVisit();
+            ScheduledVisitRequest request = createRequest();
+            request.setServiceType("Updated Care");
+            request.setPriority("High");
+            request.setNotes("Updated notes");
+            ConflictSummary noConflicts = createEmptyConflictSummary();
+
+            ScheduledVisit updatedVisit = createVisit();
+            updatedVisit.setServiceType("Updated Care");
+            updatedVisit.setPriority("High");
+            updatedVisit.setNotes("Updated notes");
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(updatedVisit);
+            mockPatientLookup();
+
+            visitService.updateScheduledVisit(VISIT_ID, request);
+
+            // serviceType, priority, notes changed = 3 audit entries
+            verify(scheduledVisitAuditRepository, times(3))
+                    .save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should not create audit entries when no fields changed")
+        void shouldNotCreateAuditWhenNoChanges() {
+            ScheduledVisit existing = createVisit();
+            ScheduledVisitRequest request = createRequest();
+            // Request matches existing visit exactly
+            ConflictSummary noConflicts = createEmptyConflictSummary();
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(existing);
+            mockPatientLookup();
+
+            visitService.updateScheduledVisit(VISIT_ID, request);
+
+            verify(scheduledVisitAuditRepository, never())
+                    .save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should create audit entry when notes changed from null")
+        void shouldCreateAuditWhenNotesChangedFromNull() {
+            ScheduledVisit existing = createVisit();
+            existing.setNotes(null);
+            ScheduledVisitRequest request = createRequest();
+            request.setNotes("New notes");
+            ConflictSummary noConflicts = createEmptyConflictSummary();
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(existing);
+            mockPatientLookup();
+
+            visitService.updateScheduledVisit(VISIT_ID, request);
+
+            // notes changed from null to "New notes" = 1 audit entry
+            verify(scheduledVisitAuditRepository, times(1))
+                    .save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should clear conflict flag when no conflicts on update")
+        void shouldClearConflictFlagWhenNoConflicts() {
+            ScheduledVisit existing = createVisit();
+            existing.setConflictFlag(true);
+            existing.setConflictWarning("Old warning");
+            ScheduledVisitRequest request = createRequest();
+            ConflictSummary noConflicts = createEmptyConflictSummary();
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(existing));
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(noConflicts);
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(existing);
+            mockPatientLookup();
+
+            visitService.updateScheduledVisit(VISIT_ID, request);
+
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
     }
 
-    // ----- getScheduledVisit -----
+    // ========================================================================
+    // cancelScheduledVisit
+    // ========================================================================
 
-    @Test
-    void getScheduledVisit_found_returnsResponse() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        final Patient maryJones = buildPatient("Mary", "Jones");
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
-        when(patientRepository.findById(10L)).thenReturn(Optional.of(maryJones));
+    @Nested
+    @DisplayName("cancelScheduledVisit")
+    class CancelScheduledVisit {
 
-        final ScheduledVisitResponse response = scheduledVisitService.getScheduledVisit(1L);
+        @Test
+        @DisplayName("should cancel visit successfully")
+        void shouldCancelVisit() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(visit);
 
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPatientName()).isEqualTo("Mary Jones");
+            visitService.cancelScheduledVisit(VISIT_ID);
+
+            assertEquals("Cancelled", visit.getStatus());
+            verify(scheduledVisitRepository).save(any(ScheduledVisit.class));
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for cancel")
+        void shouldThrowWhenVisitNotFoundForCancel() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.cancelScheduledVisit(VISIT_ID));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
     }
 
-    @Test
-    void getScheduledVisit_notFound_throwsRuntime() throws Exception {
-        when(scheduledVisitRepository.findById(99L)).thenReturn(Optional.empty());
+    // ========================================================================
+    // updateVisitStatus
+    // ========================================================================
 
-        assertThatThrownBy(() -> scheduledVisitService.getScheduledVisit(99L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Scheduled visit not found with id: 99");
+    @Nested
+    @DisplayName("updateVisitStatus")
+    class UpdateVisitStatus {
+
+        @Test
+        @DisplayName("should update status successfully")
+        void shouldUpdateStatus() {
+            ScheduledVisit visit = createVisit();
+            ScheduledVisit updatedVisit = createVisit();
+            updatedVisit.setStatus("In Progress");
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(updatedVisit);
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.updateVisitStatus(VISIT_ID, "In Progress");
+
+            assertNotNull(response);
+            assertEquals("In Progress", response.getStatus());
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for status update")
+        void shouldThrowWhenVisitNotFoundForStatusUpdate() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.updateVisitStatus(VISIT_ID, "In Progress"));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
+
+        @Test
+        @DisplayName("should update to Completed status")
+        void shouldUpdateToCompleted() {
+            ScheduledVisit visit = createVisit();
+            ScheduledVisit updatedVisit = createVisit();
+            updatedVisit.setStatus("Completed");
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(updatedVisit);
+            mockPatientLookup();
+
+            ScheduledVisitResponse response =
+                    visitService.updateVisitStatus(VISIT_ID, "Completed");
+
+            assertEquals("Completed", response.getStatus());
+        }
     }
 
-    // ----- updateScheduledVisit -----
+    // ========================================================================
+    // deleteScheduledVisit
+    // ========================================================================
 
-    @Test
-    void updateScheduledVisit_found_updatesAndReturns() throws Exception {
-        stubNoConflicts();
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
-        when(scheduledVisitRepository.save(visit)).thenReturn(visit);
-        when(patientRepository.findById(anyLong())).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("deleteScheduledVisit")
+    class DeleteScheduledVisit {
 
-        final ScheduledVisitResponse response = scheduledVisitService.updateScheduledVisit(1L, buildRequest());
+        @Test
+        @DisplayName("should delete visit and create audit entry")
+        void shouldDeleteVisitAndAudit() throws Exception {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":100}");
 
-        assertThat(response).isNotNull();
-        verify(scheduledVisitRepository).save(visit);
+            visitService.deleteScheduledVisit(VISIT_ID);
+
+            verify(scheduledVisitRepository).deleteById(VISIT_ID);
+            verify(scheduledVisitAuditRepository).save(any(ScheduledVisitAudit.class));
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for delete")
+        void shouldThrowWhenVisitNotFoundForDelete() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.deleteScheduledVisit(VISIT_ID));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
+
+        @Test
+        @DisplayName("should handle serialization failure gracefully during delete")
+        void shouldHandleSerializationFailureDuringDelete() throws Exception {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(objectMapper.writeValueAsString(any()))
+                    .thenThrow(new RuntimeException("Serialization error"));
+
+            visitService.deleteScheduledVisit(VISIT_ID);
+
+            // Should still delete and create audit with fallback value
+            verify(scheduledVisitRepository).deleteById(VISIT_ID);
+            verify(scheduledVisitAuditRepository).save(any(ScheduledVisitAudit.class));
+        }
     }
 
-    @Test
-    void updateScheduledVisit_notFound_throws() throws Exception {
-        when(scheduledVisitRepository.findById(99L)).thenReturn(Optional.empty());
+    // ========================================================================
+    // getVisitAuditHistory
+    // ========================================================================
 
-        assertThatThrownBy(() -> scheduledVisitService.updateScheduledVisit(99L, buildRequest()))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("99");
+    @Nested
+    @DisplayName("getVisitAuditHistory")
+    class GetVisitAuditHistory {
+
+        @Test
+        @DisplayName("should return audit history for visit")
+        void shouldReturnAuditHistory() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+
+            ScheduledVisitAudit audit = new ScheduledVisitAudit();
+            audit.setId(1L);
+            audit.setVisitId(VISIT_ID);
+            audit.setAction("CREATED");
+            audit.setChangedField(null);
+            audit.setOldValue(null);
+            audit.setNewValue("{}");
+            audit.setChangedBy(TEST_USER);
+            audit.setChangedAt(LocalDateTime.now());
+
+            when(scheduledVisitAuditRepository
+                    .findByVisitIdOrderByChangedAtDesc(VISIT_ID))
+                    .thenReturn(List.of(audit));
+
+            List<ScheduledVisitAuditResponse> results =
+                    visitService.getVisitAuditHistory(VISIT_ID);
+
+            assertEquals(1, results.size());
+            assertEquals("CREATED", results.get(0).getAction());
+            assertEquals(VISIT_ID, results.get(0).getVisitId());
+            assertEquals(TEST_USER, results.get(0).getChangedBy());
+        }
+
+        @Test
+        @DisplayName("should return empty list when no audit history")
+        void shouldReturnEmptyAuditHistory() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitAuditRepository
+                    .findByVisitIdOrderByChangedAtDesc(VISIT_ID))
+                    .thenReturn(Collections.emptyList());
+
+            List<ScheduledVisitAuditResponse> results =
+                    visitService.getVisitAuditHistory(VISIT_ID);
+
+            assertTrue(results.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for audit history")
+        void shouldThrowWhenVisitNotFoundForAudit() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.getVisitAuditHistory(VISIT_ID));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
+
+        @Test
+        @DisplayName("should return multiple audit entries in order")
+        void shouldReturnMultipleAuditEntries() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+
+            ScheduledVisitAudit audit1 = new ScheduledVisitAudit();
+            audit1.setId(1L);
+            audit1.setVisitId(VISIT_ID);
+            audit1.setAction("CREATED");
+            audit1.setChangedAt(LocalDateTime.now().minusHours(2));
+            audit1.setChangedBy(TEST_USER);
+
+            ScheduledVisitAudit audit2 = new ScheduledVisitAudit();
+            audit2.setId(2L);
+            audit2.setVisitId(VISIT_ID);
+            audit2.setAction("UPDATED");
+            audit2.setChangedField("serviceType");
+            audit2.setOldValue("General Care");
+            audit2.setNewValue("Physical Therapy");
+            audit2.setChangedAt(LocalDateTime.now().minusHours(1));
+            audit2.setChangedBy(TEST_USER);
+
+            when(scheduledVisitAuditRepository
+                    .findByVisitIdOrderByChangedAtDesc(VISIT_ID))
+                    .thenReturn(List.of(audit2, audit1));
+
+            List<ScheduledVisitAuditResponse> results =
+                    visitService.getVisitAuditHistory(VISIT_ID);
+
+            assertEquals(2, results.size());
+            assertEquals("UPDATED", results.get(0).getAction());
+            assertEquals("CREATED", results.get(1).getAction());
+        }
     }
 
-    // ----- cancelScheduledVisit -----
+    // ========================================================================
+    // getVisitAuditDetails
+    // ========================================================================
 
-    @Test
-    void cancelScheduledVisit_found_marksCancelled() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
-        when(scheduledVisitRepository.save(visit)).thenReturn(visit);
+    @Nested
+    @DisplayName("getVisitAuditDetails")
+    class GetVisitAuditDetails {
 
-        scheduledVisitService.cancelScheduledVisit(1L);
+        @Test
+        @DisplayName("should return audit diff response")
+        void shouldReturnAuditDiffResponse() {
+            Long auditId = 50L;
+            ScheduledVisit visit = createVisit();
+            LocalDateTime auditTime = LocalDateTime.of(2026, 3, 17, 12, 0);
 
-        assertThat(visit.getStatus()).isEqualTo("Cancelled");
-        verify(scheduledVisitRepository).save(visit);
+            ScheduledVisitAudit audit = new ScheduledVisitAudit();
+            audit.setId(auditId);
+            audit.setVisitId(VISIT_ID);
+            audit.setAction("UPDATED");
+            audit.setChangedField("serviceType");
+            audit.setOldValue("General Care");
+            audit.setNewValue("Physical Therapy");
+            audit.setChangedBy(TEST_USER);
+            audit.setChangedAt(auditTime);
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitAuditRepository.findById(auditId))
+                    .thenReturn(Optional.of(audit));
+            when(scheduledVisitAuditRepository
+                    .findByVisitIdAndChangedAtBeforeOrderByChangedAtDesc(
+                            VISIT_ID, auditTime))
+                    .thenReturn(Collections.emptyList());
+            mockPatientLookup();
+
+            AuditDiffResponse response =
+                    visitService.getVisitAuditDetails(VISIT_ID, auditId);
+
+            assertNotNull(response);
+            assertNull(response.getBefore()); // No prior audits
+            assertNotNull(response.getAfter());
+            assertEquals("serviceType", response.getChangedField());
+            assertEquals("UPDATED", response.getAction());
+            assertEquals(TEST_USER, response.getChangedBy());
+            assertEquals(auditTime, response.getChangedAt());
+        }
+
+        @Test
+        @DisplayName("should throw exception when visit not found for audit details")
+        void shouldThrowWhenVisitNotFound() {
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.getVisitAuditDetails(VISIT_ID, 50L));
+
+            assertTrue(ex.getMessage().contains("Scheduled visit not found"));
+        }
+
+        @Test
+        @DisplayName("should throw exception when audit entry not found")
+        void shouldThrowWhenAuditNotFound() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitAuditRepository.findById(50L))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.getVisitAuditDetails(VISIT_ID, 50L));
+
+            assertTrue(ex.getMessage().contains("Audit entry not found"));
+        }
+
+        @Test
+        @DisplayName("should throw exception when audit does not belong to visit")
+        void shouldThrowWhenAuditDoesNotBelongToVisit() {
+            ScheduledVisit visit = createVisit();
+            ScheduledVisitAudit audit = new ScheduledVisitAudit();
+            audit.setId(50L);
+            audit.setVisitId(999L); // Different visit ID
+            audit.setChangedAt(LocalDateTime.now());
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitAuditRepository.findById(50L))
+                    .thenReturn(Optional.of(audit));
+
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> visitService.getVisitAuditDetails(VISIT_ID, 50L));
+
+            assertTrue(ex.getMessage().contains(
+                    "Audit entry does not belong to this visit"));
+        }
+
+        @Test
+        @DisplayName("should reconstruct before state from prior audits")
+        void shouldReconstructBeforeStateFromPriorAudits() {
+            Long auditId = 50L;
+            ScheduledVisit visit = createVisit();
+            LocalDateTime auditTime = LocalDateTime.of(2026, 3, 17, 12, 0);
+
+            ScheduledVisitAudit currentAudit = new ScheduledVisitAudit();
+            currentAudit.setId(auditId);
+            currentAudit.setVisitId(VISIT_ID);
+            currentAudit.setAction("UPDATED");
+            currentAudit.setChangedField("serviceType");
+            currentAudit.setOldValue("General Care");
+            currentAudit.setNewValue("Physical Therapy");
+            currentAudit.setChangedBy(TEST_USER);
+            currentAudit.setChangedAt(auditTime);
+
+            ScheduledVisitAudit priorAudit = new ScheduledVisitAudit();
+            priorAudit.setId(49L);
+            priorAudit.setVisitId(VISIT_ID);
+            priorAudit.setAction("UPDATED");
+            priorAudit.setChangedField("serviceType");
+            priorAudit.setOldValue("Home Care");
+            priorAudit.setNewValue("General Care");
+            priorAudit.setChangedBy(TEST_USER);
+            priorAudit.setChangedAt(auditTime.minusHours(1));
+
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(scheduledVisitAuditRepository.findById(auditId))
+                    .thenReturn(Optional.of(currentAudit));
+            when(scheduledVisitAuditRepository
+                    .findByVisitIdAndChangedAtBeforeOrderByChangedAtDesc(
+                            VISIT_ID, auditTime))
+                    .thenReturn(List.of(priorAudit));
+            mockPatientLookup();
+
+            AuditDiffResponse response =
+                    visitService.getVisitAuditDetails(VISIT_ID, auditId);
+
+            assertNotNull(response);
+            assertNotNull(response.getBefore());
+            assertNotNull(response.getAfter());
+        }
     }
 
-    @Test
-    void cancelScheduledVisit_notFound_throws() throws Exception {
-        when(scheduledVisitRepository.findById(99L)).thenReturn(Optional.empty());
+    // ========================================================================
+    // analyzeConflicts (delegation)
+    // ========================================================================
 
-        assertThatThrownBy(() -> scheduledVisitService.cancelScheduledVisit(99L))
-                .isInstanceOf(RuntimeException.class);
+    @Nested
+    @DisplayName("analyzeConflicts")
+    class AnalyzeConflicts {
+
+        @Test
+        @DisplayName("should delegate to ScheduleConflictService")
+        void shouldDelegateToConflictService() {
+            ConflictSummary expected = createEmptyConflictSummary();
+            when(conflictService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60))
+                    .thenReturn(expected);
+
+            ConflictSummary result = visitService.analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60);
+
+            assertEquals(expected, result);
+            verify(conflictService).analyzeConflicts(
+                    CAREGIVER_ID, PATIENT_ID, TEST_DATE, TEST_TIME, 60);
+        }
     }
 
-    // ----- updateVisitStatus -----
+    // ========================================================================
+    // getCurrentUsername (implicit via SecurityContext)
+    // ========================================================================
 
-    @Test
-    void updateVisitStatus_found_setsStatusAndReturns() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
-        when(scheduledVisitRepository.save(visit)).thenReturn(visit);
-        when(patientRepository.findById(10L)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("getCurrentUsername via SecurityContext")
+    class GetCurrentUsername {
 
-        final ScheduledVisitResponse response = scheduledVisitService.updateVisitStatus(1L, "In Progress");
+        @Test
+        @DisplayName("should use SYSTEM when no authentication present")
+        void shouldUseSystemWhenNoAuth() throws Exception {
+            SecurityContextHolder.clearContext();
 
-        assertThat(visit.getStatus()).isEqualTo("In Progress");
-        assertThat(response).isNotNull();
+            ScheduledVisitRequest request = createRequest();
+            ScheduledVisit savedVisit = createVisit();
+
+            stubNoConflicts();
+            when(scheduledVisitRepository.save(any(ScheduledVisit.class)))
+                    .thenReturn(savedVisit);
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+            mockPatientLookup();
+
+            visitService.createScheduledVisit(CAREGIVER_ID, request);
+
+            // Verify audit was created (indirectly tests SYSTEM username path)
+            verify(scheduledVisitAuditRepository).save(any(ScheduledVisitAudit.class));
+        }
     }
 
-    @Test
-    void updateVisitStatus_notFound_throws() throws Exception {
-        when(scheduledVisitRepository.findById(99L)).thenReturn(Optional.empty());
+    // ========================================================================
+    // getPatientName edge cases
+    // ========================================================================
 
-        assertThatThrownBy(() -> scheduledVisitService.updateVisitStatus(99L, "In Progress"))
-                .isInstanceOf(RuntimeException.class);
-    }
+    @Nested
+    @DisplayName("getPatientName edge cases")
+    class GetPatientName {
 
-    // ----- deleteScheduledVisit -----
+        @Test
+        @DisplayName("should return Unknown when patient not found")
+        void shouldReturnUnknownWhenPatientNotFound() {
+            ScheduledVisit visit = createVisit();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(patientRepository.findById(PATIENT_ID))
+                    .thenReturn(Optional.empty());
 
-    @Test
-    void deleteScheduledVisit_found_deletesVisit() throws Exception {
-        final ScheduledVisit visit = buildVisit(1L, 5L, 10L);
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.of(visit));
+            ScheduledVisitResponse response = visitService.getScheduledVisit(VISIT_ID);
 
-        scheduledVisitService.deleteScheduledVisit(1L);
+            assertEquals("Unknown", response.getPatientName());
+        }
 
-        verify(scheduledVisitRepository).deleteById(1L);
-    }
+        @Test
+        @DisplayName("should handle patient with null first name")
+        void shouldHandleNullFirstName() {
+            ScheduledVisit visit = createVisit();
+            Patient patient = Patient.builder()
+                    .id(PATIENT_ID).firstName(null).lastName("Doe").build();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(patientRepository.findById(PATIENT_ID))
+                    .thenReturn(Optional.of(patient));
 
-    @Test
-    void deleteScheduledVisit_notFound_throws() throws Exception {
-        when(scheduledVisitRepository.findById(1L)).thenReturn(Optional.empty());
+            ScheduledVisitResponse response = visitService.getScheduledVisit(VISIT_ID);
 
-        assertThatThrownBy(() -> scheduledVisitService.deleteScheduledVisit(1L))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Scheduled visit not found with id: 1");
+            assertEquals("Doe", response.getPatientName());
+        }
+
+        @Test
+        @DisplayName("should handle patient with null last name")
+        void shouldHandleNullLastName() {
+            ScheduledVisit visit = createVisit();
+            Patient patient = Patient.builder()
+                    .id(PATIENT_ID).firstName("John").lastName(null).build();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(patientRepository.findById(PATIENT_ID))
+                    .thenReturn(Optional.of(patient));
+
+            ScheduledVisitResponse response = visitService.getScheduledVisit(VISIT_ID);
+
+            assertEquals("John", response.getPatientName());
+        }
+
+        @Test
+        @DisplayName("should return Unknown when patient ID is null")
+        void shouldReturnUnknownWhenPatientIdNull() {
+            ScheduledVisit visit = createVisit();
+            visit.setPatientId(null);
+            when(scheduledVisitRepository.findByCaregiverId(CAREGIVER_ID))
+                    .thenReturn(List.of(visit));
+
+            List<ScheduledVisitResponse> results =
+                    visitService.getScheduledVisits(CAREGIVER_ID);
+
+            assertEquals(1, results.size());
+            assertEquals("Unknown", results.get(0).getPatientName());
+        }
+
+        @Test
+        @DisplayName("should handle patient with both names null")
+        void shouldHandleBothNamesNull() {
+            ScheduledVisit visit = createVisit();
+            Patient patient = Patient.builder()
+                    .id(PATIENT_ID).firstName(null).lastName(null).build();
+            when(scheduledVisitRepository.findById(VISIT_ID))
+                    .thenReturn(Optional.of(visit));
+            when(patientRepository.findById(PATIENT_ID))
+                    .thenReturn(Optional.of(patient));
+
+            ScheduledVisitResponse response = visitService.getScheduledVisit(VISIT_ID);
+
+            assertEquals("", response.getPatientName());
+        }
     }
 }

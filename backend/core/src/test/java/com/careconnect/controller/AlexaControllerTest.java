@@ -1,28 +1,11 @@
 package com.careconnect.controller;
 
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.careconnect.dto.v2.TaskDtoV2;
 import com.careconnect.model.Patient;
@@ -32,74 +15,59 @@ import com.careconnect.repository.UserRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.security.Role;
-import com.careconnect.util.SecurityUtil;
+import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.v2.TaskServiceV2;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.careconnect.util.SecurityUtil;
 
-/**
- * Unit tests for {@link AlexaController}, covering the HTTP layer of the
- * Alexa-facing calendar task endpoints.
- *
- * <p><b>Why @WebMvcTest + MockMvc?</b><br>
- * {@code @WebMvcTest} spins up only the Spring MVC slice without a real
- * database or a full application context, keeping the tests fast.  Each test
- * verifies that the controller correctly handles token validation, patient
- * resolution, task delegation, and error mapping — without exercising the
- * underlying service implementations.
- *
- * <p>All service and repository collaborators are replaced with Mockito mocks
- * via {@code @MockBean}.  Security filters are disabled with
- * {@code @AutoConfigureMockMvc(addFilters = false)} so that the token
- * validation logic inside the controller itself (reading the
- * {@code Authorization} header and calling {@link JwtTokenProvider}) can be
- * tested in isolation, without interference from Spring Security's filter chain.
- */
-@WebMvcTest(AlexaController.class)
-@AutoConfigureMockMvc(addFilters = false)
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@ExtendWith(MockitoExtension.class)
 class AlexaControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    // --- Mocked collaborators ---
-    // Each bean below is replaced with a Mockito stub so the controller can be
-    // instantiated without real JWT infrastructure, a database, or task storage.
-
-    @MockitoBean
-    private JwtTokenProvider jwtTokenProvider;
-
-    @MockitoBean
-    private UserRepository userRepository;
-
-    @MockitoBean
-    private PatientRepository patientRepository;
-
-    @MockitoBean
-    private TaskServiceV2 taskService;
-
-    @MockitoBean
+    @Mock
     private SecurityUtil securityUtil;
 
-    @MockitoBean
+    @Mock
     private AuthorizationService authorizationService;
 
-    // --- Shared test constants ---
+    @Mock
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PatientRepository patientRepository;
+
+    @Mock
+    private TaskServiceV2 taskService;
+
+    @InjectMocks
+    private AlexaController controller;
 
     private static final String VALID_TOKEN = "valid.jwt.token";
     private static final String BEARER_TOKEN = "Bearer " + VALID_TOKEN;
     private static final Long PATIENT_ID = 42L;
-
-    // --- Test fixtures ---
 
     private User patientUser;
     private Patient patient;
     private TaskDtoV2 sampleTask;
 
     @BeforeEach
-    void setup() throws Exception {
+    void setUp() {
         patientUser = new User();
         patientUser.setId(10L);
         patientUser.setEmail("patient@test.com");
@@ -117,421 +85,699 @@ class AlexaControllerTest {
                 .isCompleted(false)
                 .taskType("Medication")
                 .build();
+    }
 
-        // Stub securityUtil.resolveCurrentUser() so that controller-level
-        // role checks (e.g. isFamilyMember()) do not NPE.
-        Mockito.when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
-
-        // Default: token is valid
-        Mockito.when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
-        Mockito.when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("patient@test.com");
-        Mockito.when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
-        Mockito.when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
+    private void stubTokenResolution() {
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("patient@test.com");
+        when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
+        when(patientRepository.findByUser(patientUser)).thenReturn(Optional.of(patient));
     }
 
     // =========================================================================
     // GET /v1/api/alexa/calendarTasks/get
     // =========================================================================
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get returns HTTP 200 and
-     * all tasks when the {@code filter} parameter is {@code "all"}.
-     *
-     * <p>The "all" filter signals that no date-based narrowing should be
-     * applied.  {@link TaskServiceV2#getTasksByPatient} is stubbed to return a
-     * list containing {@code sampleTask}.  The test confirms that the controller
-     * forwards the full list without filtering.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get returns all tasks when filter=all")
-    void testGetCalendarTasks_allFilter() throws Exception {
-        Mockito.when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(sampleTask));
+    @DisplayName("getCalendarTasks returns all tasks when filter=all")
+    void getCalendarTasks_allFilter_returnsAllTasks() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(sampleTask));
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", BEARER_TOKEN)
-                        .param("filter", "all"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name", is("Take Medication")))
-                .andExpect(jsonPath("$[0].id", is(1)));
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
 
-        Mockito.verify(taskService).getTasksByPatient(PATIENT_ID);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<TaskDtoV2> tasks = (List<TaskDtoV2>) response.getBody();
+        assertThat(tasks).hasSize(1);
+        assertThat(tasks.get(0).getName()).isEqualTo("Take Medication");
+        verify(taskService).getTasksByPatient(PATIENT_ID);
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get returns only tasks
-     * whose date falls within the current week when {@code filter=week}.
-     *
-     * <p>Two tasks are stubbed: one dated today (within the current week) and
-     * one dated 10 days ago (outside the window).  The test confirms that the
-     * controller's week filter includes only the today task, verifying the
-     * date-range logic applied to the service's response.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get returns only this-week tasks when filter=week")
-    void testGetCalendarTasks_weekFilter_includesTaskForToday() throws Exception {
-        final TaskDtoV2 todayTask = TaskDtoV2.builder()
-                .id(2L)
-                .name("Today Task")
+    @DisplayName("getCalendarTasks filters tasks by week when filter=week")
+    void getCalendarTasks_weekFilter_filtersCorrectly() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        TaskDtoV2 todayTask = TaskDtoV2.builder()
+                .id(2L).name("Today Task")
                 .date(LocalDate.now() + "T00:00:00")
-                .isCompleted(false)
-                .build();
-
-        final TaskDtoV2 oldTask = TaskDtoV2.builder()
-                .id(3L)
-                .name("Old Task")
+                .isCompleted(false).build();
+        TaskDtoV2 oldTask = TaskDtoV2.builder()
+                .id(3L).name("Old Task")
                 .date(LocalDate.now().minusDays(10) + "T00:00:00")
-                .isCompleted(false)
-                .build();
+                .isCompleted(false).build();
 
-        Mockito.when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(todayTask, oldTask));
+        when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(todayTask, oldTask));
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", BEARER_TOKEN)
-                        .param("filter", "week"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", is(1)))
-                .andExpect(jsonPath("$[0].name", is("Today Task")));
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "week");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<TaskDtoV2> tasks = (List<TaskDtoV2>) response.getBody();
+        assertThat(tasks).hasSize(1);
+        assertThat(tasks.get(0).getName()).isEqualTo("Today Task");
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get returns HTTP 401 when
-     * the {@code Authorization} header is absent.
-     *
-     * <p>The Alexa calendar endpoint requires a valid JWT in the
-     * {@code Authorization} header.  This test confirms that the controller
-     * rejects requests with no token and returns a JSON body with an
-     * {@code error} field describing the failure.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get returns 401 when no Authorization header")
-    void testGetCalendarTasks_missingToken() throws Exception {
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", is("Missing or invalid access token")));
+    @DisplayName("getCalendarTasks defaults to week filter when no filter param")
+    void getCalendarTasks_defaultFilter_isWeek() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        TaskDtoV2 todayTask = TaskDtoV2.builder()
+                .id(4L).name("Now Task")
+                .date(LocalDate.now() + "T00:00:00")
+                .isCompleted(false).build();
+        when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(todayTask));
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "week");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<TaskDtoV2> tasks = (List<TaskDtoV2>) response.getBody();
+        assertThat(tasks).hasSize(1);
+        assertThat(tasks.get(0).getName()).isEqualTo("Now Task");
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get returns HTTP 401 when
-     * the token in the {@code Authorization} header fails JWT validation.
-     *
-     * <p>{@link JwtTokenProvider#validateToken} is stubbed to return
-     * {@code false} for {@code "bad.token"}.  The test confirms that the
-     * controller correctly identifies an invalid token and responds with 401
-     * rather than proceeding with the request.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get returns 401 when token is invalid")
-    void testGetCalendarTasks_invalidToken() throws Exception {
-        Mockito.when(jwtTokenProvider.validateToken("bad.token")).thenReturn(false);
+    @DisplayName("getCalendarTasks returns 401 when no authorization header")
+    void getCalendarTasks_noAuthHeader_returns401() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", "Bearer bad.token"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", is("Missing or invalid access token")));
+        ResponseEntity<?> response = controller.getCalendarTasks(null, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body.get("error")).isEqualTo("Missing or invalid access token");
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get returns HTTP 400 when
-     * a valid token is supplied but the associated user cannot be resolved to
-     * a patient record.
-     *
-     * <p>{@link PatientRepository#findByUser} is stubbed to return
-     * {@link Optional#empty()}, simulating a user whose patient profile does
-     * not exist or cannot be determined.  The test confirms that the controller
-     * returns a descriptive 400 error rather than proceeding with a null
-     * patient ID.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get returns 400 when patient cannot be resolved")
-    void testGetCalendarTasks_patientNotFound() throws Exception {
-        Mockito.when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
+    @DisplayName("getCalendarTasks returns 401 when token is invalid")
+    void getCalendarTasks_invalidToken_returns401() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        when(jwtTokenProvider.validateToken("bad.token")).thenReturn(false);
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", BEARER_TOKEN))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", is("Unable to resolve patient ID")));
+        ResponseEntity<?> response =
+                controller.getCalendarTasks("Bearer bad.token", "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get correctly resolves the
-     * patient ID when the authenticated user has the {@code CAREGIVER} role.
-     *
-     * <p>For caregiver users the controller must look up the patient differently
-     * (via {@link PatientRepository#findAll} and access checking) rather than
-     * using {@code findByUser}.  This test stubs the full caregiver resolution
-     * path and confirms that tasks are returned for the correct patient.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get resolves patient via caregiver role")
-    void testGetCalendarTasks_caregiverRole() throws Exception {
-        final User caregiverUser = new User();
+    @DisplayName("getCalendarTasks returns 400 when patient cannot be resolved")
+    void getCalendarTasks_patientNotFound_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("patient@test.com");
+        when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
+        when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body.get("error")).isEqualTo("Unable to resolve patient ID");
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks resolves patient via caregiver role")
+    void getCalendarTasks_caregiverRole_resolvesPatient() throws UnauthorizedException {
+        User caregiverUser = new User();
         caregiverUser.setId(20L);
         caregiverUser.setEmail("caregiver@test.com");
         caregiverUser.setRole(Role.CAREGIVER);
 
-        Mockito.when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("caregiver@test.com");
-        Mockito.when(userRepository.findByEmail("caregiver@test.com")).thenReturn(Optional.of(caregiverUser));
-        Mockito.when(patientRepository.findAll()).thenReturn(List.of(patient));
-        Mockito.when(patientRepository.hasAccessByCaregiverId(PATIENT_ID, 20L)).thenReturn(true);
-        Mockito.when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(sampleTask));
+        when(securityUtil.resolveCurrentUser()).thenReturn(caregiverUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("caregiver@test.com");
+        when(userRepository.findByEmail("caregiver@test.com")).thenReturn(Optional.of(caregiverUser));
+        when(patientRepository.findAll()).thenReturn(List.of(patient));
+        when(patientRepository.hasAccessByCaregiverId(PATIENT_ID, 20L)).thenReturn(true);
+        when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(sampleTask));
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", BEARER_TOKEN)
-                        .param("filter", "all"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name", is("Take Medication")));
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
 
-        Mockito.verify(taskService).getTasksByPatient(PATIENT_ID);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(taskService).getTasksByPatient(PATIENT_ID);
     }
 
-    /**
-     * Verifies that GET /v1/api/alexa/calendarTasks/get applies the week filter
-     * by default when the {@code filter} query parameter is not provided.
-     *
-     * <p>Alexa requests may omit the filter parameter; the controller should
-     * default to the {@code "week"} view rather than returning all historical
-     * tasks.  This test stubs a task dated today (within the current week) and
-     * confirms it is included in the response without an explicit filter param.
-     */
     @Test
-    @DisplayName("GET /calendarTasks/get uses default week filter when no filter param provided")
-    void testGetCalendarTasks_defaultFilterIsWeek() throws Exception {
-        final TaskDtoV2 todayTask = TaskDtoV2.builder()
-                .id(4L)
-                .name("Now Task")
+    @DisplayName("getCalendarTasks returns 400 when caregiver has no linked patients")
+    void getCalendarTasks_caregiverNoLinkedPatients_returns400() throws UnauthorizedException {
+        User caregiverUser = new User();
+        caregiverUser.setId(20L);
+        caregiverUser.setEmail("caregiver@test.com");
+        caregiverUser.setRole(Role.CAREGIVER);
+
+        when(securityUtil.resolveCurrentUser()).thenReturn(caregiverUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("caregiver@test.com");
+        when(userRepository.findByEmail("caregiver@test.com")).thenReturn(Optional.of(caregiverUser));
+        when(patientRepository.findAll()).thenReturn(List.of(patient));
+        when(patientRepository.hasAccessByCaregiverId(PATIENT_ID, 20L)).thenReturn(false);
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks returns 400 for unsupported role (ADMIN)")
+    void getCalendarTasks_unsupportedRole_returns400() throws UnauthorizedException {
+        User adminUser = new User();
+        adminUser.setId(30L);
+        adminUser.setEmail("admin@test.com");
+        adminUser.setRole(Role.ADMIN);
+
+        when(securityUtil.resolveCurrentUser()).thenReturn(adminUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("admin@test.com");
+        when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks throws UnauthorizedException for family member")
+    void getCalendarTasks_familyMember_throwsUnauthorized() throws UnauthorizedException {
+        User familyUser = new User();
+        familyUser.setId(40L);
+        familyUser.setRole(Role.FAMILY_MEMBER);
+
+        when(securityUtil.resolveCurrentUser()).thenReturn(familyUser);
+
+        assertThatThrownBy(() -> controller.getCalendarTasks(BEARER_TOKEN, "all"))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("Family members cannot access Alexa features");
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks returns 400 when email not found in user repository")
+    void getCalendarTasks_userNotFoundByEmail_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("unknown@test.com");
+        when(userRepository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks returns 400 when email claim is null")
+    void getCalendarTasks_nullEmailClaim_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn(null);
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks returns 500 when taskService throws exception")
+    void getCalendarTasks_serviceThrows_returns500() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.getTasksByPatient(PATIENT_ID))
+                .thenThrow(new RuntimeException("DB error"));
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks week filter skips tasks with null date")
+    void getCalendarTasks_weekFilter_skipsNullDates() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        TaskDtoV2 nullDateTask = TaskDtoV2.builder()
+                .id(5L).name("No Date Task")
+                .date(null)
+                .isCompleted(false).build();
+        TaskDtoV2 todayTask = TaskDtoV2.builder()
+                .id(6L).name("Today Task")
                 .date(LocalDate.now() + "T00:00:00")
-                .isCompleted(false)
-                .build();
+                .isCompleted(false).build();
 
-        Mockito.when(taskService.getTasksByPatient(PATIENT_ID)).thenReturn(List.of(todayTask));
+        when(taskService.getTasksByPatient(PATIENT_ID))
+                .thenReturn(List.of(nullDateTask, todayTask));
 
-        mockMvc.perform(get("/v1/api/alexa/calendarTasks/get")
-                        .header("Authorization", BEARER_TOKEN))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name", is("Now Task")));
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "week");
+
+        @SuppressWarnings("unchecked")
+        List<TaskDtoV2> tasks = (List<TaskDtoV2>) response.getBody();
+        assertThat(tasks).hasSize(1);
+        assertThat(tasks.get(0).getName()).isEqualTo("Today Task");
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks includes tasks within 6 days from now in week filter")
+    void getCalendarTasks_weekFilter_includesFutureTasks() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        TaskDtoV2 futureTask = TaskDtoV2.builder()
+                .id(7L).name("Future Task")
+                .date(LocalDate.now().plusDays(6) + "T00:00:00")
+                .isCompleted(false).build();
+        TaskDtoV2 tooFarTask = TaskDtoV2.builder()
+                .id(8L).name("Too Far Task")
+                .date(LocalDate.now().plusDays(7) + "T00:00:00")
+                .isCompleted(false).build();
+
+        when(taskService.getTasksByPatient(PATIENT_ID))
+                .thenReturn(List.of(futureTask, tooFarTask));
+
+        ResponseEntity<?> response = controller.getCalendarTasks(BEARER_TOKEN, "week");
+
+        @SuppressWarnings("unchecked")
+        List<TaskDtoV2> tasks = (List<TaskDtoV2>) response.getBody();
+        assertThat(tasks).hasSize(1);
+        assertThat(tasks.get(0).getName()).isEqualTo("Future Task");
+    }
+
+    @Test
+    @DisplayName("getCalendarTasks returns 401 when auth header is present but not Bearer format")
+    void getCalendarTasks_nonBearerHeader_returns401() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+
+        ResponseEntity<?> response =
+                controller.getCalendarTasks("Basic dXNlcjpwYXNz", "all");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     // =========================================================================
     // POST /v1/api/alexa/calendarTasks/add
     // =========================================================================
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 201
-     * Created and the new task DTO when a valid {@code Authorization} header
-     * and request body are provided.
-     *
-     * <p>{@link TaskServiceV2#createTask} is stubbed to return
-     * {@code sampleTask} for the resolved patient ID.  The test confirms that
-     * the controller extracts the token from the header, resolves the patient,
-     * delegates to the service, and wraps the result in a 201 response.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add creates a task with Authorization header")
-    void testAddCalendarTask_success() throws Exception {
-        Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(sampleTask);
+    @DisplayName("addCalendarTask creates task successfully with Authorization header")
+    void addCalendarTask_success_withAuthHeader() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
 
-        final Map<String, Object> body = Map.of(
+        Map<String, Object> body = Map.of(
                 "name", "Take Medication",
                 "date", LocalDate.now().toString(),
-                "taskType", "Medication"
-        );
+                "taskType", "Medication");
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("Take Medication")));
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
 
-        Mockito.verify(taskService).createTask(eq(PATIENT_ID), any(TaskDtoV2.class));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        TaskDtoV2 result = (TaskDtoV2) response.getBody();
+        assertThat(result).isNotNull();
+        assertThat(result.getName()).isEqualTo("Take Medication");
+        verify(taskService).createTask(eq(PATIENT_ID), any(TaskDtoV2.class));
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add falls back to reading
-     * the token from the JSON request body ({@code accessToken} field) when no
-     * {@code Authorization} header is present.
-     *
-     * <p>Alexa skill requests may include the access token in the body rather
-     * than the header.  This test confirms that the controller supports this
-     * fallback mechanism, enabling Alexa integrations that cannot set HTTP
-     * headers directly.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add creates a task using accessToken in body as fallback")
-    void testAddCalendarTask_tokenFromBody() throws Exception {
-        Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(sampleTask);
+    @DisplayName("addCalendarTask falls back to accessToken in body")
+    void addCalendarTask_tokenFromBody() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
 
-        final Map<String, Object> body = Map.of(
+        Map<String, Object> body = Map.of(
                 "name", "Walk Outside",
                 "date", LocalDate.now().toString(),
-                "accessToken", VALID_TOKEN
-        );
+                "accessToken", VALID_TOKEN);
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("Take Medication")));
+        ResponseEntity<?> response = controller.addCalendarTask(null, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 401 when
-     * neither the {@code Authorization} header nor the {@code accessToken} body
-     * field contains a valid token.
-     *
-     * <p>The request is sent with no token information at all.  The test
-     * confirms that the controller rejects the unauthenticated request with
-     * a 401 and a descriptive error message.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add returns 401 when token is missing or invalid")
-    void testAddCalendarTask_invalidToken() throws Exception {
-        final Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
+    @DisplayName("addCalendarTask returns 401 when no token provided")
+    void addCalendarTask_noToken_returns401() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error", is("Missing or invalid access token")));
+        Map<String, Object> body = Map.of(
+                "name", "Walk",
+                "date", LocalDate.now().toString());
+
+        ResponseEntity<?> response = controller.addCalendarTask(null, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 400 when
-     * a valid token is supplied but the associated user cannot be resolved to
-     * a patient record.
-     *
-     * <p>{@link PatientRepository#findByUser} is stubbed to return
-     * {@link Optional#empty()}, simulating a missing patient profile.  The test
-     * confirms that the controller returns 400 with a descriptive error rather
-     * than proceeding to create a task with an unresolved patient ID.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add returns 400 when patient cannot be resolved")
-    void testAddCalendarTask_patientNotFound() throws Exception {
-        Mockito.when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
+    @DisplayName("addCalendarTask returns 400 when patient cannot be resolved")
+    void addCalendarTask_patientNotFound_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(jwtTokenProvider.getEmailFromToken(VALID_TOKEN)).thenReturn("patient@test.com");
+        when(userRepository.findByEmail("patient@test.com")).thenReturn(Optional.of(patientUser));
+        when(patientRepository.findByUser(patientUser)).thenReturn(Optional.empty());
 
-        final Map<String, Object> body = Map.of("name", "Walk", "date", LocalDate.now().toString());
+        Map<String, Object> body = Map.of(
+                "name", "Walk",
+                "date", LocalDate.now().toString());
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", is("Unable to resolve patient ID")));
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 400 when
-     * the {@code name} field is absent from the request body.
-     *
-     * <p>A task name is mandatory.  This test confirms that the controller
-     * validates the presence of the name before delegating to the service,
-     * returning a descriptive 400 error rather than creating a nameless task.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add returns 400 when task name is missing")
-    void testAddCalendarTask_missingName() throws Exception {
-        final Map<String, Object> body = Map.of("date", LocalDate.now().toString());
+    @DisplayName("addCalendarTask returns 400 when task name is missing")
+    void addCalendarTask_missingName_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error", is("Task name is required")));
+        Map<String, Object> body = Map.of("date", LocalDate.now().toString());
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        @SuppressWarnings("unchecked")
+        Map<String, String> respBody = (Map<String, String>) response.getBody();
+        assertThat(respBody.get("error")).isEqualTo("Task name is required");
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 403 when
-     * the service throws a {@link RuntimeException} whose message contains
-     * "Unauthorized".
-     *
-     * <p>An "Unauthorized" exception from the service indicates that the
-     * authenticated user does not have permission to create tasks for the
-     * resolved patient.  The test confirms that the controller maps this
-     * specific failure to a 403 Forbidden response to clearly distinguish
-     * authorisation failures from general errors.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add returns 403 when service rejects with Unauthorized")
-    void testAddCalendarTask_serviceThrowsUnauthorized() throws Exception {
-        Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+    @DisplayName("addCalendarTask returns 400 when task name is blank")
+    void addCalendarTask_blankName_returns400() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        Map<String, Object> body = Map.of(
+                "name", "   ",
+                "date", LocalDate.now().toString());
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask returns 403 when service throws Unauthorized")
+    void addCalendarTask_serviceThrowsUnauthorized_returns403() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
                 .thenThrow(new RuntimeException("Unauthorized access to patient data"));
 
-        final Map<String, Object> body = Map.of(
+        Map<String, Object> body = Map.of(
                 "name", "Take Medication",
-                "date", LocalDate.now().toString()
-        );
+                "date", LocalDate.now().toString());
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error", is("Access denied to patient data")));
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        @SuppressWarnings("unchecked")
+        Map<String, String> respBody = (Map<String, String>) response.getBody();
+        assertThat(respBody.get("error")).isEqualTo("Access denied to patient data");
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add returns HTTP 500 when
-     * the service throws an unexpected {@link RuntimeException} that does not
-     * indicate an authorisation failure.
-     *
-     * <p>The service is stubbed to throw a generic infrastructure error (e.g.,
-     * a database connection loss).  The test confirms that the controller
-     * catches the exception and returns a 500 Internal Server Error with a
-     * user-friendly error message.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add returns 500 when service throws unexpected error")
-    void testAddCalendarTask_serviceThrowsGenericError() throws Exception {
-        Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+    @DisplayName("addCalendarTask returns 403 when service throws Forbidden")
+    void addCalendarTask_serviceThrowsForbidden_returns403() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenThrow(new RuntimeException("Forbidden: insufficient permissions"));
+
+        Map<String, Object> body = Map.of(
+                "name", "Take Medication",
+                "date", LocalDate.now().toString());
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask returns 500 when service throws generic error")
+    void addCalendarTask_serviceThrowsGenericError_returns500() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
                 .thenThrow(new RuntimeException("Database connection lost"));
 
-        final Map<String, Object> body = Map.of(
+        Map<String, Object> body = Map.of(
                 "name", "Take Medication",
-                "date", LocalDate.now().toString()
-        );
+                "date", LocalDate.now().toString());
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error", is("Error adding task")));
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        @SuppressWarnings("unchecked")
+        Map<String, String> respBody = (Map<String, String>) response.getBody();
+        assertThat(respBody.get("error")).isEqualTo("Error adding task");
     }
 
-    /**
-     * Verifies that POST /v1/api/alexa/calendarTasks/add normalises an
-     * unparseable date string by defaulting it to today's date, then proceeds
-     * to create the task successfully.
-     *
-     * <p>Alexa may send dates in an unexpected format or with a user speech
-     * error.  The controller should gracefully recover by substituting today's
-     * date rather than rejecting the request.  The test confirms a 201
-     * response and the expected task name in the body.
-     */
     @Test
-    @DisplayName("POST /calendarTasks/add normalizes an invalid date to today")
-    void testAddCalendarTask_invalidDateDefaultsToToday() throws Exception {
-        final TaskDtoV2 created = TaskDtoV2.builder()
-                .id(5L)
-                .name("Walk")
+    @DisplayName("addCalendarTask normalizes invalid date to today")
+    void addCalendarTask_invalidDate_defaultsToToday() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+
+        TaskDtoV2 created = TaskDtoV2.builder()
+                .id(5L).name("Walk")
                 .date(LocalDate.now() + "T00:00:00")
-                .isCompleted(false)
-                .build();
+                .isCompleted(false).build();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(created);
 
-        Mockito.when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class))).thenReturn(created);
-
-        final Map<String, Object> body = Map.of(
+        Map<String, Object> body = Map.of(
                 "name", "Walk",
-                "date", "not-a-date"
-        );
+                "date", "not-a-date");
 
-        mockMvc.perform(post("/v1/api/alexa/calendarTasks/add")
-                        .header("Authorization", BEARER_TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name", is("Walk")));
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask throws UnauthorizedException for family member")
+    void addCalendarTask_familyMember_throwsUnauthorized() throws UnauthorizedException {
+        User familyUser = new User();
+        familyUser.setId(40L);
+        familyUser.setRole(Role.FAMILY_MEMBER);
+
+        when(securityUtil.resolveCurrentUser()).thenReturn(familyUser);
+
+        Map<String, Object> body = Map.of(
+                "name", "Walk",
+                "date", LocalDate.now().toString());
+
+        assertThatThrownBy(() -> controller.addCalendarTask(BEARER_TOKEN, body))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("Family members cannot access Alexa features");
+    }
+
+    @Test
+    @DisplayName("addCalendarTask uses title field as name fallback")
+    void addCalendarTask_useTitleAsNameFallback() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "title", "Exercise",
+                "date", LocalDate.now().toString());
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles description field")
+    void addCalendarTask_withDescription() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "description", "Take 2 pills");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles timeOfDay field")
+    void addCalendarTask_withTimeOfDay() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "timeOfDay", "14:30:00");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles invalid timeOfDay gracefully")
+    void addCalendarTask_invalidTimeOfDay_graceful() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "timeOfDay", "not-a-time");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles frequency and interval fields")
+    void addCalendarTask_withFrequencyAndInterval() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "frequency", "DAILY",
+                "interval", 2,
+                "count", 10);
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles string interval and count values")
+    void addCalendarTask_stringIntervalAndCount() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "interval", "3",
+                "count", "5");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles unparseable string interval gracefully")
+    void addCalendarTask_unparseableInterval_defaultsToOne() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "interval", "abc",
+                "count", "xyz");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles daysOfWeek with boolean list")
+    void addCalendarTask_daysOfWeekBooleanList() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "daysOfWeek", List.of(true, false, true, false, true, false, true));
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles daysOfWeek with string list")
+    void addCalendarTask_daysOfWeekStringList() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "daysOfWeek", List.of("true", "false", "true"));
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask handles daysOfWeek with integer list")
+    void addCalendarTask_daysOfWeekIntegerList() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of(
+                "name", "Med Reminder",
+                "date", LocalDate.now().toString(),
+                "daysOfWeek", List.of(1, 0, 1, 0, 1, 0, 0));
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    @DisplayName("addCalendarTask defaults date to today when not provided")
+    void addCalendarTask_noDate_defaultsToToday() throws UnauthorizedException {
+        when(securityUtil.resolveCurrentUser()).thenReturn(patientUser);
+        stubTokenResolution();
+        when(taskService.createTask(eq(PATIENT_ID), any(TaskDtoV2.class)))
+                .thenReturn(sampleTask);
+
+        Map<String, Object> body = Map.of("name", "Walk Outside");
+
+        ResponseEntity<?> response = controller.addCalendarTask(BEARER_TOKEN, body);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     }
 }

@@ -508,6 +508,425 @@ class CallNotificationHandlerTest {
         handler.sendSMSNotification("1", Map.of("type", "sms"));
 
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
+    }
 
+    // ─── getUserDisplayName — preferred name, email-like, role fallback ──────
+
+    @Test
+    void callInvitation_callerNameProvided_usesCallerName() throws Exception {
+        // Sender must be CAREGIVER to avoid patient-to-patient block
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+        when(user.getRole()).thenReturn(Role.CAREGIVER);
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\","
+                        + "\"callerName\":\"Dr. Smith\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        boolean found = captor.getAllValues().stream()
+                .anyMatch(m -> m.getPayload().contains("Dr. Smith"));
+        assertThat(found).isTrue();
+    }
+
+    @Test
+    void callInvitation_callerNameIsEmail_fallsBackToUserName() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+        when(user.getRole()).thenReturn(Role.CAREGIVER);
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\","
+                        + "\"callerName\":\"user@example.com\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        boolean found = captor.getAllValues().stream()
+                .anyMatch(m -> m.getPayload().contains("incoming-video-call")
+                        && m.getPayload().contains("Alice"));
+        assertThat(found).isTrue();
+    }
+
+    @Test
+    void callInvitation_callerNameEmpty_fallsBackToUserName() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+        when(user.getRole()).thenReturn(Role.CAREGIVER);
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\","
+                        + "\"callerName\":\"  \"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        boolean found = captor.getAllValues().stream()
+                .anyMatch(m -> m.getPayload().contains("incoming-video-call")
+                        && m.getPayload().contains("Alice"));
+        assertThat(found).isTrue();
+    }
+
+    @Test
+    void callInvitation_emptyNameWithRole_usesCapitalizedRoleForSender() throws Exception {
+        // When user.getName() is empty, getUserDisplayName falls back to role
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("");
+        when(user.getRole()).thenReturn(Role.PATIENT);
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(recipientUser.getRole()).thenReturn(Role.CAREGIVER);
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        // Patient calling caregiver — needs link
+        when(caregiverPatientLinkService.hasAccessToPatient(2L, 1L)).thenReturn(true);
+        when(caregiverPatientLinkService.isPatientVideoCallsEnabled(2L, 1L)).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        // senderName should fall back to capitalized role "Patient"
+        boolean found = captor.getAllValues().stream()
+                .anyMatch(m -> m.getPayload().contains("Patient"));
+        assertThat(found).isTrue();
+    }
+
+    @Test
+    void callInvitation_nullNameWithRole_usesCapitalizedRole() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn(null);
+        when(user.getRole()).thenReturn(Role.CAREGIVER);
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        boolean found = captor.getAllValues().stream()
+                .anyMatch(m -> m.getPayload().contains("Caregiver"));
+        assertThat(found).isTrue();
+    }
+
+    // ─── CALL-017: patient-to-patient calls blocked ─────────────────────────
+
+    @Test
+    void callInvitation_patientToPatient_sendsCallInvitationFailed() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getRole()).thenReturn(Role.PATIENT);
+
+        when(recipientUser.getId()).thenReturn(2L);
+        when(recipientUser.getEmail()).thenReturn("r@r.com");
+        when(recipientUser.getRole()).thenReturn(Role.PATIENT);
+        when(recipientUser.getName()).thenReturn("Bob");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("call-invitation-failed");
+        assertThat(payload).contains("Patient-to-patient");
+    }
+
+    // ─── CALL-016: patient-to-caregiver — no link ───────────────────────────
+
+    @Test
+    void callInvitation_patientToCaregiver_noLink_sendsCallInvitationFailed() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getRole()).thenReturn(Role.PATIENT);
+
+        when(recipientUser.getId()).thenReturn(2L);
+        when(recipientUser.getEmail()).thenReturn("r@r.com");
+        when(recipientUser.getRole()).thenReturn(Role.CAREGIVER);
+        when(recipientUser.getName()).thenReturn("Dr. Jones");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        when(caregiverPatientLinkService.hasAccessToPatient(2L, 1L)).thenReturn(false);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("call-invitation-failed");
+        assertThat(payload).contains("No active caregiver-patient link");
+    }
+
+    // ─── CALL-016: patient-to-caregiver — link exists but calls disabled ────
+
+    @Test
+    void callInvitation_patientToCaregiver_callsDisabled_sendsCallInvitationFailed()
+            throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getRole()).thenReturn(Role.PATIENT);
+
+        when(recipientUser.getId()).thenReturn(2L);
+        when(recipientUser.getEmail()).thenReturn("r@r.com");
+        when(recipientUser.getRole()).thenReturn(Role.CAREGIVER);
+        when(recipientUser.getName()).thenReturn("Dr. Jones");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        when(caregiverPatientLinkService.hasAccessToPatient(2L, 1L)).thenReturn(true);
+        when(caregiverPatientLinkService.isPatientVideoCallsEnabled(2L, 1L)).thenReturn(false);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("call-invitation-failed");
+        assertThat(payload).contains("disabled patient-initiated calls");
+    }
+
+    // ─── CALL-016: patient-to-caregiver — link and calls enabled ────────────
+
+    @Test
+    void callInvitation_patientToCaregiver_linkedAndEnabled_sendsInvitation() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getRole()).thenReturn(Role.PATIENT);
+        when(user.getName()).thenReturn("PatientA");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getRole()).thenReturn(Role.CAREGIVER);
+        when(recipientUser.getName()).thenReturn("Dr. Jones");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        when(caregiverPatientLinkService.hasAccessToPatient(2L, 1L)).thenReturn(true);
+        when(caregiverPatientLinkService.isPatientVideoCallsEnabled(2L, 1L)).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        verify(recipientSession, atLeast(1)).sendMessage(any(TextMessage.class));
+    }
+
+    // ─── caregiver-to-patient — no link check required ──────────────────────
+
+    @Test
+    void callInvitation_caregiverToPatient_noLinkCheckRequired() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getRole()).thenReturn(Role.CAREGIVER);
+        when(user.getName()).thenReturn("Dr. Jones");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientUser.getRole()).thenReturn(Role.PATIENT);
+        when(recipientUser.getName()).thenReturn("PatientA");
+        when(recipientSession.isOpen()).thenReturn(true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"send-video-call-invitation\","
+                        + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
+
+        verify(recipientSession, atLeast(1)).sendMessage(any(TextMessage.class));
+        // Link service should NOT have been consulted
+        verify(caregiverPatientLinkService, never()).hasAccessToPatient(any(), any());
+    }
+
+    // ─── sentiment-channel-state ────────────────────────────────────────────
+
+    @Test
+    void sentimentChannelState_notAuthenticated_sendsError() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"text\",\"otherPartyId\":\"2\"}"));
+        verify(session).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void sentimentChannelState_invalidChannel_sendsError() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"invalid\",\"otherPartyId\":\"2\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("Invalid channel");
+    }
+
+    @Test
+    void sentimentChannelState_missingOtherPartyId_sendsError() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"text\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("otherPartyId is required");
+    }
+
+    @Test
+    void sentimentChannelState_textChannel_otherPartyOnline_sendsState() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientSession.isOpen()).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"text\",\"otherPartyId\":\"2\","
+                        + "\"callId\":\"c1\",\"muted\":false}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("sentiment-channel-state");
+        assertThat(payload).contains("AWAITING");
+    }
+
+    @Test
+    void sentimentChannelState_voiceChannel_muted_sendsState() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientSession.isOpen()).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"voice\",\"otherPartyId\":\"2\","
+                        + "\"callId\":\"c1\",\"muted\":true}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("MUTED");
+    }
+
+    @Test
+    void sentimentChannelState_videoChannel_withCaptureMode_includesCaptureMode() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientSession.isOpen()).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"video\",\"otherPartyId\":\"2\","
+                        + "\"callId\":\"c1\",\"muted\":false,"
+                        + "\"captureMode\":\"continuous\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(2)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("continuous");
+    }
+
+    @Test
+    void sentimentChannelState_otherPartyOffline_doesNotThrow() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"sentiment-channel-state\","
+                        + "\"channel\":\"text\",\"otherPartyId\":\"99\","
+                        + "\"callId\":\"c1\",\"muted\":false}"));
+        // No exception; no message sent to non-existent party
+    }
+
+    // ─── telemetry recording ────────────────────────────────────────────────
+
+    @Test
+    void handleTextMessage_recordsTelemetryOnSuccess() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"heartbeat\"}"));
+
+        verify(callTelemetryService).recordWebSocketEvent(
+                any(), eq("WS_HEARTBEAT"), any(), any(), any(), eq("SUCCESS"), any());
+    }
+
+    @Test
+    void handleTextMessage_recordsTelemetryOnError() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.handleTextMessage(session, new TextMessage("{{{bad-json"));
+
+        verify(callTelemetryService).recordWebSocketEvent(
+                any(), any(), any(), any(), any(), eq("ERROR"), any());
+    }
+
+    // ─── decline-call — default reason ──────────────────────────────────────
+
+    @Test
+    void declineCall_noReasonProvided_usesDefaultDeclined() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        when(user.getName()).thenReturn("Alice");
+
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+        when(recipientSession.isOpen()).thenReturn(true);
+
+        handler.handleTextMessage(session,
+                new TextMessage("{\"type\":\"decline-call\",\"callId\":\"c1\",\"senderId\":\"2\"}"));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(recipientSession, atLeast(1)).sendMessage(captor.capture());
+        String payload = captor.getValue().getPayload();
+        assertThat(payload).contains("declined");
+    }
+
+    // ─── getOnlineUsers — empty ─────────────────────────────────────────────
+
+    @Test
+    void getOnlineUsers_noAuthenticatedUsers_returnsEmptyMap() {
+        assertThat(handler.getOnlineUsers()).isEmpty();
+    }
+
+    // ─── afterConnectionClosed — multiple users ─────────────────────────────
+
+    @Test
+    void afterConnectionClosed_removesOnlyDisconnectedUser() throws Exception {
+        authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
+        authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        Map<String, String> online = handler.getOnlineUsers();
+        assertThat(online).doesNotContainKey("1");
+        assertThat(online).containsKey("2");
     }
 }

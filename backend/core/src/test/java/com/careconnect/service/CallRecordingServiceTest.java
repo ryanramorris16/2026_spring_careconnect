@@ -1092,6 +1092,230 @@ class CallRecordingServiceTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  initRecordingInfrastructure
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("initRecordingInfrastructure")
+    class InitRecordingInfrastructureTests {
+
+        @Test
+        @DisplayName("does nothing when recordingEnabled is false")
+        void initRecordingInfrastructure_disabled_doesNothing() {
+            ReflectionTestUtils.setField(service, "recordingEnabled", false);
+
+            service.initRecordingInfrastructure();
+
+            verifyNoInteractions(iamClient);
+        }
+
+        @Test
+        @DisplayName("does nothing when AWS is unavailable (pipelinesClient is null)")
+        void initRecordingInfrastructure_awsUnavailable_doesNothing() {
+            ReflectionTestUtils.setField(service, "pipelinesClient", null);
+
+            service.initRecordingInfrastructure();
+
+            verifyNoInteractions(iamClient);
+        }
+
+        @Test
+        @DisplayName("provisions SLR and bucket when recording is enabled and AWS is available")
+        void initRecordingInfrastructure_enabled_provisionsSLRAndBucket() {
+            ReflectionTestUtils.setField(service, "recordingEnabled", true);
+
+            service.initRecordingInfrastructure();
+
+            verify(iamClient, atLeastOnce()).createServiceLinkedRole(any(
+                    software.amazon.awssdk.services.iam.model.CreateServiceLinkedRoleRequest.class));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  reconcileCompletedRecordingCleanup
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("reconcileCompletedRecordingCleanup")
+    class ReconcileCompletedRecordingCleanupTests {
+
+        @Test
+        @DisplayName("does nothing when recordingEnabled is false")
+        void reconcile_disabled_doesNothing() {
+            ReflectionTestUtils.setField(service, "recordingEnabled", false);
+
+            service.reconcileCompletedRecordingCleanup();
+
+            verifyNoInteractions(recordingRepository);
+        }
+
+        @Test
+        @DisplayName("does nothing when rawCleanupEnabled is false")
+        void reconcile_rawCleanupDisabled_doesNothing() {
+            ReflectionTestUtils.setField(service, "rawCleanupEnabled", false);
+
+            service.reconcileCompletedRecordingCleanup();
+
+            verifyNoInteractions(recordingRepository);
+        }
+
+        @Test
+        @DisplayName("does nothing when s3Client is null")
+        void reconcile_s3ClientNull_doesNothing() {
+            ReflectionTestUtils.setField(service, "s3Client", null);
+
+            service.reconcileCompletedRecordingCleanup();
+
+            verifyNoInteractions(recordingRepository);
+        }
+
+        @Test
+        @DisplayName("processes stopped recordings from repository")
+        void reconcile_stoppedRecordings_refreshesStatus() {
+            CallRecording rec = buildRecording("STOPPED");
+            rec.setS3Bucket(BUCKET);
+            rec.setS3Prefix(S3_PREFIX);
+            rec.setConcatenationStatus("NOT_REQUESTED");
+
+            when(recordingRepository.findTop100ByStatusOrderByStartedAtDesc("STOPPED"))
+                    .thenReturn(List.of(rec));
+
+            ListObjectsV2Response emptyListing = ListObjectsV2Response.builder()
+                    .contents(Collections.emptyList())
+                    .isTruncated(false)
+                    .build();
+            when(s3Client.listObjectsV2(any(ListObjectsV2Request.class)))
+                    .thenReturn(emptyListing);
+
+            service.reconcileCompletedRecordingCleanup();
+
+            verify(recordingRepository).findTop100ByStatusOrderByStartedAtDesc("STOPPED");
+        }
+
+        @Test
+        @DisplayName("handles exception during refresh gracefully")
+        void reconcile_exceptionDuringRefresh_continuesWithoutThrowing() {
+            CallRecording rec = buildRecording("STOPPED");
+            rec.setS3Bucket(BUCKET);
+            rec.setS3Prefix(S3_PREFIX);
+            rec.setConcatenationStatus("PROCESSING");
+            rec.setConcatenationPipelineId("concat-pipe");
+
+            when(recordingRepository.findTop100ByStatusOrderByStartedAtDesc("STOPPED"))
+                    .thenReturn(List.of(rec));
+            when(s3Client.listObjectsV2(any(ListObjectsV2Request.class)))
+                    .thenThrow(new RuntimeException("S3 error"));
+
+            org.assertj.core.api.Assertions.assertThatCode(() -> service.reconcileCompletedRecordingCleanup())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("skips null recordings in the list")
+        void reconcile_nullRecordingInList_skips() {
+            java.util.ArrayList<CallRecording> recordings = new java.util.ArrayList<>();
+            recordings.add(null);
+
+            when(recordingRepository.findTop100ByStatusOrderByStartedAtDesc("STOPPED"))
+                    .thenReturn(recordings);
+
+            org.assertj.core.api.Assertions.assertThatCode(() -> service.reconcileCompletedRecordingCleanup())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("returns immediately when no stopped recordings exist")
+        void reconcile_noStoppedRecordings_returnsImmediately() {
+            when(recordingRepository.findTop100ByStatusOrderByStartedAtDesc("STOPPED"))
+                    .thenReturn(Collections.emptyList());
+
+            service.reconcileCompletedRecordingCleanup();
+
+            verify(recordingRepository).findTop100ByStatusOrderByStartedAtDesc("STOPPED");
+            verify(s3Client, never()).listObjectsV2(any(ListObjectsV2Request.class));
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  stopRecording — additional edge cases
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("stopRecording — additional edge cases")
+    class StopRecordingAdditionalTests {
+
+        @Test
+        @DisplayName("returns NOT_RECORDING when DB lookup returns null recording after pipeline removal")
+        void stopRecording_dbReturnsNullAfterPipelineRemoval_returnsNotRecording() {
+            // Seed activePipelineIds with a value, then the second DB lookup returns empty
+            @SuppressWarnings("unchecked")
+            Map<String, String> activePipelineIds =
+                    (Map<String, String>) ReflectionTestUtils.getField(service, "activePipelineIds");
+            activePipelineIds.put(CALL_ID, PIPELINE_ID);
+
+            when(recordingRepository.findTopByCallIdOrderByStartedAtDesc(CALL_ID))
+                    .thenReturn(Optional.empty());
+
+            Map<String, Object> result = service.stopRecording(CALL_ID);
+
+            assertThat(result).containsEntry("status", "NOT_RECORDING");
+        }
+
+        @Test
+        @DisplayName("concatenation failure sets FAILED status when concatenation pipeline throws")
+        void stopRecording_concatenationPipelineThrows_setsFailed() {
+            CallRecording rec = buildRecording("STARTED");
+            rec.setPipelineId(PIPELINE_ID);
+            rec.setS3Bucket(BUCKET);
+            rec.setS3Prefix(S3_PREFIX);
+
+            when(recordingRepository.findTopByCallIdOrderByStartedAtDesc(CALL_ID))
+                    .thenReturn(Optional.of(rec));
+
+            MediaCapturePipeline capturePipeline = MediaCapturePipeline.builder()
+                    .mediaPipelineId(PIPELINE_ID)
+                    .mediaPipelineArn("arn:aws:chime::" + ACCOUNT_ID + ":mediaPipeline/" + PIPELINE_ID)
+                    .build();
+            GetMediaCapturePipelineResponse getCapResp = GetMediaCapturePipelineResponse.builder()
+                    .mediaCapturePipeline(capturePipeline)
+                    .build();
+            when(pipelinesClient.getMediaCapturePipeline(
+                    any(GetMediaCapturePipelineRequest.class)))
+                    .thenReturn(getCapResp);
+            when(pipelinesClient.createMediaConcatenationPipeline(
+                    any(CreateMediaConcatenationPipelineRequest.class)))
+                    .thenThrow(new RuntimeException("Concatenation failed"));
+
+            Map<String, Object> result = service.stopRecording(CALL_ID);
+
+            assertThat(result).containsEntry("status", "STOPPED");
+            assertThat(result).containsEntry("concatenationStatus", "FAILED");
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  startRecording — additional edge cases
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("startRecording — additional edge cases")
+    class StartRecordingAdditionalTests {
+
+        @Test
+        @DisplayName("returns ERROR when bucket resolution fails (STS returns null account)")
+        void startRecording_bucketResolutionFails_returnsError() {
+            when(chimeService.getMeetingId(CALL_ID)).thenReturn(MEETING_ID);
+            ReflectionTestUtils.setField(service, "cachedRecordingBucket", null);
+            ReflectionTestUtils.setField(service, "cachedAccountId", null);
+            ReflectionTestUtils.setField(service, "stsClient", null);
+
+            Map<String, Object> result = service.startRecording(CALL_ID, USER_ID);
+
+            assertThat(result).containsEntry("status", "ERROR");
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  Private helpers
     // ══════════════════════════════════════════════════════════════════════════
 

@@ -147,4 +147,85 @@ class NotificationWebSocketHandlerTest {
 
         assertThat(handler.sendNotificationToUser("userZ", "msg")).isFalse();
     }
+
+    // ─── sendNotificationToAll() — multiple sessions ─────────────────────────
+
+    @Test
+    void sendNotificationToAll_multipleSessions_sendsToAllOpen() throws Exception {
+        @SuppressWarnings("unchecked")
+        WebSocketSession session2 = mock(WebSocketSession.class);
+        when(session.getId()).thenReturn("s1");
+        when(session.isOpen()).thenReturn(true);
+        when(session2.getId()).thenReturn("s2");
+        when(session2.isOpen()).thenReturn(true);
+
+        handler.afterConnectionEstablished(session);
+        handler.afterConnectionEstablished(session2);
+
+        handler.sendNotificationToAll("broadcast");
+
+        verify(session).sendMessage(any(TextMessage.class));
+        verify(session2).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void sendNotificationToAll_mixedOpenClosed_sendsOnlyToOpen() throws Exception {
+        @SuppressWarnings("unchecked")
+        WebSocketSession session2 = mock(WebSocketSession.class);
+        when(session.getId()).thenReturn("s1");
+        when(session.isOpen()).thenReturn(true);
+        when(session2.getId()).thenReturn("s2");
+        when(session2.isOpen()).thenReturn(false);
+
+        handler.afterConnectionEstablished(session);
+        handler.afterConnectionEstablished(session2);
+
+        handler.sendNotificationToAll("broadcast");
+
+        verify(session).sendMessage(any(TextMessage.class));
+        verify(session2, never()).sendMessage(any(TextMessage.class));
+    }
+
+    // ─── handleTextMessage() — verify message content ────────────────────────
+
+    @Test
+    void handleTextMessage_registerUser_responsContainsUserId() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.afterConnectionEstablished(session);
+
+        handler.handleTextMessage(session, new TextMessage("REGISTER_USER:user99"));
+
+        org.mockito.ArgumentCaptor<TextMessage> captor =
+                org.mockito.ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        assertThat(captor.getValue().getPayload()).contains("user99");
+    }
+
+    @Test
+    void handleTextMessage_echoMessage_responseContainsEchoPrefix() throws Exception {
+        when(session.getId()).thenReturn("s1");
+        handler.afterConnectionEstablished(session);
+
+        handler.handleTextMessage(session, new TextMessage("Hello world"));
+
+        org.mockito.ArgumentCaptor<TextMessage> captor =
+                org.mockito.ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        assertThat(captor.getValue().getPayload()).startsWith("Echo: ");
+        assertThat(captor.getValue().getPayload()).contains("Hello world");
+    }
+
+    // ─── sendNotificationToUser — session exists but closed ──────────────────
+
+    @Test
+    void sendNotificationToUser_sessionExistsButNull_returnsFalse() throws Exception {
+        // Register a user, then close the connection (session removed)
+        when(session.getId()).thenReturn("s1");
+        handler.afterConnectionEstablished(session);
+        handler.handleTextMessage(session, new TextMessage("REGISTER_USER:userA"));
+
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+
+        assertThat(handler.sendNotificationToUser("userA", "msg")).isFalse();
+    }
 }
