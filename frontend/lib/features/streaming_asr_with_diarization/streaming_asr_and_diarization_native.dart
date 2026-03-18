@@ -9,7 +9,7 @@ import 'package:path/path.dart' as Path;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
-import 'package:new_simple_audio_trimmer/simple_audio_trimmer.dart';
+//import 'package:new_simple_audio_trimmer/simple_audio_trimmer.dart';
 import '../../services/notetaker_config_service.dart';
 import '../notetaker/models/patient_note_model.dart';
 import './utils.dart';
@@ -512,12 +512,12 @@ class _StreamingAsrAndDiarizationScreenState
     sherpa_onnx.SpeakerEmbeddingManager manager,
   ) async {
     try {
-      await SimpleAudioTrimmer.trim(
-        inputPath: inputPath,
-        outputPath: outputPath,
-        start: segment.start,
-        end: segment.end,
-      );
+      //await SimpleAudioTrimmer.trim(
+      //  inputPath: inputPath,
+      //  outputPath: outputPath,
+      //  start: segment.start,
+      //  end: segment.end,
+      //);
       await offlineSpeechRecognizer(
         outputPath,
         segment.speaker,
