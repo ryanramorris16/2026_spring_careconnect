@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'env_constant.dart' as env;
 
 /// Global app configuration for environment variables and settings
 class AppConfig {
@@ -9,7 +10,7 @@ class AppConfig {
 
   /// Backend base URL
   static String getBackendBaseUrl() {
-    return dotenv.env['CC_BASE_URL_WEB'] ?? 'http://localhost:8080';
+    return env.getBackendBaseUrl();
   }
 
   /// Apple Merchant ID for Apple Pay

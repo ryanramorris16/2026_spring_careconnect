@@ -93,8 +93,8 @@ dependencies:
   # For mobile/desktop (iOS/Android/Windows/macOS/Linux), these should be re-enabled
   # Web local storage strategy (IndexedDB/LocalStorage/Hive Web) can be implemented later
   # drift: ^2.29.0
-  # sqlite3: ^2.9.4
-  # sqlcipher_flutter_libs: ^0.6.8
+  sqlite3: ^2.9.4
+  sqlcipher_flutter_libs: ^0.6.8
   # -- Astha - start
   # ag
   provider: ^6.1.5+1
@@ -125,7 +125,7 @@ dependencies:
   universal_html: ^2.2.4
   flutter_secure_storage: ^9.2.4
   in_app_purchase: ^3.2.3
-  pay: ^1.0.9
+  pay: ^3.3.0
   # Flutter SDK
   flutter:
     sdk: flutter
@@ -152,7 +152,7 @@ dependencies:
   #for recording audio samples for speaker recognition
   record: ^6.1.1
   #for breaking audio into smaller files
-  new_simple_audio_trimmer: ^0.1.5
+  # new_simple_audio_trimmer: ^0.1.5
   #The following is needed as the calendar for the Calendar Assisstant feature
   #table_calendar: ^3.2.0
 # Team D - Dependencies Begin
@@ -194,7 +194,6 @@ dev_dependencies:
   build_runner: ^2.4.9
   # drift_dev: ^2.29.0  # Commented since drift is disabled for web builds
   flutter_launcher_icons: ^0.14.1
-  flutter_native_splash: ^2.4.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
