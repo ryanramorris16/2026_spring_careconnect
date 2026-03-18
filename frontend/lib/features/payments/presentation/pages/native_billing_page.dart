@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../config/app_config.dart';
@@ -151,13 +153,21 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
             _buildOrderSummary(quote),
             const SizedBox(height: 32),
           ],
-          const Text(
-            'Purchase via App Store',
+          Text(
+            kIsWeb
+                ? 'Complete Your Purchase'
+                : Platform.isIOS
+                    ? 'Purchase via App Store'
+                    : 'Purchase via Google Play',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E)),
           ),
           const SizedBox(height: 8),
           Text(
-            'Your purchase will be processed through the native app store on your device.',
+            kIsWeb
+                ? 'Your payment will be securely processed.'
+                : Platform.isIOS
+                    ? 'Your subscription will be managed through your Apple ID.'
+                    : 'Your subscription will be managed through your Google Play account.',
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
