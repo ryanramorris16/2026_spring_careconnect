@@ -1,6 +1,7 @@
 package com.careconnect.security;
 
 import com.careconnect.model.User;
+import com.careconnect.repository.PatientRepository;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,6 +34,12 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AuthorizationService {
+
+    private final PatientRepository patientRepository;
+
+    public AuthorizationService(PatientRepository patientRepository) {
+        this.patientRepository = patientRepository;
+    }
 
     // ========== Permission Enforcement Methods ==========
 
@@ -237,7 +244,8 @@ public class AuthorizationService {
 
         // Patients can only access themselves
         if (user.isPatient()) {
-            if (!user.getId().equals(patientId)) {
+            boolean isOwnPatientRecord = patientRepository.existsByIdAndUserId(patientId, user.getId());
+            if (!isOwnPatientRecord) {
                 throw new UnauthorizedException(
                     "Patients can only access their own data"
                 );
@@ -256,7 +264,11 @@ public class AuthorizationService {
                     "User does not have permission to view patient data"
                 );
             }
-            // In production, verify: SELECT COUNT(*) FROM caregiver_patient WHERE caregiver_id = ? AND patient_id = ?
+            if (!patientRepository.hasAccessByCaregiverId(patientId, user.getId())) {
+                throw new UnauthorizedException(
+                    "Caregiver does not have access to this patient"
+                );
+            }
         } else if (user.isFamilyMember()) {
             if (!user.hasPermission(Permission.VIEW_HEALTH_DATA)) {
                 throw new UnauthorizedException(

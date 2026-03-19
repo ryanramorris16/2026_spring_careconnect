@@ -35,7 +35,7 @@ public class MedicationController {
     // ================================================================
     // 1. Fetch all medications for a patient
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_MEDICATIONS)
 
     @GetMapping("/{patientId}/medications")
     public ResponseEntity<List<MedicationDTO>> getAllMedications(@PathVariable Long patientId) throws UnauthorizedException {
@@ -48,7 +48,7 @@ public class MedicationController {
     // ================================================================
     // 1.1 Fetch only active medications
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_MEDICATIONS)
 
     @GetMapping("/{patientId}/medications/active")
     public ResponseEntity<List<MedicationDTO>> getActiveMedications(@PathVariable Long patientId) throws UnauthorizedException {
@@ -61,7 +61,7 @@ public class MedicationController {
     // ================================================================
     // 1.2 Fetch pending medications (approval_status = 'PENDING')
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_MEDICATIONS)
 
     @GetMapping("/{patientId}/medications/pending")
     public ResponseEntity<List<MedicationDTO>> getPendingMedications(@PathVariable Long patientId) throws UnauthorizedException {
@@ -74,7 +74,7 @@ public class MedicationController {
     // ================================================================
     // 2. Add a new medication (creates record as PENDING)
     // ================================================================
-    @RequirePermission(Permission.CREATE_TASKS)
+    @RequirePermission(Permission.MANAGE_MEDICATIONS)
 
     @PostMapping("/{patientId}/medications")
     public ResponseEntity<MedicationDTO> addMedication(
@@ -90,7 +90,7 @@ public class MedicationController {
     // ================================================================
     // 3. Approve a medication (sets isActive=true, approval_status='APPROVED')
     // ================================================================
-    @RequirePermission(Permission.UPDATE_TASKS)
+    @RequirePermission(Permission.MANAGE_MEDICATIONS)
 
     @PutMapping("/{patientId}/medications/{medicationId}/approve")
     public ResponseEntity<?> approveMedication(
@@ -98,6 +98,7 @@ public class MedicationController {
             @PathVariable Long medicationId) throws UnauthorizedException {
 
         User currentUser = securityUtil.resolveCurrentUser();
+        requireCaregiverOrAdmin(currentUser, "approve");
         authorizationService.requirePatientAccess(currentUser, patientId);
         MedicationDTO approvedMedication = medicationService.approveMedication(patientId, medicationId);
         return ResponseEntity.ok(Map.of(
@@ -109,7 +110,7 @@ public class MedicationController {
     // ================================================================
     // 4. Remove (soft delete) medication and trigger notification (Patient-side)
     // ================================================================
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.MANAGE_MEDICATIONS)
 
     @DeleteMapping("/{patientId}/medications/{medicationId}")
     public ResponseEntity<?> deleteMedication(
@@ -127,7 +128,7 @@ public class MedicationController {
     // ================================================================
     // 5. Hard delete medication (Caregiver-side)
     // ================================================================
-    @RequirePermission(Permission.DELETE_PATIENTS)
+    @RequirePermission(Permission.MANAGE_MEDICATIONS)
 
     @DeleteMapping("/{patientId}/medications/{medicationId}/caregiver/{caregiverId}")
     public ResponseEntity<?> deleteMedicationByCaregiver(
@@ -136,10 +137,23 @@ public class MedicationController {
             @PathVariable Long caregiverId) throws UnauthorizedException {
 
         User currentUser = securityUtil.resolveCurrentUser();
+        requireCaregiverOrAdmin(currentUser, "delete");
         authorizationService.requirePatientAccess(currentUser, patientId);
         medicationService.hardDeleteMedication(patientId, medicationId, caregiverId);
         return ResponseEntity.ok(Map.of(
                 "message", "Medication deleted successfully"
         ));
+    }
+
+    private void requireCaregiverOrAdmin(User currentUser, String action) throws UnauthorizedException {
+        if (currentUser == null) {
+            throw new UnauthorizedException("User is not authenticated");
+        }
+
+        if (!currentUser.isAdmin() && !currentUser.isCaregiver()) {
+            throw new UnauthorizedException(
+                    "Only caregivers or administrators can " + action + " medications"
+            );
+        }
     }
 }

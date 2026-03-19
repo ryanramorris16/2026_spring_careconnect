@@ -2,8 +2,10 @@ package com.careconnect.service;
 
 import com.careconnect.dto.MedicationDTO;
 import com.careconnect.exception.AppException;
+import com.careconnect.model.Caregiver;
 import com.careconnect.model.Medication;
 import com.careconnect.model.Patient;
+import com.careconnect.repository.CaregiverRepository;
 import com.careconnect.repository.MedicationRepository;
 import com.careconnect.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class MedicationService {
 
     private final MedicationRepository medicationRepository;
     private final PatientRepository patientRepository;
+    private final CaregiverRepository caregiverRepository;
     private final NotificationService notificationService;
     private final CaregiverPatientLinkService caregiverPatientLinkService;
 
@@ -157,10 +160,11 @@ public class MedicationService {
         medication.setApprovalStatus("APPROVED");
         medication.setUpdatedAt(Instant.now());
         Medication updated = medicationRepository.save(medication);
+        Long patientUserId = medication.getPatient().getUser().getId();
 
         // Optional: Send dummy approval notification
         notificationService.sendNotificationToUser(
-                patientId,
+                patientUserId,
                 "Medication Approved",
                 "Your medication '" + medication.getMedicationName() + "' was approved.",
                 "MEDICATION_APPROVED",
@@ -186,10 +190,11 @@ public class MedicationService {
         medication.setApprovalStatus("REMOVAL_PENDING");
         medication.setUpdatedAt(Instant.now());
         medicationRepository.save(medication);
+        Long patientUserId = medication.getPatient().getUser().getId();
 
         // Dummy removal notification
         notificationService.sendNotificationToUser(
-                patientId,
+                patientUserId,
                 "Medication Removal Requested",
                 "Your medication '" + medication.getMedicationName() + "' has been marked for removal.",
                 "MEDICATION_REMOVED",
@@ -204,8 +209,13 @@ public class MedicationService {
     public void hardDeleteMedication(Long patientId, Long medicationId, Long caregiverId) {
         Medication medication = medicationRepository.findById(medicationId)
                 .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Medication not found with id: " + medicationId));
+        Caregiver caregiver = caregiverRepository.findById(caregiverId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "Caregiver not found with id: " + caregiverId));
 
-        if (!caregiverPatientLinkService.hasActiveLink(caregiverId, patientId)) {
+        Long patientUserId = medication.getPatient().getUser().getId();
+        Long caregiverUserId = caregiver.getUser().getId();
+
+        if (!caregiverPatientLinkService.hasActiveLink(caregiverUserId, patientUserId)) {
             throw new AppException(HttpStatus.FORBIDDEN, 
                 "Caregiver does not have active link to patient");   
         }
@@ -222,7 +232,7 @@ public class MedicationService {
 
         // Send notification to patient
         notificationService.sendNotificationToUser(
-                patientId,
+                patientUserId,
                 "Medication Deleted",
                 "Your medication '" + medication.getMedicationName() + "' has been removed by your caregiver.",
                 "MEDICATION_DELETED",
