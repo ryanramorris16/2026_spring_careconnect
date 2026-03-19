@@ -115,7 +115,6 @@ if ! docker ps --format "table {{.Names}}" | grep -q "postgres_container"; then
 else
     echo "✅ PostgreSQL container is already running"
 fi
-
 # Run Flyway migrations
 echo "🔄 Running database migrations..."
 ./mvnw flyway:migrate -q   -Dflyway.url=jdbc:postgresql://localhost:5432/careconnect \

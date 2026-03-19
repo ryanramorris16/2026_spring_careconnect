@@ -5,8 +5,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.careconnect.model.Patient;
 import com.careconnect.model.Task;
-import com.careconnect.model.User;
 
 /**
  * Repository interface for managing {@link Task} entities.
@@ -32,11 +32,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * object that has already been loaded from the database.
      * </p>
      *
-     * @param user the {@link User} entity representing the patient
+     * @param patient the {@link Patient} entity representing the patient
      * @return an {@link Optional} containing a list of tasks for the patient,
      *         or empty if no tasks exist
      */
-    Optional<List<Task>> findByPatient(User user);
+    Optional<List<Task>> findByPatient(Patient patient);
 
     /**
      * Finds all tasks for a patient by their unique patient ID.

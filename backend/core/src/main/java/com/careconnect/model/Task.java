@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +17,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -75,12 +80,14 @@ public class Task {
     /**
      * Name of the task (e.g., "Take Blood Pressure Medication").
      */
+    @Column(nullable = false)
     private String name;
 
     /**
      * Optional description providing more context for the task.
      */
     @Nullable
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     /**
@@ -90,6 +97,7 @@ public class Task {
      * (e.g., ISO-8601) for proper parsing.
      * </p>
      */
+    @Column(nullable = false)
     private String date;
 
     /**
@@ -97,11 +105,13 @@ public class Task {
      * (e.g., "08:30 AM").
      */
     @Nullable
+    @Column(name = "time_of_day")
     private String timeOfDay;
 
     /**
      * Whether the task has been completed.
      */
+    @Column(name = "is_completed", nullable = false)
     private boolean isCompleted;
 
     /**
@@ -111,6 +121,7 @@ public class Task {
      * {@code "Exercise"}, {@code "Lab"}, {@code "Pharmacy"}, {@code "General"}.
      * </p>
      */
+    @Column(name = "task_type")
     private String taskType;
 
     // ----------------------------
@@ -140,6 +151,7 @@ public class Task {
      * </p>
      */
     @Nullable
+    @Column(name = "task_interval")
     private Integer taskInterval;
 
     /**
@@ -149,6 +161,7 @@ public class Task {
      * </p>
      */
     @Nullable
+    @Column(name = "do_count")
     private Integer doCount;
 
     /**
@@ -161,12 +174,20 @@ public class Task {
      * </p>
      */
     @Nullable
+    @Column(name = "days_of_week", columnDefinition = "TEXT")
     private String daysOfWeek;
 
     /**
      * Time of creation in miliseconds.
      */
+    @Column(name = "created_at")
     private Long createdAt;
+
+    /**
+     * Time of last update in miliseconds.
+     */
+    @Column(name = "updated_at")
+    private Long updatedAt;
 
     // ----------------------------
     // Relationships
@@ -193,6 +214,7 @@ public class Task {
      * </p>
      */
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
     @Builder.Default
     private List<ScheduledNotification> notifications = new ArrayList<>();
 
@@ -212,6 +234,21 @@ public class Task {
      * </p>
      */
     @Nullable
+    @Column(name = "parent_task_id")
     private Long parentTaskId;
+
+    @PrePersist
+    void onCreate() {
+        long now = System.currentTimeMillis();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = System.currentTimeMillis();
+    }
 
 }

@@ -584,9 +584,6 @@
                             <locations>
                                 <location>classpath:db/migration</location>
                             </locations>
-                            <ignoreMigrationPatterns>
-                                <ignoreMigrationPattern>*:h2/**</ignoreMigrationPattern>
-                            </ignoreMigrationPatterns>
                         </configuration>
                     </plugin>
                 </plugins>
