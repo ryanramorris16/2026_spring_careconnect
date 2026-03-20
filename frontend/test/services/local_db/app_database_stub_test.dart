@@ -1,158 +1,233 @@
-// Tests for AppDatabase stub (lib/services/local_db/app_database_stub.dart).
-// Web-safe in-memory implementation — pure async Dart, no native plugins.
-// Tests cover Mood model, insertMood, getMoodsForUser, getMoodsForUserOldestFirst,
-// getMoodByIdForUser, deleteMoodById, and deleteMoodsByIds.
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:care_connect_app/services/local_db/app_database_stub.dart';
 
 void main() {
-  late AppDatabase db;
+  group('AppDatabase stub', () {
+    late AppDatabase db;
 
-  setUp(() {
-    db = AppDatabase();
-  });
-
-  group('Mood constructor', () {
-    test('stores all fields', () {
-      final dt = DateTime(2025, 1, 1);
-      final mood = Mood(id: 1, userId: 10, score: 7, label: 'Good', createdAt: dt);
-      expect(mood.id, 1);
-      expect(mood.userId, 10);
-      expect(mood.score, 7);
-      expect(mood.label, 'Good');
-      expect(mood.createdAt, dt);
-    });
-  });
-
-  group('AppDatabase.isEncrypted', () {
-    test('always returns false', () async {
-      expect(await db.isEncrypted(), isFalse);
-    });
-  });
-
-  group('AppDatabase.insertMood', () {
-    test('returns incremental IDs starting at 1', () async {
-      final id1 = await db.insertMood(userId: 1, score: 5, label: 'OK');
-      final id2 = await db.insertMood(userId: 1, score: 8, label: 'Good');
-      expect(id1, 1);
-      expect(id2, 2);
+    setUp(() {
+      db = AppDatabase();
     });
 
-    test('stores mood with provided createdAt', () async {
-      final dt = DateTime(2025, 3, 10);
-      await db.insertMood(userId: 5, score: 6, label: 'Fine', createdAt: dt);
-      final moods = await db.getMoodsForUser(5);
-      expect(moods.first.createdAt, dt);
+    test('isEncrypted returns false', () async {
+      final result = await db.isEncrypted();
+      expect(result, isFalse);
     });
 
-    test('uses current time when createdAt is null', () async {
-      final before = DateTime.now().subtract(const Duration(seconds: 1));
-      await db.insertMood(userId: 2, score: 4, label: 'Meh');
-      final moods = await db.getMoodsForUser(2);
-      expect(moods.first.createdAt.isAfter(before), isTrue);
-    });
-  });
+    test('upsertOfflineSyncOperation adds a new row', () async {
+      final id = await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{"Content-Type":"application/json"}',
+        bodyJson: '{"mood":"good"}',
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-1',
+      );
 
-  group('AppDatabase.getMoodsForUser', () {
-    test('returns empty list for user with no moods', () async {
-      final moods = await db.getMoodsForUser(99);
-      expect(moods, isEmpty);
-    });
+      expect(id, '1');
 
-    test('returns only moods belonging to given userId', () async {
-      await db.insertMood(userId: 1, score: 7, label: 'A');
-      await db.insertMood(userId: 2, score: 5, label: 'B');
-      await db.insertMood(userId: 1, score: 8, label: 'C');
-
-      final user1Moods = await db.getMoodsForUser(1);
-      expect(user1Moods.length, 2);
-      expect(user1Moods.every((m) => m.userId == 1), isTrue);
-    });
-  });
-
-  group('AppDatabase.getMoodsForUserOldestFirst', () {
-    test('returns moods in ascending createdAt order', () async {
-      final dt1 = DateTime(2025, 1, 3);
-      final dt2 = DateTime(2025, 1, 1);
-      final dt3 = DateTime(2025, 1, 2);
-      await db.insertMood(userId: 3, score: 5, label: 'C', createdAt: dt1);
-      await db.insertMood(userId: 3, score: 7, label: 'A', createdAt: dt2);
-      await db.insertMood(userId: 3, score: 6, label: 'B', createdAt: dt3);
-
-      final moods = await db.getMoodsForUserOldestFirst(3);
-      expect(moods[0].createdAt, dt2);
-      expect(moods[1].createdAt, dt3);
-      expect(moods[2].createdAt, dt1);
+      final row = await db.getOfflineSyncById('1');
+      expect(row, isNotNull);
+      expect(row!.id, '1');
+      expect(row.status, 'pending');
+      expect(row.retryCount, 0);
+      expect(row.lastError, isNull);
+      expect(row.method, 'POST');
+      expect(row.url, '/sync/mood');
     });
 
-    test('returns empty list when no moods for user', () async {
-      final moods = await db.getMoodsForUserOldestFirst(777);
-      expect(moods, isEmpty);
-    });
-  });
+    test('upsertOfflineSyncOperation deduplicates by fingerprint', () async {
+      final firstId = await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{}',
+        bodyJson: '{"mood":"good"}',
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'same-fingerprint',
+      );
 
-  group('AppDatabase.getMoodByIdForUser', () {
-    test('returns the correct mood when found', () async {
-      await db.insertMood(userId: 4, score: 9, label: 'Great');
-      final id = await db.insertMood(userId: 4, score: 3, label: 'Bad');
+      final secondId = await db.upsertOfflineSyncOperation(
+        id: '2',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{}',
+        bodyJson: '{"mood":"better"}',
+        createdAtIso: '2026-03-15T10:05:00Z',
+        fingerprint: 'same-fingerprint',
+      );
 
-      final mood = await db.getMoodByIdForUser(moodId: id, userIdValue: 4);
-      expect(mood, isNotNull);
-      expect(mood!.score, 3);
-      expect(mood.label, 'Bad');
-    });
+      final queue = await db.getPendingOfflineSyncQueue();
 
-    test('returns null for non-existent moodId', () async {
-      final mood = await db.getMoodByIdForUser(moodId: 999, userIdValue: 1);
-      expect(mood, isNull);
-    });
-
-    test('returns null when userId does not match', () async {
-      final id = await db.insertMood(userId: 5, score: 6, label: 'X');
-      final mood = await db.getMoodByIdForUser(moodId: id, userIdValue: 999);
-      expect(mood, isNull);
-    });
-  });
-
-  group('AppDatabase.deleteMoodById', () {
-    test('removes the mood and returns 1', () async {
-      final id = await db.insertMood(userId: 6, score: 5, label: 'Y');
-      final count = await db.deleteMoodById(id);
-      expect(count, 1);
-      final moods = await db.getMoodsForUser(6);
-      expect(moods, isEmpty);
+      expect(firstId, '1');
+      expect(secondId, '1');
+      expect(queue.length, 1);
+      expect(queue.first.id, '1');
     });
 
-    test('returns 0 when mood does not exist', () async {
-      final count = await db.deleteMoodById(9999);
+    test('queue is sorted by createdAt ascending', () async {
+      await db.upsertOfflineSyncOperation(
+        id: 'late',
+        method: 'POST',
+        url: '/sync/calendar',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T11:00:00Z',
+        fingerprint: 'fp-late',
+      );
+
+      await db.upsertOfflineSyncOperation(
+        id: 'early',
+        method: 'POST',
+        url: '/sync/calendar',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T09:00:00Z',
+        fingerprint: 'fp-early',
+      );
+
+      final queue = await db.getPendingOfflineSyncQueue();
+
+      expect(queue.length, 2);
+      expect(queue[0].id, 'early');
+      expect(queue[1].id, 'late');
+    });
+
+    test('getPendingOfflineSyncQueue respects limit', () async {
+      await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/a',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T09:00:00Z',
+        fingerprint: 'fp-1',
+      );
+
+      await db.upsertOfflineSyncOperation(
+        id: '2',
+        method: 'POST',
+        url: '/b',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-2',
+      );
+
+      final queue = await db.getPendingOfflineSyncQueue(limit: 1);
+
+      expect(queue.length, 1);
+      expect(queue.first.id, '1');
+    });
+
+    test('getPendingOfflineSyncCount returns count of actionable rows',
+        () async {
+      await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/a',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T09:00:00Z',
+        fingerprint: 'fp-1',
+      );
+
+      await db.upsertOfflineSyncOperation(
+        id: '2',
+        method: 'POST',
+        url: '/b',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-2',
+      );
+
+      final count = await db.getPendingOfflineSyncCount();
+      expect(count, 2);
+    });
+
+    test('getOfflineSyncById returns null when row does not exist', () async {
+      final row = await db.getOfflineSyncById('missing');
+      expect(row, isNull);
+    });
+
+    test('markOfflineSyncAsSyncing updates status to syncing', () async {
+      await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-1',
+      );
+
+      await db.markOfflineSyncAsSyncing('1');
+      final row = await db.getOfflineSyncById('1');
+
+      expect(row, isNotNull);
+      expect(row!.status, 'syncing');
+      expect(row.retryCount, 0);
+    });
+
+    test('markOfflineSyncAsFailed updates status, retryCount, and lastError',
+        () async {
+      await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-1',
+      );
+
+      await db.markOfflineSyncAsFailed(
+        id: '1',
+        errorMessage: 'network timeout',
+      );
+
+      final row = await db.getOfflineSyncById('1');
+
+      expect(row, isNotNull);
+      expect(row!.status, 'failed');
+      expect(row.retryCount, 1);
+      expect(row.lastError, 'network timeout');
+    });
+
+    test('deleteOfflineSyncById removes row from queue', () async {
+      await db.upsertOfflineSyncOperation(
+        id: '1',
+        method: 'POST',
+        url: '/sync/mood',
+        headersJson: '{}',
+        bodyJson: null,
+        createdAtIso: '2026-03-15T10:00:00Z',
+        fingerprint: 'fp-1',
+      );
+
+      await db.deleteOfflineSyncById('1');
+      final row = await db.getOfflineSyncById('1');
+      final count = await db.getPendingOfflineSyncCount();
+
+      expect(row, isNull);
       expect(count, 0);
     });
-  });
 
-  group('AppDatabase.deleteMoodsByIds', () {
-    test('removes multiple moods by id', () async {
-      final id1 = await db.insertMood(userId: 7, score: 5, label: 'P');
-      final id2 = await db.insertMood(userId: 7, score: 7, label: 'Q');
-      await db.insertMood(userId: 7, score: 9, label: 'R');
-
-      await db.deleteMoodsByIds([id1, id2]);
-      final moods = await db.getMoodsForUser(7);
-      expect(moods.length, 1);
-      expect(moods.first.label, 'R');
+    test('markOfflineSyncAsSyncing does nothing for missing id', () async {
+      await db.markOfflineSyncAsSyncing('missing');
+      final count = await db.getPendingOfflineSyncCount();
+      expect(count, 0);
     });
 
-    test('no-op for empty ids set', () async {
-      await db.insertMood(userId: 8, score: 6, label: 'S');
-      await db.deleteMoodsByIds([]);
-      final moods = await db.getMoodsForUser(8);
-      expect(moods.length, 1);
-    });
-  });
-
-  group('AppDatabase.close', () {
-    test('completes without error', () async {
-      await expectLater(db.close(), completes);
+    test('markOfflineSyncAsFailed does nothing for missing id', () async {
+      await db.markOfflineSyncAsFailed(
+        id: 'missing',
+        errorMessage: 'error',
+      );
+      final count = await db.getPendingOfflineSyncCount();
+      expect(count, 0);
     });
   });
 }
