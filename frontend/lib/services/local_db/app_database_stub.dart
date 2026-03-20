@@ -189,6 +189,28 @@ class AppDatabase {
     _queue.removeWhere((item) => item.id == id);
   }
 
+  // ── EVV Schedule Cache (in-memory stub) ────────────────────────────────────
+  final Map<int, ({String data, DateTime cachedAt})> _scheduleCache =
+      <int, ({String data, DateTime cachedAt})>{};
+
+  Future<void> saveEvvSchedules({
+    required int caregiverId,
+    required String dataJson,
+  }) async {
+    _scheduleCache[caregiverId] = (
+      data: dataJson,
+      cachedAt: DateTime.now().toUtc(),
+    );
+  }
+
+  Future<({String? data, DateTime? cachedAt})> loadEvvSchedules(
+    int caregiverId,
+  ) async {
+    final entry = _scheduleCache[caregiverId];
+    if (entry == null) return (data: null, cachedAt: null);
+    return (data: entry.data, cachedAt: entry.cachedAt);
+  }
+
   Future<void> close() async {}
 
   Future<void> closeDb() async {

@@ -5,8 +5,10 @@ import '../../../../providers/user_provider.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/auth_token_manager.dart';
+import '../../../../services/local_db/evv_schedule_cache.dart';
 import '../../../dashboard/models/patient_model.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../widgets/evv_month_calendar_view.dart';
@@ -26,6 +28,10 @@ class _SchedulePageState extends State<SchedulePage> {
   List<ScheduledVisit> _scheduledVisits = [];
   List<ScheduledVisit> _upcomingVisits = [];
   bool _isLoading = false;
+
+  // Offline / stale cache indicator state
+  bool _isOfflineCached = false;  // true if the current data came from cache
+  bool _isCacheStale = false;     // true if the cached data is older than 8 h
   String _viewMode = 'list'; // 'list', 'month', 'week', 'day'
   DateTime _selectedDate = DateTime.now();
   Map<String, int> _summaryData = {
@@ -77,9 +83,11 @@ class _SchedulePageState extends State<SchedulePage> {
       _isLoading = true;
     });
 
+    // Hoisted so both the try and catch blocks can reference it.
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final caregiverId = userProvider.user?.caregiverId ?? 1;
+
     try {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final caregiverId = userProvider.user?.caregiverId ?? 1;
 
       final headers = await AuthTokenManager.getAuthHeaders();
       final baseUrl = ApiConstants.baseUrl;
@@ -118,8 +126,15 @@ class _SchedulePageState extends State<SchedulePage> {
 
         setState(() {
           _scheduledVisits = visits;
+          _isOfflineCached = false;
+          _isCacheStale = false;
           _isLoading = false;
         });
+
+        // Cache the raw response so it can be used when offline.
+        unawaited(
+          EvvScheduleCache.instance.save(caregiverId, response.body),
+        );
       } else {
         throw Exception(
           'Failed to load scheduled visits: ${response.statusCode}',
@@ -127,8 +142,48 @@ class _SchedulePageState extends State<SchedulePage> {
       }
     } catch (e) {
       print('Error loading scheduled visits: $e');
+
+      // Try to serve the last successful response from the local cache.
+      try {
+        final cached = await EvvScheduleCache.instance.load(caregiverId);
+        if (cached.data != null) {
+          final List<dynamic> data = jsonDecode(cached.data!);
+          final all =
+              data.map((json) => ScheduledVisit.fromJson(json)).toList();
+
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final startWindow = now.subtract(const Duration(days: 7));
+          final visits = all
+              .where((v) {
+                final dt = v.scheduledTime;
+                final isToday =
+                    dt.year == today.year &&
+                    dt.month == today.month &&
+                    dt.day == today.day;
+                final isOverdue =
+                    dt.isBefore(now) &&
+                    dt.isAfter(startWindow) &&
+                    v.status == 'Scheduled';
+                return isToday || isOverdue;
+              })
+              .toList()
+            ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+          setState(() {
+            _scheduledVisits = visits;
+            _isOfflineCached = true;
+            _isCacheStale = cached.isStale;
+            _isLoading = false;
+          });
+          return;
+        }
+      } catch (_) {}
+
       setState(() {
         _scheduledVisits = [];
+        _isOfflineCached = false;
+        _isCacheStale = false;
         _isLoading = false;
       });
     }
@@ -250,6 +305,44 @@ class _SchedulePageState extends State<SchedulePage> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // ── Offline / stale banner ────────────────────────────────────
+                if (_isOfflineCached)
+                  Material(
+                    color: _isCacheStale
+                        ? Colors.orange.shade700
+                        : Colors.blueGrey.shade600,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isCacheStale
+                                ? Icons.warning_amber_rounded
+                                : Icons.cloud_off,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _isCacheStale
+                                  ? 'Offline — showing cached data (may be outdated). '
+                                      'Connect to the internet and pull down to refresh.'
+                                  : 'Offline — showing recently cached schedule. '
+                                      'Connect to the internet and pull down to refresh.',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 _buildPerspectiveToggle(context),
                 _buildHeader(context),
                 _buildFilterBar(context),

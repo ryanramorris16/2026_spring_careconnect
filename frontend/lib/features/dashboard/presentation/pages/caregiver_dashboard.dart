@@ -5,8 +5,6 @@ import '../../models/patient_model.dart';
 import 'package:provider/provider.dart';
 import 'package:care_connect_app/providers/user_provider.dart';
 import 'package:care_connect_app/services/api_service.dart';
-import 'package:care_connect_app/services/auth_token_manager.dart';
-import 'package:http/http.dart' as http;
 import '../../../../services/subscription_service.dart';
 import '../../../../widgets/responsive_page_wrapper.dart';
 import 'package:care_connect_app/config/theme/app_theme.dart';
@@ -128,12 +126,9 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final caregiverId = userProvider.user?.caregiverId ?? widget.caregiverId;
 
-      // Get auth headers
-      final headers = await AuthTokenManager.getAuthHeaders();
-      final baseUrl = ApiConstants.baseUrl;
-      final url = Uri.parse('${baseUrl}caregivers/$caregiverId/patients');
-      print('🔍 Fetching patients from: $url');
-      final response = await http.get(url, headers: headers);
+      print('🔍 Fetching patients for caregiverId: $caregiverId');
+      final response = await ApiService.getCaregiverPatients(caregiverId);
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -202,18 +197,14 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
 
             // --- Fetch enhanced profile for allergies and vitals ---
             try {
-              final enhancedRes = await http.get(
-                Uri.parse(
-                  '${ApiConstants.baseUrl}patients/${patientJson['id']}/profile/enhanced',
-                ),
-                headers: headers,
-              );
-              if (enhancedRes.statusCode == 200) {
-                final enhancedJson = jsonDecode(enhancedRes.body);
-                final enhancedData = enhancedJson['data'];
+              final patientId = patientJson['id'] as int?;
+              final enhancedData = patientId != null
+                  ? await ApiService.getEnhancedPatientProfile(patientId)
+                  : null;
+              if (enhancedData != null) {
 
                 // Defensive: handle allergies as list of string or objects, or null
-                final allergiesRaw = enhancedData?['allergies'];
+                final allergiesRaw = enhancedData['allergies'];
                 if (allergiesRaw == null) {
                   patientJson['allergies'] = [];
                 } else if (allergiesRaw is List) {
@@ -227,7 +218,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                 }
 
                 // Defensive: handle latestVitals as map or null
-                final vitalsRaw = enhancedData?['latestVitals'];
+                final vitalsRaw = enhancedData['latestVitals'];
                 if (vitalsRaw == null) {
                   patientJson['latestVitals'] = <String, dynamic>{};
                 } else if (vitalsRaw is Map) {
@@ -242,7 +233,7 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                 }
 
                 // Defensive: handle medications as list or null
-                final medicationsRaw = enhancedData?['medications'];
+                final medicationsRaw = enhancedData['medications'];
                 if (medicationsRaw == null) {
                   patientJson['medications'] = [];
                 } else if (medicationsRaw is List) {
@@ -254,13 +245,10 @@ class _CaregiverDashboardState extends State<CaregiverDashboard> {
                   patientJson['medications'] = [];
                 }
               } else {
-                // Set default values if enhanced profile fetch fails
+                // Set default values if enhanced profile not available
                 patientJson['allergies'] = [];
                 patientJson['latestVitals'] = <String, dynamic>{};
                 patientJson['medications'] = [];
-                print(
-                  '⚠️ Enhanced profile fetch failed with status: ${enhancedRes.statusCode}',
-                );
               }
             } catch (e) {
               print(

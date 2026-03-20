@@ -194,6 +194,61 @@ class AppDatabase {
     );
   }
 
+  // ── EVV Schedule Cache ──────────────────────────────────────────────────────
+  // Persists the raw JSON returned by the schedule API so the caregiver can
+  // view their schedule while offline.  Data is stored in the same encrypted
+  // SQLite file as the offline sync queue.
+
+  Future<void> _ensureEvvCacheTable() async {
+    final db = await _openDb();
+    db.execute('''
+      CREATE TABLE IF NOT EXISTS evv_schedule_cache (
+        caregiver_id INTEGER PRIMARY KEY,
+        data_json    TEXT NOT NULL,
+        cached_at    TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> saveEvvSchedules({
+    required int caregiverId,
+    required String dataJson,
+  }) async {
+    await _ensureEvvCacheTable();
+    final db = await _openDb();
+    db.execute(
+      '''
+      INSERT OR REPLACE INTO evv_schedule_cache (caregiver_id, data_json, cached_at)
+      VALUES (?, ?, ?)
+      ''',
+      <Object?>[
+        caregiverId,
+        dataJson,
+        DateTime.now().toUtc().toIso8601String(),
+      ],
+    );
+  }
+
+  /// Returns the cached schedule JSON and the time it was stored.
+  /// Returns `(data: null, cachedAt: null)` when nothing is cached yet.
+  Future<({String? data, DateTime? cachedAt})> loadEvvSchedules(
+    int caregiverId,
+  ) async {
+    await _ensureEvvCacheTable();
+    final db = await _openDb();
+    final rows = db.select(
+      'SELECT data_json, cached_at FROM evv_schedule_cache WHERE caregiver_id = ? LIMIT 1',
+      <Object?>[caregiverId],
+    );
+    if (rows.isEmpty) return (data: null, cachedAt: null);
+    final cachedAtStr = rows.first['cached_at']?.toString();
+    return (
+      data: rows.first['data_json']?.toString(),
+      cachedAt:
+          cachedAtStr != null ? DateTime.tryParse(cachedAtStr) : null,
+    );
+  }
+
   Future<void> closeDb() async {
     _db?.dispose();
     _db = null;

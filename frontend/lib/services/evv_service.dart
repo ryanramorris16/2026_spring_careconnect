@@ -8,6 +8,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../features/dashboard/models/patient_model.dart';
 import 'auth_token_manager.dart';
+import 'api_service_offline.dart';
 
 import 'package:care_connect_app/services/api_service.dart';
 
@@ -15,7 +16,13 @@ class EvvService {
   static final String _baseUrl = ApiConstants.evv;
   static const String _deviceIdKey = 'evv_device_id';
   
-  final http.Client _client = http.Client();
+  // Route all mutating requests through the global offline-capable HTTP client.
+  // The OfflineQueueHttpClient wrapper intercepts POST/PUT/PATCH/DELETE calls;
+  // when the device loses connectivity it stores the serialised request in the
+  // encrypted local SQLite database and replays it automatically once the
+  // network is restored — satisfying the "securely queued" and "auto-sync"
+  // offline requirements without any feature-specific plumbing.
+  final http.Client _client = ApiServiceOffline.httpClient;
   final Connectivity _connectivity = Connectivity();
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
   final Uuid _uuid = const Uuid();
@@ -228,18 +235,30 @@ class EvvService {
       if (request.checkoutNoGpsReason != null) 'checkoutNoGpsReason': request.checkoutNoGpsReason,
       if (request.checkinAccuracyM != null) 'checkinAccuracyM': request.checkinAccuracyM,
       if (request.checkoutAccuracyM != null) 'checkoutAccuracyM': request.checkoutAccuracyM,
+      if (request.patientSignatureBase64 != null)
+        'patientSignatureBase64': request.patientSignatureBase64,
     });
     
     print('📤 EVV Service: Request body: $body');
 
-    final isOnline = await _isOnline();
-    final endpoint = isOnline ? '$_baseUrl/records' : '$_baseUrl/records/offline';
-
+    // Always target the online /records endpoint.  If the device is offline
+    // the OfflineQueueHttpClient intercepts the call, stores the request in
+    // the encrypted local DB, and returns a synthetic 200 response with the
+    // header x-offline-queued: true.  The request is replayed automatically
+    // when connectivity is restored (handled by main_screen.dart).
     final response = await _client.post(
-      Uri.parse(endpoint),
+      Uri.parse('$_baseUrl/records'),
       headers: headers,
       body: body,
     );
+
+    // Offline queue interceptor returns a synthetic 200 with this header.
+    if (response.headers['x-offline-queued'] == 'true') {
+      throw EvvOfflineQueuedException(
+        requestId: response.headers['x-offline-request-id'] ?? '',
+        message: 'Visit queued — will sync automatically when connectivity is restored.',
+      );
+    }
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
@@ -729,6 +748,11 @@ class EvvRecordRequest {
   final double? checkinAccuracyM;
   final double? checkoutAccuracyM;
 
+  /// Base-64-encoded PNG of the patient's signature, captured on-device when
+  /// signature collection is enabled for the visit.  Stored alongside the EVV
+  /// record for audit purposes.  May be null when disabled or skipped.
+  final String? patientSignatureBase64;
+
   EvvRecordRequest({
     required this.serviceType,
     required this.patientId,
@@ -751,7 +775,28 @@ class EvvRecordRequest {
     this.checkoutNoGpsReason,
     this.checkinAccuracyM,
     this.checkoutAccuracyM,
+    this.patientSignatureBase64,
   });
+}
+
+/// Thrown by [EvvService.createRecord] when the device is offline and the
+/// visit submission has been queued in the local encrypted database for later
+/// synchronisation.  Callers should treat this as a non-error outcome and
+/// show the caregiver an appropriate "queued" confirmation.
+class EvvOfflineQueuedException implements Exception {
+  const EvvOfflineQueuedException({
+    required this.requestId,
+    required this.message,
+  });
+
+  /// The local queue entry ID assigned by [OfflineSyncService].
+  final String requestId;
+
+  /// Human-readable explanation suitable for display in a SnackBar.
+  final String message;
+
+  @override
+  String toString() => 'EvvOfflineQueuedException: $message';
 }
 
 class EvvCorrectionRequest {

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../providers/user_provider.dart';
 import '../../../../services/api_service.dart';
 import '../../../../config/theme/app_theme.dart';
@@ -48,6 +51,19 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
 
   // Notes controller
   final TextEditingController _notesController = TextEditingController();
+
+  // ── Patient Signature ──────────────────────────────────────────────────────
+  /// Whether the caregiver has enabled signature collection for this visit.
+  bool _signatureEnabled = false;
+  /// Each inner list is one continuous stroke (pen-down → pen-up).
+  final List<List<Offset>> _strokes = [];
+  List<Offset> _currentStroke = [];
+  /// Key used to capture the signature canvas as a PNG image.
+  final GlobalKey _signatureKey = GlobalKey();
+
+  /// SharedPreferences key used to hand the base-64 signature PNG to
+  /// [VisitCompletePage] without bloating the URL query string.
+  static const String _pendingSignatureKey = 'evv_pending_signature';
 
   @override
   void initState() {
@@ -187,7 +203,26 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
     return '$displayHour:$minute:$second $amPm';
   }
 
-  void _readyToCheckOut() {
+  Future<void> _readyToCheckOut() async {
+    // Capture patient signature (if enabled) and store it for VisitCompletePage.
+    //
+    // We persist the base-64 PNG in SharedPreferences rather than the URL because
+    // signatures can be several hundred KB — far too large for a query string.
+    final prefs = await SharedPreferences.getInstance();
+    if (_signatureEnabled && _strokes.isNotEmpty) {
+      final base64 = await _captureSignatureAsBase64();
+      if (base64 != null) {
+        await prefs.setString(_pendingSignatureKey, base64);
+      } else {
+        await prefs.remove(_pendingSignatureKey);
+      }
+    } else {
+      // Clear any leftover signature from a previous, incomplete visit.
+      await prefs.remove(_pendingSignatureKey);
+    }
+
+    if (!mounted) return;
+
     // Navigate to Check-Out Location page with check-in location data
     final queryParams = {
       'patientId': widget.patientId.toString(),
@@ -218,6 +253,23 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
         .join('&');
     
     context.push('/evv/checkout-location?$queryString');
+  }
+
+  /// Renders the signature canvas to an off-screen PNG and returns its
+  /// base-64 representation, or `null` if capture fails.
+  Future<String?> _captureSignatureAsBase64() async {
+    try {
+      final boundary = _signatureKey.currentContext
+          ?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      final image = await boundary.toImage(pixelRatio: 1.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return null;
+      return base64Encode(byteData.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('EVV signature capture error: $e');
+      return null;
+    }
   }
 
   @override
@@ -472,6 +524,11 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
             ),
           ),
 
+          const SizedBox(height: 24),
+
+          // ── Patient Signature Pad ──────────────────────────────────────────
+          _buildSignaturePad(),
+
           const SizedBox(height: 32),
 
           // Incident report button
@@ -537,6 +594,117 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
     );
   }
 
+  // ── Signature Pad Widget ──────────────────────────────────────────────────
+
+  Widget _buildSignaturePad() {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Patient Signature',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              Switch(
+                value: _signatureEnabled,
+                onChanged: (enabled) => setState(() {
+                  _signatureEnabled = enabled;
+                  if (!enabled) {
+                    _strokes.clear();
+                    _currentStroke = [];
+                  }
+                }),
+              ),
+            ],
+          ),
+          if (_signatureEnabled) ..._buildSignatureCanvas(theme),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildSignatureCanvas(ThemeData theme) {
+    return [
+      const SizedBox(height: 8),
+      Text(
+        'Please ask the patient to sign in the box below.',
+        style: TextStyle(color: theme.hintColor, fontSize: 12),
+      ),
+      const SizedBox(height: 12),
+      RepaintBoundary(
+        key: _signatureKey,
+        child: GestureDetector(
+          onPanStart: (details) {
+            setState(() {
+              _currentStroke = [details.localPosition];
+            });
+          },
+          onPanUpdate: (details) {
+            setState(() {
+              _currentStroke.add(details.localPosition);
+            });
+          },
+          onPanEnd: (_) {
+            setState(() {
+              if (_currentStroke.isNotEmpty) {
+                _strokes.add(List<Offset>.from(_currentStroke));
+              }
+              _currentStroke = [];
+            });
+          },
+          child: CustomPaint(
+            painter: _SignaturePainter(
+              strokes: _strokes,
+              currentStroke: _currentStroke,
+            ),
+            child: Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: theme.dividerColor),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ),
+      if (_strokes.isNotEmpty)
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => setState(() {
+              _strokes.clear();
+              _currentStroke = [];
+            }),
+            icon: const Icon(Icons.clear, size: 16),
+            label: const Text('Clear Signature'),
+          ),
+        ),
+    ];
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -567,4 +735,52 @@ class _VisitInProgressPageState extends State<VisitInProgressPage> {
       ),
     );
   }
+}
+
+// ── Signature CustomPainter ──────────────────────────────────────────────────
+
+/// Draws all completed strokes and the stroke currently being drawn.
+class _SignaturePainter extends CustomPainter {
+  const _SignaturePainter({
+    required this.strokes,
+    required this.currentStroke,
+  });
+
+  final List<List<Offset>> strokes;
+  final List<Offset> currentStroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.black87
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    void drawStroke(List<Offset> pts) {
+      if (pts.length == 1) {
+        // Single tap → draw a dot.
+        canvas.drawCircle(pts.first, 1.5, paint..style = PaintingStyle.fill);
+        paint.style = PaintingStyle.stroke;
+        return;
+      }
+      final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+      for (final pt in pts.skip(1)) {
+        path.lineTo(pt.dx, pt.dy);
+      }
+      canvas.drawPath(path, paint);
+    }
+
+    for (final stroke in strokes) {
+      drawStroke(stroke);
+    }
+    if (currentStroke.isNotEmpty) {
+      drawStroke(currentStroke);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SignaturePainter old) =>
+      old.strokes != strokes || old.currentStroke != currentStroke;
 }

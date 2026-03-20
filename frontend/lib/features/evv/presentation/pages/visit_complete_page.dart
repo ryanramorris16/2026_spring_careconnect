@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../../../providers/user_provider.dart';
 import '../../../../services/api_service.dart';
 import '../../../../services/evv_service.dart';
@@ -247,6 +247,14 @@ class _VisitCompletePageState extends State<VisitCompletePage> {
       // Get state from patient address or default to MD
       String stateCode = _selectedPatient?.address?.state ?? 'MD';
 
+      // Read the pending patient signature captured on the VisitInProgress screen
+      // (stored in SharedPreferences to avoid bloating the URL query string).
+      String? pendingSignature;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        pendingSignature = prefs.getString('evv_pending_signature');
+      } catch (_) {}
+
       // Create EVV record request with both check-in and check-out locations
       final request = EvvRecordRequest(
         serviceType: widget.serviceType,
@@ -272,10 +280,19 @@ class _VisitCompletePageState extends State<VisitCompletePage> {
         checkoutNoGpsReason: widget.checkoutNoGpsReason,
         checkinAccuracyM: widget.checkinAccuracyM,
         checkoutAccuracyM: widget.checkoutAccuracyM,
+        patientSignatureBase64: pendingSignature,
       );
 
       // Submit the EVV record
       final evvRecord = await evvService.createRecord(request);
+
+      // On success, clear the pending signature so it isn’t replayed next visit.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('evv_pending_signature');
+      } catch (_) {}
+
+      if (!mounted) return;
 
       // Show success message and navigate to success page
       ScaffoldMessenger.of(context).showSnackBar(
@@ -306,6 +323,46 @@ class _VisitCompletePageState extends State<VisitCompletePage> {
         queryParams['checkoutLatitude'] = widget.checkoutLatitude.toString();
         queryParams['checkoutLongitude'] = widget.checkoutLongitude.toString();
       }
+
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      context.push('/evv/visit-completed-success?$queryString');
+    } on EvvOfflineQueuedException {
+      // The generic HTTP queue intercepted the request because the device is
+      // offline.  The visit will be replayed automatically when connectivity
+      // is restored.
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('evv_pending_signature');
+      } catch (_) {}
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Device offline — visit queued and will sync automatically when connectivity is restored.',
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 6),
+        ),
+      );
+
+      // Navigate to the success page so the caregiver can finish any paperwork;
+      // mark the visit as "queued" via a query parameter so the UI can adapt.
+      final queryParams = {
+        'patientId': widget.patientId.toString(),
+        'serviceType': widget.serviceType,
+        'checkinLocationType': widget.checkinLocationType,
+        'checkoutLocationType': widget.checkoutLocationType,
+        'notes': widget.notes,
+        'duration': widget.duration.toString(),
+        'checkinTime': _checkinTime?.toIso8601String() ?? '',
+        'checkoutTime': _checkoutTime?.toIso8601String() ?? '',
+        'queued': 'true',
+      };
 
       final queryString = queryParams.entries
           .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')

@@ -297,6 +297,26 @@ class OfflineSyncService {
     final path = uri?.path.toLowerCase() ?? '';
     final body = _decodeBodyMap(bodyJson);
 
+    // ── EVV Visit Submission ─────────────────────────────────────────────────
+    if (path.contains('/evv/records')) {
+      final serviceType = body['serviceType'] as String?;
+      final patientId = body['patientId'];
+      final dateOfService = body['dateOfService'] as String?;
+      final checkinSource = body['checkinLocationSource'] as String?;
+      final checkoutSource = body['checkoutLocationSource'] as String?;
+      return _SafeDisplay(
+        title: 'EVV Visit Submission',
+        details: <String>[
+          if (serviceType != null && serviceType.isNotEmpty)
+            'Service: $serviceType',
+          if (patientId != null) 'Patient ID: $patientId',
+          'Visit date: ${dateOfService ?? _formatDateTime(createdAt)}',
+          if (checkinSource != null) 'Check-in: $checkinSource',
+          if (checkoutSource != null) 'Check-out: $checkoutSource',
+        ],
+      );
+    }
+
     if (path.contains('/mood-pain-log')) {
       final moodValue = body['moodValue'];
       final timestamp = _formatIsoDateTime(body['timestamp']?.toString()) ??
