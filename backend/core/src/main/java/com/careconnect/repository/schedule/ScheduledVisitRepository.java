@@ -109,6 +109,11 @@ public interface ScheduledVisitRepository extends JpaRepository<ScheduledVisit, 
     @Query("SELECT sv FROM ScheduledVisit sv WHERE sv.patientId = :patientId")
     List<ScheduledVisit> findByPatientId(@Param("patientId") Long patientId);
 
+    List<ScheduledVisit> findByPatientIdAndScheduledDateBetween(
+            Long patientId,
+            LocalDate startDate,
+            LocalDate endDate);
+
     @Query("SELECT COUNT(sv) FROM ScheduledVisit sv WHERE sv.caregiverId = :caregiverId AND sv.scheduledDate = :date AND sv.status != :status")
     long countByCaregiverIdAndScheduledDateAndStatusNot(@Param("caregiverId") Long caregiverId, @Param("date") LocalDate date, @Param("status") String status);
 

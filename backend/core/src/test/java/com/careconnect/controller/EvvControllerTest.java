@@ -1,11 +1,13 @@
 package com.careconnect.controller;
 
 import com.careconnect.dto.evv.*;
+import com.careconnect.model.User;
 import com.careconnect.model.evv.EvvCorrection;
 import com.careconnect.model.evv.EvvOfflineQueue;
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.service.evv.EvvOfflineSyncService;
 import com.careconnect.service.evv.EvvService;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.evv.EvvSubmissionService;
 import com.careconnect.util.SecurityUtil;
@@ -32,6 +34,7 @@ class EvvControllerTest {
     @Mock private EvvOfflineSyncService offlineSyncService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
+    @Mock private PatientRepository patientRepository;
 
     @InjectMocks
     private EvvController controller;
@@ -270,6 +273,7 @@ class EvvControllerTest {
             final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             final Page<EvvRecord> page = mock(Page.class);
+            when(securityUtil.resolveCurrentUser()).thenReturn(mock(User.class));
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
             final ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
@@ -282,6 +286,7 @@ class EvvControllerTest {
             final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             final Page<EvvRecord> page = mock(Page.class);
+            when(securityUtil.resolveCurrentUser()).thenReturn(mock(User.class));
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
             final ResponseEntity<Page<EvvRecord>> response = controller.searchRecords(searchRequest);
@@ -294,6 +299,7 @@ class EvvControllerTest {
             final EvvSearchRequestDto searchRequest = new EvvSearchRequestDto();
             @SuppressWarnings("unchecked")
             final Page<EvvRecord> page = mock(Page.class);
+            when(securityUtil.resolveCurrentUser()).thenReturn(mock(User.class));
             when(evvService.searchRecords(searchRequest)).thenReturn(page);
 
             controller.searchRecords(searchRequest);

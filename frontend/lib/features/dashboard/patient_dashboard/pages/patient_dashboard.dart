@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../services/evv_service.dart';
+import '../../../../services/api_service_offline.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../../utils/call_integration_helper.dart';
@@ -170,129 +171,78 @@ class _PatientDashboardState extends State<PatientDashboard> {
       );
       _pastEvvVisits = result.content
           .where((r) => r.patient?.id == patientId)
-          .toList();
+          .toList();
 
-      // Try caregiver scheduled visits endpoint and filter by patient
+
+      // Fetch scheduled visits directly for this patient
       try {
         final headers = await ApiService.getAuthHeaders();
-        int? caregiverId;
-        if (caregivers.isNotEmpty) {
-          caregiverId =
-              (caregivers.first['id'] ?? caregivers.first['caregiverId'])
-                  as int?;
-        } else {
-          final cgRes = await http.get(
-            Uri.parse('${ApiConstants.baseUrl}patients/$patientId/caregivers'),
-            headers: headers,
+        final startStr = DateTime(now.year, now.month, now.day)
+            .toIso8601String()
+            .split('T')[0];
+        final endDate = now.add(const Duration(days: 30));
+        final endStr = DateTime(endDate.year, endDate.month, endDate.day)
+            .toIso8601String()
+            .split('T')[0];
+
+        final url = Uri.parse(
+          '${ApiConstants.baseUrl}scheduled-visits/patient/$patientId/range?startDate=$startStr&endDate=$endStr',
+        );
+        final res = await ApiServiceOffline.httpClient.get(url, headers: headers);
+        if (res.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(res.body);
+
+          DateTime? parseWhen(Map<String, dynamic> m) {
+            final v = m['scheduledTime'] ?? m['scheduled_time'] ?? m['time'];
+            if (v is String) {
+              if (RegExp(r'^\d{1,2}:\d{2}(:\d{2})?$').hasMatch(v)) {
+                final d = (m['scheduledDate'] ?? m['scheduled_date']) as String?;
+                if (d != null && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(d)) {
+                  return DateTime.tryParse('$d $v');
+                }
+              }
+              final dt = DateTime.tryParse(v);
+              if (dt != null) return dt;
+            }
+            if (v is int) {
+              try { return DateTime.fromMillisecondsSinceEpoch(v); } catch (_) {}
+            }
+            final dateStr = (m['scheduledDate'] ?? m['scheduled_date']) as String?;
+            final timeStr = (m['scheduledTime'] ?? m['scheduled_time']) as String?;
+            if (dateStr != null && timeStr != null) {
+              final date = DateTime.tryParse(dateStr);
+              if (date != null) {
+                final tp = timeStr.split(':');
+                if (tp.length >= 2) {
+                  final h = int.tryParse(tp[0]) ?? 0;
+                  final min = int.tryParse(tp[1]) ?? 0;
+                  return DateTime(date.year, date.month, date.day, h, min);
+                }
+              }
+            }
+            return null;
+          }
+
+          final Set<dynamic> seenIds = {};
+          final List<Map<String, dynamic>> normalized = [];
+          for (final raw in data.cast<Map<String, dynamic>>()) {
+            final when = parseWhen(raw);
+            if (when == null) continue;
+            if (when.isBefore(DateTime.now())) continue;
+            final id = raw['id'] ?? raw['visitId'] ?? raw['scheduledVisitId'];
+            if (id != null && seenIds.contains(id)) continue;
+            if (id != null) seenIds.add(id);
+            final service = raw['serviceType'] ?? raw['service_type'] ?? raw['service'] ?? 'Service';
+            normalized.add({
+              'id': id,
+              'serviceType': service,
+              'scheduledTime': when.toIso8601String(),
+            });
+          }
+          normalized.sort(
+            (a, b) => DateTime.parse(a['scheduledTime']).compareTo(DateTime.parse(b['scheduledTime'])),
           );
-          if (cgRes.statusCode == 200) {
-            final cgs = List<Map<String, dynamic>>.from(jsonDecode(cgRes.body));
-            if (cgs.isNotEmpty) {
-              caregiverId =
-                  (cgs.first['id'] ?? cgs.first['caregiverId']) as int?;
-            }
-          }
-        }
-        if (caregiverId != null) {
-          final startStr = DateTime(
-            now.year,
-            now.month,
-            now.day,
-          ).toIso8601String().split('T')[0];
-          final endDate = now.add(const Duration(days: 30));
-          final endStr = DateTime(
-            endDate.year,
-            endDate.month,
-            endDate.day,
-          ).toIso8601String().split('T')[0];
-          final url = Uri.parse(
-            '${ApiConstants.baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
-          );
-          final res = await http.get(url, headers: headers);
-          if (res.statusCode == 200) {
-            final List<dynamic> data = jsonDecode(res.body);
-            bool matchesPatient(Map<String, dynamic> m) {
-              final target = patientId.toString();
-              if (m.containsKey('patientId') && '${m['patientId']}' == target) {
-                return true;
-              }
-              if (m.containsKey('patient_id') && '${m['patient_id']}' == target) {
-                return true;
-              }
-              final p = m['patient'];
-              if (p is Map && ('${p['id']}' == target)) {
-                return true;
-              }
-              return false;
-            }
-
-            DateTime? parseWhen(Map<String, dynamic> m) {
-              // Case 1: combined timestamp string
-              final v = m['scheduledTime'] ?? m['scheduled_time'] ?? m['time'];
-              if (v is String) {
-                // If this looks like HH:mm[:ss], combine with scheduledDate
-                if (RegExp(r'^\d{1,2}:\d{2}(:\d{2})?$').hasMatch(v)) {
-                  final d =
-                      (m['scheduledDate'] ?? m['scheduled_date']) as String?;
-                  if (d != null && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(d)) {
-                    return DateTime.tryParse('$d $v');
-                  }
-                }
-                final dt = DateTime.tryParse(v);
-                if (dt != null) return dt;
-              }
-              if (v is int) {
-                try {
-                  return DateTime.fromMillisecondsSinceEpoch(v);
-                } catch (_) {}
-              }
-              // Case 2: separate date/time fields
-              final dateStr =
-                  (m['scheduledDate'] ?? m['scheduled_date']) as String?;
-              final timeStr =
-                  (m['scheduledTime'] ?? m['scheduled_time']) as String?;
-              if (dateStr != null && timeStr != null) {
-                final date = DateTime.tryParse(dateStr);
-                if (date != null) {
-                  final tp = timeStr.split(':');
-                  if (tp.length >= 2) {
-                    final h = int.tryParse(tp[0]) ?? 0;
-                    final min = int.tryParse(tp[1]) ?? 0;
-                    return DateTime(date.year, date.month, date.day, h, min);
-                  }
-                }
-              }
-              return null;
-            }
-
-            final Set<dynamic> seenIds = {};
-            final List<Map<String, dynamic>> normalized = [];
-            for (final raw in data.cast<Map<String, dynamic>>()) {
-              if (!matchesPatient(raw)) continue;
-              final when = parseWhen(raw);
-              if (when == null) continue;
-              if (when.isBefore(DateTime.now())) continue; // only upcoming
-              final id = raw['id'] ?? raw['visitId'] ?? raw['scheduledVisitId'];
-              if (id != null && seenIds.contains(id)) continue;
-              if (id != null) seenIds.add(id);
-              final service =
-                  raw['serviceType'] ??
-                  raw['service_type'] ??
-                  raw['service'] ??
-                  'Service';
-              normalized.add({
-                'id': id,
-                'serviceType': service,
-                'scheduledTime': when.toIso8601String(),
-              });
-            }
-            normalized.sort(
-              (a, b) => DateTime.parse(
-                a['scheduledTime'],
-              ).compareTo(DateTime.parse(b['scheduledTime'])),
-            );
-            _upcomingEvvAppointments = normalized;
-          }
+          _upcomingEvvAppointments = normalized;
         }
       } catch (_) {
         _upcomingEvvAppointments = [];
@@ -1575,7 +1525,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
               IconButton(
                 onPressed: _loadEvvSections,
                 icon: const Icon(Icons.refresh),
-              ),
+              ),
+
             ],
           ),
           const SizedBox(height: 8),
@@ -1596,7 +1547,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 ),
                 subtitle: Text(
                   '${when.month}/${when.day}/${when.year} • ${when.hour.toString().padLeft(2, '0')}:${when.minute.toString().padLeft(2, '0')}',
-                ),
+                ),
+
               );
             }),
         ],
@@ -1639,7 +1591,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
                 title: Text(
                   r.serviceType,
                   style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                ),
+
                 subtitle: Text('${date.month}/${date.day}/${date.year}'),
               );
             }),

@@ -43,6 +43,7 @@ public interface EvvRecordRepository extends JpaRepository<EvvRecord,Long> {
     @Query(value = "SELECT DISTINCT e FROM EvvRecord e LEFT JOIN FETCH e.patient p WHERE " +
            "(:patientName IS NULL OR :patientName = '' OR LOWER(CONCAT(COALESCE(p.firstName, ''), ' ', COALESCE(p.lastName, ''))) LIKE LOWER(CONCAT('%', :patientName, '%'))) AND " +
            "(:serviceType IS NULL OR :serviceType = '' OR LOWER(e.serviceType) LIKE LOWER(CONCAT('%', :serviceType, '%'))) AND " +
+           "(:patientId IS NULL OR p.id = :patientId) AND " +
            "(:caregiverId IS NULL OR e.caregiverId = :caregiverId) AND " +
            "(:startDate IS NULL OR e.dateOfService >= :startDate) AND " +
            "(:endDate IS NULL OR e.dateOfService <= :endDate) AND " +
@@ -51,6 +52,7 @@ public interface EvvRecordRepository extends JpaRepository<EvvRecord,Long> {
            countQuery = "SELECT COUNT(DISTINCT e) FROM EvvRecord e LEFT JOIN e.patient p WHERE " +
            "(:patientName IS NULL OR :patientName = '' OR LOWER(CONCAT(COALESCE(p.firstName, ''), ' ', COALESCE(p.lastName, ''))) LIKE LOWER(CONCAT('%', :patientName, '%'))) AND " +
            "(:serviceType IS NULL OR :serviceType = '' OR LOWER(e.serviceType) LIKE LOWER(CONCAT('%', :serviceType, '%'))) AND " +
+           "(:patientId IS NULL OR p.id = :patientId) AND " +
            "(:caregiverId IS NULL OR e.caregiverId = :caregiverId) AND " +
            "(:startDate IS NULL OR e.dateOfService >= :startDate) AND " +
            "(:endDate IS NULL OR e.dateOfService <= :endDate) AND " +
@@ -58,6 +60,7 @@ public interface EvvRecordRepository extends JpaRepository<EvvRecord,Long> {
            "(:status IS NULL OR :status = '' OR e.status = :status)")
     Page<EvvRecord> searchRecords(@Param("patientName") String patientName,
                                   @Param("serviceType") String serviceType,
+                                  @Param("patientId") Long patientId,
                                   @Param("caregiverId") Long caregiverId,
                                   @Param("startDate") LocalDate startDate,
                                   @Param("endDate") LocalDate endDate,
