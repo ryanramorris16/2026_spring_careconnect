@@ -789,7 +789,7 @@ jobs:
             --out "${OUT_DIR}" \
             --data "${DATA_DIR}" \
             --nvdApiKey "${NVD_KEY}" \
-            --nvdAPIKey "{NVD_KEY}" \
+            --nvdApiDelay 6000 \
             --failOnCVSS 7 ; then
 
             echo "::warning::Dependency-Check NVD update failed; retrying with --noupdate"
