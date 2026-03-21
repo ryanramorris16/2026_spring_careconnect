@@ -1,0 +1,7 @@
+[
+  { "ParameterKey": "Environment", "ParameterValue": "cfdemo" },
+  { "ParameterKey": "DatabaseName", "ParameterValue": "careconnect" },
+  { "ParameterKey": "DatabaseMasterUsername", "ParameterValue": "postgres" },
+  { "ParameterKey": "DatabaseMasterPassword", "ParameterValue": "changeme" },
+  { "ParameterKey": "JwtSecret", "ParameterValue": "Ubtl5F9nYshQnfuSw8yyhr0cBNAS8cSvY8ewfL5GApn4ixh0LhG5beGa8qbAxvvQaJmAaA/Tcv2Xa58" }
+]
