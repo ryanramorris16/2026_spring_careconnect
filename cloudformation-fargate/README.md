@@ -558,7 +558,7 @@ Expected image URI:
 #### 9. Update `cfdemo-service.json`
 
 Set `BackendImageUri` in
-[`parameters/cfdemo-service.json`](C:/Dev/SWEN670/2026_spring_careconnect/cloudformation-fargate/parameters/cfdemo-service.json)
+[`parameters/cfdemo-service.json`](2026_spring_careconnect/cloudformation-fargate/parameters/cfdemo-service.json)
 to the full URI printed in the previous step.
 
 #### 10. Create the service stack
@@ -640,7 +640,7 @@ macOS / Linux:
 
 ```bash
 cd /path/to/2026_spring_careconnect/frontend
-flutter run --dart-define=BACKEND_URL=http://<alb-dns-name>
+flutter run --dart-define=BACKEND_URL=http://careconnect-cfdemo-alb-953043145.us-east-1.elb.amazonaws.com
 ```
 
 Do not append `/v1` to `BACKEND_URL`.
@@ -750,7 +750,7 @@ aws ecr batch-delete-image `
   --profile careconnect-sso `
   --region us-east-1 `
   --repository-name careconnect-backend-cfdemo `
-  --image-ids imageDigest=sha256:<digest-1> imageDigest=sha256:<digest-2>
+  --image-ids imageDigest=sha256:sha256:e1dc629030f58bd5c2db35fa5b83084afd4437bc675443fb82e5f79d425a7f00 imageDigest=sha256:sha256:0b1fea9aa2d457a32bb5d6ef0a59530f7f5d0c99c0eaaefc51053e3c90bea1bf
 ```
 
 Confirm the repository is empty:
