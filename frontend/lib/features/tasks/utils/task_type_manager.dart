@@ -3,6 +3,25 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Maps icon name strings to their constant IconData values.
+/// Used to serialize and deserialize icons without non-constant IconData construction.
+const Map<String, IconData> _kIconMap = {
+  'medication': Icons.medication,
+  'event': Icons.event,
+  'fitness_center': Icons.fitness_center,
+  'task': Icons.task,
+  'science': Icons.science,
+  'local_pharmacy': Icons.local_pharmacy,
+  'file_upload': Icons.file_upload,
+};
+
+IconData _iconFromName(String name) => _kIconMap[name] ?? Icons.task;
+String _iconToName(IconData icon) =>
+    _kIconMap.entries.firstWhere(
+      (e) => e.value.codePoint == icon.codePoint,
+      orElse: () => const MapEntry('task', Icons.task),
+    ).key;
+
 /// =============================
 /// TaskTypeManager (Colors + Icons)
 /// =============================
@@ -90,8 +109,8 @@ class TaskTypeManager extends ChangeNotifier {
         decoded.forEach((k, v) {
           final data = Map<String, dynamic>.from(v);
           _taskTypes[k] = _TaskTypeData(
-            color: Color(data['color']),
-            icon: IconData(data['icon'], fontFamily: 'MaterialIcons'),
+            color: Color(data['color'] as int),
+            icon: _iconFromName(data['icon'] as String? ?? 'task'),
           );
         });
       } catch (_) {
@@ -153,7 +172,7 @@ class _TaskTypeData {
   }
 
   Map<String, dynamic> toJson() => {
-    'color': color.value,
-    'icon': icon.codePoint,
+    'color': color.toARGB32(),
+    'icon': _iconToName(icon),
   };
 }
