@@ -472,7 +472,8 @@ class EvvService {
   }
 
   void dispose() {
-    _client.close();
+    // _client is the shared ApiServiceOffline.httpClient singleton — do not close it here.
+    // Closing it would invalidate the client for all other EvvService instances app-wide.
   }
 }
 
