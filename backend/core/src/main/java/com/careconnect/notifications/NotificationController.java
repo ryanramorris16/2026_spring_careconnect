@@ -1,12 +1,20 @@
 package com.careconnect.notifications;
 
-import com.careconnect.notifications.dto.DemoNotificationRequest;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.careconnect.notifications.dto.DemoNotificationRequest;
+import com.careconnect.notifications.dto.MockNotificationResponse;
 
 @RestController("demoNotificationController")
 @RequestMapping("/api/notifications/demo")
@@ -247,5 +255,57 @@ public class NotificationController {
         // TODO: Implement topic-based notifications
         // This would allow broadcasting to groups of caregivers or patients
         return ResponseEntity.ok().body("Topic notifications not yet implemented");
+    }
+
+    @GetMapping("/mock")
+    public ResponseEntity<List<MockNotificationResponse>> getMockNotifications() {
+        List<MockNotificationResponse> mocks = new ArrayList<>();
+
+        // Medication Reminder
+        mocks.add(new MockNotificationResponse(
+            "medication_reminder",
+            "John Doe (Patient)",
+            "Medication Reminder: Take Your Lisinopril",
+            "Dear John,\n\nThis is a reminder to take your prescribed medication:\n\nMedication: Lisinopril\nDosage: 10mg\nTime: 8:00 AM\n\nPlease take your medication as scheduled. If you have any questions, contact your caregiver.\n\nBest regards,\nCareConnect System",
+            "CareConnect: Reminder - Take Lisinopril 10mg at 8:00 AM"
+        ));
+
+        // Appointment Reminder
+        mocks.add(new MockNotificationResponse(
+            "appointment_reminder",
+            "Jane Smith (Patient)",
+            "Upcoming Appointment: Cardiology Check-up",
+            "Dear Jane,\n\nYou have an upcoming appointment:\n\nType: Cardiology Check-up\nDate & Time: March 25, 2026 at 2:00 PM\nLocation: Main Street Clinic\n\nPlease arrive 15 minutes early. Bring your insurance card and any recent test results.\n\nBest regards,\nCareConnect System",
+            "CareConnect: Appointment reminder - Cardiology check-up on March 25 at 2:00 PM at Main Street Clinic"
+        ));
+
+        // Caregiver Message
+        mocks.add(new MockNotificationResponse(
+            "caregiver_message",
+            "Bob Johnson (Patient)",
+            "New Message from Your Caregiver",
+            "Dear Bob,\n\nYou have received a new message from your caregiver:\n\n\"Hi Bob, I noticed your blood pressure reading was a bit high yesterday. Please remember to take it easy today and let me know if you need anything.\"\n\nFrom: Sarah Wilson (Caregiver)\n\nBest regards,\nCareConnect System",
+            "CareConnect: New message from Sarah Wilson: Hi Bob, I noticed your blood pressure reading was high yesterday. Take it easy and let me know if you need anything."
+        ));
+
+        // Emergency Alert
+        mocks.add(new MockNotificationResponse(
+            "emergency_alert",
+            "Alice Brown (Patient)",
+            "EMERGENCY ALERT: Fall Detected",
+            "EMERGENCY ALERT\n\nPatient: Alice Brown\nAlert Type: Fall Detected\nLocation: Living Room\nTime: 3:15 PM\n\nImmediate attention required. Please check on the patient immediately.\n\nThis is an automated emergency notification from CareConnect.",
+            "EMERGENCY: Alice Brown - Fall detected in Living Room at 3:15 PM. Check immediately!"
+        ));
+
+        // Vital Signs Alert
+        mocks.add(new MockNotificationResponse(
+            "vital_alert",
+            "Mike Davis (Patient)",
+            "Alert: Abnormal Heart Rate Detected",
+            "Dear Caregiver,\n\nAbnormal vital signs detected for your patient:\n\nPatient: Mike Davis\nAlert: Heart rate is 120 bpm (above normal range)\nTime: 10:30 AM\n\nPlease review the patient's condition and take appropriate action.\n\nBest regards,\nCareConnect Monitoring System",
+            "CareConnect Alert: Mike Davis - Heart rate 120 bpm (high). Please check."
+        ));
+
+        return ResponseEntity.ok(mocks);
     }
 }
