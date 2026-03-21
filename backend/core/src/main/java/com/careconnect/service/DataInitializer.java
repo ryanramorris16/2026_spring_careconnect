@@ -54,7 +54,7 @@ public class DataInitializer implements CommandLineRunner {
             .isActive(true)
             .build();
         planRepository.save(standardPlan);
-        logger.info("Created Standard Plan with ID: {}", standardPlan.getId());
+        logger.info("Created Standard Monthly plan with ID: {}", standardPlan.getId());
         
         // Create Premium Monthly Plan (ID 3)
         Plan premiumPlan = Plan.builder()
@@ -65,7 +65,7 @@ public class DataInitializer implements CommandLineRunner {
             .isActive(true)
             .build();
         planRepository.save(premiumPlan);
-        logger.info("Created Premium Plan with ID: {}", premiumPlan.getId());
+        logger.info("Created Premium Monthly plan with ID: {}", premiumPlan.getId());
         
         logger.info("Plans initialized successfully!");
     }
