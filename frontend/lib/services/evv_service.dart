@@ -10,12 +10,13 @@ import '../features/dashboard/models/patient_model.dart';
 import 'auth_token_manager.dart';
 
 import 'package:care_connect_app/services/api_service.dart';
+import 'package:care_connect_app/services/api_service_offline.dart';
 
 class EvvService { 
   static final String _baseUrl = ApiConstants.evv;
   static const String _deviceIdKey = 'evv_device_id';
   
-  final http.Client _client = http.Client();
+  final http.Client _client = ApiServiceOffline.httpClient;
   final Connectivity _connectivity = Connectivity();
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
   final Uuid _uuid = const Uuid();
@@ -471,7 +472,8 @@ class EvvService {
   }
 
   void dispose() {
-    _client.close();
+    // _client is the shared ApiServiceOffline.httpClient singleton — do not close it here.
+    // Closing it would invalidate the client for all other EvvService instances app-wide.
   }
 }
 

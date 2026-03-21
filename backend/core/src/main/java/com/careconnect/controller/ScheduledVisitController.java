@@ -6,7 +6,9 @@ import com.careconnect.security.RequirePermission;
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
+import com.careconnect.model.Patient;
 import com.careconnect.model.User;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.schedule.ScheduledVisitService;
@@ -30,6 +32,7 @@ public class ScheduledVisitController {
     private final ScheduledVisitService scheduledVisitService;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+    private final PatientRepository patientRepository;
     
     /**
      * Create a new scheduled visit
@@ -50,7 +53,7 @@ public class ScheduledVisitController {
     /**
      * Get all scheduled visits for a caregiver
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_TASKS)
 
     @GetMapping("/caregiver/{caregiverId}")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisits(
@@ -65,7 +68,7 @@ public class ScheduledVisitController {
     /**
      * Get scheduled visits for a specific date
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_TASKS)
 
     @GetMapping("/caregiver/{caregiverId}/date/{date}")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisitsByDate(
@@ -81,7 +84,7 @@ public class ScheduledVisitController {
     /**
      * Get scheduled visits between dates
      */
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_TASKS)
 
     @GetMapping("/caregiver/{caregiverId}/range")
     public ResponseEntity<List<ScheduledVisitResponse>> getScheduledVisitsBetweenDates(
@@ -96,6 +99,30 @@ public class ScheduledVisitController {
         return ResponseEntity.ok(visits);
     }
     
+    /**
+     * Get scheduled visits between dates for a patient (patient self-service)
+     */
+    @RequirePermission(Permission.VIEW_TASKS)
+
+    @GetMapping("/patient/{patientId}/range")
+    public ResponseEntity<List<ScheduledVisitResponse>> getPatientVisitsBetweenDates(
+        @PathVariable Long patientId,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        if (!currentUser.isAdmin()) {
+            Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found: " + patientId));
+            if (!patient.getUser().getId().equals(currentUser.getId())) {
+                throw new UnauthorizedException("You can only access your own visit schedule");
+            }
+        }
+        List<ScheduledVisitResponse> visits = scheduledVisitService
+            .getScheduledVisitsBetweenDatesForPatient(patientId, startDate, endDate);
+        return ResponseEntity.ok(visits);
+    }
+
     /**
      * Get visit summary statistics
      */

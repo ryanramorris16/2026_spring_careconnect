@@ -68,6 +68,7 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
     final isAdmin = user?.role == 'ADMIN';
     final isSupervisor = user?.role == 'SUPERVISOR';
     final isCaregiver = user?.role == 'CAREGIVER';
+    final isPatient = user?.role == 'PATIENT';
 
     if (_isLoading) {
       return Scaffold(
@@ -117,6 +118,7 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
                 isAdmin: isAdmin,
                 isSupervisor: isSupervisor,
                 isCaregiver: isCaregiver,
+                isPatient: isPatient,
               ),
               const SizedBox(height: 16),
               if (isAdmin || isSupervisor) ...[
@@ -337,11 +339,13 @@ class _MainActions extends StatelessWidget {
     required this.isAdmin,
     required this.isSupervisor,
     required this.isCaregiver,
+    required this.isPatient,
   });
 
   final bool isAdmin;
   final bool isSupervisor;
   final bool isCaregiver;
+  final bool isPatient;
 
   @override
   Widget build(BuildContext context) {
@@ -366,7 +370,7 @@ class _MainActions extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const EvvRecordReviewPage()),
           ),
         ),
-      if (isAdmin || isSupervisor)
+      if (isAdmin || isSupervisor || isPatient)
         _ActionSpec(
           title: 'Visit History',
           icon: Icons.history,
@@ -384,7 +388,7 @@ class _MainActions extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const EvvCorrectionsPage()),
           ),
         ),
-      if (isAdmin || isSupervisor || isCaregiver)
+      if (isAdmin || isSupervisor || isCaregiver || isPatient)
         _ActionSpec(
           title: 'Visit Schedules',
           icon: Icons.schedule,

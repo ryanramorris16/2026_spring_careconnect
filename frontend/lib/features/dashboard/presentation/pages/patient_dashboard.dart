@@ -425,6 +425,32 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      const Divider(height: 30, thickness: 2),
+                      Text(
+                        'EVV Visits',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.schedule),
+                              label: const Text('Visit Schedule'),
+                              onPressed: () => context.go('/evv'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              icon: const Icon(Icons.history),
+                              label: const Text('Visit History'),
+                              onPressed: () => context.go('/evv'),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 30),
                       // SOS Emergency Button
                       // SOS Emergency Button with improved modal UX
