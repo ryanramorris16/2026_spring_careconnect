@@ -26,60 +26,60 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DebugController {
 
-    private static final String MESSAGE_KEY = "message";
-    private static final String PREMIUM_PLAN_NAME = "Premium Plan";
-    private static final String STANDARD_PLAN_NAME = "Standard Plan";
-    private static final String ERROR_KEY = "error";
+  private static final String MESSAGE_KEY = "message";
+  private static final String PREMIUM_PLAN_NAME = "Premium Plan";
+  private static final String STANDARD_PLAN_NAME = "Standard Plan";
+  private static final String ERROR_KEY = "error";
 
-    private final PlanRepository planRepository;
-    private final SubscriptionEnrichmentService subscriptionEnrichmentService;
-    private final SecurityUtil securityUtil;
-    private final AuthorizationService authorizationService;
+  private final PlanRepository planRepository;
+  private final SubscriptionEnrichmentService subscriptionEnrichmentService;
+  private final SecurityUtil securityUtil;
+  private final AuthorizationService authorizationService;
 
-    @Value("${subscription.premium-price-ids:price_1RmqWxELoozGI1YxQql5rsvN}")
+  @Value("${subscription.premium-price-ids:price_1RmqWxELoozGI1YxQql5rsvN}")
     private String premiumPriceIds;
 
-    @Value("${subscription.standard-price-ids:price_standard}")
+  @Value("${subscription.standard-price-ids:price_standard}")
     private String standardPriceIds;
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-    @GetMapping("/plans")
+  @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+  @GetMapping("/plans")
     public ResponseEntity<Map<String, Object>> getAllPlans() throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        List<Plan> plans = planRepository.findAll();
-        return ResponseEntity.ok(Map.of(
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
+    List<Plan> plans = planRepository.findAll();
+    return ResponseEntity.ok(Map.of(
             "plans", plans,
             "count", plans.size()
         ));
-    }
+  }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-    @GetMapping("/plans/match")
+  @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+  @GetMapping("/plans/match")
     public ResponseEntity<Map<String, Object>> matchPlanToPrice() throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
+    String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
 
-        Plan exactPlan = planRepository.findByCode(priceId);
+    Plan exactPlan = planRepository.findByCode(priceId);
 
-        List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
-        Plan premiumPlan = premiumPlans.isEmpty() ? null : premiumPlans.get(0);
+    List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
+    Plan premiumPlan = premiumPlans.isEmpty() ? null : premiumPlans.get(0);
 
-        List<Plan> standardPlans = planRepository.findByName(STANDARD_PLAN_NAME);
-        Plan standardPlan = standardPlans.isEmpty() ? null : standardPlans.get(0);
+    List<Plan> standardPlans = planRepository.findByName(STANDARD_PLAN_NAME);
+    Plan standardPlan = standardPlans.isEmpty() ? null : standardPlans.get(0);
 
-        Plan manualMapping = new Plan();
-        manualMapping.setCode(priceId);
-        manualMapping.setName(PREMIUM_PLAN_NAME);
-        manualMapping.setPriceCents(3000);
-        manualMapping.setBillingPeriod("MONTH");
-        manualMapping.setIsActive(true);
+    Plan manualMapping = new Plan();
+    manualMapping.setCode(priceId);
+    manualMapping.setName(PREMIUM_PLAN_NAME);
+    manualMapping.setPriceCents(3000);
+    manualMapping.setBillingPeriod("MONTH");
+    manualMapping.setIsActive(true);
 
-        boolean isPremiumPriceId = Arrays.asList(premiumPriceIds.split(",")).contains(priceId);
-        boolean isStandardPriceId = Arrays.asList(standardPriceIds.split(",")).contains(priceId);
+    boolean isPremiumPriceId = Arrays.asList(premiumPriceIds.split(",")).contains(priceId);
+    boolean isStandardPriceId = Arrays.asList(standardPriceIds.split(",")).contains(priceId);
 
-        return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
             "priceId", priceId,
             "exactMatch", exactPlan != null ? exactPlan : "No match found",
             "premiumPlan", premiumPlan != null ? premiumPlan : "No Premium Plan found",
@@ -90,80 +90,80 @@ public class DebugController {
             "configuredPremiumPriceIds", premiumPriceIds,
             "configuredStandardPriceIds", standardPriceIds
         ));
-    }
+  }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-    @GetMapping("/plans/create-mapping")
+  @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+  @GetMapping("/plans/create-mapping")
     public ResponseEntity<Map<String, Object>> createPriceMapping() throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
+    String priceId = "price_1RmqWxELoozGI1YxQql5rsvN";
 
-        Plan existingPlan = planRepository.findByCode(priceId);
-        if (existingPlan != null) {
-            return ResponseEntity.ok(Map.of(
+    Plan existingPlan = planRepository.findByCode(priceId);
+    if (existingPlan != null) {
+      return ResponseEntity.ok(Map.of(
                 MESSAGE_KEY, "Mapping already exists",
                 "plan", existingPlan
             ));
-        }
+    }
 
-        List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
+    List<Plan> premiumPlans = planRepository.findByName(PREMIUM_PLAN_NAME);
 
-        if (!premiumPlans.isEmpty()) {
-            Plan premiumPlan = premiumPlans.get(0);
-            Plan newPlan = new Plan();
-            newPlan.setCode(priceId);
-            newPlan.setName(premiumPlan.getName());
-            newPlan.setPriceCents(premiumPlan.getPriceCents());
-            newPlan.setBillingPeriod(premiumPlan.getBillingPeriod());
-            newPlan.setIsActive(true);
+    if (!premiumPlans.isEmpty()) {
+      Plan premiumPlan = premiumPlans.get(0);
+      Plan newPlan = new Plan();
+      newPlan.setCode(priceId);
+      newPlan.setName(premiumPlan.getName());
+      newPlan.setPriceCents(premiumPlan.getPriceCents());
+      newPlan.setBillingPeriod(premiumPlan.getBillingPeriod());
+      newPlan.setIsActive(true);
 
-            Plan savedPlan = planRepository.save(newPlan);
-            return ResponseEntity.ok(Map.of(
+      Plan savedPlan = planRepository.save(newPlan);
+      return ResponseEntity.ok(Map.of(
                 MESSAGE_KEY, "Created new plan mapping based on existing Premium Plan",
                 "originalPlan", premiumPlan,
                 "newPlan", savedPlan
             ));
-        } else {
-            Plan newPlan = new Plan();
-            newPlan.setCode(priceId);
-            newPlan.setName(PREMIUM_PLAN_NAME);
-            newPlan.setPriceCents(3000);
-            newPlan.setBillingPeriod("MONTH");
-            newPlan.setIsActive(true);
+    } else {
+      Plan newPlan = new Plan();
+      newPlan.setCode(priceId);
+      newPlan.setName(PREMIUM_PLAN_NAME);
+      newPlan.setPriceCents(3000);
+      newPlan.setBillingPeriod("MONTH");
+      newPlan.setIsActive(true);
 
-            Plan savedPlan = planRepository.save(newPlan);
-            return ResponseEntity.ok(Map.of(
+      Plan savedPlan = planRepository.save(newPlan);
+      return ResponseEntity.ok(Map.of(
                 MESSAGE_KEY, "Created new Premium Plan",
                 "plan", savedPlan
             ));
-        }
     }
+  }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-    @GetMapping("/config")
+  @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+  @GetMapping("/config")
     public ResponseEntity<Map<String, Object>> getConfiguration() throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        return ResponseEntity.ok(Map.of(
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
+    return ResponseEntity.ok(Map.of(
             "premiumPriceIds", premiumPriceIds,
             "standardPriceIds", standardPriceIds,
             "premiumPriceIdsList", Arrays.asList(premiumPriceIds.split(",")),
             "standardPriceIdsList", Arrays.asList(standardPriceIds.split(","))
         ));
-    }
+  }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-    @GetMapping("/subscriptions/user/{userId}")
+  @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+  @GetMapping("/subscriptions/user/{userId}")
     public ResponseEntity<Object> getEnrichedUserSubscriptions(@PathVariable Long userId) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdmin(currentUser);
-        try {
-            return ResponseEntity.ok(subscriptionEnrichmentService.getEnrichedUserSubscriptions(userId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
+    User currentUser = securityUtil.resolveCurrentUser();
+    authorizationService.requireAdmin(currentUser);
+    try {
+      return ResponseEntity.ok(subscriptionEnrichmentService.getEnrichedUserSubscriptions(userId));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(Map.of(
                 ERROR_KEY, "Failed to get subscriptions: " + e.getMessage()
             ));
-        }
     }
+  }
 }

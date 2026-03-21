@@ -22,16 +22,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 @RequestMapping("/v1/api/test")
 public class TextractTestController {
 
-    private final TextractClient textractClient;
+  private final TextractClient textractClient;
 
-    @Autowired
+  @Autowired
     private ChatModel chatModel;
 
-    public TextractTestController(TextractClient textractClient) {
-        this.textractClient = textractClient;
-    }
+  public TextractTestController(TextractClient textractClient) {
+    this.textractClient = textractClient;
+  }
 
-@PostMapping("/extract-invoice")
+  @PostMapping("/extract-invoice")
 public String extractInvoice(@RequestBody Map<String, Object> body) {
 
     List<String> lines = (List<String>) body.get("lines");
@@ -74,10 +74,10 @@ Rules:
 - No extra text
 
 Invoice Text:
-""" + invoiceText;
+        """ + invoiceText;
 
     ChatResponse response = chatModel.chat(UserMessage.from(prompt));
 
     return response.aiMessage().text();
-}
+  }
 }

@@ -10,15 +10,15 @@ import java.util.Optional;
 @Repository
 public interface CallRecordingRepository extends JpaRepository<CallRecording, Long> {
 
-    Optional<CallRecording> findTopByCallIdOrderByStartedAtDesc(String callId);
+  Optional<CallRecording> findTopByCallIdOrderByStartedAtDesc(String callId);
 
-    List<CallRecording> findByCallIdOrderByStartedAtDesc(String callId);
+  List<CallRecording> findByCallIdOrderByStartedAtDesc(String callId);
 
-    List<CallRecording> findByInitiatedByUserIdOrderByStartedAtDesc(Long userId);
+  List<CallRecording> findByInitiatedByUserIdOrderByStartedAtDesc(Long userId);
 
-    List<CallRecording> findByStatusOrderByStartedAtDesc(String status);
+  List<CallRecording> findByStatusOrderByStartedAtDesc(String status);
 
-    List<CallRecording> findTop100ByStatusOrderByStartedAtDesc(String status);
+  List<CallRecording> findTop100ByStatusOrderByStartedAtDesc(String status);
 
-    long deleteByCallId(String callId);
+  long deleteByCallId(String callId);
 }

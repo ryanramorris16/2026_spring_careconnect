@@ -7,18 +7,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class TelemetryToggleService {
-    private final AtomicBoolean enabled;
+  private final AtomicBoolean enabled;
 
-    public TelemetryToggleService(@Value("${telemetry.enabled:true}") boolean defaultEnabled) {
-        this.enabled = new AtomicBoolean(defaultEnabled);
-    }
+  public TelemetryToggleService(@Value("${telemetry.enabled:true}") boolean defaultEnabled) {
+    this.enabled = new AtomicBoolean(defaultEnabled);
+  }
 
-    public boolean isEnabled() {
-        return enabled.get();
-    }
+  public boolean isEnabled() {
+    return enabled.get();
+  }
 
-    public boolean setEnabled(boolean value) {
-        enabled.set(value);
-        return enabled.get();
-    }
+  public boolean setEnabled(boolean value) {
+    enabled.set(value);
+    return enabled.get();
+  }
 }

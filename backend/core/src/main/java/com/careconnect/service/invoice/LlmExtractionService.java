@@ -18,14 +18,14 @@ import java.util.List;
 @ConditionalOnProperty(name = "careconnect.llm.enabled", havingValue = "true", matchIfMissing = false)
 public class LlmExtractionService {
 
-    private final @Qualifier("chatModel") ChatModel chatModel;
+  private final @Qualifier("chatModel") ChatModel chatModel;
 
-    /**
+  /**
      * Returns the raw JSON string produced by the LLM.
      * You can persist this or map it to Invoice using Jackson.
      */
-    public String extractInvoiceData(String rawInvoiceText) {
-        String systemMessageText = "You are an expert data extraction assistant. Extract invoice data from the provided text.\n"
+  public String extractInvoiceData(String rawInvoiceText) {
+    String systemMessageText = "You are an expert data extraction assistant. Extract invoice data from the provided text.\n"
                 + "\n"
                 + "CRITICAL INSTRUCTIONS:\n"
                 + "- Output must be a single valid JSON object exactly matching the schema below.\n"
@@ -122,14 +122,14 @@ public class LlmExtractionService {
                 + "}\n";
 
 
-        final var messages = List.of(
+    final var messages = List.of(
                 SystemMessage.from(systemMessageText),
                 new UserMessage(rawInvoiceText)
         );
-        ChatResponse response = chatModel.chat(messages);
-        String text = (response != null && response.aiMessage() != null)
+    ChatResponse response = chatModel.chat(messages);
+    String text = (response != null && response.aiMessage() != null)
                 ? response.aiMessage().text()
                 : "";
-        return text == null ? "" : text.trim();
-    }
+    return text == null ? "" : text.trim();
+  }
 }

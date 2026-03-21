@@ -16,57 +16,57 @@ import java.util.Map;
 @Profile("dev")
 public class DevTelemetryController {
 
-    private final TelemetryService telemetry;
-    private final TelemetryToggleService toggle;
+  private final TelemetryService telemetry;
+  private final TelemetryToggleService toggle;
 
-    public DevTelemetryController(TelemetryService telemetry, TelemetryToggleService toggle) {
-        this.telemetry = telemetry;
-        this.toggle = toggle;
-    }
+  public DevTelemetryController(TelemetryService telemetry, TelemetryToggleService toggle) {
+    this.telemetry = telemetry;
+    this.toggle = toggle;
+  }
 
-    @PostMapping
+  @PostMapping
     public ResponseEntity<?> emit(@RequestBody Map<String, Object> body) {
-        // Telemetry OFF means: do not record anything
-        if (!toggle.isEnabled()) {
-            return ResponseEntity.noContent().build(); // 204
-        }
-
-        TelemetryEvent e = new TelemetryEvent();
-        e.setEventName(asString(body.getOrDefault("eventName", "dev_emit")));
-        e.setEventTime(OffsetDateTime.now(java.time.Clock.systemUTC()));
-
-        e.setTraceId(asString(body.get("traceId")));
-        e.setSpanId(asString(body.get("spanId")));
-
-        e.setDetails(asMap(body.get("details")));
-        e.setDeviceInfo(asMap(body.get("deviceInfo")));
-
-        return ResponseEntity.ok(telemetry.record(e));
+    // Telemetry OFF means: do not record anything
+    if (!toggle.isEnabled()) {
+      return ResponseEntity.noContent().build(); // 204
     }
 
-    @GetMapping("/recent")
+    TelemetryEvent e = new TelemetryEvent();
+    e.setEventName(asString(body.getOrDefault("eventName", "dev_emit")));
+    e.setEventTime(OffsetDateTime.now(java.time.Clock.systemUTC()));
+
+    e.setTraceId(asString(body.get("traceId")));
+    e.setSpanId(asString(body.get("spanId")));
+
+    e.setDetails(asMap(body.get("details")));
+    e.setDeviceInfo(asMap(body.get("deviceInfo")));
+
+    return ResponseEntity.ok(telemetry.record(e));
+  }
+
+  @GetMapping("/recent")
     public ResponseEntity<?> recent(@RequestParam(defaultValue = "50") int limit) {
-        return ResponseEntity.ok(telemetry.recent(limit));
-    }
+    return ResponseEntity.ok(telemetry.recent(limit));
+  }
 
-    @GetMapping("/enabled")
+  @GetMapping("/enabled")
     public ResponseEntity<?> enabled() {
-        return ResponseEntity.ok(Map.of("enabled", toggle.isEnabled()));
-    }
+    return ResponseEntity.ok(Map.of("enabled", toggle.isEnabled()));
+  }
 
-    @PutMapping("/enabled")
+  @PutMapping("/enabled")
     public ResponseEntity<?> setEnabled(@RequestParam boolean enabled) {
-        return ResponseEntity.ok(Map.of("enabled", toggle.setEnabled(enabled)));
-    }
+    return ResponseEntity.ok(Map.of("enabled", toggle.setEnabled(enabled)));
+  }
 
-    private static String asString(Object o) {
-        return o == null ? null : String.valueOf(o);
-    }
+  private static String asString(Object o) {
+    return o == null ? null : String.valueOf(o);
+  }
 
-    @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
-        if (o == null) return Collections.emptyMap();
-        if (o instanceof Map<?, ?> m) return (Map<String, Object>) m;
-        return Collections.emptyMap();
-    }
+    if (o == null) return Collections.emptyMap();
+    if (o instanceof Map<?, ?> m) return (Map<String, Object>) m;
+    return Collections.emptyMap();
+  }
 }
