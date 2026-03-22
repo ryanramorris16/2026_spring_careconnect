@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -12,11 +14,26 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true 
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+
+    val keyPropertiesFile = rootProject.file("key.properties")
+    val keyProperties = Properties()
+    if (keyPropertiesFile.exists()) {
+        keyProperties.load(keyPropertiesFile.inputStream())
+    }
+
+    signingConfigs {
+        create("release") {
+            keyAlias = keyProperties["keyAlias"] as String?
+            keyPassword = keyProperties["keyPassword"] as String?
+            storeFile = keyProperties["storeFile"]?.let { rootProject.file(it as String) }
+            storePassword = keyProperties["storePassword"] as String?
+        }
     }
 
     defaultConfig {
@@ -25,32 +42,25 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // Required by flutter_appauth / flutter_web_auth_2 Android manifest entries.
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.care_connect_app"
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
-
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
-            // Usually keep this off for faster dev builds
-          
         }
     }
 
     packagingOptions {
-        // Only keep WebRTC native library conflicts (these work)
         pickFirst("**/libjingle_peerconnection_so.so")
         pickFirst("**/libc++_shared.so")
         pickFirst("**/libwebrtc.so")
-
-        // Standard metadata exclusions
         exclude("META-INF/DEPENDENCIES")
         exclude("META-INF/LICENSE")
         exclude("META-INF/LICENSE.txt")
