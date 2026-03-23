@@ -53,6 +53,8 @@ $NetworkingParameters = Join-Path $ParameterDir "$Environment-networking.json"
 $DataParameters = Join-Path $ParameterDir "$Environment-data.json"
 $PlatformParameters = Join-Path $ParameterDir "$Environment-platform.json"
 $ServiceParameters = Join-Path $ParameterDir "$Environment-service.json"
+$script:DataEffectiveParameters = $DataParameters
+$script:TemporaryFiles = New-Object System.Collections.Generic.List[string]
 
 function Write-Step {
     param([string]$Message)
@@ -88,6 +90,17 @@ function Test-StackExists {
     return ($LASTEXITCODE -eq 0)
 }
 
+function Test-EcrRepositoryExists {
+    param([string]$RepositoryName)
+
+    & aws ecr describe-repositories `
+        --profile $Profile `
+        --region $Region `
+        --repository-names $RepositoryName 2>$null 1>$null
+
+    return ($LASTEXITCODE -eq 0)
+}
+
 function Get-StackStatus {
     param([string]$StackName)
 
@@ -103,6 +116,89 @@ function Get-StackStatus {
     }
 
     return [string]$status
+}
+
+function Get-ParameterMap {
+    param([string]$ParameterFile)
+
+    $entries = Get-Content -LiteralPath $ParameterFile -Raw | ConvertFrom-Json
+    $map = @{}
+
+    foreach ($entry in $entries) {
+        $map[[string]$entry.ParameterKey] = [string]$entry.ParameterValue
+    }
+
+    return $map
+}
+
+function Merge-ParameterMaps {
+    param(
+        [hashtable]$BaseMap,
+        [hashtable]$OverlayMap
+    )
+
+    $merged = @{}
+    foreach ($key in $BaseMap.Keys) {
+        $merged[$key] = $BaseMap[$key]
+    }
+
+    foreach ($key in $OverlayMap.Keys) {
+        $merged[$key] = $OverlayMap[$key]
+    }
+
+    return $merged
+}
+
+function Get-DataSecretOverrides {
+    $overrides = @{}
+
+    if ($env:CARECONNECT_DATABASE_MASTER_PASSWORD) {
+        $overrides["DatabaseMasterPassword"] = [string]$env:CARECONNECT_DATABASE_MASTER_PASSWORD
+    }
+
+    if ($env:CARECONNECT_JWT_SECRET) {
+        $overrides["JwtSecret"] = [string]$env:CARECONNECT_JWT_SECRET
+    }
+
+    return $overrides
+}
+
+function New-EffectiveParameterFile {
+    param(
+        [string]$BaseParameterFile,
+        [hashtable]$Overrides = @{}
+    )
+
+    if ($Overrides.Count -eq 0) {
+        return $BaseParameterFile
+    }
+
+    # Build one effective parameter file at runtime so local shells and GitHub
+    # Actions can inject sensitive values without committing them to Git.
+    $baseMap = Get-ParameterMap -ParameterFile $BaseParameterFile
+    $mergedMap = Merge-ParameterMaps -BaseMap $baseMap -OverlayMap $Overrides
+
+    $entries = Get-Content -LiteralPath $BaseParameterFile -Raw | ConvertFrom-Json
+    foreach ($entry in $entries) {
+        $key = [string]$entry.ParameterKey
+        if ($mergedMap.ContainsKey($key)) {
+            $entry.ParameterValue = [string]$mergedMap[$key]
+        }
+    }
+
+    foreach ($key in $mergedMap.Keys) {
+        if (-not ($entries | Where-Object { [string]$_.ParameterKey -eq $key })) {
+            $entries += [pscustomobject]@{
+                ParameterKey = $key
+                ParameterValue = [string]$mergedMap[$key]
+            }
+        }
+    }
+
+    $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) ("careconnect-$Environment-data-" + [System.Guid]::NewGuid().ToString() + ".json")
+    $entries | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $tempFile -Encoding UTF8
+    $script:TemporaryFiles.Add($tempFile)
+    return $tempFile
 }
 
 function Remove-RollbackCompleteStack {
@@ -129,6 +225,12 @@ function Remove-RollbackCompleteStack {
 
 function Write-StackFailureDetails {
     param([string]$StackName)
+
+    if (-not (Test-StackExists -StackName $StackName)) {
+        Write-Host ""
+        Write-Host "Stack '$StackName' does not exist yet. The failure likely happened during parameter validation or change set creation." -ForegroundColor Yellow
+        return
+    }
 
     $stackStatus = Get-StackStatus -StackName $StackName
     if ($stackStatus) {
@@ -194,6 +296,60 @@ function Test-PlaceholderValue {
     }
 }
 
+function Assert-ParameterMinLength {
+    param(
+        [string]$ParameterFile,
+        [string]$ParameterKey,
+        [int]$MinLength
+    )
+
+    $parameterMap = Get-ParameterMap -ParameterFile $ParameterFile
+    if (-not $parameterMap.ContainsKey($ParameterKey)) {
+        return
+    }
+
+    $value = [string]$parameterMap[$ParameterKey]
+    if ($value.Length -lt $MinLength) {
+        throw "Parameter '$ParameterKey' in '$ParameterFile' must contain at least $MinLength characters."
+    }
+}
+
+function Assert-HealthCheckPathValue {
+    param([string]$ParameterFile)
+
+    $parameterMap = Get-ParameterMap -ParameterFile $ParameterFile
+    if (-not $parameterMap.ContainsKey("HealthCheckPath")) {
+        return
+    }
+
+    $value = [string]$parameterMap["HealthCheckPath"]
+    if (-not $value.StartsWith("/")) {
+        throw "Parameter 'HealthCheckPath' in '$ParameterFile' must start with '/'."
+    }
+
+    if ($value -match "\s") {
+        throw "Parameter 'HealthCheckPath' in '$ParameterFile' cannot contain spaces."
+    }
+}
+
+function Assert-PlatformRepositoryNameAvailable {
+    param([string]$ParameterFile)
+
+    $parameterMap = Get-ParameterMap -ParameterFile $ParameterFile
+    if (-not $parameterMap.ContainsKey("RepositoryName")) {
+        return
+    }
+
+    $repositoryName = [string]$parameterMap["RepositoryName"]
+    if (-not $repositoryName) {
+        return
+    }
+
+    if ((-not (Test-StackExists -StackName $PlatformStackName)) -and (Test-EcrRepositoryExists -RepositoryName $repositoryName)) {
+        throw "ECR repository '$repositoryName' already exists in AWS. Choose a unique RepositoryName in '$ParameterFile' or deploy into the stack that already owns it."
+    }
+}
+
 function Invoke-CloudFormationDeploy {
     param(
         [string]$StackName,
@@ -208,6 +364,7 @@ function Invoke-CloudFormationDeploy {
     Remove-RollbackCompleteStack -StackName $StackName
     $parameterOverrides = Get-ParameterOverrides -ParameterFile $ParameterFile -Overrides $Overrides
     $operation = if (Test-StackExists -StackName $StackName) { "Updating" } else { "Creating" }
+    $script:CurrentOperation = "$operation stack '$StackName'"
     Write-Host "$operation stack '$StackName'..." -ForegroundColor DarkCyan
 
     $args = @(
@@ -223,7 +380,12 @@ function Invoke-CloudFormationDeploy {
 
     & aws @args
     if ($LASTEXITCODE -ne 0) {
-        Write-StackFailureDetails -StackName $StackName
+        try {
+            Write-StackFailureDetails -StackName $StackName
+        }
+        catch {
+            Write-Host "Unable to read CloudFormation failure details for '$StackName'." -ForegroundColor Yellow
+        }
         throw "CloudFormation deploy for stack '$StackName' failed with exit code $LASTEXITCODE."
     }
 
@@ -272,9 +434,20 @@ Write-Step "Checking prerequisites"
     }
 
     # Fail fast if secrets/config placeholders were never replaced.
-    Test-PlaceholderValue -ParameterFile $DataParameters -DisallowedFragments @("REPLACE_ME")
+    $dataSecretOverrides = Get-DataSecretOverrides
+    if ($dataSecretOverrides.Count -gt 0) {
+        Write-Host "Using data stack secrets from environment variables." -ForegroundColor DarkCyan
+    }
+    $script:DataEffectiveParameters = New-EffectiveParameterFile -BaseParameterFile $DataParameters -Overrides $dataSecretOverrides
+
+    Test-PlaceholderValue -ParameterFile $script:DataEffectiveParameters -DisallowedFragments @("REPLACE_ME")
+    Assert-ParameterMinLength -ParameterFile $script:DataEffectiveParameters -ParameterKey "DatabaseMasterPassword" -MinLength 8
+    Assert-ParameterMinLength -ParameterFile $script:DataEffectiveParameters -ParameterKey "JwtSecret" -MinLength 32
+    Assert-HealthCheckPathValue -ParameterFile $ServiceParameters
+    Assert-PlatformRepositoryNameAvailable -ParameterFile $PlatformParameters
 
     Write-Step "Verifying AWS credentials for profile '$Profile'"
+    $script:CurrentOperation = "Verifying AWS credentials"
     & aws sts get-caller-identity --profile $Profile --region $Region | Out-Null
     Assert-LastExitCode "AWS credential validation"
 
@@ -284,7 +457,7 @@ Write-Step "Checking prerequisites"
     Invoke-CloudFormationDeploy -StackName $NetworkingStackName -TemplatePath $NetworkingTemplate -ParameterFile $NetworkingParameters
 
     Write-Step "Deploying data stack: $DataStackName"
-    Invoke-CloudFormationDeploy -StackName $DataStackName -TemplatePath $DataTemplate -ParameterFile $DataParameters
+    Invoke-CloudFormationDeploy -StackName $DataStackName -TemplatePath $DataTemplate -ParameterFile $script:DataEffectiveParameters
 
     Write-Step "Deploying platform stack: $PlatformStackName"
     Invoke-CloudFormationDeploy -StackName $PlatformStackName -TemplatePath $PlatformTemplate -ParameterFile $PlatformParameters
@@ -292,6 +465,7 @@ Write-Step "Checking prerequisites"
     # The platform stack creates the ECR repository. We need that URI before the
     # Docker image can be tagged and pushed.
     Write-Step "Reading ECR repository URI"
+    $script:CurrentOperation = "Reading ECR repository URI"
     $RepositoryUri = (Get-CloudFormationOutput -StackName $PlatformStackName -OutputKey "EcrRepositoryUri").Trim()
     if (-not $RepositoryUri) {
         throw "Platform stack did not return EcrRepositoryUri."
@@ -306,7 +480,8 @@ Write-Step "Checking prerequisites"
     Write-Step "Building backend jar"
     Push-Location $BackendDir
     try {
-        $mavenArgs = @("clean", "package", "-Pdocker")
+        $script:CurrentOperation = "Building backend jar"
+        $mavenArgs = @("-B", "-ntp", "clean", "package", "-Pdocker")
         if (-not $RunTests) {
             $mavenArgs += "-DskipTests"
         }
@@ -315,6 +490,7 @@ Write-Step "Checking prerequisites"
 
         # Authenticate Docker to the registry before push.
         Write-Step "Logging into ECR"
+        $script:CurrentOperation = "Logging into ECR"
         $RegistryHost = ($RepositoryUri -split "/", 2)[0]
         $LoginPassword = & aws ecr get-login-password --profile $Profile --region $Region
         Assert-LastExitCode "ECR login password retrieval"
@@ -322,10 +498,12 @@ Write-Step "Checking prerequisites"
         Assert-LastExitCode "Docker login to ECR"
 
         Write-Step "Building Docker image"
+        $script:CurrentOperation = "Building Docker image"
         & docker build -t $LocalImageName .
         Assert-LastExitCode "Docker build"
 
         Write-Step "Tagging and pushing Docker image to ECR"
+        $script:CurrentOperation = "Pushing Docker image to ECR"
         & docker tag $LocalImageName $ImageUri
         Assert-LastExitCode "Docker tag"
         & docker push $ImageUri
@@ -344,8 +522,11 @@ Write-Step "Checking prerequisites"
 
     # Print the final ALB endpoint so the frontend or health checks can use it.
     Write-Step "Reading final backend URL"
+    $script:CurrentOperation = "Reading final backend URL"
     $AlbDnsName = (Get-CloudFormationOutput -StackName $ServiceStackName -OutputKey "LoadBalancerDnsName").Trim()
     $AlbUrl = (Get-CloudFormationOutput -StackName $ServiceStackName -OutputKey "LoadBalancerUrl").Trim()
+    $script:CurrentStackName = $null
+    $script:CurrentOperation = $null
 
     Write-Host ""
     Write-Host "Deployment complete." -ForegroundColor Green
@@ -363,6 +544,10 @@ catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
     Write-Host "Elapsed time: $(Get-ElapsedTimeText)" -ForegroundColor Yellow
 
+    if ($script:CurrentOperation) {
+        Write-Host "Last operation: $script:CurrentOperation" -ForegroundColor Yellow
+    }
+
     if ($script:CurrentStackName) {
         Write-Host ""
         Write-Host "Troubleshoot this stack with:" -ForegroundColor Yellow
@@ -372,6 +557,12 @@ catch {
     exit 1
 }
 finally {
+    foreach ($tempFile in $script:TemporaryFiles) {
+        if (Test-Path -LiteralPath $tempFile) {
+            Remove-Item -LiteralPath $tempFile -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     if ($script:HadNativePreference) {
         $global:PSNativeCommandUseErrorActionPreference = $script:OriginalNativePreference
     }
