@@ -440,7 +440,9 @@ REGISTRY_HOST="${REPOSITORY_URI%%/*}"
 step "Building backend jar"
 pushd "$BACKEND_DIR" >/dev/null
 CURRENT_OPERATION="Building backend jar"
-MAVEN_ARGS=(clean package -Pdocker)
+# Use batch mode and suppress Maven transfer-progress spam so CI logs stay
+# readable and it is easier to tell whether the build is really moving.
+MAVEN_ARGS=(-B -ntp clean package -Pdocker)
 if [[ "$RUN_TESTS" != "true" ]]; then
   MAVEN_ARGS+=(-DskipTests)
 fi

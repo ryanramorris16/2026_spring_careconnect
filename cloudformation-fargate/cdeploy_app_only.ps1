@@ -293,7 +293,9 @@ try {
     Push-Location $BackendDir
     try {
         $script:CurrentOperation = "Building backend jar"
-        $mavenArgs = @("clean", "package", "-Pdocker")
+        # Use batch mode and suppress Maven transfer-progress spam so CI logs stay
+        # readable and it is easier to tell whether the build is really moving.
+        $mavenArgs = @("-B", "-ntp", "clean", "package", "-Pdocker")
         if (-not $RunTests) {
             $mavenArgs += "-DskipTests"
         }
