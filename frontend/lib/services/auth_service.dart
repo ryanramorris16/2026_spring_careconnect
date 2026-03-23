@@ -1,5 +1,6 @@
 /// Centralized Auth Guard Service for page protection
 library;
+
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:convert';
@@ -14,6 +15,7 @@ import '../providers/user_provider.dart';
 import 'messaging_service.dart';
 import 'auth_token_manager.dart';
 import 'user_role_storage_service.dart';
+import '../features/telemetry/telemetry.dart';
 import 'dart:io';
 
 class ApiConstants {
@@ -123,6 +125,7 @@ class AuthService {
               // Store user data in UserRoleStorageService for navigation
               await _storeUserDataFromSession(userSession);
 
+              Telemetry.resetSession();
               print('Google OAuth login successful: JWT token force-updated');
 
               // Create and return the user session
@@ -164,9 +167,7 @@ class AuthService {
   }
 
   /// LOGIN - Updated to return UserSession and handle JWT
-  static Future<UserSession> login(
-    String email,
-    String password) async {
+  static Future<UserSession> login(String email, String password) async {
     final response = await ApiService.login(email, password);
     final data = jsonDecode(response.body);
 
@@ -193,6 +194,7 @@ class AuthService {
         print('Warning: Failed to register user to WebSocket: $e');
       }
 
+      Telemetry.resetSession();
       print('Login successful: JWT token force-updated');
 
       return userSession;
@@ -473,6 +475,8 @@ class AuthService {
     // Clear user data from UserRoleStorageService
     await UserRoleStorageService.instance.clearUserData();
 
+    Telemetry.resetSession();
+
     if (response.statusCode == 200) {
       print("Logout successful");
     } else {
@@ -505,6 +509,7 @@ class AuthService {
       // Store user data in UserRoleStorageService for navigation
       await _storeUserDataFromSession(userSession);
 
+      Telemetry.resetSession();
       print('OAuth callback processed: JWT token force-updated');
 
       // Create and return the user session
@@ -553,6 +558,7 @@ class AuthService {
         // If refresh fails, clear auth data to force re-login
         await AuthTokenManager.clearAuthData();
         await UserRoleStorageService.instance.clearUserData();
+        Telemetry.resetSession();
         return null;
       }
     } catch (e) {
@@ -560,6 +566,7 @@ class AuthService {
       // Clear auth data on error to force re-login
       await AuthTokenManager.clearAuthData();
       await UserRoleStorageService.instance.clearUserData();
+      Telemetry.resetSession();
       return null;
     }
   }
@@ -592,7 +599,8 @@ class AuthService {
       );
 
       if (kDebugMode) {
-        print('User data stored in UserRoleStorageService: Role=${userSession.role}, UserID=${userSession.id}');
+        print(
+            'User data stored in UserRoleStorageService: Role=${userSession.role}, UserID=${userSession.id}');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -634,8 +642,8 @@ class AuthService {
     }
   }
 
-    /// Get Alexa authorization code for OAuth flow
-  /// 
+  /// Get Alexa authorization code for OAuth flow
+  ///
   /// Calls the backend endpoint: POST /v1/api/auth/sso/alexa/code
   /// Requires Bearer token in Authorization header
   /// Returns the temporary authorization code to redirect to Alexa
@@ -708,7 +716,8 @@ class AuthService {
           .post(uri, headers: headers, body: jsonEncode({}))
           .timeout(const Duration(seconds: 15));
 
-      print("🔌 Alexa unlink response: ${response.statusCode} - ${response.body}");
+      print(
+          "🔌 Alexa unlink response: ${response.statusCode} - ${response.body}");
 
       if (response.statusCode == 200) {
         return {
@@ -730,6 +739,4 @@ class AuthService {
       };
     }
   }
-
-
 }

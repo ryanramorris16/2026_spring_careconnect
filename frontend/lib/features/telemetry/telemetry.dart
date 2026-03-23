@@ -43,6 +43,10 @@ class Telemetry {
     return _sessionId!;
   }
 
+  static void resetSession() {
+    _sessionId = null;
+  }
+
   static Future<bool> _enabledLocal() async {
     final optedOut = await TelemetrySettings.isOptedOut();
     return !optedOut;
