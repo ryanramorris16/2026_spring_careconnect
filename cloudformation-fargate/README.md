@@ -18,6 +18,7 @@ Fargate deployment.
 
 - [Stack order](#stack-order)
 - [One-Command Scripts](#one-command-scripts)
+- [GitHub Actions Backend Deploy](#github-actions-backend-deploy)
 - [What each stack owns](#what-each-stack-owns)
 - [Design choices](#design-choices)
 - [Required application contract](#required-application-contract)
@@ -79,6 +80,102 @@ Teardown:
 - Teardown scripts delete stacks in dependency order and empty the ECR repository before removing the platform stack
 - `cdeploy_cloudformation.ps1` and `cdeploy_cloudformation.sh` skip Maven tests by default; use `-RunTests` in PowerShell or `--run-tests` in bash if you want tests included
 - `cdestroy_cloudformation.ps1` and `cdestroy_cloudformation.sh` support skipping ECR cleanup with `-SkipEcrCleanup` or `--skip-ecr-cleanup`
+
+### GitHub Actions Backend Deploy
+
+For normal backend code changes, you do not need to redeploy networking, data,
+and platform every time.
+
+This repo also includes an app-only deploy path:
+
+- `.github/workflows/backend-app-deploy.yml`
+- `cdeploy_app_only.ps1`
+- `cdeploy_app_only.sh`
+
+That flow:
+
+1. builds the backend jar
+2. builds and pushes a uniquely tagged Docker image to ECR
+3. updates only the ECS service stack
+
+#### AWS setup click-by-click
+
+What you are creating:
+
+- one IAM identity provider for GitHub Actions
+- one IAM role that GitHub Actions is allowed to assume
+
+##### Create the GitHub OIDC identity provider
+
+1. Sign in to the AWS Console
+2. Search for `IAM`
+3. Open `IAM`
+4. In the left sidebar, click `Identity providers`
+5. Check whether this provider already exists:
+   - `https://token.actions.githubusercontent.com`
+6. If it already exists, keep it and move to the IAM role steps
+7. If it does not exist, click `Add provider`
+8. For `Provider type`, choose:
+   - `OpenID Connect`
+9. For `Provider URL`, enter:
+   - `https://token.actions.githubusercontent.com`
+10. For `Audience`, enter:
+    - `sts.amazonaws.com`
+11. Click `Add provider`
+
+##### Create the IAM role for GitHub Actions
+
+1. In IAM, click `Roles`
+2. Click `Create role`
+3. For `Trusted entity type`, choose:
+   - `Web identity`
+4. For `Identity provider`, choose:
+   - `token.actions.githubusercontent.com`
+5. For `Audience`, choose:
+   - `sts.amazonaws.com`
+6. Continue to the permissions step
+7. Search for:
+   - `PowerUserAccess`
+8. Check `PowerUserAccess`
+9. Continue to the naming step
+10. For role name, enter:
+    - `careconnect-github-actions-deploy`
+11. Click `Create role`
+
+##### Finish the role configuration
+
+1. Open the new role:
+   - `careconnect-github-actions-deploy`
+2. Open the `Trust relationships` tab
+3. Click `Edit trust policy`
+4. Replace the default trust policy with the GitHub OIDC trust policy from
+   [`GITHUB_ACTIONS_SETUP.md`](C:/Dev/SWEN670/2026_spring_careconnect/cloudformation-fargate/GITHUB_ACTIONS_SETUP.md)
+5. Replace:
+   - `<account-id>`
+   - branch names if needed
+   - repo owner if needed
+6. Click `Update policy`
+7. Back on the role page, click `Add permissions`
+8. Click `Create inline policy`
+9. Open the `JSON` tab
+10. Paste the `iam:PassRole` policy from
+    [`GITHUB_ACTIONS_SETUP.md`](C:/Dev/SWEN670/2026_spring_careconnect/cloudformation-fargate/GITHUB_ACTIONS_SETUP.md)
+11. Replace:
+    - `<account-id>`
+12. Save the inline policy
+
+##### What to copy into GitHub
+
+After the role is ready, copy the role ARN. It will look like:
+
+- `arn:aws:iam::<account-id>:role/careconnect-github-actions-deploy`
+
+You will use that value in GitHub as:
+
+- `AWS_GITHUB_ACTIONS_ROLE_ARN`
+
+The full setup guide is in
+[`GITHUB_ACTIONS_SETUP.md`](C:/Dev/SWEN670/2026_spring_careconnect/cloudformation-fargate/GITHUB_ACTIONS_SETUP.md).
 
 ### What each stack owns
 
