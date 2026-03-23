@@ -19,6 +19,7 @@ Fargate deployment.
 - [Stack order](#stack-order)
 - [One-Command Scripts](#one-command-scripts)
 - [GitHub Actions Backend Deploy](#github-actions-backend-deploy)
+- [GitHub Actions Full Deploy](#github-actions-full-deploy)
 - [What each stack owns](#what-each-stack-owns)
 - [Design choices](#design-choices)
 - [Required application contract](#required-application-contract)
@@ -97,6 +98,47 @@ That flow:
 1. builds the backend jar
 2. builds and pushes a uniquely tagged Docker image to ECR
 3. updates only the ECS service stack
+
+#### Current GitHub storage split
+
+The current app-only workflow uses GitHub repository variables for the
+non-secret values it needs:
+
+- `AWS_GITHUB_ACTIONS_ROLE_ARN`
+- `AWS_REGION`
+- `CF_ENVIRONMENT`
+
+The full deploy path uses GitHub repository secrets for the sensitive data-stack
+values:
+
+- `DEV_DATABASE_MASTER_PASSWORD`
+- `DEV_JWT_SECRET`
+- `CFDEMO_DATABASE_MASTER_PASSWORD`
+- `CFDEMO_JWT_SECRET`
+
+The full deploy scripts read those values from environment variables:
+
+- `CARECONNECT_DATABASE_MASTER_PASSWORD`
+- `CARECONNECT_JWT_SECRET`
+
+That keeps real data-stack secrets out of committed parameter files.
+
+### GitHub Actions Full Deploy
+
+This repo also includes a manual full-deploy workflow:
+
+- `.github/workflows/backend-full-deploy.yml`
+
+Use it when you want GitHub Actions to create or update the full environment:
+
+1. networking
+2. data
+3. platform
+4. backend image build and push
+5. service
+
+This workflow is intentionally manual-only because it can create long-lived AWS
+infrastructure and consumes GitHub Secrets for the data stack.
 
 #### AWS setup click-by-click
 
@@ -240,6 +282,17 @@ The ALB health check path is:
 Parameter files live under [`parameters`](2026_spring_careconnect/cloudformation-fargate/parameters).
 Because JSON does not support inline comments, the detailed parameter guide is
 in [`parameters/README.md`](2026_spring_careconnect/cloudformation-fargate/parameters/README.md).
+
+For the data stack specifically:
+
+- committed `*-data.json` files contain placeholders only
+- real secret values should be injected through:
+  - `CARECONNECT_DATABASE_MASTER_PASSWORD`
+  - `CARECONNECT_JWT_SECRET`
+  - or the manual GitHub full-deploy workflow that maps repository secrets into
+    those variables
+- `BackendImageUri` in `*-service.json` is normally overridden by the deploy
+  scripts or GitHub Actions workflow
 
 ### Example deploy commands
 

@@ -14,9 +14,30 @@ This setup does **not** recreate networking, data, or platform resources on
 every backend push. Those long-lived stacks should be created once with the full
 deploy script and then left in place.
 
+## Current Storage Split
+
+For the current repo setup, we split values like this:
+
+- GitHub repository variables:
+  - `AWS_GITHUB_ACTIONS_ROLE_ARN`
+  - `AWS_REGION`
+  - `CF_ENVIRONMENT`
+- committed parameter JSON:
+  - non-sensitive networking, platform, and service settings
+- GitHub repository secrets for full deploys:
+  - `DEV_DATABASE_MASTER_PASSWORD`
+  - `DEV_JWT_SECRET`
+  - `CFDEMO_DATABASE_MASTER_PASSWORD`
+  - `CFDEMO_JWT_SECRET`
+
+The current app-only GitHub Actions workflow does **not** need the database
+password or JWT secret, so those repository secrets are only used by the manual
+full-deploy workflow path.
+
 ## Files Added For This Flow
 
 - `.github/workflows/backend-app-deploy.yml`
+- `.github/workflows/backend-full-deploy.yml`
 - `cloudformation-fargate/cdeploy_app_only.sh`
 - `cloudformation-fargate/cdeploy_app_only.ps1`
 
@@ -33,6 +54,16 @@ Use the app-only deploy scripts when:
 - Docker image contents changed
 - ECS service settings changed in `04-service.yaml`
 - service parameter values changed in `parameters/*-service.json`
+
+The manual full-deploy workflow uses:
+
+- `cloudformation-fargate/cdeploy_cloudformation.sh`
+- repository secrets for the data stack
+
+The app-only workflow uses:
+
+- `cloudformation-fargate/cdeploy_app_only.sh`
+- repository variables only
 
 ## 1. Deploy The Environment Once First
 

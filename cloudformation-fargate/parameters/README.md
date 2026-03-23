@@ -15,8 +15,7 @@ parameter file is for and what values need to be replaced before deployment.
 - baseline networking parameters for the `dev` environment
 
 2. `dev-data.json`
-- database and JWT values for the `dev` environment
-
+- checked-in placeholder values for the `dev` environment data stack
 3. `dev-platform.json`
 - ECR repository name and log retention for the `dev` environment
 
@@ -27,7 +26,7 @@ parameter file is for and what values need to be replaced before deployment.
 - networking parameters for the parallel CloudFormation demo environment
 
 6. `cfdemo-data.json`
-- database and JWT values for the parallel CloudFormation demo environment
+- checked-in placeholder values for the parallel CloudFormation demo environment data stack
 
 7. `cfdemo-platform.json`
 - ECR repository name and log retention for the parallel CloudFormation demo environment
@@ -37,7 +36,7 @@ parameter file is for and what values need to be replaced before deployment.
 
 ### Placeholders that must be replaced
 
-#### In `*-data.json`
+#### In the GitHub Secrets or shell environment
 
 - `DatabaseMasterPassword`
   - real PostgreSQL master password for the new RDS instance
@@ -45,12 +44,41 @@ parameter file is for and what values need to be replaced before deployment.
 - `JwtSecret`
   - long random string used by the backend for JWT signing
 
+The checked-in `*-data.json` files should stay sanitized with placeholders so
+real secrets are not committed to Git.
+
 #### In `*-service.json`
 
 - `BackendImageUri`
   - full ECR image URI including the tag
   - example:
     - `331738867837.dkr.ecr.us-east-1.amazonaws.com/careconnect-backend-cfdemo:cfdemo`
+  - when you use the deploy scripts or the GitHub Actions app-only workflow,
+    this value is usually overridden automatically after the Docker image is
+    pushed to ECR
+
+### Secret injection pattern
+
+For local full deploys, export these environment variables before running the
+deploy script:
+
+- `CARECONNECT_DATABASE_MASTER_PASSWORD`
+- `CARECONNECT_JWT_SECRET`
+
+For GitHub Actions full deploys, keep the checked-in `*-data.json` files
+sanitized and store the real values in repository secrets such as:
+
+- `DEV_DATABASE_MASTER_PASSWORD`
+- `DEV_JWT_SECRET`
+- `CFDEMO_DATABASE_MASTER_PASSWORD`
+- `CFDEMO_JWT_SECRET`
+
+The full deploy workflow maps those repository secrets into:
+
+- `CARECONNECT_DATABASE_MASTER_PASSWORD`
+- `CARECONNECT_JWT_SECRET`
+
+before calling the full deploy script.
 
 ### Runtime notes
 
