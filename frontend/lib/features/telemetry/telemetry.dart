@@ -10,6 +10,8 @@ import '../../services/api_service.dart';
 class Telemetry {
   static http.Client client = http.Client();
 
+  static http.Client client = http.Client();
+
   // Backend base URL (configurable via Dart environment variable)
   static String get _backendBase => getBackendBaseUrl();
 
