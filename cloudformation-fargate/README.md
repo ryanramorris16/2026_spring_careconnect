@@ -17,6 +17,7 @@ Fargate deployment.
 ### Table of Contents
 
 - [Stack order](#stack-order)
+- [One-Command Scripts](#one-command-scripts)
 - [What each stack owns](#what-each-stack-owns)
 - [Design choices](#design-choices)
 - [Required application contract](#required-application-contract)
@@ -37,6 +38,47 @@ Fargate deployment.
 3. `03-platform.yaml`
 4. Build and push the backend image to ECR
 5. `04-service.yaml`
+
+### One-Command Scripts
+
+If you want the fastest path, use the deployment and teardown scripts instead of
+running each AWS CLI command manually.
+
+#### Windows / PowerShell
+
+Deploy:
+
+```powershell
+.\cloudformation-fargate\cdeploy_cloudformation.ps1 -Environment cfdemo -Profile careconnect-sso
+```
+
+Teardown:
+
+```powershell
+.\cloudformation-fargate\cdestroy_cloudformation.ps1 -Environment cfdemo -Profile careconnect-sso
+```
+
+#### macOS / Linux
+
+Deploy:
+
+```bash
+./cloudformation-fargate/cdeploy_cloudformation.sh --environment cfdemo --profile careconnect-sso
+```
+
+Teardown:
+
+```bash
+./cloudformation-fargate/cdestroy_cloudformation.sh --environment cfdemo --profile careconnect-sso
+```
+
+#### Notes
+
+- Deploy scripts create or update the four stacks in order
+- Deploy scripts build the backend Docker image and push it to ECR
+- Teardown scripts delete stacks in dependency order and empty the ECR repository before removing the platform stack
+- `cdeploy_cloudformation.ps1` and `cdeploy_cloudformation.sh` skip Maven tests by default; use `-RunTests` in PowerShell or `--run-tests` in bash if you want tests included
+- `cdestroy_cloudformation.ps1` and `cdestroy_cloudformation.sh` support skipping ECR cleanup with `-SkipEcrCleanup` or `--skip-ecr-cleanup`
 
 ### What each stack owns
 
