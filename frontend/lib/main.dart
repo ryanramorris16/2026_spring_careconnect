@@ -87,8 +87,10 @@ Future<void> main() async {
       _initializeServicesInBackground(userProvider);
     },
     (error, stack) {
-      debugPrint('Uncaught error: $error\\n$stack');
-      // Optionally log to a remote server
+      // Use print() not debugPrint() — debugPrint is a no-op in release mode,
+      // which silently swallows startup crashes and leaves the loading screen stuck.
+      // ignore: avoid_print
+      print('🔴 Uncaught error (runZonedGuarded): $error\n$stack');
     },
   );
 }

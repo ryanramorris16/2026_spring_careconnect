@@ -195,7 +195,7 @@ class VideoCallService {
     }
 
     final callId = _currentCallId!;
-      debugPrint('📴 Ending call: $callId');
+    debugPrint('📴 Ending call: $callId');
 
     _sentimentTimer?.cancel();
     await _flushPendingTranscriptSegments(
@@ -205,17 +205,10 @@ class VideoCallService {
     );
     _stopTranscriptFlushTimer();
 
-    final otherPartyId = _otherPartyId?.trim();
-    if (otherPartyId != null && otherPartyId.isNotEmpty) {
-      // Mirror backend websocket contract so peer teardown is immediate.
-      await CallNotificationService.sendEndCallSignal(
-        callId: callId,
-        otherPartyId: otherPartyId,
-      );
-    }
+    String endStatus = 'ended';
 
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse('${EnvironmentConfig.baseUrl}/api/v3/calls/$callId/end'),
         headers: {
           'Content-Type': 'application/json',
@@ -226,21 +219,19 @@ class VideoCallService {
           ...?_callContextMetadata,
         }),
       );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        endStatus = ((body['status'] as String?) ?? 'ended').trim().toLowerCase();
+      } else {
+        debugPrint(
+          'Backend returned ${response.statusCode} while ending call: ${response.body}',
+        );
+      }
     } catch (e) {
       debugPrint('⚠️ Error notifying backend of call end: $e');
     }
 
-    _isInCall = false;
-    _currentCallId = null;
-    _otherPartyId = null;
-    _callContextMetadata = null;
-    _callStartedAt = null;
-    _lastTranscriptEndMs = 0;
-    _meetingCredentials = null;
-    _aggregatedSentiment.clear();
-    _pendingTranscriptSegments.clear();
-    _completedCallIds.add(callId);
-    CallNotificationService.clearActiveCall(callId);
+    _resetLocalCallState(callId: callId, markCompleted: endStatus == 'ended');
     _onCallEnded?.call();
   }
 
@@ -463,13 +454,21 @@ class VideoCallService {
   void _handleRemoteCallEnd() {
     if (!_isInCall) return;
     debugPrint('📴 Remote party ended the call');
-    _sentimentTimer?.cancel();
     final callId = _currentCallId;
     unawaited(_flushPendingTranscriptSegments(
       callIdOverride: callId,
       maxAttempts: 2,
       respectInCallState: false,
     ));
+    _resetLocalCallState(callId: callId, markCompleted: true);
+    _onCallEnded?.call();
+  }
+
+  void _resetLocalCallState({
+    required String? callId,
+    required bool markCompleted,
+  }) {
+    _sentimentTimer?.cancel();
     _stopTranscriptFlushTimer();
     _isInCall = false;
     _currentCallId = null;
@@ -479,11 +478,12 @@ class VideoCallService {
     _lastTranscriptEndMs = 0;
     _meetingCredentials = null;
     _aggregatedSentiment.clear();
-    if (callId != null && callId.trim().isNotEmpty) {
-      _completedCallIds.add(callId.trim());
+    _pendingTranscriptSegments.clear();
+    final normalizedCallId = callId?.trim();
+    if (markCompleted && normalizedCallId != null && normalizedCallId.isNotEmpty) {
+      _completedCallIds.add(normalizedCallId);
     }
-    CallNotificationService.clearActiveCall(callId);
-    _onCallEnded?.call();
+    CallNotificationService.clearActiveCall(normalizedCallId);
   }
 
   void _enqueueTranscriptSegment(_BufferedTranscriptSegment segment) {
@@ -1012,6 +1012,52 @@ class VideoCallService {
       debugPrint('⚠️ getRecordingStatus error: $e');
     }
     return null;
+  }
+
+  // ================================================================
+  // CONFERENCE - invite participants to an active call
+  // ================================================================
+
+  /// Returns care-circle members who can be added to [callId].
+  /// Each entry has: userId, name, role (CAREGIVER|FAMILY_MEMBER), relationship?.
+  Future<List<Map<String, dynamic>>> getEligibleInvitees(String callId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${EnvironmentConfig.baseUrl}/api/v3/calls/$callId/eligible-invitees'),
+        headers: {'Authorization': 'Bearer $_jwtToken'},
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> body = jsonDecode(response.body);
+        return body.cast<Map<String, dynamic>>();
+      }
+      debugPrint('getEligibleInvitees returned ${response.statusCode}');
+    } catch (e) {
+      debugPrint('getEligibleInvitees error: $e');
+    }
+    return [];
+  }
+
+  /// Invites [targetUserId] into the active [callId].
+  /// Returns the backend invite status.
+  Future<String> inviteParticipant(String callId, String targetUserId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${EnvironmentConfig.baseUrl}/api/v3/calls/$callId/invite'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_jwtToken',
+        },
+        body: jsonEncode({'targetUserId': targetUserId}),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return (body['status'] as String?) ?? 'invited';
+      }
+      debugPrint('inviteParticipant returned ${response.statusCode}: ${response.body}');
+    } catch (e) {
+      debugPrint('inviteParticipant error: $e');
+    }
+    return 'error';
   }
 
   /// Returns a time-limited presigned S3 URL for playback of [callId].

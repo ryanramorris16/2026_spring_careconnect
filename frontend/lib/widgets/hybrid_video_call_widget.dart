@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as uh;
 import 'package:go_router/go_router.dart';
 import '../services/video_call_service.dart';
 import '../services/auth_token_manager.dart';
@@ -98,6 +99,9 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
   bool _isSendingVideoSample = false;
   bool _isEndingCall = false;
   bool _isExitingCall = false;
+
+  // Conference invite
+  bool _isLoadingInvitees = false;
 
   // Recording
   bool _isRecording = false;
@@ -769,6 +773,138 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     }
   }
 
+  // ================================================================
+  // CONFERENCE — add participant to active call
+  // ================================================================
+
+  Future<void> _showAddParticipantDialog() async {
+    if (_callSession == null) return;
+    setState(() => _isLoadingInvitees = true);
+
+    List<Map<String, dynamic>> invitees = [];
+    try {
+      invitees = await _videoCallService.getEligibleInvitees(widget.callId);
+    } catch (_) {
+      invitees = [];
+    } finally {
+      if (mounted) setState(() => _isLoadingInvitees = false);
+    }
+
+    if (!mounted) return;
+
+    if (invitees.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No available care-circle members to add.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Disable iframe pointer events so the Flutter dialog receives taps on web
+    if (kIsWeb) {
+      for (final el in uh.document.querySelectorAll('iframe')) {
+        (el as uh.IFrameElement).style.pointerEvents = 'none';
+      }
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Participant'),
+        content: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select a care-circle member to join this call:',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              ...invitees.map((person) {
+                final name = (person['name'] ?? '').toString();
+                final role = (person['role'] ?? '').toString();
+                final relationship = (person['relationship'] as String?);
+                final subtitle = role == 'FAMILY_MEMBER'
+                    ? 'Family Member${relationship != null && relationship.isNotEmpty ? ' · $relationship' : ''}'
+                    : 'Caregiver';
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: role == 'FAMILY_MEMBER'
+                        ? Colors.teal.shade100
+                        : Colors.blue.shade100,
+                    child: Icon(
+                      role == 'FAMILY_MEMBER' ? Icons.people : Icons.medical_services,
+                      size: 18,
+                      color: role == 'FAMILY_MEMBER'
+                          ? Colors.teal.shade700
+                          : Colors.blue.shade700,
+                    ),
+                  ),
+                  title: Text(name, style: const TextStyle(fontSize: 14)),
+                  subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _inviteParticipant(
+                      userId: person['userId'].toString(),
+                      name: name,
+                    );
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    // Restore iframe pointer events after dialog closes
+    if (kIsWeb) {
+      for (final el in uh.document.querySelectorAll('iframe')) {
+        (el as uh.IFrameElement).style.pointerEvents = '';
+      }
+    }
+  }
+
+  Future<void> _inviteParticipant({
+    required String userId,
+    required String name,
+  }) async {
+    final status = await _videoCallService.inviteParticipant(widget.callId, userId);
+    if (!mounted) return;
+    final String message;
+    final Color bgColor;
+    switch (status) {
+      case 'invited':
+        message = 'Invitation sent to $name.';
+        bgColor = Colors.green.shade700;
+        break;
+      case 'offline':
+        message = '$name is not available right now.';
+        bgColor = Colors.orange.shade700;
+        break;
+      default:
+        message = 'Could not invite $name. Please try again.';
+        bgColor = Colors.red.shade700;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: bgColor,
+      ),
+    );
+  }
+
   Future<void> _exitCallScreen() async {
     if (_isExitingCall || !mounted) return;
     _isExitingCall = true;
@@ -1286,6 +1422,24 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
             icon: const Icon(Icons.cameraswitch, color: Colors.white),
           ),
           const SizedBox(width: 8),
+          // Add participant button (caregiver only)
+          if (_isCaregiverView) ...[
+            _isLoadingInvitees
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Add participant',
+                    onPressed: _showAddParticipantDialog,
+                    icon: const Icon(Icons.person_add, color: Colors.white),
+                  ),
+            const SizedBox(width: 8),
+          ],
           // Record / stop-recording button (caregiver only)
           if (_isCaregiverView) ...[
             _isTogglingRecording

@@ -11,6 +11,7 @@ import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/al
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/primary_care_provider_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/medication_reminder_widget.dart';
 import 'package:care_connect_app/features/dashboard/patient_dashboard/widgets/recent_checkin_widget.dart';
+import 'package:care_connect_app/features/dashboard/patient_dashboard/models/medication_reminder_item.dart';
 
 Widget _wrap(Widget child) =>
     MaterialApp(home: Scaffold(body: SingleChildScrollView(child: child)));
@@ -231,122 +232,118 @@ void main() {
   // MedicationRemindersWidget
   // ───────────────────────────────────────────────────────────────────────────
   group('MedicationRemindersWidget', () {
-    testWidgets('renders without crashing when reminder is null', (tester) async {
+    final sampleItem = MedicationReminderItem(
+      medicationId: 1,
+      medicationName: 'Aspirin',
+      dosage: '100 mg',
+      frequency: 'Once daily',
+      nextDueAt: DateTime(2024, 6, 15, 9, 0),
+      isTakenForCurrentWindow: false,
+    );
+
+    testWidgets('renders without crashing when list is empty', (tester) async {
       await tester.pumpWidget(_wrap(
-        const MedicationRemindersWidget(reminder: null),
+        const MedicationRemindersWidget(reminders: []),
       ));
       expect(find.byType(MedicationRemindersWidget), findsOneWidget);
     });
 
-    testWidgets('shows "None to show" when reminder is null', (tester) async {
+    testWidgets('shows empty-state message when list is empty', (tester) async {
       await tester.pumpWidget(_wrap(
-        const MedicationRemindersWidget(reminder: null),
+        const MedicationRemindersWidget(reminders: []),
       ));
-      expect(find.text('None to show'), findsOneWidget);
+      expect(find.textContaining('No active medication reminders'), findsOneWidget);
     });
 
     testWidgets('renders without crashing when reminder is provided', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Aspirin',
-        scheduledTime: DateTime(2024, 6, 15, 9, 0),
-        status: 'Pending',
-      );
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [sampleItem]),
       ));
       expect(find.byType(MedicationRemindersWidget), findsOneWidget);
     });
 
     testWidgets('shows medication name when reminder is provided', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Aspirin',
-        scheduledTime: DateTime(2024, 6, 15, 9, 0),
-        status: 'Pending',
-      );
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [sampleItem]),
       ));
       expect(find.text('Aspirin'), findsOneWidget);
     });
 
-    testWidgets('shows status when reminder is provided', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Aspirin',
-        scheduledTime: DateTime(2024, 6, 15, 9, 0),
-        status: 'Pending',
-      );
+    testWidgets('shows dosage and frequency when reminder is provided', (tester) async {
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [sampleItem]),
       ));
-      expect(find.text('Pending'), findsOneWidget);
+      expect(find.textContaining('100 mg'), findsOneWidget);
     });
 
     testWidgets('shows Mark Taken button', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Metformin',
-        scheduledTime: DateTime(2024, 6, 15, 8, 0),
-        status: 'Due',
-      );
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [
+          MedicationReminderItem(
+            medicationId: 2,
+            medicationName: 'Metformin',
+            dosage: '500 mg',
+            frequency: 'Twice daily',
+            nextDueAt: DateTime(2024, 6, 15, 8, 0),
+            isTakenForCurrentWindow: false,
+          ),
+        ]),
       ));
       expect(find.text('Mark Taken'), findsOneWidget);
     });
 
     testWidgets('shows Mark Missed button', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Metformin',
-        scheduledTime: DateTime(2024, 6, 15, 8, 0),
-        status: 'Due',
-      );
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [
+          MedicationReminderItem(
+            medicationId: 3,
+            medicationName: 'Metformin',
+            dosage: '500 mg',
+            frequency: 'Twice daily',
+            nextDueAt: DateTime(2024, 6, 15, 8, 0),
+            isTakenForCurrentWindow: false,
+          ),
+        ]),
       ));
       expect(find.text('Mark Missed'), findsOneWidget);
     });
 
-    testWidgets('calls onMarkTaken when Mark Taken tapped', (tester) async {
-      bool taken = false;
-      final reminder = MedicationReminder(
-        medicationName: 'Lisinopril',
-        scheduledTime: DateTime(2024, 6, 15, 8, 0),
-        status: 'Pending',
-      );
+    testWidgets('calls onMarkTaken with medicationId when Mark Taken tapped', (tester) async {
+      int? takenId;
       await tester.pumpWidget(_wrap(
         MedicationRemindersWidget(
-          reminder: reminder,
-          onMarkTaken: () => taken = true,
+          reminders: [sampleItem],
+          onMarkTaken: (id) => takenId = id,
         ),
       ));
       await tester.tap(find.text('Mark Taken'));
-      expect(taken, isTrue);
+      expect(takenId, equals(1));
     });
 
-    testWidgets('calls onMarkMissed when Mark Missed tapped', (tester) async {
-      bool missed = false;
-      final reminder = MedicationReminder(
-        medicationName: 'Lisinopril',
-        scheduledTime: DateTime(2024, 6, 15, 8, 0),
-        status: 'Pending',
-      );
+    testWidgets('calls onMarkMissed with medicationId when Mark Missed tapped', (tester) async {
+      int? missedId;
       await tester.pumpWidget(_wrap(
         MedicationRemindersWidget(
-          reminder: reminder,
-          onMarkMissed: () => missed = true,
+          reminders: [sampleItem],
+          onMarkMissed: (id) => missedId = id,
         ),
       ));
       await tester.tap(find.text('Mark Missed'));
-      expect(missed, isTrue);
+      expect(missedId, equals(1));
     });
 
     testWidgets('shows medication icon', (tester) async {
-      final reminder = MedicationReminder(
-        medicationName: 'Ibuprofen',
-        scheduledTime: DateTime(2024, 6, 15, 12, 0),
-        status: 'Pending',
-      );
       await tester.pumpWidget(_wrap(
-        MedicationRemindersWidget(reminder: reminder),
+        MedicationRemindersWidget(reminders: [
+          MedicationReminderItem(
+            medicationId: 4,
+            medicationName: 'Ibuprofen',
+            dosage: '200 mg',
+            frequency: 'As needed',
+            nextDueAt: DateTime(2024, 6, 15, 12, 0),
+            isTakenForCurrentWindow: false,
+          ),
+        ]),
       ));
       expect(find.byIcon(Icons.medication), findsOneWidget);
     });

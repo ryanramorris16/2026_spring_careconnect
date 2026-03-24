@@ -37,7 +37,7 @@ class MedicationControllerTest {
         return d;
     }
 
-    // ─── getAllMedications ─────────────────────────────────────────────────────
+    //  getAllMedications 
 
     @Test
     void getAllMedications_returnsListFromService() throws Exception {
@@ -60,7 +60,7 @@ class MedicationControllerTest {
         assertThat(response.getBody()).isEmpty();
     }
 
-    // ─── getActiveMedications ─────────────────────────────────────────────────
+    //  getActiveMedications 
 
     @Test
     void getActiveMedications_returnsActiveList() throws Exception {
@@ -83,7 +83,7 @@ class MedicationControllerTest {
         assertThat(response.getBody()).isEmpty();
     }
 
-    // ─── getPendingMedications ────────────────────────────────────────────────
+    //  getPendingMedications 
 
     @Test
     void getPendingMedications_returnsPendingList() throws Exception {
@@ -106,7 +106,7 @@ class MedicationControllerTest {
         assertThat(response.getBody()).isEmpty();
     }
 
-    // ─── addMedication ────────────────────────────────────────────────────────
+    //  addMedication 
 
     @Test
     void addMedication_delegatesToServiceAndReturnsCreated() throws Exception {
@@ -121,7 +121,7 @@ class MedicationControllerTest {
         verify(medicationService).addMedication(PATIENT_ID, input);
     }
 
-    // ─── approveMedication ────────────────────────────────────────────────────
+    //  approveMedication 
 
     @Test
     void approveMedication_returnsOkWithMessageAndApprovedDto() throws Exception {
@@ -139,7 +139,7 @@ class MedicationControllerTest {
         verify(medicationService).approveMedication(PATIENT_ID, MEDICATION_ID);
     }
 
-    // ─── deleteMedication ─────────────────────────────────────────────────────
+    //  deleteMedication 
 
     @Test
     void deleteMedication_deactivatesAndReturnsMessage() throws Exception {
@@ -155,7 +155,7 @@ class MedicationControllerTest {
         verify(medicationService).deactivateMedication(PATIENT_ID, MEDICATION_ID);
     }
 
-    // ─── deleteMedicationByCaregiver ──────────────────────────────────────────
+    //  deleteMedicationByCaregiver 
 
     @Test
     void deleteMedicationByCaregiver_hardDeletesAndReturnsMessage() throws Exception {

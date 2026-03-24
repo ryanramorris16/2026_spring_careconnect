@@ -29,7 +29,7 @@ public class UserFile {
     private Long fileSize;
     
     @Lob
-    @Column(name = "file_data", nullable = false)
+    @Column(name = "file_data", nullable = true)
     @Basic(fetch = FetchType.LAZY)
     private byte[] fileData;
     

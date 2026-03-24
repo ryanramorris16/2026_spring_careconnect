@@ -198,6 +198,7 @@ class CallNotificationService {
       genericFallback: 'Unknown Caller',
     );
     final isVideoCall = callData['isVideoCall'] ?? true;
+    final isConferenceInvite = callData['isConferenceInvite'] == true;
 
     if (callId.isEmpty) return;
     _pruneSuppressedIncomingCallIds();
@@ -220,7 +221,8 @@ class CallNotificationService {
       return;
     }
 
-    debugPrint('📞 Processing incoming call from $callerName ($callerRole)');
+    debugPrint('📞 Processing incoming call from $callerName ($callerRole)'
+        '${isConferenceInvite ? ' [conference invite]' : ''}');
 
     // Show incoming call popup
     _showIncomingCallPopup(
@@ -229,6 +231,7 @@ class CallNotificationService {
       callerName: callerName,
       isVideoCall: isVideoCall,
       callerRole: callerRole,
+      isConferenceInvite: isConferenceInvite,
     );
   }
 
@@ -239,6 +242,7 @@ class CallNotificationService {
     required String callerName,
     required bool isVideoCall,
     required String callerRole,
+    bool isConferenceInvite = false,
   }) {
     if (_context == null) return;
 
@@ -255,6 +259,7 @@ class CallNotificationService {
         callerName: callerName,
         isVideoCall: isVideoCall,
         callerRole: callerRole,
+        isConferenceInvite: isConferenceInvite,
         onAccept: () => _acceptCall(
           callId: callId,
           callerId: callerId,

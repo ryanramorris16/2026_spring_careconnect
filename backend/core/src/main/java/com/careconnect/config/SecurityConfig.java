@@ -133,6 +133,9 @@ public class SecurityConfig {
                                 "/api/notifications/demo/**"
                         ).permitAll()
 
+                        /* ---------- Actuator / health checks ------------------- */
+                        .requestMatchers("/actuator/**").permitAll()
+
                         /* ---------- Public static assets ---------------------- */
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
