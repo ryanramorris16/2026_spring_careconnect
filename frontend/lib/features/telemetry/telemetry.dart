@@ -178,8 +178,10 @@ class Telemetry {
     };
 
     try {
-      final resp = await ApiService.sendTelemetryEventV3(
-        payload: Map<String, dynamic>.from(payload),
+      final resp = await client.post(
+        Uri.parse(_devEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
       );
 
       final queued = resp.headers['x-offline-queued'] == 'true';
