@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../config/env_constant.dart';
 import 'telemetry_settings.dart';
 import 'telemetry_guardrails.dart';
+import '../../services/api_service.dart';
 
 class Telemetry {
   static http.Client client = http.Client();
@@ -97,9 +98,16 @@ class Telemetry {
         return enabled == true;
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[telemetry] getBackendEnabled failed: $e');
+      _backendEnabledCache = true;
+      _backendEnabledCacheTime = DateTime.now();
+
+      if (kDebugMode) {
+        debugPrint('[telemetry] getBackendEnabled failed, failing open');
+      }
+      return true;
     }
-    // Fail open if backend call fails.
+
+    // fallback (non-200 response, etc.)
     return true;
   }
 
@@ -170,18 +178,24 @@ class Telemetry {
     };
 
     try {
-      final resp = await client.post(
-        Uri.parse(_devEndpoint),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+      final resp = await ApiService.sendTelemetryEventV3(
+        payload: Map<String, dynamic>.from(payload),
+      );  
+
+      final queued = resp.headers['x-offline-queued'] == 'true';
 
       if (kDebugMode) {
-        debugPrint('[telemetry] sent: $name status=${resp.statusCode}');
-        if (resp.statusCode >= 400) debugPrint('[telemetry] body=${resp.body}');
+        debugPrint(
+          '[telemetry] sent: $name status=${resp.statusCode} queued=$queued',
+        );
+        if (resp.statusCode >= 400) {
+          debugPrint('[telemetry] body=${resp.body}');
+        }
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[telemetry] send failed: $name error=$e');
+      if (kDebugMode) {
+        debugPrint('[telemetry] send failed: $name error=$e');
+      }
     }
   }
 }
