@@ -37,12 +37,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.care_connect_app"
+        applicationId = "edu.umgc.careconnect"
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.example.care_connect_app"
+        manifestPlaceholders["appAuthRedirectScheme"] = "edu.umgc.careconnect"
     }
 
     buildTypes {
