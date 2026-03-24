@@ -1,4 +1,6 @@
 /// Centralized Auth Guard Service for page protection
+// ignore_for_file: avoid_print
+
 library;
 
 import 'package:flutter/widgets.dart';
@@ -15,7 +17,6 @@ import '../providers/user_provider.dart';
 import 'messaging_service.dart';
 import 'auth_token_manager.dart';
 import 'user_role_storage_service.dart';
-import '../features/telemetry/telemetry.dart';
 import 'dart:io';
 
 class ApiConstants {
@@ -125,7 +126,6 @@ class AuthService {
               // Store user data in UserRoleStorageService for navigation
               await _storeUserDataFromSession(userSession);
 
-              Telemetry.resetSession();
               print('Google OAuth login successful: JWT token force-updated');
 
               // Create and return the user session
@@ -194,7 +194,6 @@ class AuthService {
         print('Warning: Failed to register user to WebSocket: $e');
       }
 
-      Telemetry.resetSession();
       print('Login successful: JWT token force-updated');
 
       return userSession;
@@ -475,8 +474,6 @@ class AuthService {
     // Clear user data from UserRoleStorageService
     await UserRoleStorageService.instance.clearUserData();
 
-    Telemetry.resetSession();
-
     if (response.statusCode == 200) {
       print("Logout successful");
     } else {
@@ -509,7 +506,6 @@ class AuthService {
       // Store user data in UserRoleStorageService for navigation
       await _storeUserDataFromSession(userSession);
 
-      Telemetry.resetSession();
       print('OAuth callback processed: JWT token force-updated');
 
       // Create and return the user session
@@ -558,7 +554,6 @@ class AuthService {
         // If refresh fails, clear auth data to force re-login
         await AuthTokenManager.clearAuthData();
         await UserRoleStorageService.instance.clearUserData();
-        Telemetry.resetSession();
         return null;
       }
     } catch (e) {
@@ -566,7 +561,6 @@ class AuthService {
       // Clear auth data on error to force re-login
       await AuthTokenManager.clearAuthData();
       await UserRoleStorageService.instance.clearUserData();
-      Telemetry.resetSession();
       return null;
     }
   }
@@ -600,7 +594,8 @@ class AuthService {
 
       if (kDebugMode) {
         print(
-            'User data stored in UserRoleStorageService: Role=${userSession.role}, UserID=${userSession.id}');
+          'User data stored in UserRoleStorageService: Role=${userSession.role}, UserID=${userSession.id}',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -653,16 +648,18 @@ class AuthService {
     try {
       final endpoint = '${ApiConstants.auth}/sso/alexa/code';
 
-      final response = await http.post(
-        Uri.parse(endpoint),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw SocketException('Request timeout'),
-      );
+      final response = await http
+          .post(
+            Uri.parse(endpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw SocketException('Request timeout'),
+          );
 
       final data = jsonDecode(response.body);
 
@@ -717,7 +714,8 @@ class AuthService {
           .timeout(const Duration(seconds: 15));
 
       print(
-          "🔌 Alexa unlink response: ${response.statusCode} - ${response.body}");
+        "🔌 Alexa unlink response: ${response.statusCode} - ${response.body}",
+      );
 
       if (response.statusCode == 200) {
         return {
@@ -737,6 +735,18 @@ class AuthService {
         'isSuccess': false,
         'message': 'An unexpected error occurred: $e',
       };
+    }
+  }
+
+  /// Get current user session from storage
+  static Future<UserSession?> getCurrentUser() async {
+    try {
+      final userData = await AuthTokenManager.getUserSession();
+      if (userData == null) return null;
+      return UserSession.fromJson(userData);
+    } catch (e) {
+      print('Error getting current user: $e');
+      return null;
     }
   }
 }
