@@ -34,6 +34,7 @@ class BottomNavItem {
   final String routeName;
   final Widget? screen;
   final bool requiresPatientId;
+  final bool showCallFab;
   final void Function(BuildContext context, WidgetBuilder builder)? onPress;
 
   /// Creates a new BottomNavItem.
@@ -45,6 +46,7 @@ class BottomNavItem {
   /// * [routeName] - The route identifier for navigation purposes
   /// * [screen] - Optional widget to display when the item is pressed
   /// * [requiresPatientId] - Whether this item requires a patient ID to function (defaults to false)
+  /// * [showCallFab] - Whether to show the global video call FAB on this tab (defaults to false)
   /// * [onPress] - Optional callback function executed when the item is pressed
   const BottomNavItem({
     required this.label,
@@ -54,6 +56,7 @@ class BottomNavItem {
     required this.routeName,
     this.screen,
     this.requiresPatientId = false,
+    this.showCallFab = false,
     this.onPress,
   }) : assert(
          screen != null || onPress != null,
@@ -98,6 +101,7 @@ class BottomNavConfig {
         activeIcon: Icons.home,
         routeName: 'home',
         screen: const PatientHomeTab(),
+        showCallFab: true,
       ),
       BottomNavItem(
         label: 'Symptoms and Allergies',
@@ -157,6 +161,7 @@ static List<BottomNavItem> getCaregiverNavItems() {
         activeIcon: Icons.home,
         routeName: 'home',
         screen: const CaregiverDashboard(),
+        showCallFab: true,
       ),
       BottomNavItem(
         label: 'Patient List',

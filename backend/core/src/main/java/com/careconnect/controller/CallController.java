@@ -28,12 +28,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v3/calls")
@@ -54,6 +56,7 @@ public class CallController {
     @Autowired private CallSummaryService callSummaryService;
     @Autowired private CallRecordingService callRecordingService;
     @Autowired private CaregiverPatientLinkService caregiverPatientLinkService;
+    @Autowired private com.careconnect.service.FamilyMemberService familyMemberService;
     @Autowired private UserRepository userRepository;
     @Autowired private Environment environment;
 
@@ -147,6 +150,164 @@ public class CallController {
         }
     }
 
+    // =========================================================
+    // CONFERENCE: eligible invitees + add-participant invite
+    // =========================================================
+
+    @GetMapping("/{callId}/eligible-invitees")
+    @Operation(summary = "Get care-circle members who can be added to an active call")
+    public ResponseEntity<List<Map<String, Object>>> getEligibleInvitees(@PathVariable String callId) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != com.careconnect.security.Role.CAREGIVER) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only caregivers can invite participants");
+        }
+        if (!chimeService.isMeetingActive(callId)) {
+            throw new AppException(HttpStatus.GONE, "Call is no longer active");
+        }
+
+        Long patientId = findPatientInCall(callId);
+        if (patientId == null) {
+            throw new AppException(HttpStatus.NOT_FOUND, "No patient found in this call");
+        }
+
+        Set<Long> currentParticipantIds = resolveActiveParticipantIds(callId);
+
+        List<Map<String, Object>> eligible = new ArrayList<>();
+
+        caregiverPatientLinkService.getCaregiversByPatient(patientId).stream()
+                .filter(link -> !currentParticipantIds.contains(link.caregiverUserId()))
+                .filter(link -> !link.caregiverUserId().equals(currentUser.getId()))
+                .forEach(link -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("userId", link.caregiverUserId());
+                    entry.put("name", link.caregiverName() != null ? link.caregiverName() : link.caregiverEmail());
+                    entry.put("role", "CAREGIVER");
+                    entry.put("relationship", null);
+                    eligible.add(entry);
+                });
+
+        familyMemberService.getFamilyMembersByPatient(patientId).stream()
+                .filter(link -> !currentParticipantIds.contains(link.familyUserId()))
+                .forEach(link -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("userId", link.familyUserId());
+                    entry.put("name", link.familyMemberName() != null ? link.familyMemberName() : link.familyMemberEmail());
+                    entry.put("role", "FAMILY_MEMBER");
+                    entry.put("relationship", link.relationship());
+                    eligible.add(entry);
+                });
+
+        return ResponseEntity.ok(eligible);
+    }
+
+    @PostMapping("/{callId}/invite")
+    @Operation(summary = "Add a care-circle member to an active call")
+    public ResponseEntity<Map<String, Object>> inviteParticipant(
+            @PathVariable String callId,
+            @RequestBody Map<String, Object> body) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getRole() != com.careconnect.security.Role.CAREGIVER) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Only caregivers can invite participants");
+        }
+        if (!chimeService.isMeetingActive(callId)) {
+            throw new AppException(HttpStatus.GONE, "Call is no longer active");
+        }
+
+        Long targetUserId = parseUserId(body.get("targetUserId") == null ? null : body.get("targetUserId").toString());
+        if (targetUserId == null) {
+            throw new AppException(HttpStatus.BAD_REQUEST, "targetUserId is required");
+        }
+
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (target.getRole() == com.careconnect.security.Role.PATIENT) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Cannot add a patient to an existing call");
+        }
+
+        Long patientId = findPatientInCall(callId);
+        if (patientId == null) {
+            throw new AppException(HttpStatus.NOT_FOUND, "No patient found in this call");
+        }
+
+        boolean isLinked = target.getRole() == com.careconnect.security.Role.CAREGIVER
+                ? caregiverPatientLinkService.hasAccessToPatient(targetUserId, patientId)
+                : familyMemberService.hasAccessToPatient(targetUserId, patientId);
+        if (!isLinked) {
+            throw new AppException(HttpStatus.FORBIDDEN, "User is not in this patient's care circle");
+        }
+
+        // Add attendee to the existing Chime meeting (meeting already exists)
+        chimeService.createAttendee(callId, targetUserId.toString());
+
+        // Notify target via WebSocket if online
+        Map<String, Object> invite = new HashMap<>();
+        invite.put("type", "incoming-video-call");
+        invite.put("senderId", currentUser.getId());
+        invite.put("senderName", getCallUserDisplayName(currentUser));
+        invite.put("senderEmail", currentUser.getEmail());
+        invite.put("senderRole", currentUser.getRole().name());
+        invite.put("callId", callId);
+        invite.put("isVideoCall", true);
+        invite.put("callType", "conference-invite");
+        invite.put("isConferenceInvite", true);
+        invite.put("timestamp", System.currentTimeMillis());
+        boolean online = callNotificationHandler.isUserOnline(targetUserId.toString());
+        if (online) {
+            callNotificationHandler.sendNotificationToUser(targetUserId.toString(), invite);
+        }
+
+        callTelemetryService.recordCallEvent(callId, "CONFERENCE_INVITE",
+                currentUser.getId(), targetUserId, online ? "SUCCESS" : "OFFLINE",
+                Map.of("targetRole", target.getRole().name()), null);
+
+        log.info("Caregiver {} invited {} to call {} (online={})", currentUser.getId(), targetUserId, callId, online);
+        String status = online ? "invited" : "offline";
+        return ResponseEntity.ok(Map.of("status", status, "callId", callId, "targetUserId", targetUserId));
+    }
+
+    private Long findPatientInCall(String callId) {
+        return callTelemetryService.getTelemetryForCall(callId).stream()
+                .filter(e -> "CALL_JOIN".equals(e.getEventType()) && e.getActorUserId() != null)
+                .map(e -> userRepository.findById(e.getActorUserId()).orElse(null))
+                .filter(u -> u != null && u.getRole() == com.careconnect.security.Role.PATIENT)
+                .map(User::getId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String getCallUserDisplayName(User user) {
+        String name = user.getName();
+        if (name != null && !name.trim().isEmpty()) {
+            return name.trim();
+        }
+        return user.getRole().name().charAt(0)
+                + user.getRole().name().substring(1).toLowerCase();
+    }
+
+    private Set<Long> resolveActiveParticipantIds(String callId) {
+        Set<Long> activeParticipantIds = new LinkedHashSet<>();
+
+        callTelemetryService.getTelemetryForCall(callId).stream()
+                .filter(event -> event.getOccurredAt() != null)
+                .sorted(java.util.Comparator.comparing(CallTelemetryEvent::getOccurredAt))
+                .forEach(event -> {
+                    Long actorUserId = event.getActorUserId();
+                    if (actorUserId == null) {
+                        return;
+                    }
+
+                    String eventType = event.getEventType();
+                    if ("CALL_JOIN".equals(eventType)) {
+                        activeParticipantIds.add(actorUserId);
+                    } else if ("CALL_LEAVE".equals(eventType) || "CALL_END".equals(eventType)) {
+                        activeParticipantIds.remove(actorUserId);
+                    }
+                });
+
+        return activeParticipantIds;
+    }
+
     @PostMapping("/{callId}/end")
     @Operation(summary = "End a Chime meeting and notify all participants")
     public ResponseEntity<Map<String, String>> endCall(
@@ -159,32 +320,67 @@ public class CallController {
                 Object otherPartyRaw = body.get("otherPartyId");
                 otherPartyId = otherPartyRaw == null ? null : otherPartyRaw.toString();
             }
-            Map<String, Object> contextMetadata = extractCallContextMetadata(body);
-            maybeRecordFinalOverallSentiment(callId, currentUser.getId(), parseUserId(otherPartyId));
-            maybeGenerateAndStoreCallSummary(callId, currentUser.getId());
-            callRecordingService.stopRecording(callId);
-            chimeService.endMeeting(callId);
-            if (otherPartyId != null && !otherPartyId.isBlank()) {
-                callNotificationHandler.sendNotificationToUser(otherPartyId, Map.of(
-                        "type", "call-ended",
-                        "callId", callId,
-                        "endedBy", currentUser.getId().toString()
-                ));
+
+            Set<Long> activeParticipantIds = resolveActiveParticipantIds(callId);
+            Long parsedOtherPartyId = parseUserId(otherPartyId);
+            if (parsedOtherPartyId != null && !parsedOtherPartyId.equals(currentUser.getId())) {
+                activeParticipantIds.add(parsedOtherPartyId);
             }
+            activeParticipantIds.add(currentUser.getId());
+            activeParticipantIds.remove(currentUser.getId());
+            boolean shouldEndMeeting = activeParticipantIds.size() <= 1;
+            Map<String, Object> contextMetadata = extractCallContextMetadata(body);
+
+            if (shouldEndMeeting) {
+                maybeRecordFinalOverallSentiment(callId, currentUser.getId(), parseUserId(otherPartyId));
+                maybeGenerateAndStoreCallSummary(callId, currentUser.getId());
+                callRecordingService.stopRecording(callId);
+                chimeService.endMeeting(callId);
+            }
+
+            if (shouldEndMeeting) {
+                activeParticipantIds.stream()
+                        .map(String::valueOf)
+                        .forEach(participantId -> callNotificationHandler.sendNotificationToUser(participantId, Map.of(
+                                "type", "call-ended",
+                                "callId", callId,
+                                "endedBy", currentUser.getId().toString()
+                        )));
+            } else {
+                activeParticipantIds.stream()
+                        .map(String::valueOf)
+                        .forEach(participantId -> callNotificationHandler.sendNotificationToUser(participantId, Map.of(
+                                "type", "participant-left",
+                                "callId", callId,
+                                "leftBy", currentUser.getId().toString(),
+                                "remainingParticipantCount", activeParticipantIds.size()
+                        )));
+            }
+
+            String eventType = shouldEndMeeting ? "CALL_END" : "CALL_LEAVE";
             callTelemetryService.recordCallEvent(
                     callId,
-                    "CALL_END",
+                    eventType,
                     currentUser.getId(),
                     parseUserId(otherPartyId),
                     "SUCCESS",
                     mergeMetadata(
-                            Map.of("notifiedOtherParty", otherPartyId != null && !otherPartyId.isBlank()),
+                            Map.of(
+                                    "endedMeeting", shouldEndMeeting,
+                                    "remainingParticipantCount", activeParticipantIds.size(),
+                                    "notifiedOtherParty", otherPartyId != null && !otherPartyId.isBlank()
+                            ),
                             contextMetadata
                     ),
                     null
             );
-            log.info("User {} ended call {}", currentUser.getId(), callId);
-            return ResponseEntity.ok(Map.of("status", "ended", "callId", callId));
+            log.info("User {} {} call {} (remainingParticipants={}, endedMeeting={})",
+                    currentUser.getId(), shouldEndMeeting ? "ended" : "left", callId, activeParticipantIds.size(), shouldEndMeeting);
+            return ResponseEntity.ok(Map.of(
+                    "status", shouldEndMeeting ? "ended" : "left",
+                    "callId", callId,
+                    "remainingParticipantCount", String.valueOf(activeParticipantIds.size())
+            ));
         } catch (AppException e) {
             Long actorId = null;
             try {
@@ -1279,7 +1475,7 @@ public class CallController {
     }
 
     @DeleteMapping("/recordings")
-    @Operation(summary = "Purge ALL recordings from S3 and DB (dev/local only — for test cleanup)")
+    @Operation(summary = "Purge ALL recordings from S3 and DB (dev/local only - for test cleanup)")
     public ResponseEntity<Map<String, Object>> purgeAllRecordings() {
         ensureDevOrLocalMode();
         User currentUser = getCurrentUser();
@@ -1289,5 +1485,6 @@ public class CallController {
     }
 
 }
+
 
 

@@ -35,8 +35,6 @@ public class MedicationController {
     // ================================================================
     // 1. Fetch all medications for a patient
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/medications")
     public ResponseEntity<List<MedicationDTO>> getAllMedications(@PathVariable Long patientId) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -48,8 +46,6 @@ public class MedicationController {
     // ================================================================
     // 1.1 Fetch only active medications
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/medications/active")
     public ResponseEntity<List<MedicationDTO>> getActiveMedications(@PathVariable Long patientId) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
@@ -61,8 +57,6 @@ public class MedicationController {
     // ================================================================
     // 1.2 Fetch pending medications (approval_status = 'PENDING')
     // ================================================================
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
-
     @GetMapping("/{patientId}/medications/pending")
     public ResponseEntity<List<MedicationDTO>> getPendingMedications(@PathVariable Long patientId) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
