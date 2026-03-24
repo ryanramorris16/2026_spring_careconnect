@@ -773,6 +773,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (user == null || !_isRoleSupportedForGlobalCall(user.role)) {
       return null;
     }
+    if (_navItems.isEmpty || !_navItems[_selectedIndex].showCallFab) {
+      return null;
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 78),

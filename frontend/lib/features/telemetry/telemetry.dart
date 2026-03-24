@@ -7,8 +7,6 @@ import 'telemetry_settings.dart';
 import 'telemetry_guardrails.dart';
 
 class Telemetry {
-  static http.Client client = http.Client();
-
   // Backend base URL (configurable via Dart environment variable)
   static String get _backendBase => getBackendBaseUrl();
 
@@ -28,23 +26,12 @@ class Telemetry {
   // One session ID per app run
   static String? _sessionId;
 
-  static void resetForTest() {
-    _backendEnabledCache = null;
-    _backendEnabledCacheTime = null;
-    _forcedBackendOffThisRun = false;
-    _sessionId = null;
-  }
-
   static String _getSessionId() {
     if (_sessionId != null) return _sessionId!;
 
     final micros = DateTime.now().microsecondsSinceEpoch;
     _sessionId = 'session-$micros';
     return _sessionId!;
-  }
-
-  static void resetSession() {
-    _sessionId = null;
   }
 
   static Future<bool> _enabledLocal() async {
@@ -90,7 +77,7 @@ class Telemetry {
 
   static Future<bool> getBackendEnabled() async {
     try {
-      final resp = await client.get(Uri.parse('$_devEndpoint/enabled'));
+      final resp = await http.get(Uri.parse('$_devEndpoint/enabled'));
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
         final enabled = decoded is Map ? decoded['enabled'] : null;
@@ -105,7 +92,7 @@ class Telemetry {
 
   static Future<bool> setBackendEnabled(bool enabled) async {
     try {
-      final resp = await client.put(
+      final resp = await http.put(
         Uri.parse('$_devEndpoint/enabled?enabled=$enabled'),
       );
 
@@ -170,7 +157,7 @@ class Telemetry {
     };
 
     try {
-      final resp = await client.post(
+      final resp = await http.post(
         Uri.parse(_devEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
