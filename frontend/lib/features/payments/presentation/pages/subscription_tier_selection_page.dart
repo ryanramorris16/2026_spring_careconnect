@@ -204,8 +204,13 @@ class _SubscriptionTierSelectionPageState
   void _continueToPayment() {
     if (_selectedTier == null) return;
 
+    // Free tier bypasses payment entirely
+    if (_selectedTier == 'free') {
+      context.go('/home');
+      return;
+    }
+
     final tierIdMap = {
-      'free': 1,
       'standard_monthly': 2,
       'premium_monthly': 3,
     };
