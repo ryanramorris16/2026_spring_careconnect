@@ -53,10 +53,14 @@ class ApiConstants {
 
   // EVV endpoints
   static final String evv = '$_host/v1/api/evv';
+
+  // Telemetry endpoints
+  static final String telemetryV3 = '$_host/v1/api/dev/telemetry';
 }
 
 class ApiService {
-  static const storage = FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
+  static const storage =
+      FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
   static http.Client _httpClient = ApiServiceOffline.httpClient;
 
   static void configureOfflineQueue({
@@ -670,7 +674,8 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print('ΓÜá∩╕Å getCaregiverMoodSummaries failed: ${response.statusCode}');
+        print(
+            'ΓÜá∩╕Å getCaregiverMoodSummaries failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
@@ -781,6 +786,22 @@ class ApiService {
       print('Γ¥î getMoodHistory error: $e');
       return [];
     }
+  }
+
+  // ========================
+  // TELEMETRY METHODS
+  // ========================
+
+  static Future<http.Response> sendTelemetryEventV3({
+    required Map<String, dynamic> payload,
+  }) async {
+    return await _httpClient
+        .post(
+          Uri.parse(ApiConstants.telemetryV3),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 15));
   }
 
   // ========================
@@ -1328,7 +1349,6 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final url = Uri.parse('${ApiConstants._host}/v1/api/patients/$patientId');
@@ -1379,7 +1399,8 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
 
     print('≡ƒöì registerPatientForCaregiver caregiverId: $caregiverId');
-    print('≡ƒöì patientData with structured address: ${jsonEncode(patientData)}');
+    print(
+        '≡ƒöì patientData with structured address: ${jsonEncode(patientData)}');
 
     return await _httpClient
         .post(
@@ -1474,7 +1495,9 @@ class ApiService {
     }
     final uri = Uri.parse('${ApiConstants.clients}/$clientId/audit-log')
         .replace(queryParameters: query.isEmpty ? null : query);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 30));
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 30));
   }
 
   /// Update patient profile
@@ -1510,7 +1533,8 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-  static Future<http.Response> flagPatientRisk(int patientId, int riskTypeId) async {
+  static Future<http.Response> flagPatientRisk(
+      int patientId, int riskTypeId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json';
     return await _httpClient
@@ -1522,7 +1546,8 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-  static Future<http.Response> unflagPatientRisk(int patientId, int riskId) async {
+  static Future<http.Response> unflagPatientRisk(
+      int patientId, int riskId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .delete(
@@ -1574,7 +1599,8 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .put(
-          Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId'),
+          Uri.parse(
+              '${ApiConstants.clients}/$clientId/activity-config/$activityId'),
           headers: headers,
           body: jsonEncode({'isEnabled': isEnabled}),
         )
@@ -1591,7 +1617,8 @@ class ApiService {
     headers.remove('Content-Type');
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId/icon'),
+      Uri.parse(
+          '${ApiConstants.clients}/$clientId/activity-config/$activityId/icon'),
     );
     request.headers.addAll(headers);
     request.files.add(await http.MultipartFile.fromPath(
@@ -1627,9 +1654,11 @@ class ApiService {
       'activityId': activityId,
       'competencyScore': competencyScore,
     };
-    if (satisfactionRating != null) body['satisfactionRating'] = satisfactionRating;
+    if (satisfactionRating != null)
+      body['satisfactionRating'] = satisfactionRating;
     if (notes != null && notes.trim().isNotEmpty) body['notes'] = notes.trim();
-    if (activityName != null && activityName.trim().isNotEmpty) body['activityName'] = activityName.trim();
+    if (activityName != null && activityName.trim().isNotEmpty)
+      body['activityName'] = activityName.trim();
     return await _httpClient
         .post(
           Uri.parse(ApiConstants.activityLogs),
@@ -1640,10 +1669,14 @@ class ApiService {
   }
 
   /// GET /activity-logs?clientId=X&limit=N ΓÇö list activity logs for a client.
-  static Future<http.Response> getActivityLogs(int clientId, {int limit = 100}) async {
+  static Future<http.Response> getActivityLogs(int clientId,
+      {int limit = 100}) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final uri = Uri.parse(ApiConstants.activityLogs).replace(
-      queryParameters: {'clientId': clientId.toString(), 'limit': limit.toString()},
+      queryParameters: {
+        'clientId': clientId.toString(),
+        'limit': limit.toString()
+      },
     );
     return await _httpClient
         .get(uri, headers: headers)
@@ -1743,11 +1776,13 @@ class ApiService {
   }
 
   /// GET /clients/{id}/incident-reports/{reportId}` ΓÇö single report with actions.
-  static Future<http.Response> getIncidentReport(int clientId, int reportId) async {
+  static Future<http.Response> getIncidentReport(
+      int clientId, int reportId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.clients}/$clientId/incident-reports/$reportId'),
+          Uri.parse(
+              '${ApiConstants.clients}/$clientId/incident-reports/$reportId'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 15));
@@ -1764,9 +1799,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/competency-trends')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/competency-trends')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   static String _formatDate(DateTime d) {
@@ -1783,9 +1822,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/behavioral-trends')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/behavioral-trends')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   /// GET /clients/{id}/reports/participation ΓÇö activity log counts and last logged per activity.
@@ -1798,9 +1841,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/participation')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/participation')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   /// Upload profile picture or other files
