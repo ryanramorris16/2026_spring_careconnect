@@ -1,6 +1,6 @@
 ﻿import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+// import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -127,11 +127,11 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
 
     // Debug: Check if JWT token is included
-    print('≡ƒöì registerPatient headers: $headers');
+    debugPrint('registerPatient headers: $headers');
     final hasAuth = headers.containsKey('Authorization');
-    print('≡ƒöì Authorization header present: $hasAuth');
+    debugPrint('Authorization header present: $hasAuth');
     if (hasAuth) {
-      print('≡ƒöì Auth header value: ${headers['Authorization']}');
+      debugPrint('Auth header value: ${headers['Authorization']}');
     }
 
     return await _httpClient
@@ -541,8 +541,8 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 15));
 
-      print(
-        '≡ƒöì Check email response: ${response.statusCode} - ${response.body}',
+      debugPrint(
+        'Check email response: ${response.statusCode} - ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -554,7 +554,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('Γ¥î Error checking email: $e');
+      debugPrint('Error checking email: $e');
       return {'exists': false, 'error': e.toString()};
     }
   }
@@ -569,7 +569,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
-    print('≡ƒöì Sending connection request to $patientEmail');
+    debugPrint('Sending connection request to $patientEmail');
 
     return await _httpClient
         .post(
@@ -606,16 +606,16 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json'; // Add content type header
 
-    print('≡ƒöì Calling suspendCaregiverPatientLink for linkId: $linkId');
+    debugPrint('Calling suspendCaregiverPatientLink for linkId: $linkId');
 
     // Try both formats to determine which one works with the backend
     final url1 =
         '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/suspend';
     final url2 = '${ApiConstants.baseUrl}caregivers/links/$linkId/suspend';
 
-    print('≡ƒöì URL Option 1: $url1');
-    print('≡ƒöì URL Option 2: $url2');
-    print('≡ƒöì Headers: $headers');
+    debugPrint('URL Option 1: $url1');
+    debugPrint('URL Option 2: $url2');
+    debugPrint('Headers: $headers');
 
     // Use the first URL format by default
     final String finalUrl = url1;
@@ -635,16 +635,16 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json'; // Add content type header
 
-    print('≡ƒöì Calling reactivateCaregiverPatientLink for linkId: $linkId');
+    debugPrint(' Calling reactivateCaregiverPatientLink for linkId: $linkId');
 
     // Try both formats to determine which one works with the backend
     final url1 =
         '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/reactivate';
     final url2 = '${ApiConstants.baseUrl}caregivers/links/$linkId/reactivate';
 
-    print('≡ƒöì URL Option 1: $url1');
-    print('≡ƒöì URL Option 2: $url2');
-    print('≡ƒöì Headers: $headers');
+    debugPrint(' URL Option 1: $url1');
+    debugPrint(' URL Option 2: $url2');
+    debugPrint(' Headers: $headers');
 
     // Use the first URL format by default
     final String finalUrl = url1;
@@ -674,12 +674,12 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print(
+        debugPrint(
             'ΓÜá∩╕Å getCaregiverMoodSummaries failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
-      print('Γ¥î getCaregiverMoodSummaries error: $e');
+      debugPrint('Γ¥î getCaregiverMoodSummaries error: $e');
       return {};
     }
   }
@@ -700,11 +700,11 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getActiveMedications error: $e');
+      debugPrint('Γ¥î getActiveMedications error: $e');
       return [];
     }
   }
@@ -726,11 +726,11 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getTodaysMedications error: $e');
+      debugPrint('Γ¥î getTodaysMedications error: $e');
       return [];
     }
   }
@@ -756,11 +756,11 @@ class ApiService {
           .post(url, headers: headers, body: body)
           .timeout(const Duration(seconds: 30));
 
-      print(
-          '≡ƒöì saveMoodScore response: ${response.statusCode} - ${response.body}');
+      debugPrint(
+          ' saveMoodScore response: ${response.statusCode} - ${response.body}');
       return response;
     } catch (e) {
-      print('Γ¥î saveMoodScore error: $e');
+      debugPrint('Γ¥î saveMoodScore error: $e');
       rethrow;
     }
   }
@@ -779,11 +779,11 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getMoodHistory failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getMoodHistory failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getMoodHistory error: $e');
+      debugPrint('Γ¥î getMoodHistory error: $e');
       return [];
     }
   }
@@ -855,7 +855,7 @@ class ApiService {
   // Save JWT token from Set-Cookie header or response body
   static Future<void> saveJWTToken(String token) async {
     // This method is now deprecated - use AuthTokenManager.saveAuthData instead
-    print(
+    debugPrint(
       'Warning: saveJWTToken is deprecated. Use AuthTokenManager.saveAuthData instead.',
     );
   }
@@ -1398,9 +1398,9 @@ class ApiService {
   }) async {
     final headers = await AuthTokenManager.getAuthHeaders();
 
-    print('≡ƒöì registerPatientForCaregiver caregiverId: $caregiverId');
-    print(
-        '≡ƒöì patientData with structured address: ${jsonEncode(patientData)}');
+    debugPrint(' registerPatientForCaregiver caregiverId: $caregiverId');
+    debugPrint(
+        ' patientData with structured address: ${jsonEncode(patientData)}');
 
     return await _httpClient
         .post(
@@ -1417,7 +1417,7 @@ class ApiService {
     required String patientEmail,
   }) async {
     final headers = await AuthTokenManager.getAuthHeaders();
-    print('addExistingPatientToCaregiver caregiverId: $caregiverId');
+    debugPrint('addExistingPatientToCaregiver caregiverId: $caregiverId');
     final url = '${ApiConstants.baseUrl}caregivers/$caregiverId/patients/add';
 
     return await _httpClient
@@ -1922,7 +1922,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Error getting profile picture URL: $e');
+      debugPrint('Error getting profile picture URL: $e');
       return null;
     }
   }
@@ -1943,11 +1943,11 @@ class ApiService {
         if (data is Map<String, dynamic>) return data;
         return {};
       } else {
-        print('ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
-      print('Γ¥î getPrimaryCareProvider error: $e');
+      debugPrint('Γ¥î getPrimaryCareProvider error: $e');
       return {};
     }
   }
@@ -2203,11 +2203,11 @@ class ApiService {
           return decoded as Map<String, dynamic>?;
         }
       } else {
-        print('Failed to fetch enhanced profile: ${response.statusCode}');
+        debugPrint('Failed to fetch enhanced profile: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Error fetching enhanced patient profile: ${e.toString()}');
+      debugPrint('Error fetching enhanced patient profile: ${e.toString()}');
       return null;
     }
   }
