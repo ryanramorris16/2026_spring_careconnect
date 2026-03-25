@@ -17,16 +17,27 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Service that records and summarizes call telemetry events. */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CallTelemetryService {
+
+  /** Sentiment score threshold above which a call segment is labelled CALM. */
+  private static final double CALM_SCORE_THRESHOLD = 0.67;
+
+  /** Sentiment score threshold below which a call segment is labelled DISTRESSED. */
+  private static final double DISTRESSED_SCORE_THRESHOLD = 0.34;
+
+  /** Multiplier used when rounding doubles to three decimal places. */
+  private static final double ROUND_SCALE = 1000.0;
+
+  /** Maximum string length for an individual telemetry payload value before truncation. */
+  private static final int MAX_VALUE_LENGTH = 180;
 
   private static final Set<String> LARGE_OR_SENSITIVE_KEYS =
       Set.of(
@@ -72,6 +83,20 @@ public class CallTelemetryService {
   private final ObjectMapper objectMapper;
 
   /**
+   * Creates the call telemetry service with its required collaborators.
+   *
+   * @param callTelemetryEventRepository repository used to persist call telemetry events
+   * @param objectMapper mapper used to serialize and deserialize telemetry payloads
+   */
+  @Autowired
+  public CallTelemetryService(
+      final CallTelemetryEventRepository callTelemetryEventRepository,
+      final ObjectMapper objectMapper) {
+    this.callTelemetryEventRepository = callTelemetryEventRepository;
+    this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
+  }
+
+  /**
    * Records a general call telemetry event.
    *
    * @param callId call identifier
@@ -93,7 +118,7 @@ public class CallTelemetryService {
     final CallTelemetryEvent event =
         buildBaseEvent(callId, eventType, "REST", actorUserId, targetUserId, status, errorMessage);
     event.setMetadataJson(toJsonSafe(metadata));
-    callTelemetryEventRepository.save(event);
+    saveEventSafely(event, eventType, callId);
   }
 
   /**
@@ -127,7 +152,7 @@ public class CallTelemetryService {
     event.setCaptureMode(trim(captureMode));
     applySentimentResult(event, result);
     event.setPayloadJson(toJsonSafe(sanitizePayload(payload)));
-    callTelemetryEventRepository.save(event);
+    saveEventSafely(event, eventType, callId);
   }
 
   /**
@@ -159,7 +184,7 @@ public class CallTelemetryService {
             status,
             errorMessage);
     event.setPayloadJson(toJsonSafe(sanitizePayload(payload)));
-    callTelemetryEventRepository.save(event);
+    saveEventSafely(event, eventType, callId);
   }
 
   /**
@@ -197,9 +222,15 @@ public class CallTelemetryService {
     return latestByChannel;
   }
 
+  /**
+   * Returns up to 500 telemetry events for a user ordered by most recent first.
+   *
+   * @param userId user identifier
+   * @return telemetry events involving the user
+   */
   public List<CallTelemetryEvent> getTelemetryForUser(final Long userId) {
-    return callTelemetryEventRepository.findTop500ByActorUserIdOrTargetUserIdOrderByOccurredAtDesc(
-        userId, userId);
+    return callTelemetryEventRepository
+        .findTop500ByActorUserIdOrTargetUserIdOrderByOccurredAtDesc(userId, userId);
   }
 
   /**
@@ -237,8 +268,10 @@ public class CallTelemetryService {
 
     summaries.sort(
         (a, b) -> {
-          LocalDateTime left = (LocalDateTime) a.getOrDefault("_sortDate", LocalDateTime.MIN);
-          LocalDateTime right = (LocalDateTime) b.getOrDefault("_sortDate", LocalDateTime.MIN);
+          final LocalDateTime left =
+              (LocalDateTime) a.getOrDefault("_sortDate", LocalDateTime.MIN);
+          final LocalDateTime right =
+              (LocalDateTime) b.getOrDefault("_sortDate", LocalDateTime.MIN);
           return right.compareTo(left);
         });
     summaries.forEach(item -> item.remove("_sortDate"));
@@ -317,7 +350,6 @@ public class CallTelemetryService {
     return deletedCount;
   }
 
-
   private CallTelemetryEvent buildBaseEvent(
       final String callId,
       final String eventType,
@@ -367,16 +399,16 @@ public class CallTelemetryService {
     return channel;
   }
 
-  private Map<String, Object> sanitizePayload(Map<String, Object> payload) {
+  private Map<String, Object> sanitizePayload(final Map<String, Object> payload) {
     if (payload == null || payload.isEmpty()) {
       return Map.of();
     }
 
-    Map<String, Object> sanitized = new LinkedHashMap<>();
-    for (Map.Entry<String, Object> entry : payload.entrySet()) {
-      String key = entry.getKey();
-      String normalizedKey = key == null ? "" : key.trim();
-      String lowerKey = normalizedKey.toLowerCase(Locale.ROOT);
+    final Map<String, Object> sanitized = new LinkedHashMap<>();
+    for (final Map.Entry<String, Object> entry : payload.entrySet()) {
+      final String key = entry.getKey();
+      final String normalizedKey = key == null ? "" : key.trim();
+      final String lowerKey = normalizedKey.toLowerCase(Locale.ROOT);
 
       if (lowerKey.isEmpty()) {
         continue;
@@ -393,11 +425,11 @@ public class CallTelemetryService {
           || lowerKey.contains("phone")
           || lowerKey.contains("address")
           || lowerKey.contains("name")) {
-        Object value = entry.getValue();
+        final Object value = entry.getValue();
         if (value == null) {
           sanitized.put(normalizedKey, null);
         } else {
-          int length = value.toString().length();
+          final int length = value.toString().length();
           sanitized.put(normalizedKey, "[REDACTED:" + length + " chars]");
         }
         continue;
@@ -408,8 +440,8 @@ public class CallTelemetryService {
         continue;
       }
 
-      Object value = entry.getValue();
-      if (value instanceof String textValue && textValue.length() > 180) {
+      final Object value = entry.getValue();
+      if (value instanceof String textValue && textValue.length() > MAX_VALUE_LENGTH) {
         sanitized.put(normalizedKey, "[TRUNCATED:" + textValue.length() + " chars]");
         continue;
       }
@@ -419,32 +451,50 @@ public class CallTelemetryService {
     return sanitized;
   }
 
-  private String toJsonSafe(Object value) {
+  private String toJsonSafe(final Object value) {
     if (value == null) {
       return null;
     }
     try {
-      return objectMapper.writeValueAsString(value);
+      return currentObjectMapper().writeValueAsString(value);
     } catch (JsonProcessingException ex) {
       log.warn("Failed to serialize telemetry payload", ex);
       return "{}";
     }
   }
 
-  private String trim(String value) {
+  private String trim(final String value) {
     if (value == null) {
       return null;
     }
-    String trimmed = value.trim();
+    final String trimmed = value.trim();
     return trimmed.isEmpty() ? null : trimmed;
   }
 
-  private String defaultStatus(String status) {
-    String normalized = trim(status);
+  private String defaultStatus(final String status) {
+    final String normalized = trim(status);
     return normalized == null ? "SUCCESS" : normalized;
   }
+  private ObjectMapper currentObjectMapper() {
+    return objectMapper == null ? new ObjectMapper() : objectMapper;
+  }
 
-  private boolean eventMatchesPatientHistory(CallTelemetryEvent event, Long patientUserId) {
+  private void saveEventSafely(
+      final CallTelemetryEvent event, final String eventType, final String callId) {
+    if (callTelemetryEventRepository == null) {
+      log.error(
+          "CallTelemetryEventRepository is unavailable; skipping telemetry save for eventType={} "
+              + "callId={}",
+          eventType,
+          callId);
+      return;
+    }
+    callTelemetryEventRepository.save(event);
+  }
+
+
+  private boolean eventMatchesPatientHistory(
+      final CallTelemetryEvent event, final Long patientUserId) {
     if (event == null || patientUserId == null) {
       return false;
     }
@@ -453,19 +503,19 @@ public class CallTelemetryService {
       return true;
     }
 
-    Map<String, Object> metadata = parseJsonMap(event.getMetadataJson());
+    final Map<String, Object> metadata = parseJsonMap(event.getMetadataJson());
     if (containsPatientContext(metadata.get("contextPatientUserIds"), patientUserId)) {
       return true;
     }
-    Long singleContextId = toLong(metadata.get("contextPatientUserId"));
+    final Long singleContextId = toLong(metadata.get("contextPatientUserId"));
     return patientUserId.equals(singleContextId);
   }
 
-  private boolean containsPatientContext(Object rawValue, Long patientUserId) {
+  private boolean containsPatientContext(final Object rawValue, final Long patientUserId) {
     if (!(rawValue instanceof List<?> values) || patientUserId == null) {
       return false;
     }
-    for (Object value : values) {
+    for (final Object value : values) {
       if (patientUserId.equals(toLong(value))) {
         return true;
       }
@@ -473,17 +523,17 @@ public class CallTelemetryService {
     return false;
   }
 
-  private Map<String, Object> parseJsonMap(String rawJson) {
-    String normalized = trim(rawJson);
+  private Map<String, Object> parseJsonMap(final String rawJson) {
+    final String normalized = trim(rawJson);
     if (normalized == null) {
       return Map.of();
     }
     try {
-      Object decoded = objectMapper.readValue(normalized, Object.class);
+      final Object decoded = currentObjectMapper().readValue(normalized, Object.class);
       if (decoded instanceof Map<?, ?> map) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-          String key = entry.getKey() == null ? "" : entry.getKey().toString();
+        final Map<String, Object> result = new LinkedHashMap<>();
+        for (final Map.Entry<?, ?> entry : map.entrySet()) {
+          final String key = entry.getKey() == null ? "" : entry.getKey().toString();
           if (!key.isBlank()) {
             result.put(key, entry.getValue());
           }
@@ -498,11 +548,11 @@ public class CallTelemetryService {
     return Map.of();
   }
 
-  private Long toLong(Object value) {
+  private Long toLong(final Object value) {
     if (value instanceof Number number) {
       return number.longValue();
     }
-    String normalized = value == null ? null : trim(value.toString());
+    final String normalized = value == null ? null : trim(value.toString());
     if (normalized == null) {
       return null;
     }
@@ -513,12 +563,13 @@ public class CallTelemetryService {
     }
   }
 
-  private Map<String, Object> summarizeCall(String callId, List<CallTelemetryEvent> allEvents) {
+  private Map<String, Object> summarizeCall(
+      final String callId, final List<CallTelemetryEvent> allEvents) {
     if (allEvents == null || allEvents.isEmpty()) {
       return Map.of();
     }
 
-    List<CallTelemetryEvent> sorted =
+    final List<CallTelemetryEvent> sorted =
         allEvents.stream()
             .filter(e -> e.getOccurredAt() != null)
             .sorted(Comparator.comparing(CallTelemetryEvent::getOccurredAt))
@@ -527,14 +578,14 @@ public class CallTelemetryService {
       return Map.of();
     }
 
-    LocalDateTime callStart =
+    final LocalDateTime callStart =
         sorted.stream()
             .filter(e -> "CALL_JOIN".equalsIgnoreCase(e.getEventType()))
             .map(CallTelemetryEvent::getOccurredAt)
             .findFirst()
             .orElse(sorted.get(0).getOccurredAt());
 
-    LocalDateTime callEnd =
+    final LocalDateTime callEnd =
         sorted.stream()
             .filter(e -> "CALL_END".equalsIgnoreCase(e.getEventType()))
             .map(CallTelemetryEvent::getOccurredAt)
@@ -548,45 +599,52 @@ public class CallTelemetryService {
             .filter(e -> e.getSentimentScore() != null && e.getSentimentLabel() != null)
             .filter(
                 e -> {
-                  String channel =
-                      e.getChannel() == null ? "" : e.getChannel().trim().toUpperCase(Locale.ROOT);
+                  final String channel =
+                      e.getChannel() == null
+                          ? ""
+                          : e.getChannel().trim().toUpperCase(Locale.ROOT);
                   if (channel.isEmpty() || "COMBINED".equals(channel)) {
                     return false;
                   }
-                  String eventType =
+                  final String eventType =
                       e.getEventType() == null
                           ? ""
                           : e.getEventType().trim().toUpperCase(Locale.ROOT);
-                  return eventType.startsWith("SENTIMENT_") && !"SENTIMENT_FINAL".equals(eventType);
+                  return eventType.startsWith("SENTIMENT_")
+                      && !"SENTIMENT_FINAL".equals(eventType);
                 })
             .toList();
 
-    Map<String, Long> durationByBucket = new HashMap<>();
+    final Map<String, Long> durationByBucket = new HashMap<>();
     durationByBucket.put("CALM", 0L);
     durationByBucket.put("ANXIOUS", 0L);
     durationByBucket.put("DISTRESSED", 0L);
 
     if (!timelineSamples.isEmpty()) {
       for (int i = 0; i < timelineSamples.size(); i++) {
-        CallTelemetryEvent current = timelineSamples.get(i);
-        LocalDateTime from = current.getOccurredAt();
-        LocalDateTime to =
-            i < timelineSamples.size() - 1 ? timelineSamples.get(i + 1).getOccurredAt() : callEnd;
-        long segmentSeconds = Math.max(1L, Duration.between(from, to).getSeconds());
-        String bucket = normalizeLabel(current.getSentimentLabel());
-        durationByBucket.put(bucket, durationByBucket.getOrDefault(bucket, 0L) + segmentSeconds);
+        final CallTelemetryEvent current = timelineSamples.get(i);
+        final LocalDateTime from = current.getOccurredAt();
+        final LocalDateTime to =
+            i < timelineSamples.size() - 1
+                ? timelineSamples.get(i + 1).getOccurredAt()
+                : callEnd;
+        final long segmentSeconds =
+            Math.max(1L, Duration.between(from, to).getSeconds());
+        final String bucket = normalizeLabel(current.getSentimentLabel());
+        durationByBucket.put(
+            bucket, durationByBucket.getOrDefault(bucket, 0L) + segmentSeconds);
       }
     }
 
-    CallTelemetryEvent finalEvent =
+    final CallTelemetryEvent finalEvent =
         sorted.stream()
             .filter(e -> "SENTIMENT_FINAL".equalsIgnoreCase(e.getEventType()))
             .filter(e -> e.getSentimentScore() != null)
             .reduce((first, second) -> second)
             .orElse(null);
 
-    double overallScore;
-    String overallLabel;
+    final double overallScore;
+    final String overallLabel;
     if (finalEvent != null) {
       overallScore = clamp(finalEvent.getSentimentScore());
       overallLabel = normalizeLabel(finalEvent.getSentimentLabel());
@@ -629,7 +687,7 @@ public class CallTelemetryService {
       }
     }
 
-    Map<String, Object> output = new LinkedHashMap<>();
+    final Map<String, Object> output = new LinkedHashMap<>();
     output.put("callId", callId);
     output.put("callDate", callStart);
     output.put("durationMinutes", round(totalSeconds / 60.0));
@@ -643,8 +701,8 @@ public class CallTelemetryService {
     return output;
   }
 
-  private String normalizeLabel(String label) {
-    String normalized = label == null ? "" : label.trim().toUpperCase(Locale.ROOT);
+  private String normalizeLabel(final String label) {
+    final String normalized = label == null ? "" : label.trim().toUpperCase(Locale.ROOT);
     if (normalized.contains("CALM") || normalized.contains("POSITIVE")) {
       return "CALM";
     }
@@ -654,41 +712,42 @@ public class CallTelemetryService {
     return "ANXIOUS";
   }
 
-  private String labelFromScore(double score) {
-    if (score >= 0.67) {
+  private String labelFromScore(final double score) {
+    if (score >= CALM_SCORE_THRESHOLD) {
       return "CALM";
     }
-    if (score < 0.34) {
+    if (score < DISTRESSED_SCORE_THRESHOLD) {
       return "DISTRESSED";
     }
     return "ANXIOUS";
   }
 
-  private double computeStability(List<Double> values) {
+  private double computeStability(final List<Double> values) {
     if (values == null || values.isEmpty()) {
       return 0.0;
     }
     if (values.size() == 1) {
       return 1.0;
     }
-    double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-    double variance = values.stream().mapToDouble(v -> Math.pow(v - mean, 2)).average().orElse(0.0);
-    double stdDev = Math.sqrt(variance);
+    final double mean = values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    final double variance =
+        values.stream().mapToDouble(v -> Math.pow(v - mean, 2)).average().orElse(0.0);
+    final double stdDev = Math.sqrt(variance);
     return clamp(1.0 - stdDev);
   }
 
-  private double percent(long part, long total) {
+  private double percent(final long part, final long total) {
     if (total <= 0) {
       return 0.0;
     }
     return clamp((double) part / (double) total);
   }
 
-  private double round(double value) {
-    return Math.round(value * 1000.0) / 1000.0;
+  private double round(final double value) {
+    return Math.round(value * ROUND_SCALE) / ROUND_SCALE;
   }
 
-  private double clamp(double value) {
+  private double clamp(final double value) {
     if (value < 0.0) {
       return 0.0;
     }
@@ -700,6 +759,7 @@ public class CallTelemetryService {
 
   /** Matched telemetry history for a patient across related calls. */
   public record PatientCallHistoryMatch(List<CallTelemetryEvent> events, Set<String> callIds) {
+    /** Canonical constructor that defensively copies the supplied collections. */
     public PatientCallHistoryMatch {
       events = events == null ? List.of() : List.copyOf(events);
       callIds = callIds == null ? Set.of() : Set.copyOf(callIds);

@@ -89,6 +89,13 @@ public class CallRecordingService {
   private static final String CONCATENATION_STATUS_PROCESSING = "PROCESSING";
   private static final String CONCATENATION_STATUS_READY = "READY";
   private static final String CONCATENATION_STATUS_FAILED = "FAILED";
+  private static final String STATUS_STARTED = "STARTED";
+  private static final String STATUS_STOPPED = "STOPPED";
+  private static final int MAX_KEYS_SMALL = 20;
+  private static final int MAX_KEYS_MEDIUM = 50;
+  private static final int MAX_KEYS_LARGE = 1000;
+  private static final int SLR_RETRY_DELAY_MS = 5000;
+  private static final int PIPELINE_ID_MIN_LENGTH = 32;
 
   // tracks active pipeline IDs so we can stop them cleanly
   private final Map<String, String> activePipelineIds = new ConcurrentHashMap<>();
@@ -134,6 +141,11 @@ public class CallRecordingService {
   // STARTUP INITIALISATION
   // ================================================================
 
+  /** Default constructor required by Spring and static analysis. */
+  public CallRecordingService() {
+    // default
+  }
+
   /**
    * Eagerly provisions the two AWS prerequisites for Chime Media Capture Pipelines at application
    * startup so they are ready before any recording attempt:
@@ -150,7 +162,9 @@ public class CallRecordingService {
     if (!recordingEnabled || !isAwsAvailable()) {
       return;
     }
-    log.info("Recording enabled — provisioning AWS prerequisites at startup…");
+    if (log.isInfoEnabled()) {
+      log.info("Recording enabled — provisioning AWS prerequisites at startup…");
+    }
     // SLR first — bucket policy setup can proceed in parallel but SLR needs time to propagate
     ensureChimeMediaPipelinesServiceLinkedRole();
     resolveOrCreateRecordingBucket();
@@ -164,13 +178,13 @@ public class CallRecordingService {
    * Starts a Chime Media Capture Pipeline for the given callId. The Chime meeting must already be
    * active. Returns a map describing the recording that was started.
    */
-  public Map<String, Object> startRecording(String callId, Long initiatedByUserId) {
+  public Map<String, Object> startRecording(final String callId, final Long initiatedByUserId) {
     if (!recordingEnabled) {
       return Map.of(
           "status", "DISABLED", "message", "Recording is not enabled in this environment");
     }
 
-    String meetingId = chimeService.getMeetingId(callId);
+    final String meetingId = chimeService.getMeetingId(callId);
     if (meetingId == null) {
       return Map.of(
           "status", "ERROR", "message", "No active Chime meeting found for callId: " + callId);
@@ -184,29 +198,32 @@ public class CallRecordingService {
     }
 
     if (!isAwsAvailable()) {
-      log.warn("AWS Chime Media Pipelines not available — recording skipped for callId={}", callId);
+      if (log.isWarnEnabled()) {
+        log.warn(
+            "AWS Chime Media Pipelines not available — recording skipped for callId={}", callId);
+      }
       return Map.of("status", "UNAVAILABLE", "message", "AWS media pipeline client not available");
     }
 
-    String bucket = resolveOrCreateRecordingBucket();
+    final String bucket = resolveOrCreateRecordingBucket();
     if (bucket == null) {
       return Map.of(
           "status", "ERROR", "message", "Could not resolve or create the recording bucket");
     }
 
-    String timestamp = LocalDateTime.now().format(S3_TS_FORMAT);
-    String s3Prefix = "recordings/" + callId + "/" + timestamp + "/";
-    String accountId = getAwsAccountId();
+    final String timestamp = LocalDateTime.now().format(S3_TS_FORMAT);
+    final String s3Prefix = "recordings/" + callId + "/" + timestamp + "/";
+    final String accountId = getAwsAccountId();
     if (accountId == null) {
       return Map.of(
           "status", "ERROR", "message", "Could not resolve AWS account ID for meeting ARN");
     }
 
-    String sourceArn = "arn:aws:chime::" + accountId + ":meeting/" + meetingId;
-    String sinkArn = "arn:aws:s3:::" + bucket;
+    final String sourceArn = "arn:aws:chime::" + accountId + ":meeting/" + meetingId;
+    final String sinkArn = "arn:aws:s3:::" + bucket;
 
     try {
-      CreateMediaCapturePipelineRequest request =
+      final CreateMediaCapturePipelineRequest request =
           CreateMediaCapturePipelineRequest.builder()
               .sourceType(MediaPipelineSourceType.CHIME_SDK_MEETING)
               .sourceArn(sourceArn)
@@ -234,26 +251,28 @@ public class CallRecordingService {
                       .build())
               .build();
 
-      CreateMediaCapturePipelineResponse response = createPipelineWithSlrRetry(request);
-      String pipelineId = response.mediaCapturePipeline().mediaPipelineId();
+      final CreateMediaCapturePipelineResponse response = createPipelineWithSlrRetry(request);
+      final String pipelineId = response.mediaCapturePipeline().mediaPipelineId();
 
       activePipelineIds.put(callId, pipelineId);
 
-      CallRecording recording = new CallRecording();
+      final CallRecording recording = new CallRecording();
       recording.setCallId(callId);
       recording.setPipelineId(pipelineId);
       recording.setS3Bucket(bucket);
       recording.setS3Prefix(s3Prefix);
-      recording.setStatus("STARTED");
+      recording.setStatus(STATUS_STARTED);
       recording.setConcatenationStatus(CONCATENATION_STATUS_NOT_REQUESTED);
       recording.setInitiatedByUserId(initiatedByUserId);
       recording.setStartedAt(LocalDateTime.now());
       recordingRepository.save(recording);
 
-      log.info(
-          "Recording started callId={} pipelineId={} s3Prefix={}", callId, pipelineId, s3Prefix);
+      if (log.isInfoEnabled()) {
+        log.info(
+            "Recording started callId={} pipelineId={} s3Prefix={}", callId, pipelineId, s3Prefix);
+      }
 
-      Map<String, Object> result = new HashMap<>();
+      final Map<String, Object> result = new HashMap<>();
       result.put("status", "STARTED");
       result.put("callId", callId);
       result.put("pipelineId", pipelineId);
@@ -267,7 +286,7 @@ public class CallRecordingService {
         log.error("Failed to start recording for callId={}: {}", callId, e.getMessage(), e);
       }
 
-      CallRecording failed = new CallRecording();
+      final CallRecording failed = new CallRecording();
       failed.setCallId(callId);
       failed.setStatus("FAILED");
       failed.setInitiatedByUserId(initiatedByUserId);
@@ -287,21 +306,23 @@ public class CallRecordingService {
    * Stops the active capture pipeline for a call. Safe to call even if no recording is active
    * (no-op).
    */
-  public Map<String, Object> stopRecording(String callId) {
+  public Map<String, Object> stopRecording(final String callId) {
     String pipelineId = activePipelineIds.remove(callId);
     CallRecording recording = null;
     if (pipelineId == null) {
       // Check DB for a STARTED entry (e.g. after restart)
-      Optional<CallRecording> dbRec =
+      final Optional<CallRecording> dbRec =
           recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
-      if (dbRec.isPresent() && "STARTED".equals(dbRec.get().getStatus())) {
+      if (dbRec.isPresent() && STATUS_STARTED.equals(dbRec.get().getStatus())) {
         recording = dbRec.get();
         pipelineId = dbRec.get().getPipelineId();
       }
     }
 
     if (pipelineId == null) {
-      log.debug("No active recording pipeline found for callId={}", callId);
+      if (log.isDebugEnabled()) {
+        log.debug("No active recording pipeline found for callId={}", callId);
+      }
       return Map.of("status", "NOT_RECORDING", "callId", callId);
     }
 
@@ -336,26 +357,29 @@ public class CallRecordingService {
       warning = e.getMessage();
     }
 
-    Map<String, Object> result = new HashMap<>();
+    final Map<String, Object> result = new HashMap<>();
     result.put("status", "STOPPED");
     result.put("callId", callId);
     result.put("pipelineId", pipelineId);
 
     if (capturePipelineArn != null) {
       try {
-        CreateMediaConcatenationPipelineResponse response =
+        final CreateMediaConcatenationPipelineResponse response =
             createConcatenationPipeline(recording, capturePipelineArn);
-        String concatenationPipelineId = response.mediaConcatenationPipeline().mediaPipelineId();
+        final String concatenationPipelineId =
+            response.mediaConcatenationPipeline().mediaPipelineId();
         recording.setConcatenationPipelineId(concatenationPipelineId);
         recording.setConcatenationStatus(CONCATENATION_STATUS_PROCESSING);
         recording.setErrorMessage(null);
         recordingRepository.save(recording);
         result.put("concatenationPipelineId", concatenationPipelineId);
         result.put("concatenationStatus", CONCATENATION_STATUS_PROCESSING);
-        log.info(
-            "Recording concatenation started callId={} concatPipelineId={}",
-            callId,
-            concatenationPipelineId);
+        if (log.isInfoEnabled()) {
+          log.info(
+              "Recording concatenation started callId={} concatPipelineId={}",
+              callId,
+              concatenationPipelineId);
+        }
       } catch (Exception e) {
         recording.setConcatenationStatus(CONCATENATION_STATUS_FAILED);
         recording.setErrorMessage(e.getMessage());
@@ -385,21 +409,22 @@ public class CallRecordingService {
   // ================================================================
 
   /** Returns the latest recording metadata for a call (from DB + optional live pipeline status). */
-  public Map<String, Object> getRecordingStatus(String callId) {
-    Optional<CallRecording> opt = recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
+  public Map<String, Object> getRecordingStatus(final String callId) {
+    final Optional<CallRecording> opt =
+        recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
     if (opt.isEmpty()) {
       return Map.of("callId", callId, "status", "NO_RECORDING");
     }
 
-    CallRecording rec = opt.get();
+    final CallRecording rec = opt.get();
     refreshConcatenationStatus(rec);
-    Map<String, Object> result = buildRecordingMap(rec);
+    final Map<String, Object> result = buildRecordingMap(rec);
 
     // Enrich with live pipeline status if still active and AWS available
-    String pipelineId = activePipelineIds.get(callId);
+    final String pipelineId = activePipelineIds.get(callId);
     if (pipelineId != null && isAwsAvailable()) {
       try {
-        GetMediaCapturePipelineResponse live =
+        final GetMediaCapturePipelineResponse live =
             pipelinesClient.getMediaCapturePipeline(
                 GetMediaCapturePipelineRequest.builder().mediaPipelineId(pipelineId).build());
         result.put("liveStatus", live.mediaCapturePipeline().statusAsString());
@@ -413,14 +438,14 @@ public class CallRecordingService {
   }
 
   /** Returns all recordings for a given call (full history). */
-  public List<Map<String, Object>> getRecordingsForCall(String callId) {
+  public List<Map<String, Object>> getRecordingsForCall(final String callId) {
     return recordingRepository.findByCallIdOrderByStartedAtDesc(callId).stream()
         .map(this::buildRecordingMap)
         .toList();
   }
 
   /** Returns all recordings initiated by a specific user. */
-  public List<Map<String, Object>> getRecordingsByUser(Long userId) {
+  public List<Map<String, Object>> getRecordingsByUser(final Long userId) {
     return recordingRepository.findByInitiatedByUserIdOrderByStartedAtDesc(userId).stream()
         .map(this::buildRecordingMap)
         .toList();
@@ -443,13 +468,14 @@ public class CallRecordingService {
    * prefix URL; callers should list the prefix if they need a specific file path once recording has
    * finished.
    */
-  public Map<String, Object> generatePlaybackUrl(String callId) {
-    Optional<CallRecording> opt = recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
+  public Map<String, Object> generatePlaybackUrl(final String callId) {
+    final Optional<CallRecording> opt =
+        recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
     if (opt.isEmpty()) {
       return Map.of("status", "NO_RECORDING", "callId", callId);
     }
 
-    CallRecording rec = opt.get();
+    final CallRecording rec = opt.get();
     refreshConcatenationStatus(rec);
     if (rec.getS3Bucket() == null || rec.getS3Prefix() == null) {
       return Map.of("status", "ERROR", "message", "Recording has no S3 location stored");
@@ -461,9 +487,9 @@ public class CallRecordingService {
     }
 
     try {
-      String videoKey = resolvePlayableVideoKey(rec);
+      final String videoKey = resolvePlayableVideoKey(rec);
       if (videoKey == null) {
-        Map<String, Object> processing = new HashMap<>();
+        final Map<String, Object> processing = new HashMap<>();
         processing.put("callId", callId);
         processing.put("status", "PROCESSING");
         processing.put("message", playbackPendingMessage(rec));
@@ -473,26 +499,27 @@ public class CallRecordingService {
         return processing;
       }
 
-      GetObjectPresignRequest presignRequest =
+      final GetObjectPresignRequest presignRequest =
           GetObjectPresignRequest.builder()
               .signatureDuration(Duration.ofMinutes(presignedUrlTtlMinutes))
               .getObjectRequest(
                   GetObjectRequest.builder().bucket(rec.getS3Bucket()).key(videoKey).build())
               .build();
 
-      PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+      final PresignedGetObjectRequest presignedRequest =
+          s3Presigner.presignGetObject(presignRequest);
 
-      Map<String, Object> result = new HashMap<>();
-      result.put("callId", callId);
-      result.put("s3Bucket", rec.getS3Bucket());
-      result.put("s3Prefix", rec.getS3Prefix());
-      result.put("s3Key", videoKey);
-      result.put("playbackUrl", presignedRequest.url().toString());
-      result.put("expiresInMinutes", presignedUrlTtlMinutes);
-      result.put("recordingStatus", rec.getStatus());
-      result.put("concatenationStatus", rec.getConcatenationStatus());
-      result.put("playbackReady", true);
-      return result;
+      final Map<String, Object> playbackResult = new HashMap<>();
+      playbackResult.put("callId", callId);
+      playbackResult.put("s3Bucket", rec.getS3Bucket());
+      playbackResult.put("s3Prefix", rec.getS3Prefix());
+      playbackResult.put("s3Key", videoKey);
+      playbackResult.put("playbackUrl", presignedRequest.url().toString());
+      playbackResult.put("expiresInMinutes", presignedUrlTtlMinutes);
+      playbackResult.put("recordingStatus", rec.getStatus());
+      playbackResult.put("concatenationStatus", rec.getConcatenationStatus());
+      playbackResult.put("playbackReady", true);
+      return playbackResult;
 
     } catch (Exception e) {
       if (log.isErrorEnabled()) {
@@ -506,27 +533,27 @@ public class CallRecordingService {
   // PRIVATE HELPERS
   // ================================================================
 
-  private void finalizeRecordingInDb(CallRecording rec) {
+  private void finalizeRecordingInDb(final CallRecording rec) {
     if (rec == null) {
       return;
     }
-    if (!"STARTED".equals(rec.getStatus())) {
+    if (!STATUS_STARTED.equals(rec.getStatus())) {
       return;
     }
 
-    LocalDateTime endedAt = LocalDateTime.now();
-    rec.setStatus("STOPPED");
+    final LocalDateTime endedAt = LocalDateTime.now();
+    rec.setStatus(STATUS_STOPPED);
     rec.setEndedAt(endedAt);
 
     if (rec.getStartedAt() != null) {
-      long secs = Duration.between(rec.getStartedAt(), endedAt).getSeconds();
+      final long secs = Duration.between(rec.getStartedAt(), endedAt).getSeconds();
       rec.setDurationSeconds(secs);
     }
     recordingRepository.save(rec);
   }
 
-  private Map<String, Object> buildRecordingMap(CallRecording rec) {
-    Map<String, Object> m = new HashMap<>();
+  private Map<String, Object> buildRecordingMap(final CallRecording rec) {
+    final Map<String, Object> m = new HashMap<>();
     m.put("id", rec.getId());
     m.put("callId", rec.getCallId());
     m.put("pipelineId", rec.getPipelineId());
@@ -545,8 +572,8 @@ public class CallRecordingService {
   }
 
   private CreateMediaConcatenationPipelineResponse createConcatenationPipeline(
-      CallRecording recording, String capturePipelineArn) {
-    String destinationArn = buildConcatenationDestinationArn(recording);
+      final CallRecording recording, final String capturePipelineArn) {
+    final String destinationArn = buildConcatenationDestinationArn(recording);
     return pipelinesClient.createMediaConcatenationPipeline(
         CreateMediaConcatenationPipelineRequest.builder()
             .sources(
@@ -605,12 +632,12 @@ public class CallRecordingService {
             .build());
   }
 
-  private String resolveCapturePipelineArn(String pipelineId) {
+  private String resolveCapturePipelineArn(final String pipelineId) {
     if (!isAwsAvailable() || pipelineId == null || pipelineId.isBlank()) {
       return null;
     }
     try {
-      GetMediaCapturePipelineResponse response =
+      final GetMediaCapturePipelineResponse response =
           pipelinesClient.getMediaCapturePipeline(
               GetMediaCapturePipelineRequest.builder().mediaPipelineId(pipelineId).build());
       return response.mediaCapturePipeline().mediaPipelineArn();
@@ -622,7 +649,7 @@ public class CallRecordingService {
     }
   }
 
-  private void refreshConcatenationStatus(CallRecording rec) {
+  private void refreshConcatenationStatus(final CallRecording rec) {
     if (rec == null || rec.getS3Bucket() == null || rec.getS3Prefix() == null) {
       return;
     }
@@ -651,8 +678,8 @@ public class CallRecordingService {
       nextStatus = CONCATENATION_STATUS_NOT_REQUESTED;
     }
 
-    boolean statusChanged = nextStatus != null && !nextStatus.equals(existingStatus);
-    boolean errorChanged = !java.util.Objects.equals(nextErrorMessage, rec.getErrorMessage());
+    final boolean statusChanged = nextStatus != null && !nextStatus.equals(existingStatus);
+    final boolean errorChanged = !java.util.Objects.equals(nextErrorMessage, rec.getErrorMessage());
     if (statusChanged || errorChanged) {
       rec.setConcatenationStatus(nextStatus);
       rec.setErrorMessage(nextErrorMessage);
@@ -661,13 +688,14 @@ public class CallRecordingService {
   }
 
   /** Deletes raw recording artifacts for a call when the stitched video is ready. */
-  public Map<String, Object> cleanupRawArtifactsForCall(String callId) {
-    Optional<CallRecording> opt = recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
+  public Map<String, Object> cleanupRawArtifactsForCall(final String callId) {
+    final Optional<CallRecording> opt =
+        recordingRepository.findTopByCallIdOrderByStartedAtDesc(callId);
     if (opt.isEmpty()) {
       return Map.of("callId", callId, "status", "NO_RECORDING", "deletedObjects", 0L);
     }
 
-    CallRecording rec = opt.get();
+    final CallRecording rec = opt.get();
     String playableKey = resolvePlayableVideoKeyWithoutRefresh(rec);
     if (playableKey == null || playableKey.isBlank()) {
       refreshConcatenationStatus(rec);
@@ -685,7 +713,7 @@ public class CallRecordingService {
           "Final stitched video was not found; raw artifacts were not deleted.");
     }
 
-    long deletedObjects = cleanupRawArtifactsAfterConcatenation(rec, playableKey);
+    final long deletedObjects = cleanupRawArtifactsAfterConcatenation(rec, playableKey);
     return Map.of(
         "callId", callId,
         "status", "CLEANED",
@@ -700,9 +728,9 @@ public class CallRecordingService {
       return;
     }
 
-    List<CallRecording> recentStoppedRecordings =
+    final List<CallRecording> recentStoppedRecordings =
         recordingRepository.findTop100ByStatusOrderByStartedAtDesc("STOPPED");
-    for (CallRecording recording : recentStoppedRecordings) {
+    for (final CallRecording recording : recentStoppedRecordings) {
       if (recording == null) {
         continue;
       }
@@ -719,19 +747,21 @@ public class CallRecordingService {
     }
   }
 
-  private String resolveConcatenationPipelineStatus(String pipelineId, String fallbackStatus) {
+  private String resolveConcatenationPipelineStatus(
+      final String pipelineId, final String fallbackStatus) {
     if (!isAwsAvailable()) {
       return fallbackStatus == null ? CONCATENATION_STATUS_PROCESSING : fallbackStatus;
     }
     try {
-      GetMediaPipelineResponse response =
+      final GetMediaPipelineResponse response =
           pipelinesClient.getMediaPipeline(
               GetMediaPipelineRequest.builder().mediaPipelineId(pipelineId).build());
       if (response.mediaPipeline() == null
           || response.mediaPipeline().mediaConcatenationPipeline() == null) {
         return fallbackStatus == null ? CONCATENATION_STATUS_PROCESSING : fallbackStatus;
       }
-      MediaPipelineStatus status = response.mediaPipeline().mediaConcatenationPipeline().status();
+      final MediaPipelineStatus status =
+          response.mediaPipeline().mediaConcatenationPipeline().status();
       if (status == MediaPipelineStatus.FAILED) {
         return CONCATENATION_STATUS_FAILED;
       }
@@ -748,12 +778,12 @@ public class CallRecordingService {
     }
   }
 
-  private String resolvePlayableVideoKey(CallRecording rec) {
+  private String resolvePlayableVideoKey(final CallRecording rec) {
     refreshConcatenationStatus(rec);
     return resolvePlayableVideoKeyWithoutRefresh(rec);
   }
 
-  private String resolvePlayableVideoKeyWithoutRefresh(CallRecording rec) {
+  private String resolvePlayableVideoKeyWithoutRefresh(final CallRecording rec) {
     if (rec == null || s3Client == null || rec.getS3Bucket() == null || rec.getS3Prefix() == null) {
       return null;
     }
@@ -770,37 +800,38 @@ public class CallRecordingService {
     return null;
   }
 
-  private String resolveConcatenatedVideoKey(CallRecording rec) {
-    String concatenatedPrefix = buildConcatenatedPrefix(rec);
-    List<String> candidatePrefixes =
+  private String resolveConcatenatedVideoKey(final CallRecording rec) {
+    final String concatenatedPrefix = buildConcatenatedPrefix(rec);
+    final List<String> candidatePrefixes =
         List.of(concatenatedPrefix + "composited-video/", concatenatedPrefix + "video/");
 
     if (rec.getConcatenationPipelineId() != null && !rec.getConcatenationPipelineId().isBlank()) {
-      for (String prefix : candidatePrefixes) {
-        String exactKey = prefix + rec.getConcatenationPipelineId() + ".mp4";
-        ListObjectsV2Response exact =
+      for (final String prefix : candidatePrefixes) {
+        final String exactKey = prefix + rec.getConcatenationPipelineId() + ".mp4";
+        final ListObjectsV2Response exact =
             s3Client.listObjectsV2(
                 ListObjectsV2Request.builder()
                     .bucket(rec.getS3Bucket())
                     .prefix(exactKey)
                     .maxKeys(1)
                     .build());
-        boolean exists = exact.contents().stream().anyMatch(obj -> exactKey.equals(obj.key()));
+        final boolean exists =
+            exact.contents().stream().anyMatch(obj -> exactKey.equals(obj.key()));
         if (exists) {
           return exactKey;
         }
       }
     }
 
-    for (String prefix : candidatePrefixes) {
-      ListObjectsV2Response listing =
+    for (final String prefix : candidatePrefixes) {
+      final ListObjectsV2Response listing =
           s3Client.listObjectsV2(
               ListObjectsV2Request.builder()
                   .bucket(rec.getS3Bucket())
                   .prefix(prefix)
                   .maxKeys(20)
                   .build());
-      String found =
+      final String found =
           listing.contents().stream()
               .filter(o -> o.key().endsWith(".mp4"))
               .findFirst()
@@ -813,8 +844,8 @@ public class CallRecordingService {
     return null;
   }
 
-  private String resolveLegacyChunkKey(CallRecording rec) {
-    String videoPrefix = rec.getS3Prefix() + "video/";
+  private String resolveLegacyChunkKey(final CallRecording rec) {
+    final String videoPrefix = rec.getS3Prefix() + "video/";
     ListObjectsV2Response listing =
         s3Client.listObjectsV2(
             ListObjectsV2Request.builder()
@@ -829,11 +860,11 @@ public class CallRecordingService {
         .orElse(null);
   }
 
-  private String buildConcatenatedPrefix(CallRecording recording) {
+  private String buildConcatenatedPrefix(final CallRecording recording) {
     return recording.getS3Prefix() + "concatenated/";
   }
 
-  private String buildConcatenationDestinationArn(CallRecording recording) {
+  private String buildConcatenationDestinationArn(final CallRecording recording) {
     String prefix = buildConcatenatedPrefix(recording);
     if (prefix.endsWith("/")) {
       prefix = prefix.substring(0, prefix.length() - 1);
@@ -841,17 +872,17 @@ public class CallRecordingService {
     return "arn:aws:s3:::" + recording.getS3Bucket() + "/" + prefix;
   }
 
-  private String playbackPendingMessage(CallRecording rec) {
+  private String playbackPendingMessage(final CallRecording rec) {
     if (CONCATENATION_STATUS_FAILED.equals(rec.getConcatenationStatus())) {
       return "Recording stitching did not complete. Check the recording status or retry later.";
     }
     return "Video is still being stitched. Pull to refresh in about 1-2 minutes.";
   }
 
-  private String buildMissingConcatenatedOutputMessage(CallRecording rec) {
-    String pipelineId =
+  private String buildMissingConcatenatedOutputMessage(final CallRecording rec) {
+    final String pipelineId =
         rec.getConcatenationPipelineId() == null ? "unknown" : rec.getConcatenationPipelineId();
-    String expectedPrefix = buildConcatenatedPrefix(rec) + "composited-video/";
+    final String expectedPrefix = buildConcatenatedPrefix(rec) + "composited-video/";
     return "Concatenation pipeline completed but no stitched video was found under "
         + rec.getS3Bucket()
         + "/"
@@ -861,7 +892,8 @@ public class CallRecordingService {
         + ".";
   }
 
-  private long cleanupRawArtifactsAfterConcatenation(CallRecording rec, String playableKey) {
+  private long cleanupRawArtifactsAfterConcatenation(
+      final CallRecording rec, final String playableKey) {
     if (rec == null || s3Client == null || rec.getS3Bucket() == null || rec.getS3Prefix() == null) {
       return 0L;
     }
@@ -870,7 +902,7 @@ public class CallRecordingService {
     }
 
     long deletedObjects = 0L;
-    List<String> rawPrefixes = discoverRawArtifactPrefixes(rec, playableKey);
+    final List<String> rawPrefixes = discoverRawArtifactPrefixes(rec, playableKey);
     if (log.isInfoEnabled()) {
       log.info(
           "Attempting raw recording artifact cleanup for callId={} pipelineId={} s3Prefix={}"
@@ -929,26 +961,27 @@ public class CallRecordingService {
     return deletedObjects;
   }
 
-  private List<String> discoverRawArtifactPrefixes(CallRecording rec, String playableKey) {
-    java.util.LinkedHashSet<String> prefixes = new java.util.LinkedHashSet<>();
+  private List<String> discoverRawArtifactPrefixes(
+      final CallRecording rec, final String playableKey) {
+    final java.util.LinkedHashSet<String> prefixes = new java.util.LinkedHashSet<>();
 
-    String recordingPrefix = rec.getS3Prefix();
+    final String recordingPrefix = rec.getS3Prefix();
     if (recordingPrefix != null && !recordingPrefix.isBlank()) {
       prefixes.add(recordingPrefix);
     }
 
-    String pipelineId = rec.getPipelineId();
+    final String pipelineId = rec.getPipelineId();
     if (pipelineId != null && !pipelineId.isBlank()) {
       prefixes.add(pipelineId.endsWith("/") ? pipelineId : pipelineId + "/");
     }
 
-    String finalFileName = playableKey.substring(playableKey.lastIndexOf('/') + 1);
+    final String finalFileName = playableKey.substring(playableKey.lastIndexOf('/') + 1);
     if (finalFileName.isBlank()) {
       return new java.util.ArrayList<>(prefixes);
     }
 
     try {
-      ListObjectsV2Response rootListing =
+      final ListObjectsV2Response rootListing =
           s3Client.listObjectsV2(
               ListObjectsV2Request.builder()
                   .bucket(rec.getS3Bucket())
@@ -956,13 +989,13 @@ public class CallRecordingService {
                   .maxKeys(1000)
                   .build());
 
-      for (CommonPrefix commonPrefix : rootListing.commonPrefixes()) {
-        String prefix = commonPrefix.prefix();
+      for (final CommonPrefix commonPrefix : rootListing.commonPrefixes()) {
+        final String prefix = commonPrefix.prefix();
         if (!isTopLevelPipelinePrefix(prefix)) {
           continue;
         }
 
-        ListObjectsV2Response videoListing =
+        final ListObjectsV2Response videoListing =
             s3Client.listObjectsV2(
                 ListObjectsV2Request.builder()
                     .bucket(rec.getS3Bucket())
@@ -970,7 +1003,7 @@ public class CallRecordingService {
                     .maxKeys(50)
                     .build());
 
-        boolean matchesFinalVideo =
+        final boolean matchesFinalVideo =
             videoListing.contents().stream()
                 .map(obj -> obj.key())
                 .filter(key -> key != null)
@@ -992,29 +1025,30 @@ public class CallRecordingService {
     return new java.util.ArrayList<>(prefixes);
   }
 
-  private boolean isRecordingManagedPrefix(CallRecording rec, String prefix) {
+  private boolean isRecordingManagedPrefix(final CallRecording rec, final String prefix) {
     if (rec == null || rec.getS3Prefix() == null || prefix == null) {
       return false;
     }
     return rec.getS3Prefix().equals(prefix);
   }
 
-  private boolean prefixContainsPlayableKey(String prefix, String playableKey) {
+  private boolean prefixContainsPlayableKey(final String prefix, final String playableKey) {
     if (prefix == null || prefix.isBlank() || playableKey == null || playableKey.isBlank()) {
       return false;
     }
     return playableKey.startsWith(prefix);
   }
 
-  private long deleteExactObjectIfPresent(String bucket, String key) {
+  private long deleteExactObjectIfPresent(final String bucket, final String key) {
     if (bucket == null || bucket.isBlank() || key == null || key.isBlank() || s3Client == null) {
       return 0L;
     }
     try {
-      ListObjectsV2Response listing =
+      final ListObjectsV2Response listing =
           s3Client.listObjectsV2(
               ListObjectsV2Request.builder().bucket(bucket).prefix(key).maxKeys(1).build());
-      boolean exactExists = listing.contents().stream().anyMatch(obj -> key.equals(obj.key()));
+      final boolean exactExists =
+          listing.contents().stream().anyMatch(obj -> key.equals(obj.key()));
       if (!exactExists) {
         return 0L;
       }
@@ -1033,26 +1067,26 @@ public class CallRecordingService {
     }
   }
 
-  private void cleanupEmptyTopLevelPipelineMarkers(String bucket) {
+  private void cleanupEmptyTopLevelPipelineMarkers(final String bucket) {
     if (bucket == null || bucket.isBlank() || s3Client == null) {
       return;
     }
     try {
-      ListObjectsV2Response rootListing =
+      final ListObjectsV2Response rootListing =
           s3Client.listObjectsV2(
               ListObjectsV2Request.builder().bucket(bucket).delimiter("/").maxKeys(1000).build());
 
-      for (CommonPrefix commonPrefix : rootListing.commonPrefixes()) {
-        String prefix = commonPrefix.prefix();
+      for (final CommonPrefix commonPrefix : rootListing.commonPrefixes()) {
+        final String prefix = commonPrefix.prefix();
         if (!isTopLevelPipelinePrefix(prefix)) {
           continue;
         }
 
-        ListObjectsV2Response nestedListing =
+        final ListObjectsV2Response nestedListing =
             s3Client.listObjectsV2(
                 ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).maxKeys(2).build());
 
-        boolean hasNestedObjects =
+        final boolean hasNestedObjects =
             nestedListing.contents().stream()
                 .map(obj -> obj.key())
                 .filter(key -> key != null)
@@ -1073,11 +1107,11 @@ public class CallRecordingService {
     }
   }
 
-  private boolean isTopLevelPipelinePrefix(String prefix) {
+  private boolean isTopLevelPipelinePrefix(final String prefix) {
     if (prefix == null || prefix.isBlank()) {
       return false;
     }
-    String normalized = stripTrailingSlash(prefix);
+    final String normalized = stripTrailingSlash(prefix);
     if (normalized.isBlank() || normalized.contains("/")) {
       return false;
     }
@@ -1087,7 +1121,7 @@ public class CallRecordingService {
     return normalized.matches("[0-9a-fA-F\\-]{32,}");
   }
 
-  private String stripTrailingSlash(String value) {
+  private String stripTrailingSlash(final String value) {
     if (value == null) {
       return "";
     }
@@ -1098,7 +1132,7 @@ public class CallRecordingService {
     return normalized;
   }
 
-  private long deleteObjectsUnderPrefix(String bucket, String prefix) {
+  private long deleteObjectsUnderPrefix(final String bucket, final String prefix) {
     if (bucket == null
         || bucket.isBlank()
         || prefix == null
@@ -1110,14 +1144,14 @@ public class CallRecordingService {
     long deletedObjects = 0L;
     String continuationToken = null;
     do {
-      ListObjectsV2Request.Builder listReq =
+      final ListObjectsV2Request.Builder listReq =
           ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).maxKeys(1000);
       if (continuationToken != null) {
         listReq.continuationToken(continuationToken);
       }
-      ListObjectsV2Response page = s3Client.listObjectsV2(listReq.build());
+      final ListObjectsV2Response page = s3Client.listObjectsV2(listReq.build());
       if (!page.contents().isEmpty()) {
-        List<ObjectIdentifier> keys =
+        final List<ObjectIdentifier> keys =
             page.contents().stream()
                 .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
                 .toList();
@@ -1149,21 +1183,21 @@ public class CallRecordingService {
     activePipelineIds.clear();
 
     long deletedS3Objects = 0;
-    String bucket = resolveOrCreateRecordingBucket();
+    final String bucket = resolveOrCreateRecordingBucket();
 
     if (bucket != null && s3Client != null) {
       try {
         String continuationToken = null;
         do {
-          ListObjectsV2Request.Builder listReq =
+          final ListObjectsV2Request.Builder listReq =
               ListObjectsV2Request.builder().bucket(bucket).prefix("recordings/").maxKeys(1000);
           if (continuationToken != null) {
             listReq.continuationToken(continuationToken);
           }
-          ListObjectsV2Response page = s3Client.listObjectsV2(listReq.build());
+          final ListObjectsV2Response page = s3Client.listObjectsV2(listReq.build());
 
           if (!page.contents().isEmpty()) {
-            List<ObjectIdentifier> keys =
+            final List<ObjectIdentifier> keys =
                 page.contents().stream()
                     .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
                     .toList();
@@ -1201,8 +1235,8 @@ public class CallRecordingService {
 
   /** Deletes all recording metadata and S3 artifacts associated with a call. */
   @Transactional
-  public Map<String, Object> purgeRecordingsForCall(String callId) {
-    String normalizedCallId = normalizeCallId(callId);
+  public Map<String, Object> purgeRecordingsForCall(final String callId) {
+    final String normalizedCallId = normalizeCallId(callId);
     if (normalizedCallId == null) {
       return Map.of(
           "callId", "",
@@ -1211,13 +1245,13 @@ public class CallRecordingService {
     }
 
     activePipelineIds.remove(normalizedCallId);
-    List<CallRecording> recordings =
+    final List<CallRecording> recordings =
         recordingRepository.findByCallIdOrderByStartedAtDesc(normalizedCallId);
-    long deletedDbRows = recordings.size();
+    final long deletedDbRows = recordings.size();
     long deletedS3Objects = 0L;
 
     if (s3Client != null) {
-      for (CallRecording recording : recordings) {
+      for (final CallRecording recording : recordings) {
         deletedS3Objects +=
             deleteObjectsUnderPrefix(recording.getS3Bucket(), recording.getS3Prefix());
       }
@@ -1245,14 +1279,14 @@ public class CallRecordingService {
       return cachedRecordingBucket;
     }
 
-    String accountId = getAwsAccountId();
+    final String accountId = getAwsAccountId();
     if (accountId == null) {
       return null;
     }
 
-    String regionId = (defaultAwsRegion != null) ? defaultAwsRegion.id() : "us-east-1";
+    final String regionId = (defaultAwsRegion != null) ? defaultAwsRegion.id() : "us-east-1";
 
-    String bucketName = "careconnect-recordings-" + accountId + "-" + regionId;
+    final String bucketName = "careconnect-recordings-" + accountId + "-" + regionId;
 
     if (s3Client != null) {
       try {
@@ -1263,9 +1297,13 @@ public class CallRecordingService {
               CreateBucketConfiguration.builder().locationConstraint(regionId).build());
         }
         s3Client.createBucket(reqBuilder.build());
-        log.info("Created recording bucket: {}", bucketName);
+        if (log.isInfoEnabled()) {
+          log.info("Created recording bucket: {}", bucketName);
+        }
       } catch (BucketAlreadyOwnedByYouException | BucketAlreadyExistsException ignored) {
-        log.debug("Recording bucket already exists: {}", bucketName);
+        if (log.isDebugEnabled()) {
+          log.debug("Recording bucket already exists: {}", bucketName);
+        }
       } catch (Exception e) {
         if (log.isWarnEnabled()) {
           log.warn("Could not create recording bucket {}: {}", bucketName, e.getMessage());
@@ -1297,10 +1335,12 @@ public class CallRecordingService {
    * write captured media s3:GetBucketAcl, s3:GetObject — to verify and read source media
    * s3:ListBucket — to enumerate capture artifacts for concatenation
    */
-  private void applyChimeBucketPolicy(String bucketName) {
-    String accountId = getAwsAccountId();
+  private void applyChimeBucketPolicy(final String bucketName) {
+    final String accountId = getAwsAccountId();
     if (bucketName == null || bucketName.isBlank() || accountId == null || accountId.isBlank()) {
-      log.warn("Skipping Chime bucket policy application; bucketName or accountId missing");
+      if (log.isWarnEnabled()) {
+        log.warn("Skipping Chime bucket policy application; bucketName or accountId missing");
+      }
       return;
     }
 

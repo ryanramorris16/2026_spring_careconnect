@@ -1,4 +1,5 @@
 package com.careconnect.controller.dev;
+
 import com.careconnect.model.TelemetryEvent;
 import com.careconnect.service.TelemetryService;
 import com.careconnect.service.TelemetryToggleService;
@@ -15,16 +16,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 /** Development-only endpoints for manually emitting and inspecting telemetry. */
 @RestController
 @RequestMapping("/v1/api/dev/telemetry")
 @Profile("dev")
 @RequiredArgsConstructor
 public class DevTelemetryController {
+
   /** Service used to persist and query telemetry events. */
   private final TelemetryService telemetry;
+
   /** Feature toggle used to enable or disable telemetry collection. */
   private final TelemetryToggleService toggle;
+
   /**
    * Emits a telemetry event from a development request payload.
    *
@@ -32,10 +37,11 @@ public class DevTelemetryController {
    * @return created telemetry event, or no content when telemetry is disabled
    */
   @PostMapping
-  public ResponseEntity<?> emit(@RequestBody final Map<String, Object> body) {
+  public final ResponseEntity<?> emit(@RequestBody final Map<String, Object> body) {
     if (!toggle.isEnabled()) {
       return ResponseEntity.noContent().build();
     }
+
     final TelemetryEvent event = new TelemetryEvent();
     event.setEventName(asString(body.getOrDefault("eventName", "dev_emit")));
     event.setEventTime(OffsetDateTime.now(Clock.systemUTC()));
@@ -45,6 +51,7 @@ public class DevTelemetryController {
     setOptionalMap(event, body);
     return ResponseEntity.ok(telemetry.record(event));
   }
+
   /**
    * Returns the most recent telemetry events.
    *
@@ -52,18 +59,20 @@ public class DevTelemetryController {
    * @return recent telemetry events
    */
   @GetMapping("/recent")
-  public ResponseEntity<?> recent(@RequestParam(defaultValue = "50") final int limit) {
+  public final ResponseEntity<?> recent(@RequestParam(defaultValue = "50") final int limit) {
     return ResponseEntity.ok(telemetry.recent(limit));
   }
+
   /**
    * Returns whether telemetry collection is currently enabled.
    *
    * @return telemetry enabled state
    */
   @GetMapping("/enabled")
-  public ResponseEntity<?> enabled() {
+  public final ResponseEntity<?> enabled() {
     return ResponseEntity.ok(Map.of("enabled", toggle.isEnabled()));
   }
+
   /**
    * Updates whether telemetry collection is enabled.
    *
@@ -71,24 +80,27 @@ public class DevTelemetryController {
    * @return updated telemetry enabled state
    */
   @PutMapping("/enabled")
-  public ResponseEntity<?> setEnabled(@RequestParam final boolean enabled) {
+  @SuppressWarnings("PMD.LinguisticNaming")
+  public final ResponseEntity<?> setEnabled(@RequestParam final boolean enabled) {
     return ResponseEntity.ok(Map.of("enabled", toggle.setEnabled(enabled)));
   }
-  private static void setOptionalMap(
-      final TelemetryEvent event,
-      final Map<String, Object> body) {
+
+  private static void setOptionalMap(final TelemetryEvent event, final Map<String, Object> body) {
     final Map<String, Object> details = asMap(body.get("details"));
     if (!details.isEmpty()) {
       event.setDetails(details);
     }
+
     final Map<String, Object> deviceInfo = asMap(body.get("deviceInfo"));
     if (!deviceInfo.isEmpty()) {
       event.setDeviceInfo(deviceInfo);
     }
   }
+
   private static String asString(final Object value) {
     return value == null ? null : String.valueOf(value);
   }
+
   @SuppressWarnings("unchecked")
   private static Map<String, Object> asMap(final Object value) {
     final Map<String, Object> mapValue;

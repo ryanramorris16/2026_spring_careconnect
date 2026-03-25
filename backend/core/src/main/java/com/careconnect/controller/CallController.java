@@ -36,7 +36,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v3/calls")
@@ -48,6 +55,28 @@ public class CallController {
   private static final double SILENCE_SPEECH_RATIO_THRESHOLD = 0.04;
   private static final double SILENCE_MIC_LEVEL_THRESHOLD = 0.02;
   private static final double SILENCE_VARIABILITY_THRESHOLD = 0.12;
+
+  /** Maximum number of transcript segments allowed per request. */
+  private static final int MAX_TRANSCRIPT_SEGMENTS = 200;
+
+  /** Maximum allowed length for a callId string. */
+  private static final int MAX_CALL_ID_LENGTH = 120;
+
+  private static final String EVT_CALL_JOIN = "CALL_JOIN";
+  private static final String EVT_CALL_END = "CALL_END";
+  private static final String EVT_CALL_LEAVE = "CALL_LEAVE";
+  private static final String EVT_SENTIMENT_TEXT = "SENTIMENT_TEXT";
+  private static final String EVT_SENTIMENT_VOICE = "SENTIMENT_VOICE";
+  private static final String EVT_SENTIMENT_VIDEO = "SENTIMENT_VIDEO";
+  private static final String EVT_SENTIMENT_COMBINED = "SENTIMENT_COMBINED";
+  private static final String EVT_SENTIMENT_FINAL = "SENTIMENT_FINAL";
+  private static final String STATUS_SUCCESS = "SUCCESS";
+  private static final String STATUS_ERROR = "ERROR";
+  private static final String MSG_ACCESS_DENIED = "Access denied";
+  private static final String CHANNEL_COMBINED = "COMBINED";
+  private static final String CHANNEL_TEXT = "TEXT";
+  private static final String CHANNEL_VOICE = "VOICE";
+  private static final String CHANNEL_VIDEO = "VIDEO";
 
   @Autowired private ChimeService chimeService;
   @Autowired private BedrockSentimentService sentimentService;
@@ -61,15 +90,20 @@ public class CallController {
   @Autowired private UserRepository userRepository;
   @Autowired private Environment environment;
 
+  /** Default constructor. */
+  public CallController() {
+    // Spring will inject dependencies via @Autowired fields
+  }
+
   private User getCurrentUser() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String userEmail = authentication.getName();
+    final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    final String userEmail = authentication.getName();
     return userRepository
         .findByEmail(userEmail)
         .orElseThrow(() -> new AppException(HttpStatus.UNAUTHORIZED, "User not authenticated"));
   }
 
-  private void ensurePatientSource(User currentUser) {
+  private void ensurePatientSource(final User currentUser) {
     if (currentUser.getRole() != Role.PATIENT) {
       throw new AppException(
           HttpStatus.FORBIDDEN,
@@ -83,8 +117,8 @@ public class CallController {
       activeProfiles = environment.getDefaultProfiles();
     }
 
-    for (String profile : activeProfiles) {
-      String normalized = profile == null ? "" : profile.trim().toLowerCase(Locale.ROOT);
+    for (final String profile : activeProfiles) {
+      final String normalized = profile == null ? "" : profile.trim().toLowerCase(Locale.ROOT);
       if ("dev".equals(normalized)
           || "local".equals(normalized)
           || "default".equals(normalized)
@@ -99,19 +133,21 @@ public class CallController {
 
   @PostMapping("/{callId}/join")
   @Operation(summary = "Join or create a Chime meeting for a call")
-  public ResponseEntity<Map<String, Object>> joinCall(
-      @PathVariable String callId, @RequestBody(required = false) Map<String, Object> body) {
+  /** Handles join-call request. */
+  public final ResponseEntity<Map<String, Object>> joinCall(
+      @PathVariable final String callId,
+      @RequestBody(required = false) final Map<String, Object> body) {
     try {
-      User currentUser = getCurrentUser();
-      Map<String, Object> response =
+      final User currentUser = getCurrentUser();
+      final Map<String, Object> response =
           chimeService.joinMeeting(callId, currentUser.getId().toString());
-      Map<String, Object> contextMetadata = extractCallContextMetadata(body);
+      final Map<String, Object> contextMetadata = extractCallContextMetadata(body);
       callTelemetryService.recordCallEvent(
           callId,
-          "CALL_JOIN",
+          EVT_CALL_JOIN,
           currentUser.getId(),
           null,
-          "SUCCESS",
+          STATUS_SUCCESS,
           mergeMetadata(
               Map.of("meetingActive", chimeService.isMeetingActive(callId)), contextMetadata),
           null);
@@ -126,7 +162,7 @@ public class CallController {
       } catch (Exception ignored) {
       }
       callTelemetryService.recordCallEvent(
-          callId, "CALL_JOIN", actorId, null, "ERROR", Map.of(), e.getMessage());
+          callId, EVT_CALL_JOIN, actorId, null, STATUS_ERROR, Map.of(), e.getMessage());
       throw e;
     } catch (Exception e) {
       Long actorId = null;
@@ -135,7 +171,7 @@ public class CallController {
       } catch (Exception ignored) {
       }
       callTelemetryService.recordCallEvent(
-          callId, "CALL_JOIN", actorId, null, "ERROR", Map.of(), e.getMessage());
+          callId, EVT_CALL_JOIN, actorId, null, STATUS_ERROR, Map.of(), e.getMessage());
       if (log.isErrorEnabled()) {
         log.error("Failed to join call {}: {}", callId, e.getMessage(), e);
       }
@@ -149,9 +185,10 @@ public class CallController {
 
   @GetMapping("/{callId}/eligible-invitees")
   @Operation(summary = "Get care-circle members who can be added to an active call")
-  public ResponseEntity<List<Map<String, Object>>> getEligibleInvitees(
-      @PathVariable String callId) {
-    User currentUser = getCurrentUser();
+  /** Handles get-eligible-invitees request. */
+  public final ResponseEntity<List<Map<String, Object>>> getEligibleInvitees(
+      @PathVariable final String callId) {
+    final User currentUser = getCurrentUser();
     if (currentUser.getRole() != Role.CAREGIVER) {
       throw new AppException(HttpStatus.FORBIDDEN, "Only caregivers can invite participants");
     }
@@ -159,21 +196,21 @@ public class CallController {
       throw new AppException(HttpStatus.GONE, "Call is no longer active");
     }
 
-    Long patientId = findPatientInCall(callId);
+    final Long patientId = findPatientInCall(callId);
     if (patientId == null) {
       throw new AppException(HttpStatus.NOT_FOUND, "No patient found in this call");
     }
 
-    Set<Long> currentParticipantIds = resolveActiveParticipantIds(callId);
+    final Set<Long> currentParticipantIds = resolveActiveParticipantIds(callId);
 
-    List<Map<String, Object>> eligible = new ArrayList<>();
+    final List<Map<String, Object>> eligible = new ArrayList<>();
 
     caregiverPatientLinkService.getCaregiversByPatient(patientId).stream()
         .filter(link -> !currentParticipantIds.contains(link.caregiverUserId()))
         .filter(link -> !link.caregiverUserId().equals(currentUser.getId()))
         .forEach(
             link -> {
-              Map<String, Object> entry = new LinkedHashMap<>();
+              final Map<String, Object> entry = new LinkedHashMap<>();
               entry.put("userId", link.caregiverUserId());
               entry.put(
                   "name",
@@ -187,7 +224,7 @@ public class CallController {
         .filter(link -> !currentParticipantIds.contains(link.familyUserId()))
         .forEach(
             link -> {
-              Map<String, Object> entry = new LinkedHashMap<>();
+              final Map<String, Object> entry = new LinkedHashMap<>();
               entry.put("userId", link.familyUserId());
               entry.put(
                   "name",
@@ -204,9 +241,10 @@ public class CallController {
 
   @PostMapping("/{callId}/invite")
   @Operation(summary = "Add a care-circle member to an active call")
-  public ResponseEntity<Map<String, Object>> inviteParticipant(
-      @PathVariable String callId, @RequestBody Map<String, Object> body) {
-    User currentUser = getCurrentUser();
+  /** Handles invite-participant request. */
+  public final ResponseEntity<Map<String, Object>> inviteParticipant(
+      @PathVariable final String callId, @RequestBody final Map<String, Object> body) {
+    final User currentUser = getCurrentUser();
     if (currentUser.getRole() != Role.CAREGIVER) {
       throw new AppException(HttpStatus.FORBIDDEN, "Only caregivers can invite participants");
     }
@@ -214,13 +252,13 @@ public class CallController {
       throw new AppException(HttpStatus.GONE, "Call is no longer active");
     }
 
-    Long targetUserId =
+    final Long targetUserId =
         parseUserId(body.get("targetUserId") == null ? null : body.get("targetUserId").toString());
     if (targetUserId == null) {
       throw new AppException(HttpStatus.BAD_REQUEST, "targetUserId is required");
     }
 
-    User target =
+    final User target =
         userRepository
             .findById(targetUserId)
             .orElseThrow(() -> new AppException(HttpStatus.NOT_FOUND, "User not found"));
@@ -229,12 +267,12 @@ public class CallController {
       throw new AppException(HttpStatus.FORBIDDEN, "Cannot add a patient to an existing call");
     }
 
-    Long patientId = findPatientInCall(callId);
+    final Long patientId = findPatientInCall(callId);
     if (patientId == null) {
       throw new AppException(HttpStatus.NOT_FOUND, "No patient found in this call");
     }
 
-    boolean isLinked =
+    final boolean isLinked =
         target.getRole() == Role.CAREGIVER
             ? caregiverPatientLinkService.hasAccessToPatient(targetUserId, patientId)
             : familyMemberService.hasAccessToPatient(targetUserId, patientId);
@@ -246,7 +284,7 @@ public class CallController {
     chimeService.createAttendee(callId, targetUserId.toString());
 
     // Notify target via WebSocket if online
-    Map<String, Object> invite = new HashMap<>();
+    final Map<String, Object> invite = new HashMap<>();
     invite.put("type", "incoming-video-call");
     invite.put("senderId", currentUser.getId());
     invite.put("senderName", getCallUserDisplayName(currentUser));
@@ -257,7 +295,7 @@ public class CallController {
     invite.put("callType", "conference-invite");
     invite.put("isConferenceInvite", true);
     invite.put("timestamp", System.currentTimeMillis());
-    boolean online = callNotificationHandler.isUserOnline(targetUserId.toString());
+    final boolean online = callNotificationHandler.isUserOnline(targetUserId.toString());
     if (online) {
       callNotificationHandler.sendNotificationToUser(targetUserId.toString(), invite);
     }
@@ -267,7 +305,7 @@ public class CallController {
         "CONFERENCE_INVITE",
         currentUser.getId(),
         targetUserId,
-        online ? "SUCCESS" : "OFFLINE",
+        online ? STATUS_SUCCESS : "OFFLINE",
         Map.of("targetRole", target.getRole().name()),
         null);
 
@@ -279,7 +317,7 @@ public class CallController {
           callId,
           online);
     }
-    String status = online ? "invited" : "offline";
+    final String status = online ? "invited" : "offline";
     return ResponseEntity.ok(
         Map.of("status", status, "callId", callId, "targetUserId", targetUserId));
   }
@@ -303,23 +341,23 @@ public class CallController {
         + user.getRole().name().substring(1).toLowerCase(Locale.ROOT);
   }
 
-  private Set<Long> resolveActiveParticipantIds(String callId) {
-    Set<Long> activeParticipantIds = new LinkedHashSet<>();
+  private Set<Long> resolveActiveParticipantIds(final String callId) {
+    final Set<Long> activeParticipantIds = new LinkedHashSet<>();
 
     callTelemetryService.getTelemetryForCall(callId).stream()
         .filter(event -> event.getOccurredAt() != null)
         .sorted(Comparator.comparing(CallTelemetryEvent::getOccurredAt))
         .forEach(
             event -> {
-              Long actorUserId = event.getActorUserId();
+              final Long actorUserId = event.getActorUserId();
               if (actorUserId == null) {
                 return;
               }
 
-              String eventType = event.getEventType();
-              if ("CALL_JOIN".equals(eventType)) {
+              final String eventType = event.getEventType();
+              if (EVT_CALL_JOIN.equals(eventType)) {
                 activeParticipantIds.add(actorUserId);
-              } else if ("CALL_LEAVE".equals(eventType) || "CALL_END".equals(eventType)) {
+              } else if (EVT_CALL_LEAVE.equals(eventType) || EVT_CALL_END.equals(eventType)) {
                 activeParticipantIds.remove(actorUserId);
               }
             });
@@ -329,26 +367,27 @@ public class CallController {
 
   @PostMapping("/{callId}/end")
   @Operation(summary = "End a Chime meeting and notify all participants")
-  public ResponseEntity<Map<String, String>> endCall(
-      @PathVariable String callId,
+  /** Handles end-call request. */
+  public final ResponseEntity<Map<String, String>> endCall(
+      @PathVariable final String callId,
       @RequestParam(required = false) String otherPartyId,
-      @RequestBody(required = false) Map<String, Object> body) {
+      @RequestBody(required = false) final Map<String, Object> body) {
     try {
-      User currentUser = getCurrentUser();
+      final User currentUser = getCurrentUser();
       if ((otherPartyId == null || otherPartyId.isBlank()) && body != null) {
-        Object otherPartyRaw = body.get("otherPartyId");
+        final Object otherPartyRaw = body.get("otherPartyId");
         otherPartyId = otherPartyRaw == null ? null : otherPartyRaw.toString();
       }
 
-      Set<Long> activeParticipantIds = resolveActiveParticipantIds(callId);
-      Long parsedOtherPartyId = parseUserId(otherPartyId);
+      final Set<Long> activeParticipantIds = resolveActiveParticipantIds(callId);
+      final Long parsedOtherPartyId = parseUserId(otherPartyId);
       if (parsedOtherPartyId != null && !parsedOtherPartyId.equals(currentUser.getId())) {
         activeParticipantIds.add(parsedOtherPartyId);
       }
       activeParticipantIds.add(currentUser.getId());
       activeParticipantIds.remove(currentUser.getId());
-      boolean shouldEndMeeting = activeParticipantIds.size() <= 1;
-      Map<String, Object> contextMetadata = extractCallContextMetadata(body);
+      final boolean shouldEndMeeting = activeParticipantIds.size() <= 1;
+      final Map<String, Object> contextMetadata = extractCallContextMetadata(body);
 
       if (shouldEndMeeting) {
         maybeRecordFinalOverallSentiment(callId, currentUser.getId(), parseUserId(otherPartyId));
@@ -389,13 +428,13 @@ public class CallController {
                             activeParticipantIds.size())));
       }
 
-      String eventType = shouldEndMeeting ? "CALL_END" : "CALL_LEAVE";
+      final String eventType = shouldEndMeeting ? EVT_CALL_END : EVT_CALL_LEAVE;
       callTelemetryService.recordCallEvent(
           callId,
           eventType,
           currentUser.getId(),
           parseUserId(otherPartyId),
-          "SUCCESS",
+          STATUS_SUCCESS,
           mergeMetadata(
               Map.of(
                   "endedMeeting",
@@ -431,10 +470,10 @@ public class CallController {
       }
       callTelemetryService.recordCallEvent(
           callId,
-          "CALL_END",
+          EVT_CALL_END,
           actorId,
           parseUserId(otherPartyId),
-          "ERROR",
+          STATUS_ERROR,
           Map.of(),
           e.getMessage());
       throw e;
@@ -446,10 +485,10 @@ public class CallController {
       }
       callTelemetryService.recordCallEvent(
           callId,
-          "CALL_END",
+          EVT_CALL_END,
           actorId,
           parseUserId(otherPartyId),
-          "ERROR",
+          STATUS_ERROR,
           Map.of(),
           e.getMessage());
       if (log.isErrorEnabled()) {
@@ -461,21 +500,22 @@ public class CallController {
 
   @PostMapping("/{callId}/sentiment/text")
   @Operation(summary = "Analyze sentiment from a chat message")
-  public ResponseEntity<SentimentResult> analyzeTextSentiment(
-      @PathVariable String callId, @RequestBody Map<String, String> body) {
+  /** Analyzes sentiment from a chat message for the given call. */
+  public final ResponseEntity<SentimentResult> analyzeTextSentiment(
+      @PathVariable final String callId, @RequestBody final Map<String, String> body) {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
-      User currentUser = getCurrentUser();
+      final User currentUser = getCurrentUser();
       ensureSentimentAllowedForCall(callId, currentUser);
-      String text = body.get("text");
+      final String text = body.get("text");
       if (text == null || text.isBlank()) {
         throw new AppException(HttpStatus.BAD_REQUEST, "text field is required");
       }
-      SentimentResult result = sentimentService.analyzeText(text, callId);
+      final SentimentResult result = sentimentService.analyzeText(text, callId);
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_TEXT",
-          "TEXT",
+          EVT_SENTIMENT_TEXT,
+          CHANNEL_TEXT,
           currentUser.getId(),
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
@@ -483,7 +523,7 @@ public class CallController {
           Map.of(
               "textLength", text.length(),
               "captureMode", body.get("captureMode")),
-          "SUCCESS",
+          STATUS_SUCCESS,
           null);
       broadcastSentimentToCaregivers(
           callId,
@@ -500,14 +540,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_TEXT",
-          "TEXT",
+          EVT_SENTIMENT_TEXT,
+          CHANNEL_TEXT,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       throw e;
     } catch (Exception e) {
@@ -518,14 +558,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_TEXT",
-          "TEXT",
+          EVT_SENTIMENT_TEXT,
+          CHANNEL_TEXT,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       if (log.isErrorEnabled()) {
         log.error("Text sentiment failed for call {}: {}", callId, e.getMessage(), e);
@@ -536,16 +576,17 @@ public class CallController {
 
   @PostMapping("/{callId}/sentiment/voice")
   @Operation(summary = "Analyze sentiment from an audio clip (base64 encoded)")
-  public ResponseEntity<SentimentResult> analyzeVoiceSentiment(
-      @PathVariable String callId, @RequestBody Map<String, String> body) {
+  /** Analyzes sentiment from voice/audio metrics for the given call. */
+  public final ResponseEntity<SentimentResult> analyzeVoiceSentiment(
+      @PathVariable final String callId, @RequestBody final Map<String, String> body) {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
-      User currentUser = getCurrentUser();
+      final User currentUser = getCurrentUser();
       ensureSentimentAllowedForCall(callId, currentUser);
-      Long otherPartyUserId = parseUserId(body.get("otherPartyId"));
-      Double averageLevel = parseDouble(body.get("averageLevel"));
-      Double speechRatio = parseDouble(body.get("speechRatio"));
-      Double variability = parseDouble(body.get("variability"));
+      final Long otherPartyUserId = parseUserId(body.get("otherPartyId"));
+      final Double averageLevel = parseDouble(body.get("averageLevel"));
+      final Double speechRatio = parseDouble(body.get("speechRatio"));
+      final Double variability = parseDouble(body.get("variability"));
 
       if (averageLevel == null || speechRatio == null || variability == null) {
         throw new AppException(
@@ -554,7 +595,7 @@ public class CallController {
       }
 
       if (isSilenceWindow(averageLevel, speechRatio, variability)) {
-        SentimentResult ignored =
+        final SentimentResult ignored =
             SentimentResult.neutral("VOICE", callId, "Silence window ignored");
         if (log.isDebugEnabled()) {
           log.debug(
@@ -573,7 +614,7 @@ public class CallController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ignored);
       }
 
-      SentimentResult result =
+      final SentimentResult result =
           sentimentService.analyzeVoiceFromChimeMetrics(
               callId, averageLevel, speechRatio, variability);
       if (log.isInfoEnabled()) {
@@ -589,14 +630,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VOICE",
-          "VOICE",
+          EVT_SENTIMENT_VOICE,
+          CHANNEL_VOICE,
           currentUser.getId(),
           otherPartyUserId,
           body.get("captureMode"),
           result,
           telemetryPayload,
-          "SUCCESS",
+          STATUS_SUCCESS,
           null);
       broadcastSentimentToCaregivers(
           callId,
@@ -614,14 +655,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VOICE",
-          "VOICE",
+          EVT_SENTIMENT_VOICE,
+          CHANNEL_VOICE,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       throw e;
     } catch (Exception e) {
@@ -632,14 +673,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VOICE",
-          "VOICE",
+          EVT_SENTIMENT_VOICE,
+          CHANNEL_VOICE,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       if (log.isErrorEnabled()) {
         log.error("Voice sentiment failed for call {}: {}", callId, e.getMessage(), e);
@@ -658,8 +699,11 @@ public class CallController {
   }
 
   private void broadcastQuietVoiceStateToCaregivers(
-      String callId, String userId, String otherPartyId, String captureMode) {
-    Map<String, Object> notification = new HashMap<>();
+      final String callId,
+      final String userId,
+      final String otherPartyId,
+      final String captureMode) {
+    final Map<String, Object> notification = new HashMap<>();
     notification.put("type", "sentiment-channel-state");
     notification.put("callId", callId);
     notification.put("channel", "voice");
@@ -677,28 +721,30 @@ public class CallController {
 
   @PostMapping("/{callId}/sentiment/video")
   @Operation(summary = "Analyze sentiment from a video frame (base64 encoded image)")
-  public ResponseEntity<SentimentResult> analyzeVideoSentiment(
-      @PathVariable String callId, @RequestBody Map<String, String> body) {
+  /** Analyzes sentiment from a video frame for the given call. */
+  public final ResponseEntity<SentimentResult> analyzeVideoSentiment(
+      @PathVariable final String callId, @RequestBody final Map<String, String> body) {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
-      User currentUser = getCurrentUser();
+      final User currentUser = getCurrentUser();
       ensureSentimentAllowedForCall(callId, currentUser);
-      String imageBase64 = body.get("imageBase64");
+      final String imageBase64 = body.get("imageBase64");
       if (imageBase64 == null || imageBase64.isBlank()) {
         throw new AppException(HttpStatus.BAD_REQUEST, "imageBase64 field is required");
       }
-      String imageFormat = body.getOrDefault("imageFormat", "jpeg");
-      SentimentResult result = sentimentService.analyzeVideoFrame(imageBase64, imageFormat, callId);
+      final String imageFormat = body.getOrDefault("imageFormat", "jpeg");
+      final SentimentResult result =
+          sentimentService.analyzeVideoFrame(imageBase64, imageFormat, callId);
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VIDEO",
-          "VIDEO",
+          EVT_SENTIMENT_VIDEO,
+          CHANNEL_VIDEO,
           currentUser.getId(),
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           result,
           telemetryPayload,
-          "SUCCESS",
+          STATUS_SUCCESS,
           null);
       broadcastSentimentToCaregivers(
           callId,
@@ -715,14 +761,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VIDEO",
-          "VIDEO",
+          EVT_SENTIMENT_VIDEO,
+          CHANNEL_VIDEO,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       throw e;
     } catch (Exception e) {
@@ -733,14 +779,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_VIDEO",
-          "VIDEO",
+          EVT_SENTIMENT_VIDEO,
+          CHANNEL_VIDEO,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       if (log.isErrorEnabled()) {
         log.error("Video sentiment failed for call {}: {}", callId, e.getMessage(), e);
@@ -751,42 +797,43 @@ public class CallController {
 
   @PostMapping("/{callId}/sentiment/combined")
   @Operation(summary = "Get combined sentiment score across all channels")
-  public ResponseEntity<Map<String, Object>> getCombinedSentiment(
-      @PathVariable String callId, @RequestBody Map<String, String> body) {
+  /** Returns combined sentiment score across all channels for the given call. */
+  public final ResponseEntity<Map<String, Object>> getCombinedSentiment(
+      @PathVariable final String callId, @RequestBody final Map<String, String> body) {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
-      User currentUser = getCurrentUser();
+      final User currentUser = getCurrentUser();
       ensureSentimentAllowedForCall(callId, currentUser);
-      String text = body.getOrDefault("text", "");
-      String imageBase64 = body.getOrDefault("imageBase64", "");
-      String imageFormat = body.getOrDefault("imageFormat", "jpeg");
-      Double averageLevel = parseDouble(body.get("averageLevel"));
-      Double speechRatio = parseDouble(body.get("speechRatio"));
-      Double variability = parseDouble(body.get("variability"));
+      final String text = body.getOrDefault("text", "");
+      final String imageBase64 = body.getOrDefault("imageBase64", "");
+      final String imageFormat = body.getOrDefault("imageFormat", "jpeg");
+      final Double averageLevel = parseDouble(body.get("averageLevel"));
+      final Double speechRatio = parseDouble(body.get("speechRatio"));
+      final Double variability = parseDouble(body.get("variability"));
 
-      SentimentResult textResult =
+      final SentimentResult textResult =
           text.isBlank() ? null : sentimentService.analyzeText(text, callId);
-      SentimentResult voiceResult =
+      final SentimentResult voiceResult =
           averageLevel == null || speechRatio == null || variability == null
               ? null
               : sentimentService.analyzeVoiceFromChimeMetrics(
                   callId, averageLevel, speechRatio, variability);
-      SentimentResult videoResult =
+      final SentimentResult videoResult =
           imageBase64.isBlank()
               ? null
               : sentimentService.analyzeVideoFrame(imageBase64, imageFormat, callId);
-      Map<String, Object> combined =
+      final Map<String, Object> combined =
           sentimentService.buildCombinedSentiment(textResult, voiceResult, videoResult, callId);
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_COMBINED",
-          "COMBINED",
+          EVT_SENTIMENT_COMBINED,
+          CHANNEL_COMBINED,
           currentUser.getId(),
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           sanitizeCombinedTelemetry(combined),
-          "SUCCESS",
+          STATUS_SUCCESS,
           null);
       return ResponseEntity.ok(combined);
     } catch (AppException e) {
@@ -797,14 +844,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_COMBINED",
-          "COMBINED",
+          EVT_SENTIMENT_COMBINED,
+          CHANNEL_COMBINED,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       throw e;
     } catch (Exception e) {
@@ -815,14 +862,14 @@ public class CallController {
       }
       callTelemetryService.recordSentimentEvent(
           callId,
-          "SENTIMENT_COMBINED",
-          "COMBINED",
+          EVT_SENTIMENT_COMBINED,
+          CHANNEL_COMBINED,
           actorId,
           parseUserId(body.get("otherPartyId")),
           body.get("captureMode"),
           null,
           telemetryPayload,
-          "ERROR",
+          STATUS_ERROR,
           e.getMessage());
       if (log.isErrorEnabled()) {
         log.error("Combined sentiment failed for call {}: {}", callId, e.getMessage(), e);
@@ -833,28 +880,32 @@ public class CallController {
 
   @GetMapping("/{callId}/telemetry")
   @Operation(summary = "Get stored call telemetry events")
-  public ResponseEntity<List<CallTelemetryEvent>> getCallTelemetry(@PathVariable String callId) {
-    User currentUser = getCurrentUser();
-    List<CallTelemetryEvent> events = callTelemetryService.getTelemetryForCall(callId);
-    boolean isAdmin = currentUser.getRole() == Role.ADMIN;
-    boolean isParticipant =
+  /** Returns stored call telemetry events for the given call. */
+  public final ResponseEntity<List<CallTelemetryEvent>> getCallTelemetry(
+      @PathVariable final String callId) {
+    final User currentUser = getCurrentUser();
+    final List<CallTelemetryEvent> events = callTelemetryService.getTelemetryForCall(callId);
+    final boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+    final boolean isParticipant =
         events.stream()
             .anyMatch(
                 e ->
                     currentUser.getId().equals(e.getActorUserId())
                         || currentUser.getId().equals(e.getTargetUserId()));
     if (!isAdmin && !events.isEmpty() && !isParticipant) {
-      throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new AppException(HttpStatus.FORBIDDEN, MSG_ACCESS_DENIED);
     }
     return ResponseEntity.ok(events);
   }
 
   @GetMapping("/{callId}/transcription/debug")
   @Operation(summary = "Get Chime transcription debug state for a call")
-  public ResponseEntity<Map<String, Object>> getTranscriptionDebugStatus(
-      @PathVariable String callId) {
-    User currentUser = getCurrentUser();
-    Map<String, Object> status = new HashMap<>(chimeService.getTranscriptionDebugStatus(callId));
+  /** Returns Chime transcription debug state for the given call. */
+  public final ResponseEntity<Map<String, Object>> getTranscriptionDebugStatus(
+      @PathVariable final String callId) {
+    final User currentUser = getCurrentUser();
+    final Map<String, Object> status =
+        new HashMap<>(chimeService.getTranscriptionDebugStatus(callId));
     status.put("requestedByUserId", currentUser.getId());
     status.put("requestedByRole", currentUser.getRole().name());
     return ResponseEntity.ok(status);
@@ -862,27 +913,31 @@ public class CallController {
 
   @PostMapping("/{callId}/transcript/segments")
   @Operation(summary = "Persist transcript segments for a call")
-  public ResponseEntity<Map<String, Object>> saveTranscriptSegments(
-      @PathVariable String callId, @RequestBody Map<String, Object> body) {
-    if (callId == null || callId.trim().isEmpty() || callId.length() > 120) {
+  /** Persists transcript segments for the given call. */
+  public final ResponseEntity<Map<String, Object>> saveTranscriptSegments(
+      @PathVariable final String callId, @RequestBody final Map<String, Object> body) {
+    if (callId == null || callId.trim().isEmpty() || callId.length() > MAX_CALL_ID_LENGTH) {
       throw new AppException(HttpStatus.BAD_REQUEST, "Invalid callId");
     }
-    User currentUser = getCurrentUser();
-    boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+    final User currentUser = getCurrentUser();
+    final boolean isAdmin = currentUser.getRole() == Role.ADMIN;
     if (!isAdmin && !isCallParticipant(callId, currentUser.getId())) {
       throw new AppException(
           HttpStatus.FORBIDDEN, "Only call participants can persist transcript segments");
     }
-    List<CallTranscriptService.TranscriptSegmentInput> segments = extractTranscriptSegments(body);
-    if (segments.size() > 200) {
+    final List<CallTranscriptService.TranscriptSegmentInput> segments =
+        extractTranscriptSegments(body);
+    if (segments.size() > MAX_TRANSCRIPT_SEGMENTS) {
       throw new AppException(HttpStatus.BAD_REQUEST, "Too many transcript segments in one request");
     }
-    int saved = callTranscriptService.recordSegments(callId, currentUser.getId(), segments);
-    log.info(
-        "Saved {} transcript segments for callId={} by userId={}",
-        saved,
-        callId,
-        currentUser.getId());
+    final int saved = callTranscriptService.recordSegments(callId, currentUser.getId(), segments);
+    if (log.isInfoEnabled()) {
+      log.info(
+          "Saved {} transcript segments for callId={} by userId={}",
+          saved,
+          callId,
+          currentUser.getId());
+    }
     return ResponseEntity.ok(
         Map.of(
             "callId", callId,
@@ -892,31 +947,34 @@ public class CallController {
 
   @GetMapping("/{callId}/summary")
   @Operation(summary = "Get latest stored call summary")
-  public ResponseEntity<Map<String, Object>> getCallSummary(@PathVariable String callId) {
-    User currentUser = getCurrentUser();
-    boolean isAdmin = currentUser.getRole() == Role.ADMIN;
-    boolean inTelemetry =
+  /** Returns the latest stored call summary for the given call. */
+  public final ResponseEntity<Map<String, Object>> getCallSummary(
+      @PathVariable final String callId) {
+    final User currentUser = getCurrentUser();
+    final boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+    final boolean inTelemetry =
         callTelemetryService.getTelemetryForCall(callId).stream()
             .anyMatch(
                 e ->
                     currentUser.getId().equals(e.getActorUserId())
                         || currentUser.getId().equals(e.getTargetUserId()));
-    boolean inTranscript = callTranscriptService.hasTranscriptAccess(callId, currentUser.getId());
+    final boolean inTranscript =
+        callTranscriptService.hasTranscriptAccess(callId, currentUser.getId());
 
-    Optional<com.careconnect.model.CallSummary> latestEntity =
+    final Optional<com.careconnect.model.CallSummary> latestEntity =
         callSummaryService.getLatestSummaryEntity(callId);
-    boolean isSummaryOwner =
+    final boolean isSummaryOwner =
         latestEntity.map(s -> currentUser.getId().equals(s.getGeneratedByUserId())).orElse(false);
 
     if (!isAdmin && !inTelemetry && !inTranscript && !isSummaryOwner) {
-      throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new AppException(HttpStatus.FORBIDDEN, MSG_ACCESS_DENIED);
     }
 
     // If end-call summary ran before transcript retries landed, regenerate on read.
     if (latestEntity.isPresent()
         && "NO_TRANSCRIPT".equalsIgnoreCase(latestEntity.get().getStatus())
         && callTranscriptService.countSegments(callId) > 0) {
-      Map<String, CallTelemetryEvent> latestByChannel =
+      final Map<String, CallTelemetryEvent> latestByChannel =
           callTelemetryService.getLatestSentimentByChannel(callId);
       callSummaryService.generateAndStoreSummary(callId, currentUser.getId(), latestByChannel);
     }
@@ -936,45 +994,49 @@ public class CallController {
 
   @GetMapping("/{callId}/transcript/segments")
   @Operation(summary = "Get stored transcript segments for a call")
-  public ResponseEntity<List<com.careconnect.model.CallTranscriptSegment>> getTranscriptSegments(
-      @PathVariable String callId) {
-    User currentUser = getCurrentUser();
-    boolean isAdmin = currentUser.getRole() == Role.ADMIN;
-    boolean inTelemetry =
+  /** Returns stored transcript segments for the given call. */
+  public final ResponseEntity<List<com.careconnect.model.CallTranscriptSegment>>
+      getTranscriptSegments(@PathVariable final String callId) {
+    final User currentUser = getCurrentUser();
+    final boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+    final boolean inTelemetry =
         callTelemetryService.getTelemetryForCall(callId).stream()
             .anyMatch(
                 e ->
                     currentUser.getId().equals(e.getActorUserId())
                         || currentUser.getId().equals(e.getTargetUserId()));
-    boolean inTranscript = callTranscriptService.hasTranscriptAccess(callId, currentUser.getId());
+    final boolean inTranscript =
+        callTranscriptService.hasTranscriptAccess(callId, currentUser.getId());
     if (!isAdmin && !inTelemetry && !inTranscript) {
-      throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new AppException(HttpStatus.FORBIDDEN, MSG_ACCESS_DENIED);
     }
     return ResponseEntity.ok(callTranscriptService.getSegmentsForCall(callId));
   }
 
   @DeleteMapping("/{callId}/telemetry")
   @Operation(summary = "Delete the full stored call footprint for a call (dev/local only)")
-  public ResponseEntity<Map<String, Object>> deleteCallTelemetry(@PathVariable String callId) {
+  /** Deletes the full stored call footprint for the given call (dev/local only). */
+  public final ResponseEntity<Map<String, Object>> deleteCallTelemetry(
+      @PathVariable final String callId) {
     ensureDevOrLocalMode();
 
-    User currentUser = getCurrentUser();
-    long deletedEvents = callTelemetryService.deleteTelemetryForCall(callId);
-    long deletedSummaries = callSummaryService.deleteSummariesForCall(callId);
-    Map<String, Long> transcriptPurge = callTranscriptService.purgeForCall(callId);
-    Map<String, Object> recordingPurge = callRecordingService.purgeRecordingsForCall(callId);
+    final User currentUser = getCurrentUser();
+    final long deletedEvents = callTelemetryService.deleteTelemetryForCall(callId);
+    final long deletedSummaries = callSummaryService.deleteSummariesForCall(callId);
+    final Map<String, Long> transcriptPurge = callTranscriptService.purgeForCall(callId);
+    final Map<String, Object> recordingPurge = callRecordingService.purgeRecordingsForCall(callId);
 
-    long deletedTranscriptSegments =
+    final long deletedTranscriptSegments =
         (transcriptPurge.get("deletedTranscriptSegments") == null)
             ? 0L
             : transcriptPurge.get("deletedTranscriptSegments");
-    long deletedTranscriptArchives =
+    final long deletedTranscriptArchives =
         (transcriptPurge.get("deletedTranscriptArchives") == null)
             ? 0L
             : transcriptPurge.get("deletedTranscriptArchives");
-    long deletedRecordingRows =
+    final long deletedRecordingRows =
         recordingPurge.get("deletedDbRows") instanceof Number n ? n.longValue() : 0L;
-    long deletedRecordingObjects =
+    final long deletedRecordingObjects =
         recordingPurge.get("deletedS3Objects") instanceof Number n ? n.longValue() : 0L;
 
     if (log.isWarnEnabled()) {
@@ -992,7 +1054,7 @@ public class CallController {
           deletedRecordingObjects);
     }
 
-    Map<String, Object> response = new LinkedHashMap<>();
+    final Map<String, Object> response = new LinkedHashMap<>();
     response.put("callId", callId);
     response.put("deletedEvents", deletedEvents);
     response.put("deletedSummaries", deletedSummaries);
@@ -1008,12 +1070,13 @@ public class CallController {
   @Operation(
       summary =
           "Delete the full stored call footprint for a patient call history tile (dev/local only)")
-  public ResponseEntity<Map<String, Object>> deletePatientCallHistory(
-      @PathVariable Long patientUserId) {
+  /** Deletes the full stored call footprint for a patient's call history (dev/local only). */
+  public final ResponseEntity<Map<String, Object>> deletePatientCallHistory(
+      @PathVariable final Long patientUserId) {
     ensureDevOrLocalMode();
 
-    User currentUser = getCurrentUser();
-    CallTelemetryService.PatientCallHistoryMatch match =
+    final User currentUser = getCurrentUser();
+    final CallTelemetryService.PatientCallHistoryMatch match =
         callTelemetryService.findCallHistoryForPatient(patientUserId);
 
     long deletedSummaries = 0L;
@@ -1022,14 +1085,15 @@ public class CallController {
     long deletedRecordingRows = 0L;
     long deletedRecordingObjects = 0L;
 
-    for (String callId : match.callIds()) {
+    for (final String callId : match.callIds()) {
       deletedSummaries += callSummaryService.deleteSummariesForCall(callId);
 
-      Map<String, Long> transcriptPurge = callTranscriptService.purgeForCall(callId);
+      final Map<String, Long> transcriptPurge = callTranscriptService.purgeForCall(callId);
       deletedTranscriptSegments += transcriptPurge.getOrDefault("deletedTranscriptSegments", 0L);
       deletedTranscriptArchives += transcriptPurge.getOrDefault("deletedTranscriptArchives", 0L);
 
-      Map<String, Object> recordingPurge = callRecordingService.purgeRecordingsForCall(callId);
+      final Map<String, Object> recordingPurge =
+          callRecordingService.purgeRecordingsForCall(callId);
       if (recordingPurge.get("deletedDbRows") instanceof Number deletedDbRows) {
         deletedRecordingRows += deletedDbRows.longValue();
       }
@@ -1038,7 +1102,7 @@ public class CallController {
       }
     }
 
-    long deletedEvents = callTelemetryService.deleteTelemetryEvents(match.events());
+    final long deletedEvents = callTelemetryService.deleteTelemetryEvents(match.events());
 
     if (log.isWarnEnabled()) {
       log.warn(
@@ -1056,7 +1120,7 @@ public class CallController {
           deletedRecordingObjects);
     }
 
-    Map<String, Object> response = new LinkedHashMap<>();
+    final Map<String, Object> response = new LinkedHashMap<>();
     response.put("patientUserId", patientUserId);
     response.put("deletedEvents", deletedEvents);
     response.put("deletedCalls", match.callIds().size());
@@ -1071,28 +1135,31 @@ public class CallController {
 
   @GetMapping("/telemetry/my")
   @Operation(summary = "Get telemetry for current user participation")
-  public ResponseEntity<List<CallTelemetryEvent>> getMyTelemetry() {
-    User currentUser = getCurrentUser();
+  /** Returns telemetry events for the currently authenticated user's call participation. */
+  public final ResponseEntity<List<CallTelemetryEvent>> getMyTelemetry() {
+    final User currentUser = getCurrentUser();
     return ResponseEntity.ok(callTelemetryService.getTelemetryForUser(currentUser.getId()));
   }
 
   @GetMapping("/sentiment-history")
   @Operation(summary = "Get longitudinal per-call sentiment summaries for a user")
-  public ResponseEntity<List<Map<String, Object>>> getSentimentHistory(@RequestParam Long userId) {
-    User currentUser = getCurrentUser();
+  /** Returns longitudinal per-call sentiment summaries for the given user. */
+  public final ResponseEntity<List<Map<String, Object>>> getSentimentHistory(
+      @RequestParam final Long userId) {
+    final User currentUser = getCurrentUser();
     if (!canAccessSentimentHistory(currentUser, userId)) {
-      throw new AppException(HttpStatus.FORBIDDEN, "Access denied");
+      throw new AppException(HttpStatus.FORBIDDEN, MSG_ACCESS_DENIED);
     }
     return ResponseEntity.ok(callTelemetryService.getSentimentHistoryForUser(userId));
   }
 
   private void broadcastSentimentToCaregivers(
-      String callId,
-      String userId,
-      String otherPartyId,
-      SentimentResult result,
-      String captureMode) {
-    Map<String, Object> notification = new HashMap<>();
+      final String callId,
+      final String userId,
+      final String otherPartyId,
+      final SentimentResult result,
+      final String captureMode) {
+    final Map<String, Object> notification = new HashMap<>();
     notification.put("type", "sentiment-update");
     notification.put("callId", callId);
     notification.put("sentiment", result);
@@ -1104,13 +1171,14 @@ public class CallController {
     sendSentimentToCaregiverIfEligible(otherPartyId, notification);
   }
 
-  private void sendSentimentToCaregiverIfEligible(String userId, Map<String, Object> notification) {
+  private void sendSentimentToCaregiverIfEligible(
+      final String userId, final Map<String, Object> notification) {
     if (userId == null || userId.isBlank()) {
       return;
     }
 
     try {
-      Long parsedUserId = Long.parseLong(userId);
+      final Long parsedUserId = Long.parseLong(userId);
       userRepository
           .findById(parsedUserId)
           .ifPresent(
@@ -1121,7 +1189,9 @@ public class CallController {
                 }
               });
     } catch (NumberFormatException ex) {
-      log.warn("Skipping sentiment recipient with invalid userId: {}", userId);
+      if (log.isWarnEnabled()) {
+        log.warn("Skipping sentiment recipient with invalid userId: {}", userId);
+      }
     }
   }
 
@@ -1131,7 +1201,7 @@ public class CallController {
     // Non-patient participants are already blocked by ensurePatientSource.
   }
 
-  private boolean isCareTeamCall(String callId) {
+  private boolean isCareTeamCall(final String callId) {
     if (callId == null || callId.isBlank()) {
       return false;
     }
@@ -1139,23 +1209,23 @@ public class CallController {
     return callTelemetryService.getTelemetryForCall(callId).stream()
         .anyMatch(
             event -> {
-              String metadataJson = event.getMetadataJson();
+              final String metadataJson = event.getMetadataJson();
               if (metadataJson == null || metadataJson.isBlank()) {
                 return false;
               }
-              String normalized = metadataJson.toUpperCase(Locale.ROOT);
+              final String normalized = metadataJson.toUpperCase(Locale.ROOT);
               return normalized.contains("\"CALLKIND\":\"CARE_TEAM\"")
                   || normalized.contains("\"CALLKIND\": \"CARE_TEAM\"");
             });
   }
 
-  private AppException internalServerError(String message, Exception cause) {
-    AppException exception = new AppException(HttpStatus.INTERNAL_SERVER_ERROR, message);
+  private AppException internalServerError(final String message, final Exception cause) {
+    final AppException exception = new AppException(HttpStatus.INTERNAL_SERVER_ERROR, message);
     exception.initCause(cause);
     return exception;
   }
 
-  private Long parseUserId(String userId) {
+  private Long parseUserId(final String userId) {
     if (userId == null || userId.isBlank()) {
       return null;
     }
@@ -1166,7 +1236,7 @@ public class CallController {
     }
   }
 
-  private Double parseDouble(String value) {
+  private Double parseDouble(final String value) {
     if (value == null || value.isBlank()) {
       return null;
     }
@@ -1177,8 +1247,8 @@ public class CallController {
     }
   }
 
-  private Map<String, Object> sanitizeTelemetryPayload(Map<String, String> body) {
-    Map<String, Object> sanitized = new HashMap<>();
+  private Map<String, Object> sanitizeTelemetryPayload(final Map<String, String> body) {
+    final Map<String, Object> sanitized = new HashMap<>();
     if (body == null || body.isEmpty()) {
       return sanitized;
     }
@@ -1205,7 +1275,7 @@ public class CallController {
       sanitized.put("variability", body.get("variability"));
     }
 
-    String text = body.get("text");
+    final String text = body.get("text");
     if (text != null) {
       sanitized.put("textLength", text.length());
     }
@@ -1213,35 +1283,35 @@ public class CallController {
     return sanitized;
   }
 
-  private Map<String, Object> sanitizeCombinedTelemetry(Map<String, Object> combined) {
+  private Map<String, Object> sanitizeCombinedTelemetry(final Map<String, Object> combined) {
     if (combined == null || combined.isEmpty()) {
       return Map.of();
     }
 
-    Object overallRaw = combined.get("overall");
+    final Object overallRaw = combined.get("overall");
     if (!(overallRaw instanceof Map<?, ?> overallMap)) {
       return Map.of();
     }
 
-    Map<String, Object> safe = new HashMap<>();
-    Object score = overallMap.get("score");
-    Object label = overallMap.get("label");
+    final Map<String, Object> safe = new HashMap<>();
+    final Object score = overallMap.get("score");
+    final Object label = overallMap.get("label");
     if (score != null) {
       safe.put("overallScore", score);
     }
     if (label != null) {
       safe.put("overallLabel", label.toString());
     }
-    Object timestamp = combined.get("timestamp");
+    final Object timestamp = combined.get("timestamp");
     if (timestamp != null) {
       safe.put("timestamp", timestamp);
     }
 
-    for (String debugKey :
+    for (final String debugKey :
         List.of(
             "dbgTs", "dbgVs", "dbgIs", "dbgTw", "dbgVw", "dbgIw", "dbgTc", "dbgVc", "dbgIc",
             "dbgCf")) {
-      Object debugValue = combined.get(debugKey);
+      final Object debugValue = combined.get(debugKey);
       if (debugValue != null) {
         safe.put(debugKey, debugValue);
       }
@@ -1251,21 +1321,21 @@ public class CallController {
   }
 
   private void maybeRecordFinalOverallSentiment(
-      String callId, Long actorUserId, Long targetUserId) {
+      final String callId, final Long actorUserId, final Long targetUserId) {
     try {
-      Map<String, CallTelemetryEvent> latestByChannel =
+      final Map<String, CallTelemetryEvent> latestByChannel =
           callTelemetryService.getLatestSentimentByChannel(callId);
       if (latestByChannel.isEmpty()) {
         return;
       }
 
-      Map<String, SentimentResult> channelResults = new LinkedHashMap<>();
-      for (Map.Entry<String, CallTelemetryEvent> entry : latestByChannel.entrySet()) {
-        CallTelemetryEvent event = entry.getValue();
+      final Map<String, SentimentResult> channelResults = new LinkedHashMap<>();
+      for (final Map.Entry<String, CallTelemetryEvent> entry : latestByChannel.entrySet()) {
+        final CallTelemetryEvent event = entry.getValue();
         if (event == null || event.getSentimentScore() == null) {
           continue;
         }
-        String channel = entry.getKey().trim().toUpperCase(Locale.ROOT);
+        final String channel = entry.getKey().trim().toUpperCase(Locale.ROOT);
         channelResults.put(
             channel,
             new SentimentResult(
