@@ -122,11 +122,7 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
         title: const Text('Complete Your Purchase'),
         backgroundColor: const Color(0xFF00A7C8),
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: _buildBody(),
     );
@@ -199,6 +195,14 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('Subscribe Now', style: TextStyle(fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => context.go('/subscription'),
+              child: const Text('Cancel', style: TextStyle(fontSize: 16, color: Colors.grey)),
             ),
           ),
         ],
