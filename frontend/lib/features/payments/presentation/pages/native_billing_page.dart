@@ -33,6 +33,13 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
   @override
   void initState() {
     super.initState();
+    // Free tier bypasses billing entirely
+    if (widget.tierId == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go('/home');
+      });
+      return;
+    }
     _billing = NativeBillingService(userId: widget.userId ?? 0);
     _billing.init();
     _fetchBillingQuote();
@@ -113,8 +120,13 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complete Your Purchase'),
-        backgroundColor: const Color(0xFF14366E),
+        backgroundColor: const Color(0xFF00A7C8),
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: _buildBody(),
     );
@@ -159,7 +171,7 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
                 : Platform.isIOS
                     ? 'Purchase via App Store'
                     : 'Purchase via Google Play',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E)),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8)),
           ),
           const SizedBox(height: 8),
           Text(
@@ -176,7 +188,7 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
             child: ElevatedButton(
               onPressed: _isPurchasing ? null : _startPurchase,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF14366E),
+                backgroundColor: const Color(0xFF00A7C8),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -205,7 +217,7 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,8 +238,8 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
-              Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+              const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
+              Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
             ],
           ),
         ],

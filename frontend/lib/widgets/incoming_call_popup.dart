@@ -8,6 +8,7 @@ class IncomingCallPopup extends StatefulWidget {
   final String callerName;
   final bool isVideoCall;
   final String callerRole;
+  final bool isConferenceInvite;
   final VoidCallback onAccept;
   final VoidCallback onDecline;
 
@@ -18,6 +19,7 @@ class IncomingCallPopup extends StatefulWidget {
     required this.callerName,
     required this.isVideoCall,
     required this.callerRole,
+    this.isConferenceInvite = false,
     required this.onAccept,
     required this.onDecline,
   });
@@ -101,7 +103,9 @@ class _IncomingCallPopupState extends State<IncomingCallPopup>
                       child: Column(
                         children: [
                           Text(
-                            'Incoming ${widget.isVideoCall ? 'Video' : 'Audio'} Call',
+                            widget.isConferenceInvite
+                                ? 'Joining Existing Call'
+                                : 'Incoming ${widget.isVideoCall ? 'Video' : 'Audio'} Call',
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -114,7 +118,9 @@ class _IncomingCallPopupState extends State<IncomingCallPopup>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'from ${widget.callerRole.toLowerCase()}',
+                            widget.isConferenceInvite
+                                ? 'invited by ${widget.callerRole == 'CAREGIVER' ? 'Caregiver' : widget.callerRole.toLowerCase()}'
+                                : 'from ${widget.callerRole == 'CAREGIVER' ? 'Caregiver' : widget.callerRole.toLowerCase()}',
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey[600]),
                           ),

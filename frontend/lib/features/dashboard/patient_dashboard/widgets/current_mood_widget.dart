@@ -39,7 +39,7 @@ class _CurrentMoodWidgetState extends State<CurrentMoodWidget> {
 
   /// Gets a mood icon based on score.
   String _getMoodEmoji(int score) {
-    if (score == 10) return '\u{1F929}';
+    if (score == 10) return '\u{1F60A}';
     if (score == 9) return '\u{1F601}';
     if (score == 8) return '\u{1F604}';
     if (score == 7) return '\u{1F60A}';
@@ -53,7 +53,8 @@ class _CurrentMoodWidgetState extends State<CurrentMoodWidget> {
   }
 
   String _getMoodLabel(int score) {
-    if (score >= 9) return 'Ecstatic';
+    if (score == 10) return 'Excellent';
+    if (score >= 9) return 'Great';
     if (score >= 7) return 'Happy';
     if (score >= 5) return 'Okay';
     if (score >= 3) return 'Down';

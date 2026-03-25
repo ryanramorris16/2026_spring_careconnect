@@ -141,7 +141,7 @@ class _WebPayPageState extends State<WebPayPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complete Your Purchase'),
-        backgroundColor: const Color(0xFF14366E),
+        backgroundColor: const Color(0xFF00A7C8),
         foregroundColor: Colors.white,
       ),
       body: _paymentSuccess ? _buildSuccessView() : _buildBody(),
@@ -157,7 +157,7 @@ class _WebPayPageState extends State<WebPayPage> {
           children: [
             const Icon(Icons.check_circle, color: Colors.green, size: 80),
             const SizedBox(height: 24),
-            const Text('Payment Successful!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+            const Text('Payment Successful!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
             const SizedBox(height: 12),
             if (_transactionId != null)
               Text('Transaction: $_transactionId', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
@@ -167,7 +167,7 @@ class _WebPayPageState extends State<WebPayPage> {
               child: ElevatedButton(
                 onPressed: () => context.go('/dashboard'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF14366E),
+                  backgroundColor: const Color(0xFF00A7C8),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -214,7 +214,7 @@ class _WebPayPageState extends State<WebPayPage> {
           _buildOrderSummary(),
           const SizedBox(height: 32),
           const Text('Select Payment Method',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
           const SizedBox(height: 16),
           if (_showApplePay) ...[
             _buildPaymentButton(
@@ -252,7 +252,7 @@ class _WebPayPageState extends State<WebPayPage> {
             : Icon(icon, size: 24),
         label: Text(label, style: const TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor ?? const Color(0xFF14366E),
+          backgroundColor: backgroundColor ?? const Color(0xFF00A7C8),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -293,7 +293,7 @@ class _WebPayPageState extends State<WebPayPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
           const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text(quote.tierName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
@@ -309,8 +309,8 @@ class _WebPayPageState extends State<WebPayPage> {
           ]),
           Container(height: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(vertical: 12)),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
-            Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF14366E))),
+            const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
+            Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
           ]),
           const SizedBox(height: 8),
           Text('Currency: ${quote.currency}', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
