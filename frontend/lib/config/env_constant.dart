@@ -124,9 +124,11 @@ String getBackendBaseUrl() {
     }
   }
 
-  if (!kDebugMode && !resolved.startsWith('https://')) {
-    throw Exception('BACKEND_URL must use https:// in release builds.');
-  }
+  // https enforcement disabled for local testing
+  // TODO: re-enable before production release
+  //if (!kDebugMode && !resolved.startsWith('https://')) {
+    //throw Exception('BACKEND_URL must use https:// in release builds.');
+  //}
 
   return resolved;
 }

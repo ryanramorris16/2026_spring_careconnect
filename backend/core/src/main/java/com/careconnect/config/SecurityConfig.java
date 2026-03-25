@@ -88,6 +88,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
+                        /* =======================================================
+                           ACTUATOR HEALTH ENDPOINT (CI/CD + AWS HEALTH CHECKS)
+                           =======================================================
+                           - Must be public (no auth)
+                           - Used by:
+                             • CI/CD pipeline gating
+                             • AWS ALB / ECS / Fargate health checks
+                             • Monitoring tools
+                        */
+                       .requestMatchers("/actuator/health").permitAll()
+                        
                         /* ---------- Swagger / API docs ------------------------ */
                         .requestMatchers(
                                 "/swagger-ui/**",

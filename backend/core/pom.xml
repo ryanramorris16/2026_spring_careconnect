@@ -396,6 +396,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <!-- Compiler plugin with Lombok annotation processing -->
@@ -653,7 +660,10 @@
                         <executions>
                             <execution>
                                 <id>repackage</id>
-                                <phase>none</phase>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>repackage</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
