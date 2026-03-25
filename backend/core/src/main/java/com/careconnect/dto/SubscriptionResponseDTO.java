@@ -7,7 +7,7 @@ import java.time.Instant;
 public class SubscriptionResponseDTO {
     private Long id;
     private String stripeSubscriptionId;
-    private String stripeCustomerId;
+    private String paymentCustomerId;
     private String priceId;
     private Long userId;
     private Long planId;
@@ -23,7 +23,7 @@ public class SubscriptionResponseDTO {
     public SubscriptionResponseDTO(Subscription subscription) {
         this.id = subscription.getId();
         this.stripeSubscriptionId = subscription.getStripeSubscriptionId();
-        this.stripeCustomerId = subscription.getStripeCustomerId();
+        this.paymentCustomerId = subscription.getPaymentCustomerId();
         this.priceId = subscription.getPriceId();
         
         // Safely extract user ID
@@ -62,12 +62,12 @@ public class SubscriptionResponseDTO {
         this.stripeSubscriptionId = stripeSubscriptionId;
     }
 
-    public String getStripeCustomerId() {
-        return stripeCustomerId;
+    public String getPaymentCustomerId() {
+        return paymentCustomerId;
     }
 
-    public void setStripeCustomerId(String stripeCustomerId) {
-        this.stripeCustomerId = stripeCustomerId;
+    public void setPaymentCustomerId(String paymentCustomerId) {
+        this.paymentCustomerId = paymentCustomerId;
     }
 
     public String getPriceId() {
