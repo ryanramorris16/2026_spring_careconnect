@@ -24,10 +24,11 @@ public class EmailOAuthController {
     private final GoogleOAuthService googleOAuthService;
     private final EmailCredentialRepository credRepo;
 
-    @Value("${google.oauth.client-id}")    String clientId;
-    @Value("${google.oauth.redirect-uri}") String redirectUri;
-    @Value("${google.oauth.scope}")        String scope;
-    @Value("${google.oauth.frontend-url}") String frontendBaseUrl;
+    @Value("${google.oauth.client-id:}")    String clientId;
+    @Value("${google.oauth.redirect-uri:}") String redirectUri;
+    @Value("${google.oauth.scope:email}")   String scope;
+    @Value("${google.oauth.frontend-url:http://localhost}") String frontendBaseUrl;
+
 
     @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
 
