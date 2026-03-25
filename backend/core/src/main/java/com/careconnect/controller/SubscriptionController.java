@@ -24,6 +24,7 @@ public class SubscriptionController {
     private static final String ERROR_KEY = "error";
 
     private final SubscriptionEnrichmentService subscriptionEnrichmentService;
+    private final SubscriptionService subscriptionService;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
 
