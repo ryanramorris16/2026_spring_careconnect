@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:care_connect_app/services/api_service.dart';
+import 'package:care_connect_app/services/auth_token_manager.dart';
 
 class SubscriptionTierSelectionPage extends StatefulWidget {
   final String? email;
@@ -217,7 +219,14 @@ class _SubscriptionTierSelectionPageState
           ],
         ),
       );
-      if (confirm == true && mounted) context.go('/subscription');
+      if (confirm == true && mounted) {
+        final session = await AuthTokenManager.getUserSession();
+        final customerId = session?['paymentCustomerId'] ?? session?['stripeCustomerId'] ?? '';
+        if (customerId.isNotEmpty) {
+          await ApiService.createSubscription(customerId, 'free_monthly');
+        }
+        if (mounted) context.go('/subscription');
+      }
       return;
     }
 
@@ -257,9 +266,9 @@ class _SubscriptionTierSelectionPageState
             width: isSelected ? 2.5 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isSelected ? color.withOpacity(0.05) : Colors.white,
+          color: isSelected ? color.withValues(alpha:0.05) : Colors.white,
           boxShadow: isSelected
-              ? [BoxShadow(color: color.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: color.withValues(alpha:0.2), blurRadius: 8, offset: const Offset(0, 2))]
               : null,
         ),
         padding: const EdgeInsets.all(20),
