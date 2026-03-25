@@ -50,7 +50,7 @@ class Subscription {
         cancelAtPeriodEnd: false, // Default since it's not in the new format
         planId:
             json['planId']?.toString() ?? json['planCode']?.toString() ?? '',
-        planName: json['planName']?.toString() ?? 'Standard Plan',
+        planName: json['planName']?.toString() ?? '',
         planAmount: json['priceCents'] != null
             ? ((json['priceCents'] as num).toDouble() / 100)
             : 0.0,
@@ -75,7 +75,7 @@ class Subscription {
       currentPeriodEnd: json['current_period_end']?.toString() ?? '',
       cancelAtPeriodEnd: json['cancel_at_period_end'] as bool? ?? false,
       planId: planData['id']?.toString() ?? '',
-      planName: planData['nickname']?.toString() ?? 'Standard Plan',
+      planName: planData['nickname']?.toString() ?? '',
       planAmount: ((planData['amount'] ?? 0) as num).toDouble() / 100,
       planInterval: planData['interval']?.toString() ?? 'month',
     );
@@ -147,7 +147,7 @@ final List<SubscriptionPlan> availablePlans = [
   ),
   SubscriptionPlan(
     id: 'price_standard',
-    name: 'Standard Plan',
+    name: 'Standard Plan (Legacy)',
     description: 'Advanced features for better care management',
     amount: 19.99,
     interval: 'month',
