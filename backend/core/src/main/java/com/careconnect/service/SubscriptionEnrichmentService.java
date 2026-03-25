@@ -71,9 +71,12 @@ public class SubscriptionEnrichmentService {
   public List<SubscriptionResponseDTO> getEnrichedActiveUserSubscriptions(Long userId) {
     User user = resolveUser(userId);
     List<Subscription> active =
-        subscriptionRepository.findByUser(user).stream()
-            .filter(s -> "ACTIVE".equalsIgnoreCase(s.getStatus()))
-            .collect(Collectors.toList());
+      subscriptionRepository.findByUser(user).stream()
+      .filter(s -> "ACTIVE".equalsIgnoreCase(s.getStatus()))
+      .sorted((a, b) -> b.getStartedAt().compareTo(a.getStartedAt()))
+      .limit(1)
+      .collect(Collectors.toList());
+
     LOG.debug("Found {} active subscription(s) for user {}", active.size(), userId);
     return enrichSubscriptions(active);
   }

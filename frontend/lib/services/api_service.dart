@@ -1015,7 +1015,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -1135,7 +1135,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
