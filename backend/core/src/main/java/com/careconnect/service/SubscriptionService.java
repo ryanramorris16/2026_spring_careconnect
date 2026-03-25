@@ -89,8 +89,12 @@ public class SubscriptionService {
             .orElseThrow(() -> new IllegalArgumentException("User not found for customerId: " + customerId));
 
         List<Subscription> active = subscriptionRepository.findByUserAndStatus(user, "ACTIVE");
-        if (!active.isEmpty()) {
-            return new SubscriptionResponseDTO(active.get(0));
+        for (Subscription existing : active) {
+            if (priceId.equals(existing.getPriceId())) {
+                return new SubscriptionResponseDTO(existing);
+            }
+            existing.setStatus("CANCELLED");
+            subscriptionRepository.save(existing);
         }
 
         Plan plan = planRepository.findByCode(priceId);
@@ -116,8 +120,12 @@ public class SubscriptionService {
             .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         List<Subscription> active = subscriptionRepository.findByUserAndStatus(user, "ACTIVE");
-        if (!active.isEmpty()) {
-            return new SubscriptionResponseDTO(active.get(0));
+        for (Subscription existing : active) {
+            if (priceId.equals(existing.getPriceId())) {
+                return new SubscriptionResponseDTO(existing);
+            }
+            existing.setStatus("CANCELLED");
+            subscriptionRepository.save(existing);
         }
 
         Plan plan = planRepository.findByCode(priceId);
