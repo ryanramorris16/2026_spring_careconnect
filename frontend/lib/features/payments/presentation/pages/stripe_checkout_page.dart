@@ -7,14 +7,14 @@ import '../../models/package_model.dart';
 class StripeCheckoutPage extends StatelessWidget {
   final PackageModel package;
   final String? userId;
-  final String? stripeCustomerId;
+  final String? paymentCustomerId;
   final bool fromPortal;
 
   const StripeCheckoutPage({
     super.key,
     required this.package,
     this.userId,
-    this.stripeCustomerId,
+    this.paymentCustomerId,
     this.fromPortal = false,
   });
 
