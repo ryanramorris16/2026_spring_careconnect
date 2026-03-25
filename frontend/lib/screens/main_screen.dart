@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import '../services/auth_token_manager.dart';
 
 import 'package:care_connect_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -389,6 +390,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshUnreadMessageBadge();
+    } else if (state == AppLifecycleState.detached) {
+      AuthTokenManager.clearAuthData();
     }
   }
 

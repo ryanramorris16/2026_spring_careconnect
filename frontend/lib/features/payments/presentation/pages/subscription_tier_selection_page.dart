@@ -201,14 +201,26 @@ class _SubscriptionTierSelectionPageState
     setState(() { _selectedTier = tierId; });
   }
 
-  void _continueToPayment() {
+  void _continueToPayment() async {
     if (_selectedTier == null) return;
 
     // Free tier bypasses payment entirely
     if (_selectedTier == 'free') {
-      context.go('/home');
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Confirm Free Plan'),
+          content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirm')),
+          ],
+        ),
+      );
+      if (confirm == true && mounted) context.go('/subscription');
       return;
     }
+
 
     final tierIdMap = {
       'standard_monthly': 2,
