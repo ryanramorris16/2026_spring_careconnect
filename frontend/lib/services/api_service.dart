@@ -1015,7 +1015,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -1044,6 +1044,19 @@ class ApiService {
     // Create form data as required by the API
     final formData = {'customerId': customerId, 'priceId': priceId};
 
+    return await _httpClient
+        .post(uri, headers: headers, body: formData)
+        .timeout(const Duration(seconds: 30));
+  }
+
+  static Future<http.Response> createSubscriptionByUser(
+    String userId,
+    String priceId,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    final uri = Uri.parse('${ApiConstants.subscriptions}/create-by-user');
+    final formData = {'userId': userId, 'priceId': priceId};
     return await _httpClient
         .post(uri, headers: headers, body: formData)
         .timeout(const Duration(seconds: 30));
@@ -1122,7 +1135,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -1654,11 +1667,13 @@ class ApiService {
       'activityId': activityId,
       'competencyScore': competencyScore,
     };
-    if (satisfactionRating != null)
+    if (satisfactionRating != null) {
       body['satisfactionRating'] = satisfactionRating;
+    }
     if (notes != null && notes.trim().isNotEmpty) body['notes'] = notes.trim();
-    if (activityName != null && activityName.trim().isNotEmpty)
+    if (activityName != null && activityName.trim().isNotEmpty) {
       body['activityName'] = activityName.trim();
+    }
     return await _httpClient
         .post(
           Uri.parse(ApiConstants.activityLogs),

@@ -44,7 +44,7 @@ class UserTest {
                 .role(Role.PATIENT)
                 .isVerified(true)
                 .verificationToken("tok-abc")
-                .stripeCustomerId("cus_stripe")
+                .paymentCustomerId("cus_stripe")
                 .createdAt(now)
                 .lastLogin(now)
                 .profileImageUrl("https://example.com/pic.jpg")
@@ -62,7 +62,7 @@ class UserTest {
         assertThat(user.getRole()).isEqualTo(Role.PATIENT);
         assertThat(user.getIsVerified()).isTrue();
         assertThat(user.getVerificationToken()).isEqualTo("tok-abc");
-        assertThat(user.getStripeCustomerId()).isEqualTo("cus_stripe");
+        assertThat(user.getPaymentCustomerId()).isEqualTo("cus_stripe");
         assertThat(user.getProfileImageUrl()).isEqualTo("https://example.com/pic.jpg");
         assertThat(user.getStatus()).isEqualTo("ACTIVE");
     }
@@ -131,7 +131,7 @@ class UserTest {
         user.setRole(Role.FAMILY_MEMBER);
         user.setIsVerified(true);
         user.setVerificationToken("tok-xyz");
-        user.setStripeCustomerId("cus_bob");
+        user.setPaymentCustomerId("cus_bob");
         user.setProfileImageUrl("https://example.com/bob.jpg");
         user.setStatus("SUSPENDED");
 
@@ -146,7 +146,7 @@ class UserTest {
         assertThat(user.getRole()).isEqualTo(Role.FAMILY_MEMBER);
         assertThat(user.getIsVerified()).isTrue();
         assertThat(user.getVerificationToken()).isEqualTo("tok-xyz");
-        assertThat(user.getStripeCustomerId()).isEqualTo("cus_bob");
+        assertThat(user.getPaymentCustomerId()).isEqualTo("cus_bob");
         assertThat(user.getProfileImageUrl()).isEqualTo("https://example.com/bob.jpg");
         assertThat(user.getStatus()).isEqualTo("SUSPENDED");
     }

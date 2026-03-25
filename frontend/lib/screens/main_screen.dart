@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import '../services/auth_token_manager.dart';
 
 import 'package:care_connect_app/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -8,8 +9,6 @@ import 'package:go_router/go_router.dart';
 import '../providers/user_provider.dart';
 import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
-import '../services/api_service.dart';
-import '../services/local_db/offline_sync_service.dart';
 import '../services/api_service.dart';
 import '../services/local_db/offline_sync_service.dart';
 import '../features/telemetry/telemetry.dart';
@@ -389,6 +388,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshUnreadMessageBadge();
+    } else if (state == AppLifecycleState.detached) {
+      AuthTokenManager.clearAuthData();
     }
   }
 

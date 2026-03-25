@@ -31,10 +31,10 @@ class VideoCallService {
   // Static methods for compatibility
   static Future<bool> initializeService() async {
     try {
-      print('Web VideoCallService initialized');
+      debugPrint('Web VideoCallService initialized');
       return true;
     } catch (e) {
-      print('Error initializing web video service: $e');
+      debugPrint('Error initializing web video service: $e');
       return false;
     }
   }
@@ -89,7 +89,7 @@ class VideoCallService {
     Function()? onCallEnded,
   }) async {
     _currentUserId = userId;
-    print('Web VideoCallService initialized with mobile-compatible interface');
+    debugPrint('Web VideoCallService initialized with mobile-compatible interface');
   }
 
   // Start a video call (internal method)
@@ -101,7 +101,7 @@ class VideoCallService {
     bool audioEnabled = true,
   }) async {
     try {
-      print('📞 Starting web call: $callId');
+      debugPrint('📞 Starting web call: $callId');
 
       _currentCallId = callId;
       _currentUserId = userId;
@@ -111,10 +111,10 @@ class VideoCallService {
       _isCallActive = true;
       _callStateController.add(true);
 
-      print('✅ Web call started successfully');
+      debugPrint('✅ Web call started successfully');
       return true;
     } catch (e) {
-      print('❌ Error starting web call: $e');
+      debugPrint('❌ Error starting web call: $e');
       return false;
     }
   }
@@ -126,7 +126,7 @@ class VideoCallService {
     String callerUserId,
   ) async {
     try {
-      print('📞 Answering web call: $callId');
+      debugPrint('📞 Answering web call: $callId');
 
       _currentCallId = callId;
       _currentUserId = userId;
@@ -134,10 +134,10 @@ class VideoCallService {
       _isCallActive = true;
       _callStateController.add(true);
 
-      print('✅ Web call answered successfully');
+      debugPrint('✅ Web call answered successfully');
       return true;
     } catch (e) {
-      print('❌ Error answering web call: $e');
+      debugPrint('❌ Error answering web call: $e');
       return false;
     }
   }
@@ -145,7 +145,7 @@ class VideoCallService {
   // Toggle video on/off
   Future<void> toggleVideo() async {
     _isVideoEnabled = !_isVideoEnabled;
-    print('📹 Video ${_isVideoEnabled ? 'enabled' : 'disabled'}');
+    debugPrint('📹 Video ${_isVideoEnabled ? 'enabled' : 'disabled'}');
     _callEventController.add({
       'type': 'video-toggled',
       'enabled': _isVideoEnabled,
@@ -155,7 +155,7 @@ class VideoCallService {
   // Toggle audio on/off
   Future<void> toggleAudio() async {
     _isAudioEnabled = !_isAudioEnabled;
-    print('🎤 Audio ${_isAudioEnabled ? 'enabled' : 'disabled'}');
+    debugPrint('🎤 Audio ${_isAudioEnabled ? 'enabled' : 'disabled'}');
     _callEventController.add({
       'type': 'audio-toggled',
       'enabled': _isAudioEnabled,
@@ -165,7 +165,7 @@ class VideoCallService {
   // End call
   Future<void> endCall() async {
     try {
-      print('📞 Ending web call...');
+      debugPrint('📞 Ending web call...');
 
       _isCallActive = false;
       _currentCallId = null;
@@ -177,9 +177,9 @@ class VideoCallService {
       _callStateController.add(false);
       _callEventController.add({'type': 'call-ended'});
 
-      print('✅ Web call ended successfully');
+      debugPrint('✅ Web call ended successfully');
     } catch (e) {
-      print('❌ Error ending web call: $e');
+      debugPrint('❌ Error ending web call: $e');
     }
   }
 
@@ -315,12 +315,12 @@ class VideoCallService {
   // Methods with parameters to match mobile interface
   Future<void> toggleVideoWithParam(bool enabled) async {
     _isVideoEnabled = enabled;
-    print('📹 Video set to ${_isVideoEnabled ? 'enabled' : 'disabled'}');
+    debugPrint('📹 Video set to ${_isVideoEnabled ? 'enabled' : 'disabled'}');
   }
 
   Future<void> toggleAudioWithParam(bool enabled) async {
     _isAudioEnabled = enabled;
-    print('🎤 Audio set to ${_isAudioEnabled ? 'enabled' : 'disabled'}');
+    debugPrint('🎤 Audio set to ${_isAudioEnabled ? 'enabled' : 'disabled'}');
   }
 
   // Dispose service
@@ -328,6 +328,6 @@ class VideoCallService {
     await endCall();
     await _callStateController.close();
     await _callEventController.close();
-    print('🧹 Web VideoCallService disposed');
+    debugPrint('🧹 Web VideoCallService disposed');
   }
 }

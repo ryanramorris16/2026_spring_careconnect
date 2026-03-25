@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
-    Optional<Subscription> findByStripeSubscriptionId(String stripeId);
+    Optional<Subscription> findByPaymentSubscriptionId(String stripeId);
     List<Subscription> findByUser(User user);
-    List<Subscription> findByStripeCustomerId(String stripeCustomerId);
+    List<Subscription> findByPaymentCustomerId(String paymentCustomerId);
     List<Subscription> findByUserAndStatus(User user, String status);
 }

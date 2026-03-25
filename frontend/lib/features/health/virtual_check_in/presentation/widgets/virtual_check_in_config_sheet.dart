@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in_question.dart';
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in_backend_question_model.dart'
     show BackendQuestionDto, BackendQuestionType;
-import 'package:care_connect_app/features/health/virtual_check_in/models/question_type.dart';
 import 'package:care_connect_app/features/health/virtual_check_in/models/virtual_check_in_mapper.dart'
 as vmap;
 

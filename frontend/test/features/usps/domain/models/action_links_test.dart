@@ -75,7 +75,7 @@ void main() {
     });
 
     test('fields accept very long URLs', () {
-      final longUrl = 'https://example.com/' + 'a' * 2000;
+      final longUrl = 'https://example.com/${'a' * 2000}';
       final links = ActionLinks(track: longUrl);
       expect(links.track!.length, greaterThan(2000));
     });

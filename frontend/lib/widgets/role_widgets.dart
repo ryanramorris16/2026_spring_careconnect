@@ -12,11 +12,11 @@ class RoleWidget extends StatelessWidget {
   final Widget? fallback;
 
   const RoleWidget({
-    Key? key,
+    super.key,
     required this.child,
     required this.shouldShow,
     this.fallback,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +40,7 @@ class AdminOnly extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
 
-  const AdminOnly({Key? key, required this.child, this.fallback})
-    : super(key: key);
+  const AdminOnly({super.key, required this.child, this.fallback});
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +57,7 @@ class CaregiverOnly extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
 
-  const CaregiverOnly({Key? key, required this.child, this.fallback})
-    : super(key: key);
+  const CaregiverOnly({super.key, required this.child, this.fallback});
 
   @override
   Widget build(BuildContext context) {
@@ -76,8 +74,7 @@ class CaregiverOrAdmin extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
 
-  const CaregiverOrAdmin({Key? key, required this.child, this.fallback})
-    : super(key: key);
+  const CaregiverOrAdmin({super.key, required this.child, this.fallback});
 
   @override
   Widget build(BuildContext context) {
@@ -94,8 +91,7 @@ class PatientOnly extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
 
-  const PatientOnly({Key? key, required this.child, this.fallback})
-    : super(key: key);
+  const PatientOnly({super.key, required this.child, this.fallback});
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +108,7 @@ class NotFamilyMember extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
 
-  const NotFamilyMember({Key? key, required this.child, this.fallback})
-    : super(key: key);
+  const NotFamilyMember({super.key, required this.child, this.fallback});
 
   @override
   Widget build(BuildContext context) {
@@ -133,12 +128,12 @@ class PermissionButton extends StatelessWidget {
   final ButtonStyle? style;
 
   const PermissionButton({
-    Key? key,
+    super.key,
     required this.permission,
     required this.onPressed,
     required this.child,
     this.style,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -168,12 +163,12 @@ class PermissionIconButton extends StatelessWidget {
   final String? tooltip;
 
   const PermissionIconButton({
-    Key? key,
+    super.key,
     required this.permission,
     required this.onPressed,
     required this.icon,
     this.tooltip,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -204,13 +199,13 @@ class PermissionMenuItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const PermissionMenuItem({
-    Key? key,
+    super.key,
     required this.permission,
     required this.leading,
     required this.title,
     this.subtitle,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,7 @@ import '../services/auth_service.dart';
 
 /// Navigation drawer that shows menu items based on user role
 class RoleBasedDrawer extends StatelessWidget {
-  const RoleBasedDrawer({Key? key}) : super(key: key);
+  const RoleBasedDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {

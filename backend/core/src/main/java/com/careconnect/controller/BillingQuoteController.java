@@ -279,7 +279,7 @@ public class BillingQuoteController {
   private Subscription buildSubscription(
       String transactionId, BillingPlatform platform, Plan plan, User user) {
     Subscription subscription = new Subscription();
-    subscription.setStripeSubscriptionId(transactionId);
+    subscription.setPaymentSubscriptionId(transactionId);
     subscription.setPlatform(platform);
     subscription.setExternalSubscriptionId(transactionId);
     subscription.setStatus("ACTIVE");

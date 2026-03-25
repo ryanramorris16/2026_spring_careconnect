@@ -16,13 +16,12 @@ class _Contact {
   final String name;
   final String role;
   final String phone;
-  final bool isPrimary;
+  final bool isPrimary = false;
 
   const _Contact({
     required this.name,
     required this.role,
     required this.phone,
-    this.isPrimary = false,
   });
 }
 
@@ -93,7 +92,7 @@ class QrScreen extends StatelessWidget {
   // For development, it defaults to http://localhost:8080 if BASE_URL is not set.
   static const String _baseUrl = String.fromEnvironment('BASE_URL', defaultValue: 'http://localhost:8080');
 
-  const QrScreen({required this.payload, this.emergencyId, this.patientId});
+  const QrScreen({super.key, required this.payload, this.emergencyId, this.patientId});
 
   @override
   Widget build(BuildContext context) {

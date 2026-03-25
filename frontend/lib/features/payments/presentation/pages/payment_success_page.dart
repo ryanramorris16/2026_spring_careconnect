@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../../../config/router/app_router.dart';
 import '../../../../providers/user_provider.dart';
 import '../../../../widgets/responsive_container.dart';
 
@@ -26,7 +25,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isRedirecting = false;
   double _progressValue = 0.0;
 
   @override
@@ -55,11 +53,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     }
 
     // Auto-redirect after delay
+    // Auto-redirect after delay
     Future.delayed(const Duration(seconds: redirectDelay), () {
       if (mounted) {
-        setState(() {
-          _isRedirecting = true;
-        });
         _navigateToNext();
       }
     });
@@ -83,10 +79,10 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
       context.go('/login', extra: {'userType': userType});
     } else if (widget.fromPortal) {
       // If coming from subscription management portal, return to subscription management page
-      context.go('/select-package');
+      context.go('/subscription');
     } else {
-      // For existing users, go to dashboard based on their role
-      navigateToDashboard(context);
+      // Navigate to subscription management page
+      context.go('/subscription');
     }
   }
 
@@ -271,3 +267,4 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
     );
   }
 }
+

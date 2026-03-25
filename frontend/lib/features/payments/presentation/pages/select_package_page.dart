@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../../models/package_model.dart';
 import '../../../payments/models/subscription_plan_model.dart';
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:care_connect_app/widgets/common_drawer.dart';
@@ -80,16 +79,6 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
     }
   }
 
-  // Convert SubscriptionPlan to PackageModel
-  PackageModel _convertToPackageModel(SubscriptionPlan plan) {
-    return PackageModel(
-      id: plan.id,
-      name: plan.nickname,
-      description: plan.description,
-      priceCents: plan.amount,
-    );
-  }
-
   // Build plan information section (title, description, features)
   Widget _buildPlanInfo(SubscriptionPlan plan, ThemeData theme) {
     return Column(
@@ -106,7 +95,7 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
         Text(
           plan.description,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha:0.7),
           ),
         ),
         const SizedBox(height: 16),
@@ -229,7 +218,7 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: theme.colorScheme.error.withOpacity(0.7),
+              color: theme.colorScheme.error.withValues(alpha:0.7),
             ),
             const SizedBox(height: 16),
             Text(
@@ -262,7 +251,7 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
             Icon(
               Icons.info_outline,
               size: 64,
-              color: theme.colorScheme.primary.withOpacity(0.7),
+              color: theme.colorScheme.primary.withValues(alpha:0.7),
             ),
             const SizedBox(height: 16),
             Text(
@@ -335,7 +324,7 @@ class _SelectPackagePageState extends State<SelectPackagePage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+          color: theme.colorScheme.primary.withValues(alpha:0.2),
           width: 1,
         ),
       ),

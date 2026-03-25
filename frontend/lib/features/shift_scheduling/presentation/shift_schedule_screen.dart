@@ -1,5 +1,3 @@
-import 'package:care_connect_app/features/shift_scheduling/services/schedule_api_service.dart';
-import 'package:care_connect_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'widgets/calendar_view.dart';
 import 'widgets/schedule_visit_dialog.dart';

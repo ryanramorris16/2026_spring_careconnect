@@ -1,8 +1,8 @@
 class Subscription {
-  final String id; // Database ID or Stripe ID depending on source
+  final String id; // Database ID
   final String
-  stripeSubscriptionId; // Stripe's subscription ID for API operations
-  final String customerId; // Stripe customer ID
+  paymentSubscriptionId; // Payment subscription ID for API operations
+  final String customerId; // Payment customer ID
   final String status;
   final String currentPeriodStart;
   final String currentPeriodEnd;
@@ -14,7 +14,7 @@ class Subscription {
 
   Subscription({
     required this.id,
-    required this.stripeSubscriptionId,
+    required this.paymentSubscriptionId,
     required this.customerId,
     required this.status,
     required this.currentPeriodStart,
@@ -28,19 +28,19 @@ class Subscription {
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
     // Handle different API response formats
-    // Support both Stripe direct format and our backend's custom format
+    // Support both payment provider format and our backend's custom format
 
     // Check if this is the new API format with our backend structure
-    if (json.containsKey('stripeSubscriptionId') ||
-        json.containsKey('stripeCustomerId')) {
+    if (json.containsKey('paymentSubscriptionId') ||
+        json.containsKey('paymentCustomerId')) {
       // New backend format
-      final stripeSubId = json['stripeSubscriptionId']?.toString() ?? '';
+      final paymentSubId = json['paymentSubscriptionId']?.toString() ?? '';
       return Subscription(
         id: json['id']?.toString() ?? '', // Database ID
-        stripeSubscriptionId:
-            stripeSubId, // Stripe subscription ID for API operations
+        paymentSubscriptionId:
+            paymentSubId, // Payment subscription ID for API operations
         customerId:
-            json['stripeCustomerId']?.toString() ??
+            json['paymentCustomerId']?.toString() ??
             json['customer']?.toString() ??
             json['customerId']?.toString() ??
             '',
@@ -50,7 +50,7 @@ class Subscription {
         cancelAtPeriodEnd: false, // Default since it's not in the new format
         planId:
             json['planId']?.toString() ?? json['planCode']?.toString() ?? '',
-        planName: json['planName']?.toString() ?? 'Standard Plan',
+        planName: json['planName']?.toString() ?? '',
         planAmount: json['priceCents'] != null
             ? ((json['priceCents'] as num).toDouble() / 100)
             : 0.0,
@@ -58,24 +58,24 @@ class Subscription {
       );
     }
 
-    // Original Stripe format
+    // Original Payment format
     final planData =
         json['plan'] as Map<String, dynamic>? ??
         json['items']?['data']?[0]?['plan'] as Map<String, dynamic>? ??
         {};
 
-    final stripeId = json['id']?.toString() ?? '';
+    final paymentId = json['id']?.toString() ?? '';
     return Subscription(
-      id: stripeId, // In direct Stripe format, id is the subscription ID
-      stripeSubscriptionId:
-          stripeId, // Same value as id for direct Stripe format
+      id: paymentId, // In direct Payment format, id is the subscription ID
+      paymentSubscriptionId:
+          paymentId, // Same value as id for direct Payment format
       customerId: (json['customer'] ?? '').toString(),
       status: json['status']?.toString() ?? '',
       currentPeriodStart: json['current_period_start']?.toString() ?? '',
       currentPeriodEnd: json['current_period_end']?.toString() ?? '',
       cancelAtPeriodEnd: json['cancel_at_period_end'] as bool? ?? false,
       planId: planData['id']?.toString() ?? '',
-      planName: planData['nickname']?.toString() ?? 'Standard Plan',
+      planName: planData['nickname']?.toString() ?? '',
       planAmount: ((planData['amount'] ?? 0) as num).toDouble() / 100,
       planInterval: planData['interval']?.toString() ?? 'month',
     );
@@ -147,7 +147,7 @@ final List<SubscriptionPlan> availablePlans = [
   ),
   SubscriptionPlan(
     id: 'price_standard',
-    name: 'Standard Plan',
+    name: 'Standard Plan (Legacy)',
     description: 'Advanced features for better care management',
     amount: 19.99,
     interval: 'month',

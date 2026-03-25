@@ -939,7 +939,7 @@ void main() {
     });
 
     test('resendMessage set: success section shown', () {
-      const String? resendMessage = 'Verification email sent successfully!';
+      const String resendMessage = 'Verification email sent successfully!';
       final showSuccess = resendMessage != null;
       expect(showSuccess, isTrue);
     });
@@ -951,7 +951,7 @@ void main() {
     });
 
     test('resendError set: error section shown', () {
-      const String? resendError =
+      const String resendError =
           'Failed to send verification email. Please try again.';
       final showError = resendError != null;
       expect(showError, isTrue);
