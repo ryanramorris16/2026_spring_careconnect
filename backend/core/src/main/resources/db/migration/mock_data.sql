@@ -238,7 +238,7 @@ WHERE NOT EXISTS (SELECT 1 FROM plan WHERE code = 'PREMIUM');
 -- 15. SUBSCRIPTIONS - Match current schema (`subscriptions`)
 -- ============================================
 
-INSERT INTO subscriptions (user_id, plan_id, status, started_at, current_period_end, stripe_subscription_id, stripe_customer_id, price_id)
+INSERT INTO subscriptions (user_id, plan_id, status, started_at, current_period_end, stripe_subscription_id, payment_customer_id, price_id)
 SELECT
 	(SELECT id FROM users WHERE email = 'patient@careconnect.com'),
 	(SELECT id FROM plan WHERE code = 'PREMIUM' LIMIT 1),
