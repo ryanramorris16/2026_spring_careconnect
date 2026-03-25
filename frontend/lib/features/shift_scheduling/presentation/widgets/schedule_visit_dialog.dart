@@ -330,7 +330,7 @@ class _ScheduleVisitDialogState extends State<ScheduleVisitDialog> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: DropdownButtonFormField<int>(
-        value: _duration,
+        initialValue: _duration,
         decoration: InputDecoration(
           labelText: 'Duration (minutes)',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -354,7 +354,7 @@ class _ScheduleVisitDialogState extends State<ScheduleVisitDialog> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: DropdownButtonFormField<String>(
-        value: _priority,
+        initialValue: _priority,
         decoration: InputDecoration(
           labelText: 'Priority',
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

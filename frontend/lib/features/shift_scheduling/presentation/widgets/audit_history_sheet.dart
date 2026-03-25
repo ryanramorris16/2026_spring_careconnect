@@ -139,7 +139,7 @@ class _AuditHistorySheetState extends State<AuditHistorySheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${DateFormat('MMM d, yyyy - kk:mm').format(audit.changedAt)}',
+                DateFormat('MMM d, yyyy - kk:mm').format(audit.changedAt),
                 style: const TextStyle(fontSize: 12),
               ),
               Text(

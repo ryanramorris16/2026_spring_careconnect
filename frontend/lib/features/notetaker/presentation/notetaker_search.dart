@@ -422,7 +422,7 @@ class _NotetakerSearchPageState extends State<NotetakerSearchPage> {
   Widget _buildPatientSection(ThemeData theme) {
     return _buildSection(theme, 'Select patient', Icons.person, [
       DropdownButtonFormField<String>(
-        value: _selectedPatientId,
+        initialValue: _selectedPatientId,
         decoration: InputDecoration(labelText: 'Select an option'),
         items: _patientList
             .map(

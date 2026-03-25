@@ -8,7 +8,7 @@ import 'package:care_connect_app/features/payments/models/subscription_plan_mode
 
 void main() {
   group('Subscription (subscription_model.dart)', () {
-    sm.Subscription _sub({
+    sm.Subscription sub0({
       String status = 'active',
       bool cancelAtPeriodEnd = false,
       double planAmount = 19.99,
@@ -29,51 +29,51 @@ void main() {
         );
 
     test('isActive true for active status', () {
-      expect(_sub(status: 'active').isActive, isTrue);
+      expect(sub0(status: 'active').isActive, isTrue);
     });
 
     test('isActive true for trialing status', () {
-      expect(_sub(status: 'trialing').isActive, isTrue);
+      expect(sub0(status: 'trialing').isActive, isTrue);
     });
 
     test('isActive false for canceled status', () {
-      expect(_sub(status: 'canceled').isActive, isFalse);
+      expect(sub0(status: 'canceled').isActive, isFalse);
     });
 
     test('isCancelled true for canceled status', () {
-      expect(_sub(status: 'canceled').isCancelled, isTrue);
+      expect(sub0(status: 'canceled').isCancelled, isTrue);
     });
 
     test('isCancelled true when cancelAtPeriodEnd is true', () {
-      expect(_sub(cancelAtPeriodEnd: true).isCancelled, isTrue);
+      expect(sub0(cancelAtPeriodEnd: true).isCancelled, isTrue);
     });
 
     test('formattedAmount formats correctly', () {
-      expect(_sub(planAmount: 19.99).formattedAmount, '\$19.99');
+      expect(sub0(planAmount: 19.99).formattedAmount, '\$19.99');
     });
 
     test('formattedInterval returns Monthly for month', () {
-      expect(_sub(planInterval: 'month').formattedInterval, 'Monthly');
+      expect(sub0(planInterval: 'month').formattedInterval, 'Monthly');
     });
 
     test('formattedInterval returns Yearly for year', () {
-      expect(_sub(planInterval: 'year').formattedInterval, 'Yearly');
+      expect(sub0(planInterval: 'year').formattedInterval, 'Yearly');
     });
 
     test('statusDisplay for active', () {
-      expect(_sub(status: 'active').statusDisplay, 'Active');
+      expect(sub0(status: 'active').statusDisplay, 'Active');
     });
 
     test('statusDisplay for trialing', () {
-      expect(_sub(status: 'trialing').statusDisplay, 'Trial');
+      expect(sub0(status: 'trialing').statusDisplay, 'Trial');
     });
 
     test('statusDisplay for canceled', () {
-      expect(_sub(status: 'canceled').statusDisplay, 'Cancelled');
+      expect(sub0(status: 'canceled').statusDisplay, 'Cancelled');
     });
 
     test('statusDisplay for cancelAtPeriodEnd', () {
-      expect(_sub(cancelAtPeriodEnd: true).statusDisplay, 'Canceling at period end');
+      expect(sub0(cancelAtPeriodEnd: true).statusDisplay, 'Canceling at period end');
     });
 
     test('fromJson with backend format', () {
