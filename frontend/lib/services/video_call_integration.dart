@@ -31,6 +31,10 @@ class VideoCallIntegration {
       if (!hasAccess) return;
     }
 
+    if (!context.mounted) {
+      return;
+    }
+
     final callId = 'call_${DateTime.now().millisecondsSinceEpoch}';
 
     // Extract patient info from your API structure
@@ -41,10 +45,10 @@ class VideoCallIntegration {
     final patientEmail = patientData['email'] ?? '';
     final patientPhone = patientData['phone'] ?? '';
 
-    print('📞 Initiating call from caregiver to patient:');
-    print('   Caregiver: $caregiverName ($caregiverEmail)');
-    print('   Patient: $patientName ($patientEmail)');
-    print('   Call ID: $callId');
+    debugPrint('📞 Initiating call from caregiver to patient:');
+    debugPrint('   Caregiver: $caregiverName ($caregiverEmail)');
+    debugPrint('   Patient: $patientName ($patientEmail)');
+    debugPrint('   Call ID: $callId');
 
     // Navigate to video call widget with real data
     Navigator.of(context).push(
@@ -88,6 +92,10 @@ class VideoCallIntegration {
       if (!hasAccess) return;
     }
 
+    if (!context.mounted) {
+      return;
+    }
+
     final callId = 'call_${DateTime.now().millisecondsSinceEpoch}';
 
     final patientId = patientData['id']?.toString() ?? 'unknown';
@@ -97,9 +105,9 @@ class VideoCallIntegration {
     final patientEmail = patientData['email'] ?? '';
     final patientPhone = patientData['phone'] ?? '';
 
-    print('📞 Initiating voice call from caregiver to patient:');
-    print('   Caregiver: $caregiverName ($caregiverEmail)');
-    print('   Patient: $patientName ($patientEmail)');
+    debugPrint('📞 Initiating voice call from caregiver to patient:');
+    debugPrint('   Caregiver: $caregiverName ($caregiverEmail)');
+    debugPrint('   Patient: $patientName ($patientEmail)');
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -130,14 +138,14 @@ class VideoCallIntegration {
     final patientPhone = patientData['phone'] ?? '';
 
     if (patientPhone.isEmpty) {
-      print('❌ Cannot send SMS: Patient phone number not available');
+      debugPrint('❌ Cannot send SMS: Patient phone number not available');
       return false;
     }
 
-    print('📱 Sending SMS via backend:');
-    print('   From: $caregiverName');
-    print('   To: $patientPhone');
-    print('   Message: $message');
+    debugPrint('📱 Sending SMS via backend:');
+    debugPrint('   From: $caregiverName');
+    debugPrint('   To: $patientPhone');
+    debugPrint('   Message: $message');
 
     return await BackendApiService.sendSMS(
       senderName: caregiverName,

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +83,8 @@ class CallSummaryServiceTest {
             assertThat(result).isPresent();
             assertThat(result.get()).containsEntry("callId", CALL_ID);
             assertThat(result.get()).containsEntry("transcriptArchived", true);
-            assertThat((Map<String, Object>) result.get().get("summary")).containsEntry("headline", "Stable call");
+            assertThat(asObjectMap(result.get().get("summary")))
+                    .containsEntry("headline", "Stable call");
         }
 
         @Test
@@ -101,7 +103,7 @@ class CallSummaryServiceTest {
             Map<String, Object> result = service.getLatestSummary(CALL_ID).orElseThrow();
 
             assertThat(result).containsEntry("status", "ERROR");
-            assertThat((Map<String, Object>) result.get("summary")).isEqualTo(Map.of());
+            assertThat(asObjectMap(result.get("summary"))).isEqualTo(Map.of());
         }
     }
 
@@ -170,11 +172,11 @@ class CallSummaryServiceTest {
 
             assertThat(result).containsEntry("status", "SUCCESS");
             assertThat(result).containsEntry("transcriptArchived", true);
-            assertThat((Map<String, Object>) result.get("summary")).containsEntry("headline", "Call follow-up");
+            assertThat(asObjectMap(result.get("summary")))
+                    .containsEntry("headline", "Call follow-up");
 
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<Map<String, BedrockSentimentService.SentimentResult>> channelsCaptor =
-                    ArgumentCaptor.forClass(Map.class);
+            final ArgumentCaptor<Map<String, BedrockSentimentService.SentimentResult>>
+                    channelsCaptor = channelScoresCaptor();
             verify(bedrockSentimentService).summarizeTranscript(
                     org.mockito.ArgumentMatchers.eq(CALL_ID),
                     org.mockito.ArgumentMatchers.eq("[PATIENT] Feeling okay"),
@@ -201,8 +203,28 @@ class CallSummaryServiceTest {
 
             assertThat(result).containsEntry("status", "ERROR");
             assertThat(result).containsEntry("errorMessage", "bedrock timeout");
-            assertThat((Map<String, Object>) result.get("summary")).containsEntry("headline", "Summary unavailable");
+            assertThat(asObjectMap(result.get("summary")))
+                    .containsEntry("headline", "Summary unavailable");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> asObjectMap(final Object value) {
+        if (value == null) {
+            return Map.of();
+        }
+        if (value instanceof Map<?, ?> rawMap) {
+            return (Map<String, Object>) rawMap;
+        }
+        throw new AssertionError("Expected a map but found: " + value.getClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ArgumentCaptor<
+            Map<String, BedrockSentimentService.SentimentResult>
+    > channelScoresCaptor() {
+        return (ArgumentCaptor<Map<String, BedrockSentimentService.SentimentResult>>)
+                (ArgumentCaptor<?>) ArgumentCaptor.forClass(LinkedHashMap.class);
     }
 
     @Nested
