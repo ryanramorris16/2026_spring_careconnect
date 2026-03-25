@@ -128,16 +128,16 @@ class _SubscriptionManagementPageState
             // Extract customer ID from the subscription data
             if (activeSubscription != null &&
                 activeSubscription is Map<String, dynamic>) {
-              if (activeSubscription.containsKey('stripeCustomerId')) {
-                _customerId = activeSubscription['stripeCustomerId'];
+              if (activeSubscription.containsKey('paymentCustomerId')) {
+                _customerId = activeSubscription['paymentCustomerId'];
               } else if (activeSubscription.containsKey('customer')) {
                 _customerId = activeSubscription['customer'];
               } else if (activeSubscription.containsKey('customerId')) {
                 _customerId = activeSubscription['customerId'];
               }
             } else if (data.isNotEmpty && data.first is Map<String, dynamic>) {
-              if (data.first.containsKey('stripeCustomerId')) {
-                _customerId = data.first['stripeCustomerId'];
+              if (data.first.containsKey('paymentCustomerId')) {
+                _customerId = data.first['paymentCustomerId'];
               } else if (data.first.containsKey('customer')) {
                 _customerId = data.first['customer'];
               } else if (data.first.containsKey('customerId')) {
@@ -458,7 +458,7 @@ class _SubscriptionManagementPageState
       try {
         // First cancel the current subscription
         final response = await ApiService.cancelSubscription(
-          _currentSubscription!.stripeSubscriptionId,
+          _currentSubscription!.paymentSubscriptionId,
         );
 
         if (response.statusCode != 200) {
@@ -626,7 +626,7 @@ class _SubscriptionManagementPageState
 
     try {
       final response = await ApiService.cancelSubscription(
-        _currentSubscription!.stripeSubscriptionId,
+        _currentSubscription!.paymentSubscriptionId,
       );
       if (response.statusCode == 200) {
         // Show brief success message
