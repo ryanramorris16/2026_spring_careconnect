@@ -29,9 +29,9 @@ class EvvService {
     final hours = offset.inHours.abs();
     final minutes = offset.inMinutes.abs() % 60;
     final sign = offset.isNegative ? '-' : '+';
-    final timezoneOffset = '${sign}${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    final timezoneOffset = '$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
     
-    return '${utc.toIso8601String().replaceAll('Z', timezoneOffset)}';
+    return utc.toIso8601String().replaceAll('Z', timezoneOffset);
   }
 
   // EVV Data Models
@@ -795,9 +795,9 @@ class EvvCorrectionRequest {
       final hours = offset.inHours.abs();
       final minutes = offset.inMinutes.abs() % 60;
       final sign = offset.isNegative ? '-' : '+';
-      final timezoneOffset = '${sign}${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+      final timezoneOffset = '$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
       
-      return '${utc.toIso8601String().replaceAll('Z', timezoneOffset)}';
+      return utc.toIso8601String().replaceAll('Z', timezoneOffset);
     }
 
     return {

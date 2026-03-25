@@ -163,7 +163,7 @@ class _AddMedicationModalState extends State<AddMedicationModal> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedFrequency,
+                      initialValue: _selectedFrequency,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),

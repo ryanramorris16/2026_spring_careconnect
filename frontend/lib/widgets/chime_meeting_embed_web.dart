@@ -801,7 +801,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
               const text = items
                 .map((item) => (item && item.content ? String(item.content) : ''))
                 .join(' ')
-                .replace(/\s+/g, ' ')
+                .replace(/s+/g, ' ')
                 .trim();
               if (text.length > 0) {
                 lines.push(text);

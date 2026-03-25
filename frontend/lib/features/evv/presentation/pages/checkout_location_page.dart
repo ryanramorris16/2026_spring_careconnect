@@ -50,7 +50,7 @@ class _CheckoutLocationPageState extends State<CheckoutLocationPage> {
   bool _gpsAttemptFailed = false;
   String? _selectedNoGpsReason;
   final TextEditingController _manualAddressController = TextEditingController();
-  bool _showManualEntry = false;
+  final bool _showManualEntry = false;
 
   static const _noGpsReasons = [
     {'value': 'GPS_SERVICE_DISABLED', 'label': 'GPS service disabled'},
@@ -244,7 +244,7 @@ class _CheckoutLocationPageState extends State<CheckoutLocationPage> {
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Why is GPS not being used?'),
           content: DropdownButtonFormField<String>(
-            value: selectedReason,
+            initialValue: selectedReason,
             decoration: const InputDecoration(
               labelText: 'Select reason',
               border: OutlineInputBorder(),
@@ -594,7 +594,7 @@ class _CheckoutLocationPageState extends State<CheckoutLocationPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _selectedNoGpsReason,
+                  initialValue: _selectedNoGpsReason,
                   decoration: InputDecoration(
                     labelText: 'Reason GPS Not Used',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:care_connect_app/features/shift_scheduling/models/scheduled_visit_model.dart';
-import 'conflict_warning.dart';
 
 class MonthCalendarView extends StatefulWidget {
   final int caregiverId;

@@ -213,7 +213,7 @@ class _EVVDayScheduleViewState extends State<EVVDayScheduleView> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             );
           }),

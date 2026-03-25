@@ -5,7 +5,7 @@ import '../widgets/role_based_drawer.dart';
 import '../widgets/role_widgets.dart';
 
 class RBACTestScreen extends StatelessWidget {
-  const RBACTestScreen({Key? key}) : super(key: key);
+  const RBACTestScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -141,20 +141,20 @@ class RBACTestScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         AdminOnly(
-          child: Card(
-            color: Colors.red.shade50,
-            child: const ListTile(
-              leading: Icon(Icons.admin_panel_settings, color: Colors.red),
-              title: Text('Admin Control Panel'),
-              subtitle: Text('Only admins can see this'),
-            ),
-          ),
           fallback: Card(
             color: Colors.grey.shade200,
             child: const ListTile(
               leading: Icon(Icons.block),
               title: Text('Access Denied'),
               subtitle: Text('Admin only'),
+            ),
+          ),
+          child: Card(
+            color: Colors.red.shade50,
+            child: const ListTile(
+              leading: Icon(Icons.admin_panel_settings, color: Colors.red),
+              title: Text('Admin Control Panel'),
+              subtitle: Text('Only admins can see this'),
             ),
           ),
         ),
@@ -167,20 +167,20 @@ class RBACTestScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         CaregiverOrAdmin(
-          child: Card(
-            color: Colors.blue.shade50,
-            child: const ListTile(
-              leading: Icon(Icons.people, color: Colors.blue),
-              title: Text('Patient Management'),
-              subtitle: Text('Caregivers and admins can see this'),
-            ),
-          ),
           fallback: Card(
             color: Colors.grey.shade200,
             child: const ListTile(
               leading: Icon(Icons.block),
               title: Text('Access Denied'),
               subtitle: Text('Caregivers and admins only'),
+            ),
+          ),
+          child: Card(
+            color: Colors.blue.shade50,
+            child: const ListTile(
+              leading: Icon(Icons.people, color: Colors.blue),
+              title: Text('Patient Management'),
+              subtitle: Text('Caregivers and admins can see this'),
             ),
           ),
         ),
@@ -222,20 +222,20 @@ class RBACTestScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         NotFamilyMember(
-          child: Card(
-            color: Colors.green.shade50,
-            child: const ListTile(
-              leading: Icon(Icons.edit, color: Colors.green),
-              title: Text('Edit Data'),
-              subtitle: Text('Everyone except family members'),
-            ),
-          ),
           fallback: Card(
             color: Colors.grey.shade200,
             child: const ListTile(
               leading: Icon(Icons.block),
               title: Text('Read-Only Access'),
               subtitle: Text('Family members cannot edit'),
+            ),
+          ),
+          child: Card(
+            color: Colors.green.shade50,
+            child: const ListTile(
+              leading: Icon(Icons.edit, color: Colors.green),
+              title: Text('Edit Data'),
+              subtitle: Text('Everyone except family members'),
             ),
           ),
         ),

@@ -315,7 +315,7 @@ class _NotetakerDetailViewState extends State<NotetakerDetailView> {
                           : Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceVariant
+                                color: theme.colorScheme.surfaceContainerHighest
                                     .withOpacity(0.5),
                                 borderRadius: BorderRadius.circular(8),
                               ),
