@@ -223,9 +223,17 @@ class _SubscriptionTierSelectionPageState
         final session = await AuthTokenManager.getUserSession();
         final userId = session?['id']?.toString() ?? '';
         if (userId.isNotEmpty) {
-          await ApiService.createSubscriptionByUser(userId, 'plan_free');
+          try {
+            final response = await ApiService.createSubscriptionByUser(userId, 'plan_free');
+            print('Free plan response: ${response.statusCode} ${response.body}');
+          } catch (e) {
+            print('Free plan error: $e');
+          }
+        } else {
+          print('Free plan: userId is empty, session: $session');
         }
         if (mounted) context.go('/subscription');
+
       }
       return;
     }

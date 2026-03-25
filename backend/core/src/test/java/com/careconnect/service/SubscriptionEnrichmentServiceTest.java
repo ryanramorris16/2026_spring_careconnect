@@ -82,7 +82,7 @@ class SubscriptionEnrichmentServiceTest {
         final Subscription sub = new Subscription();
         sub.setId(id);
         sub.setUser(user);
-        sub.setStripeSubscriptionId(stripeSubId);
+        sub.setPaymentSubscriptionId(stripeSubId);
         sub.setStatus(status);
         sub.setPriceId(priceId);
         return sub;

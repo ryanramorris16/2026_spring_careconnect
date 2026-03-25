@@ -369,7 +369,7 @@ public Patient registerPatient(PatientRegistration reg) {
                     // Save subscription information to database
                     if (subscriptionResult != null && subscriptionResult.get("id") != null) {
                         Subscription subscription = new Subscription();
-                        subscription.setStripeSubscriptionId((String) subscriptionResult.get("id"));
+                        subscription.setPaymentSubscriptionId((String) subscriptionResult.get("id"));
                         subscription.setPaymentCustomerId(paymentCustomerId);
                         subscription.setUser(user);
                         subscription.setPlan(plan);
