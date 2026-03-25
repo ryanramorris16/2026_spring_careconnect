@@ -42,4 +42,6 @@ doc/api/
 .venv/
 __pycache__/
 .idea/
-.claude/
+.claude/startup_logs.json
+web-deploy.zip
+frontend-build.zip

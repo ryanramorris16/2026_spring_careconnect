@@ -540,7 +540,15 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
     <style>
       html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
       #stage { position:relative; width:100%; height:100%; background:#000; }
-      #remoteVideo { width:100%; height:100%; object-fit:cover; background:#000; }
+      #videoGrid {
+        position:absolute; top:0; left:0; right:0; bottom:0;
+        display:grid; background:#000; gap:2px;
+        grid-template-columns:1fr; grid-template-rows:1fr;
+      }
+      #videoGrid.count-2 { grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
+      #videoGrid.count-3 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      #videoGrid.count-4 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      .remote-video { width:100%; height:100%; object-fit:cover; background:#111; min-height:0; }
       #localVideo {
         position:absolute; right:16px; top:16px; width:22%; max-width:260px;
         aspect-ratio:16/9; object-fit:cover; border-radius:12px;
@@ -617,7 +625,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
   </head>
   <body>
     <div id="stage">
-      <video id="remoteVideo" autoplay playsinline muted></video>
+      <div id="videoGrid" class="count-0"></div>
       <video id="localVideo" autoplay playsinline muted></video>
       <audio id="remoteAudio" autoplay></audio>
       <div id="status">Connecting media...</div>
@@ -673,7 +681,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
         const config = $configJson;
         const statusEl = document.getElementById('status');
         const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
+        const videoGrid = document.getElementById('videoGrid');
         const remoteAudio = document.getElementById('remoteAudio');
         const micBtn = document.getElementById('micBtn');
         const switchCamBtn = document.getElementById('switchCamBtn');
@@ -998,9 +1006,8 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           if (localVideo) {
             localVideo.srcObject = null;
           }
-          if (remoteVideo) {
-            remoteVideo.srcObject = null;
-          }
+          remoteTiles.forEach((tileId, el) => { el.srcObject = null; });
+          remoteTiles.clear();
 
           if (flutterMessageHandler) {
             try {
@@ -1924,15 +1931,15 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           let localVideoRetryTimer = null;
           let videoPublishRecoveryAttempts = 0;
           let localTileId = null;
-          let remoteTileId = null;
+          const remoteTiles = new Map(); // tileId -> HTMLVideoElement
           let remoteParticipantPresent = false;
           availableVideoInputs = [];
           let activeVideoDeviceId = null;
           let localVideoHealthTimer = null;
 
           function updateParticipantStatus() {
-            if (remoteTileId !== null) {
-              setStatus('Connected with participant');
+            if (remoteTiles.size > 0) {
+              setStatus(remoteTiles.size === 1 ? 'Connected with participant' : 'Connected with ' + remoteTiles.size + ' participants');
               return;
             }
 
@@ -2278,12 +2285,19 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 report('info', 'Local video tile bound');
               } else {
                 remoteParticipantPresent = true;
-                if (remoteTileId !== tileState.tileId) {
-                  remoteTileId = tileState.tileId;
-                  bindAndPlayVideo(tileState.tileId, remoteVideo, 'remote');
+                if (!remoteTiles.has(tileState.tileId)) {
+                  const el = document.createElement('video');
+                  el.autoplay = true;
+                  el.playsInline = true;
+                  el.muted = true;
+                  el.className = 'remote-video';
+                  videoGrid.appendChild(el);
+                  remoteTiles.set(tileState.tileId, el);
+                  videoGrid.className = 'count-' + Math.min(remoteTiles.size, 4);
                 }
+                bindAndPlayVideo(tileState.tileId, remoteTiles.get(tileState.tileId), 'remote');
                 updateParticipantStatus();
-                report('info', 'Remote video tile bound');
+                report('info', 'Remote video tile bound: ' + tileState.tileId + ' (total=' + remoteTiles.size + ')');
               }
             },
             videoTileWasRemoved: (tileId) => {
@@ -2291,8 +2305,13 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 localTileId = null;
                 localVideoBound = false;
               }
-              if (tileId === remoteTileId) {
-                remoteTileId = null;
+              const remoteEl = remoteTiles.get(tileId);
+              if (remoteEl) {
+                remoteEl.srcObject = null;
+                remoteEl.remove();
+                remoteTiles.delete(tileId);
+                videoGrid.className = 'count-' + Math.min(remoteTiles.size, 4);
+                remoteParticipantPresent = remoteTiles.size > 0;
                 updateParticipantStatus();
               }
             }
@@ -2306,9 +2325,10 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 return;
               }
 
-              remoteParticipantPresent = !!present;
-              if (!remoteParticipantPresent) {
-                remoteTileId = null;
+              if (present) {
+                remoteParticipantPresent = true;
+              } else {
+                remoteParticipantPresent = remoteTiles.size > 0;
               }
 
               updateParticipantStatus();

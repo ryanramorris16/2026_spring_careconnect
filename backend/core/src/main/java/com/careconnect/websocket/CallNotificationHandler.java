@@ -480,24 +480,13 @@ public class CallNotificationHandler extends TextWebSocketHandler {
             sendErrorMessage(session, "User not authenticated");
             return;
         }
-        
+
         String callId = (String) payload.get("callId");
-        String otherPartyId = (String) payload.get("otherPartyId");
-        
-        // Notify other party that call ended
-        WebSocketSession otherSession = userSessions.get(otherPartyId);
-        if (otherSession != null && otherSession.isOpen()) {
-            Map<String, Object> response = Map.of(
-                "type", "call-ended",
-                "callId", callId,
-                "endedBy", user.getId(),
-                "endedByName", getUserDisplayName(user),
-                "timestamp", System.currentTimeMillis()
-            );
-            otherSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
-            
-            log.info("Call {} ended by {}", callId, user.getEmail());
-        }
+
+        // Conference teardown is owned by the REST /api/v3/calls/{callId}/end endpoint.
+        // Ignore the legacy websocket signal so one participant cannot force another client
+        // to leave a multi-party call by using an outdated frontend path.
+        log.warn("Ignoring legacy websocket end-call for call {} from user {}", callId, user.getEmail());
     }
 
     private void handleHeartbeat(WebSocketSession session, Map<String, Object> payload) throws Exception {
@@ -583,6 +572,11 @@ public class CallNotificationHandler extends TextWebSocketHandler {
     }
 
     // Public method to send notifications from other services
+    public boolean isUserOnline(String userId) {
+        WebSocketSession session = userSessions.get(userId);
+        return session != null && session.isOpen();
+    }
+
     public void sendNotificationToUser(String userId, Map<String, Object> notification) {
         WebSocketSession session = userSessions.get(userId);
         if (session != null && session.isOpen()) {

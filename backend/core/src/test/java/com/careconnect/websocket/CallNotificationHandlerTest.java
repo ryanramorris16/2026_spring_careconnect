@@ -46,7 +46,7 @@ class CallNotificationHandlerTest {
 
     @InjectMocks CallNotificationHandler handler;
 
-    // ────────────────── helpers ───────────────────────────────────────────────
+    //  helpers 
 
     /** Authenticate `sess` as `usr` (userId, email). Stubs are lenient so they
      *  can safely be declared even when not exercised by a particular code path. */
@@ -64,7 +64,7 @@ class CallNotificationHandlerTest {
         handler.handleTextMessage(sess, new TextMessage(json));
     }
 
-    // ─── afterConnectionEstablished() ────────────────────────────────────────
+    //  afterConnectionEstablished() 
 
     @Test
     void afterConnectionEstablished_sendsConnectionEstablishedMessage() throws Exception {
@@ -73,7 +73,7 @@ class CallNotificationHandlerTest {
         verify(session).sendMessage(any(TextMessage.class));
     }
 
-    // ─── handleTextMessage() — exception in JSON parsing ─────────────────────
+    //  handleTextMessage()  exception in JSON parsing 
 
     @Test
     void handleTextMessage_invalidJson_catchesExceptionAndSendsError() throws Exception {
@@ -90,7 +90,7 @@ class CallNotificationHandlerTest {
         // No exception escapes
     }
 
-    // ─── authenticate — token null / invalid ─────────────────────────────────
+    //  authenticate  token null / invalid 
 
     @Test
     void authenticate_nullToken_sendsAuthFailedAndClosesSession() throws Exception {
@@ -137,7 +137,7 @@ class CallNotificationHandlerTest {
         verify(session, atLeastOnce()).sendMessage(any(TextMessage.class));
     }
 
-    // ─── join-user-room ───────────────────────────────────────────────────────
+    //  join-user-room 
 
     @Test
     void joinUserRoom_notAuthenticated_sendsError() throws Exception {
@@ -156,7 +156,7 @@ class CallNotificationHandlerTest {
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── send-video-call-invitation ───────────────────────────────────────────
+    //  send-video-call-invitation 
 
     @Test
     void callInvitation_notAuthenticated_sendsError() throws Exception {
@@ -203,7 +203,7 @@ class CallNotificationHandlerTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
         when(recipientUser.getEmail()).thenReturn("r@r.com");
 
-        // recipientUser session is NOT registered → offline
+        // recipientUser session is NOT registered  offline
         handler.handleTextMessage(session,
                 new TextMessage("{\"type\":\"send-video-call-invitation\","
                         + "\"recipientId\":\"2\",\"callId\":\"c1\"}"));
@@ -211,11 +211,11 @@ class CallNotificationHandlerTest {
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
     }
 
-    // getUserDisplayName — null/empty name → email branch
+    // getUserDisplayName  null/empty name  email branch
 
     @Test
     void callInvitation_senderNameNull_usesEmail() throws Exception {
-        // Authenticate sender (name=null → falls back to email in getUserDisplayName)
+        // Authenticate sender (name=null  falls back to email in getUserDisplayName)
         authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
         when(user.getName()).thenReturn(null);
 
@@ -233,7 +233,7 @@ class CallNotificationHandlerTest {
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── send-sms-notification ────────────────────────────────────────────────
+    //  send-sms-notification 
 
     @Test
     void smsNotification_notAuthenticated_sendsError() throws Exception {
@@ -283,7 +283,7 @@ class CallNotificationHandlerTest {
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── accept-call ──────────────────────────────────────────────────────────
+    //  accept-call 
 
     @Test
     void acceptCall_notAuthenticated_sendsError() throws Exception {
@@ -317,7 +317,7 @@ class CallNotificationHandlerTest {
         verify(session, atMost(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── decline-call ─────────────────────────────────────────────────────────
+    //  decline-call 
 
     @Test
     void declineCall_notAuthenticated_sendsError() throws Exception {
@@ -350,7 +350,7 @@ class CallNotificationHandlerTest {
         verify(session, atMost(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── end-call ─────────────────────────────────────────────────────────────
+    //  end-call 
 
     @Test
     void endCall_notAuthenticated_sendsError() throws Exception {
@@ -361,16 +361,17 @@ class CallNotificationHandlerTest {
     }
 
     @Test
-    void endCall_authenticated_otherPartyOnline_notifiesOtherParty() throws Exception {
+    void endCall_authenticated_otherPartyOnline_doesNotNotifyOtherParty() throws Exception {
         authenticate(session, "s1", user, 1L, "u@u.com", "tok1");
         when(user.getName()).thenReturn("Alice");
 
         authenticate(recipientSession, "s2", recipientUser, 2L, "r@r.com", "tok2");
         when(recipientSession.isOpen()).thenReturn(true);
+        clearInvocations(recipientSession);
 
         handler.handleTextMessage(session,
                 new TextMessage("{\"type\":\"end-call\",\"callId\":\"c1\",\"otherPartyId\":\"2\"}"));
-        verify(recipientSession, atLeast(1)).sendMessage(any(TextMessage.class));
+        verify(recipientSession, never()).sendMessage(any(TextMessage.class));
     }
 
     @Test
@@ -382,7 +383,7 @@ class CallNotificationHandlerTest {
         verify(session, atMost(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── heartbeat ────────────────────────────────────────────────────────────
+    //  heartbeat 
 
     @Test
     void heartbeat_sendsHeartbeatResponse() throws Exception {
@@ -392,7 +393,7 @@ class CallNotificationHandlerTest {
         verify(session).sendMessage(any(TextMessage.class));
     }
 
-    // ─── unknown type ─────────────────────────────────────────────────────────
+    //  unknown type 
 
     @Test
     void unknownType_logsWarningAndSendsError() throws Exception {
@@ -402,7 +403,7 @@ class CallNotificationHandlerTest {
         verify(session).sendMessage(any(TextMessage.class));
     }
 
-    // ─── afterConnectionClosed() ─────────────────────────────────────────────
+    //  afterConnectionClosed() 
 
     @Test
     void afterConnectionClosed_withAuthenticatedUser_removesEntries() throws Exception {
@@ -410,7 +411,7 @@ class CallNotificationHandlerTest {
 
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
 
-        // User should be gone — getOnlineUsers returns empty
+        // User should be gone  getOnlineUsers returns empty
         assertThat(handler.getOnlineUsers()).doesNotContainKey("1");
     }
 
@@ -421,7 +422,7 @@ class CallNotificationHandlerTest {
         // Just verifying no exception
     }
 
-    // ─── handleTransportError() ──────────────────────────────────────────────
+    //  handleTransportError() 
 
     @Test
     void handleTransportError_withAuthenticatedUser_logsUserEmail() throws Exception {
@@ -437,7 +438,7 @@ class CallNotificationHandlerTest {
         // No exception expected
     }
 
-    // ─── sendNotificationToUser() (public) ───────────────────────────────────
+    //  sendNotificationToUser() (public) 
 
     @Test
     void sendNotificationToUser_sessionOpen_sendsMessage() throws Exception {
@@ -477,7 +478,7 @@ class CallNotificationHandlerTest {
         verifyNoInteractions(session);
     }
 
-    // ─── getOnlineUsers() ────────────────────────────────────────────────────
+    //  getOnlineUsers() 
 
     @Test
     void getOnlineUsers_returnsMapOfIdToEmail() throws Exception {
@@ -488,7 +489,7 @@ class CallNotificationHandlerTest {
         assertThat(online).containsEntry("1", "u@u.com");
     }
 
-    // ─── sendCallInvitation() & sendSMSNotification() ────────────────────────
+    //  sendCallInvitation() & sendSMSNotification() 
 
     @Test
     void sendCallInvitation_delegatesToSendNotificationToUser() throws Exception {
@@ -510,7 +511,7 @@ class CallNotificationHandlerTest {
         verify(session, atLeast(2)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── getUserDisplayName — preferred name, email-like, role fallback ──────
+    //  getUserDisplayName  preferred name, email-like, role fallback 
 
     @Test
     void callInvitation_callerNameProvided_usesCallerName() throws Exception {
@@ -597,7 +598,7 @@ class CallNotificationHandlerTest {
         when(recipientSession.isOpen()).thenReturn(true);
         when(userRepository.findById(2L)).thenReturn(Optional.of(recipientUser));
 
-        // Patient calling caregiver — needs link
+        // Patient calling caregiver  needs link
         when(caregiverPatientLinkService.hasAccessToPatient(2L, 1L)).thenReturn(true);
         when(caregiverPatientLinkService.isPatientVideoCallsEnabled(2L, 1L)).thenReturn(true);
 
@@ -635,7 +636,7 @@ class CallNotificationHandlerTest {
         assertThat(found).isTrue();
     }
 
-    // ─── CALL-017: patient-to-patient calls blocked ─────────────────────────
+    //  CALL-017: patient-to-patient calls blocked 
 
     @Test
     void callInvitation_patientToPatient_sendsCallInvitationFailed() throws Exception {
@@ -659,7 +660,7 @@ class CallNotificationHandlerTest {
         assertThat(payload).contains("Patient-to-patient");
     }
 
-    // ─── CALL-016: patient-to-caregiver — no link ───────────────────────────
+    //  CALL-016: patient-to-caregiver  no link 
 
     @Test
     void callInvitation_patientToCaregiver_noLink_sendsCallInvitationFailed() throws Exception {
@@ -685,7 +686,7 @@ class CallNotificationHandlerTest {
         assertThat(payload).contains("No active caregiver-patient link");
     }
 
-    // ─── CALL-016: patient-to-caregiver — link exists but calls disabled ────
+    //  CALL-016: patient-to-caregiver  link exists but calls disabled 
 
     @Test
     void callInvitation_patientToCaregiver_callsDisabled_sendsCallInvitationFailed()
@@ -713,7 +714,7 @@ class CallNotificationHandlerTest {
         assertThat(payload).contains("disabled patient-initiated calls");
     }
 
-    // ─── CALL-016: patient-to-caregiver — link and calls enabled ────────────
+    //  CALL-016: patient-to-caregiver  link and calls enabled 
 
     @Test
     void callInvitation_patientToCaregiver_linkedAndEnabled_sendsInvitation() throws Exception {
@@ -737,7 +738,7 @@ class CallNotificationHandlerTest {
         verify(recipientSession, atLeast(1)).sendMessage(any(TextMessage.class));
     }
 
-    // ─── caregiver-to-patient — no link check required ──────────────────────
+    //  caregiver-to-patient  no link check required 
 
     @Test
     void callInvitation_caregiverToPatient_noLinkCheckRequired() throws Exception {
@@ -760,7 +761,7 @@ class CallNotificationHandlerTest {
         verify(caregiverPatientLinkService, never()).hasAccessToPatient(any(), any());
     }
 
-    // ─── sentiment-channel-state ────────────────────────────────────────────
+    //  sentiment-channel-state 
 
     @Test
     void sentimentChannelState_notAuthenticated_sendsError() throws Exception {
@@ -869,7 +870,7 @@ class CallNotificationHandlerTest {
         // No exception; no message sent to non-existent party
     }
 
-    // ─── telemetry recording ────────────────────────────────────────────────
+    //  telemetry recording 
 
     @Test
     void handleTextMessage_recordsTelemetryOnSuccess() throws Exception {
@@ -890,7 +891,7 @@ class CallNotificationHandlerTest {
                 any(), any(), any(), any(), any(), eq("ERROR"), any());
     }
 
-    // ─── decline-call — default reason ──────────────────────────────────────
+    //  decline-call  default reason 
 
     @Test
     void declineCall_noReasonProvided_usesDefaultDeclined() throws Exception {
@@ -909,14 +910,14 @@ class CallNotificationHandlerTest {
         assertThat(payload).contains("declined");
     }
 
-    // ─── getOnlineUsers — empty ─────────────────────────────────────────────
+    //  getOnlineUsers  empty 
 
     @Test
     void getOnlineUsers_noAuthenticatedUsers_returnsEmptyMap() {
         assertThat(handler.getOnlineUsers()).isEmpty();
     }
 
-    // ─── afterConnectionClosed — multiple users ─────────────────────────────
+    //  afterConnectionClosed  multiple users 
 
     @Test
     void afterConnectionClosed_removesOnlyDisconnectedUser() throws Exception {

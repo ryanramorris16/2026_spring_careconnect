@@ -346,7 +346,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   }
 
   Future<void> _submitCaregiverRegistration() async {
-    const baseUrl = 'http://localhost:8080/v1/api';
+    final baseUrl = ApiConstants.baseUrl.replaceAll(RegExp(r'/+$'), '');
 
     final caregiverData = {
       'name': '${_firstNameController.text} ${_lastNameController.text}',
@@ -384,17 +384,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
     final response = await http.post(
       Uri.parse('$baseUrl/auth/register'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Connection': 'keep-alive',
-        'Origin': 'http://localhost:50030', // TODO - update to use .env
-        'Referer': 'http://localhost:50030/', // TODO - update to use .env
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: json.encode(caregiverData),
     );
 
