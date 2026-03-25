@@ -49,7 +49,7 @@ public class SubscriptionController {
             return Long.parseLong(id);
         } catch (NumberFormatException e) {
             Subscription sub = subscriptionRepository.findAll().stream()
-                .filter(s -> id.equals(s.getExternalSubscriptionId()) || id.equals(s.getStripeSubscriptionId()))
+                .filter(s -> id.equals(s.getExternalSubscriptionId()) || id.equals(s.getPaymentSubscriptionId()))
                 .findFirst()
                 .orElse(null);
             return sub != null ? sub.getId() : null;
