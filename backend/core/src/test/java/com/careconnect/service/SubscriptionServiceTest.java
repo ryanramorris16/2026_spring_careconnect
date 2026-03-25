@@ -275,8 +275,8 @@ class SubscriptionServiceTest {
         assertEquals(plan, result.getPlan());
         assertNotNull(result.getStartedAt());
         assertNotNull(result.getCurrentPeriodEnd());
-        assertNotNull(result.getStripeSubscriptionId());
-        assertTrue(result.getStripeSubscriptionId().startsWith("web_"));
+        assertNotNull(result.getPaymentSubscriptionId());
+        assertTrue(result.getPaymentSubscriptionId().startsWith("web_"));
         verify(subscriptionRepository).save(any(Subscription.class));
     }
 

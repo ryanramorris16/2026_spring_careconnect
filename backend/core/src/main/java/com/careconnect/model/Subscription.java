@@ -19,7 +19,7 @@ public class Subscription {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String stripeSubscriptionId;
+    private String paymentSubscriptionId;
 
     private String paymentCustomerId;
 
@@ -46,7 +46,7 @@ public class Subscription {
     
     // Explicit getter methods for compatibility
     public Long getId() { return id; }
-    public String getStripeSubscriptionId() { return stripeSubscriptionId; }
+    public String getPaymentSubscriptionId() { return paymentSubscriptionId; }
     public String getPaymentCustomerId() { return paymentCustomerId; }
     public String getPriceId() { return priceId; }
     public User getUser() { return user; }
@@ -57,7 +57,7 @@ public class Subscription {
     
     // Explicit setter methods for compatibility
     public void setId(Long id) { this.id = id; }
-    public void setStripeSubscriptionId(String stripeSubscriptionId) { this.stripeSubscriptionId = stripeSubscriptionId; }
+    public void setPaymentSubscriptionId(String paymentSubscriptionId) { this.paymentSubscriptionId = paymentSubscriptionId; }
     public void setPaymentCustomerId(String paymentCustomerId) { this.paymentCustomerId = paymentCustomerId; }
     public void setPriceId(String priceId) { this.priceId = priceId; }
     public void setUser(User user) { this.user = user; }

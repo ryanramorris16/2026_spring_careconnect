@@ -78,7 +78,7 @@ public class SubscriptionService {
         subscription.setStatus("ACTIVE");
         subscription.setStartedAt(Instant.now());
         subscription.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
-        subscription.setStripeSubscriptionId(platform.toLowerCase() + "_" + System.currentTimeMillis());
+        subscription.setPaymentSubscriptionId(platform.toLowerCase() + "_" + System.currentTimeMillis());
 
         return subscriptionRepository.save(subscription);
     }
@@ -104,6 +104,7 @@ public class SubscriptionService {
         sub.setStartedAt(Instant.now());
         sub.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
         sub.setExternalSubscriptionId("direct_" + System.currentTimeMillis());
+        sub.setPaymentSubscriptionId("direct_" + System.currentTimeMillis());
 
         Subscription saved = subscriptionRepository.save(sub);
         return new SubscriptionResponseDTO(saved);
@@ -129,6 +130,7 @@ public class SubscriptionService {
         sub.setStartedAt(Instant.now());
         sub.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
         sub.setExternalSubscriptionId("direct_" + System.currentTimeMillis());
+        sub.setPaymentSubscriptionId("direct_" + System.currentTimeMillis());
 
         Subscription saved = subscriptionRepository.save(sub);
         return new SubscriptionResponseDTO(saved);
