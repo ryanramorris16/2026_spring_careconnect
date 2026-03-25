@@ -2,6 +2,7 @@ package com.careconnect.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +51,39 @@ public class BedrockSentimentService {
   private static final int SUMMARY_HEADLINE_MAX_LEN = 80;
   private static final int SUMMARY_TEXT_MAX_LEN = 280;
   private static final int SUMMARY_ITEM_MAX_LEN = 140;
+  /** Score rounding multiplier — two decimal places. */
+  private static final double ROUND_TWO_DECIMALS = 100.0;
+  /** Score rounding multiplier — three decimal places. */
+  private static final double ROUND_THREE_DECIMALS = 1000.0;
+  /** Notes cleanup max character length. */
+  private static final int NOTES_MAX_LEN = 120;
+  /** Heuristic positive score step per matching keyword. */
+  private static final double HEURISTIC_POS_STEP = 0.09;
+  /** Heuristic negative score step per matching keyword. */
+  private static final double HEURISTIC_NEG_STEP = 0.08;
+  /** Heuristic severe distress score step per matching keyword. */
+  private static final double HEURISTIC_SEVERE_STEP = 0.12;
+  /** Floor score applied when positive dominates and no severe hits. */
+  private static final double HEURISTIC_POS_FLOOR = 0.58;
+  /** Ceiling score applied when negative dominates. */
+  private static final double HEURISTIC_NEG_CEIL = 0.45;
+  /** Amplification factor applied to move scores away from neutral. */
+  private static final double HEURISTIC_AMPLIFY_FACTOR = 1.45;
+  /** Score threshold above which the label is CALM. */
+  private static final double SCORE_THRESHOLD_CALM = 0.60;
+  /** Score threshold above which the label is ANXIOUS (below CALM). */
+  private static final double SCORE_THRESHOLD_ANXIOUS = 0.35;
+  /** Score threshold above which voice activity is VERY_HIGH. */
+  private static final double VOICE_VERY_HIGH_THRESHOLD = 0.75;
+  /** Score threshold above which voice activity is HIGH. */
+  private static final double VOICE_HIGH_THRESHOLD = 0.55;
+  /** Score threshold above which voice activity is MODERATE. */
+  private static final double VOICE_MODERATE_THRESHOLD = 0.30;
+
+  /** Nova Pro model ID — configured in application-prod.properties. */
+  // Nova Pro handles text + image (video frames)
+  @Value("${aws.bedrock.sentiment.model-id:amazon.nova-pro-v1:0}")
+  private String novaProModelId;
 
   private final BedrockRuntimeClient bedrockRuntimeClient;
   private final ObjectMapper objectMapper;
@@ -58,18 +92,13 @@ public class BedrockSentimentService {
   /** Creates the sentiment service with optional AWS Bedrock support. */
   @Autowired
   public BedrockSentimentService(
-      @Autowired(required = false) BedrockRuntimeClient bedrockRuntimeClient,
-      ObjectMapper objectMapper,
-      @Value("${careconnect.aws.enabled:true}") boolean awsEnabled) {
+      @Autowired(required = false) final BedrockRuntimeClient bedrockRuntimeClient,
+      final ObjectMapper objectMapper,
+      @Value("${careconnect.aws.enabled:true}") final boolean awsEnabled) {
     this.bedrockRuntimeClient = bedrockRuntimeClient;
     this.objectMapper = objectMapper;
     this.awsEnabled = awsEnabled;
   }
-
-  // Model IDs — configured in application-prod.properties
-  // Nova Pro handles text + image (video frames)
-  @Value("${aws.bedrock.sentiment.model-id:amazon.nova-pro-v1:0}")
-  private String novaProModelId;
 
   // ================================================================
   // TEXT SENTIMENT
@@ -80,7 +109,7 @@ public class BedrockSentimentService {
    * Analyzes the emotional tone of a text message. Called whenever a chat message is sent during a
    * call.
    */
-  public SentimentResult analyzeText(final String text, final String callId) {
+  public final SentimentResult analyzeText(final String text, final String callId) {
     if (log.isDebugEnabled()) {
       log.debug("Analyzing text sentiment for callId: {}", callId);
     }
@@ -93,7 +122,7 @@ public class BedrockSentimentService {
       return analyzeTranscriptHeuristic(input, callId);
     }
 
-    String prompt =
+    final String prompt =
         """
         You are a clinical transcript sentiment analyzer for a healthcare video call.
         Assess patient emotional state from this transcript text.
@@ -117,7 +146,7 @@ public class BedrockSentimentService {
             .replace("$TRANSCRIPT$", input);
 
     try {
-      String responseBody = invokeNovaModel(prompt, null, null);
+      final String responseBody = invokeNovaModel(prompt, null, null);
       final SentimentResult parsed = parseSentimentResponse(responseBody, CHANNEL_TEXT, callId);
       if (parsed != null && !parsed.fallback()) {
         return parsed;
@@ -134,8 +163,16 @@ public class BedrockSentimentService {
     }
   }
 
-  /** Analyzes voice activity metrics captured from Amazon Chime. */
-  public SentimentResult analyzeVoiceFromChimeMetrics(
+  /**
+   * Analyzes voice activity metrics captured from Amazon Chime.
+   *
+   * @param callId the active call session ID
+   * @param averageLevel average audio level reported by Chime (0.0–1.0)
+   * @param speechRatio ratio of speech frames to total frames (0.0–1.0)
+   * @param variability audio level variability / jitter measure (0.0–1.0)
+   * @return a {@link SentimentResult} for the VOICE channel
+   */
+  public final SentimentResult analyzeVoiceFromChimeMetrics(
       final String callId,
       final Double averageLevel,
       final Double speechRatio,
@@ -153,7 +190,7 @@ public class BedrockSentimentService {
     double score = speaking;
 
     score = clamp(score, 0.0, 1.0);
-    String label = voiceActivityLabel(score);
+    final String label = voiceActivityLabel(score);
     final String notes =
         String.format(
             Locale.ROOT,
@@ -184,17 +221,19 @@ public class BedrockSentimentService {
    * @param imageFormat "jpeg" or "png"
    * @param callId the active call session ID
    */
-  public SentimentResult analyzeVideoFrame(
+  public final SentimentResult analyzeVideoFrame(
       final String imageBase64,
       final String imageFormat,
       final String callId) {
-    log.debug("Analyzing video frame sentiment for callId: {}", callId);
+    if (log.isDebugEnabled()) {
+      log.debug("Analyzing video frame sentiment for callId: {}", callId);
+    }
 
     if (!isBedrockAvailable()) {
       return SentimentResult.neutral(CHANNEL_VIDEO, callId, "Bedrock disabled in local mode");
     }
 
-    String prompt =
+    final String prompt =
         """
 You are a clinical facial expression analyzer for a healthcare platform.
 Analyze this video frame for emotional and wellbeing cues.
@@ -216,10 +255,12 @@ Respond with ONLY a JSON object in this exact format, no other text:
         """;
 
     try {
-      String responseBody = invokeNovaModel(prompt, imageBase64, imageFormat);
+      final String responseBody = invokeNovaModel(prompt, imageBase64, imageFormat);
       return parseSentimentResponse(responseBody, CHANNEL_VIDEO, callId);
     } catch (Exception e) {
-      log.error("Video sentiment analysis failed for callId: {}", callId, e);
+      if (log.isErrorEnabled()) {
+        log.error("Video sentiment analysis failed for callId: {}", callId, e);
+      }
       return SentimentResult.neutral(CHANNEL_VIDEO, callId, "Video analysis unavailable");
     }
   }
@@ -231,29 +272,29 @@ Respond with ONLY a JSON object in this exact format, no other text:
   // ================================================================
 
   /** Combines voice and video sentiment into an overall score. Weights: voice 50%, video 50% */
-  public Map<String, Object> buildCombinedSentiment(
-      SentimentResult textResult,
-      SentimentResult voiceResult,
-      SentimentResult videoResult,
+  public final Map<String, Object> buildCombinedSentiment(
+      final SentimentResult textResult,
+      final SentimentResult voiceResult,
+      final SentimentResult videoResult,
       final String callId) {
 
     final double voiceWeight = VOICE_WEIGHT;
     final double videoWeight = VIDEO_WEIGHT;
 
-    if (textResult == null) {
-      textResult = SentimentResult.neutral(CHANNEL_TEXT, callId, "Transcript channel disabled");
-    }
-    if (voiceResult == null) {
-      voiceResult = SentimentResult.neutral(CHANNEL_VOICE, callId, "No voice sample");
-    }
-    if (videoResult == null) {
-      videoResult = SentimentResult.neutral(CHANNEL_VIDEO, callId, "No video sample");
-    }
+    final SentimentResult effectiveText = textResult == null
+        ? SentimentResult.neutral(CHANNEL_TEXT, callId, "Transcript channel disabled")
+        : textResult;
+    final SentimentResult effectiveVoice = voiceResult == null
+        ? SentimentResult.neutral(CHANNEL_VOICE, callId, "No voice sample")
+        : voiceResult;
+    final SentimentResult effectiveVideo = videoResult == null
+        ? SentimentResult.neutral(CHANNEL_VIDEO, callId, "No video sample")
+        : videoResult;
 
-    final boolean hasVoiceSample = voiceResult != null && !voiceResult.fallback();
-    final boolean hasVideoSample = videoResult != null && !videoResult.fallback();
+    final boolean hasVoiceSample = !effectiveVoice.fallback();
+    final boolean hasVideoSample = !effectiveVideo.fallback();
 
-    double activeWeightSum =
+    final double activeWeightSum =
         (hasVoiceSample ? voiceWeight : 0.0) + (hasVideoSample ? videoWeight : 0.0);
 
     double effectiveVoiceWeight = 0.0;
@@ -263,50 +304,54 @@ Respond with ONLY a JSON object in this exact format, no other text:
       effectiveVideoWeight = hasVideoSample ? videoWeight / activeWeightSum : 0.0;
     }
 
-    double textContribution = 0.0;
-    double voiceContribution = voiceResult.score() * effectiveVoiceWeight;
-    double videoContribution = videoResult.score() * effectiveVideoWeight;
+    final double textContribution = 0.0;
+    final double voiceContribution = effectiveVoice.score() * effectiveVoiceWeight;
+    final double videoContribution = effectiveVideo.score() * effectiveVideoWeight;
 
     // Missing/fallback channels are excluded from combined math.
-    double combined =
+    final double combined =
         activeWeightSum > 0.0
             ? textContribution + voiceContribution + videoContribution
             : NEUTRAL_SCORE;
 
     final String overallLabel = scoreToLabel(combined);
 
-    Map<String, Object> result = new HashMap<>();
+    final Map<String, Object> result = new HashMap<>();
     result.put("callId", callId);
     result.put("timestamp", System.currentTimeMillis());
     result.put(
-        "overall", Map.of("score", Math.round(combined * 100.0) / 100.0, "label", overallLabel));
+        "overall",
+        Map.of("score", Math.round(combined * ROUND_TWO_DECIMALS) / ROUND_TWO_DECIMALS,
+            "label", overallLabel));
     result.put(
         "text",
         Map.of(
-            "score", textResult.score(), "label", textResult.label(), "notes", textResult.notes()));
+            "score", effectiveText.score(),
+            "label", effectiveText.label(),
+            "notes", effectiveText.notes()));
     result.put(
         "voice",
         Map.of(
             "score",
-            voiceResult.score(),
+            effectiveVoice.score(),
             "label",
-            voiceResult.label(),
+            effectiveVoice.label(),
             "notes",
-            voiceResult.notes()));
+            effectiveVoice.notes()));
     result.put(
         "video",
         Map.of(
             "score",
-            videoResult.score(),
+            effectiveVideo.score(),
             "label",
-            videoResult.label(),
+            effectiveVideo.label(),
             "notes",
-            videoResult.notes()));
+            effectiveVideo.notes()));
 
     // Temporary debug fields to tune score calibration from real call data.
-    result.put("dbgTs", round2(textResult.score()));
-    result.put("dbgVs", round2(voiceResult.score()));
-    result.put("dbgIs", round2(videoResult.score()));
+    result.put("dbgTs", round2(effectiveText.score()));
+    result.put("dbgVs", round2(effectiveVoice.score()));
+    result.put("dbgIs", round2(effectiveVideo.score()));
     result.put("dbgTw", round3(0.0));
     result.put("dbgVw", round3(effectiveVoiceWeight));
     result.put("dbgIw", round3(effectiveVideoWeight));
@@ -319,7 +364,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
   }
 
   /** Computes the final overall sentiment for a call from channel results. */
-  public SentimentResult analyzeFinalOverallSentiment(
+  public final SentimentResult analyzeFinalOverallSentiment(
       final String callId, final Map<String, SentimentResult> channelResults) {
     final SentimentResult voice = safeChannelResult(channelResults, CHANNEL_VOICE, callId);
     final SentimentResult video = safeChannelResult(channelResults, CHANNEL_VIDEO, callId);
@@ -328,7 +373,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
       return localFinalOverall(voice, video, callId);
     }
 
-    String prompt =
+    final String prompt =
         """
         You are a clinical sentiment aggregator for a healthcare call summary.
         Use the channel scores and notes below to compute one final overall sentiment.
@@ -349,7 +394,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
             .replace("$VIDEO_NOTES$", safeNotes(video.notes()));
 
     try {
-      String responseBody = invokeNovaModel(prompt, null, null);
+      final String responseBody = invokeNovaModel(prompt, null, null);
       final SentimentResult parsed = parseSentimentResponse(responseBody, CHANNEL_COMBINED, callId);
       if (parsed == null || parsed.fallback()) {
         return localFinalOverall(voice, video, callId);
@@ -372,7 +417,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
   }
 
   /** Builds a structured transcript summary using available sentiment context. */
-  public Map<String, Object> summarizeTranscript(
+  public final Map<String, Object> summarizeTranscript(
       final String callId,
       final String transcript,
       final Map<String, SentimentResult> channelResults) {
@@ -393,7 +438,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
               "overallLabel", combined.label()));
     }
 
-    String prompt =
+    final String prompt =
         """
         You are a HIPAA-safe clinical call summarizer for a caregiver dashboard.
         Summarize the transcript as structured JSON only.
@@ -424,8 +469,8 @@ Respond with ONLY a JSON object in this exact format, no other text:
             .replace("$OVERALL_SCORE$", String.valueOf(combined.score()));
 
     try {
-      String responseBody = invokeNovaModel(prompt, null, null);
-      Map<String, Object> parsed = parseSummaryResponse(responseBody);
+      final String responseBody = invokeNovaModel(prompt, null, null);
+      final Map<String, Object> parsed = parseSummaryResponse(responseBody);
       if (parsed.isEmpty()) {
         return localTranscriptSummary(
             Map.of(
@@ -459,10 +504,10 @@ Respond with ONLY a JSON object in this exact format, no other text:
       final String imageBase64,
       final String imageFormat)
       throws Exception {
-    Map<String, Object> requestBody = new HashMap<>();
+    final Map<String, Object> requestBody = new HashMap<>();
 
     // Build content array — text only, or text + image
-    Map<String, Object> userMessage = new HashMap<>();
+    final Map<String, Object> userMessage = new HashMap<>();
     if (imageBase64 != null && imageFormat != null) {
       // Image + text request
       userMessage.put("role", "user");
@@ -491,7 +536,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
     if (channelResults == null) {
       return SentimentResult.neutral(channel, callId, "No channel sample");
     }
-    SentimentResult result = channelResults.get(channel);
+    final SentimentResult result = channelResults.get(channel);
     if (result == null) {
       return SentimentResult.neutral(channel, callId, "No channel sample");
     }
@@ -504,7 +549,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
       final String callId) {
     final double voiceWeight = voice.fallback() ? 0.0 : VOICE_WEIGHT;
     final double videoWeight = video.fallback() ? 0.0 : VIDEO_WEIGHT;
-    double weightSum = voiceWeight + videoWeight;
+    final double weightSum = voiceWeight + videoWeight;
 
     double score =
         weightSum > 0.0
@@ -512,7 +557,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
             : NEUTRAL_SCORE;
     score = clamp(score, 0.0, 1.0);
     return new SentimentResult(
-        Math.round(score * 100.0) / 100.0,
+        Math.round(score * ROUND_TWO_DECIMALS) / ROUND_TWO_DECIMALS,
         normalizeCombinedLabel(scoreToLabel(score)),
         "Final overall sentiment from end-of-call channels",
         CHANNEL_COMBINED,
@@ -525,7 +570,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
     if (notes == null || notes.isBlank()) {
       return "none";
     }
-    String cleaned = notes.replaceAll("\\s+", " ").trim();
+    final String cleaned = notes.replaceAll("\\s+", " ").trim();
     return cleaned.length() > 120 ? cleaned.substring(0, 120) : cleaned;
   }
 
@@ -538,7 +583,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
   }
 
   private String normalizeCombinedLabel(final String label) {
-    String normalized = label == null ? "" : label.trim().toUpperCase(Locale.ROOT);
+    final String normalized = label == null ? "" : label.trim().toUpperCase(Locale.ROOT);
     return switch (normalized) {
       case "DISTRESSED", "ANXIOUS", "CALM" -> normalized;
       case "NEGATIVE" -> "DISTRESSED";
@@ -626,19 +671,19 @@ Respond with ONLY a JSON object in this exact format, no other text:
 
     int pos = 0;
     int neg = 0;
-    for (String token : positive) {
+    for (final String token : positive) {
       if (normalized.contains(token)) {
         pos += 1;
       }
     }
-    for (String token : negative) {
+    for (final String token : negative) {
       if (normalized.contains(token)) {
         neg += 1;
       }
     }
 
     int severeHits = 0;
-    for (String token : severe) {
+    for (final String token : severe) {
       if (normalized.contains(token)) {
         severeHits += 1;
       }
@@ -680,7 +725,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
   }
 
   private double amplifyAwayFromNeutral(final double score, final double factor) {
-    double centered = score - 0.5;
+    final double centered = score - 0.5;
     return 0.5 + (centered * factor);
   }
 
@@ -689,7 +734,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
       throws Exception {
     final String requestJson = objectMapper.writeValueAsString(requestBody);
 
-    InvokeModelRequest request =
+    final InvokeModelRequest request =
         InvokeModelRequest.builder()
             .modelId(modelId)
             .contentType("application/json")
@@ -697,7 +742,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
             .body(SdkBytes.fromUtf8String(requestJson))
             .build();
 
-    InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
+    final InvokeModelResponse response = bedrockRuntimeClient.invokeModel(request);
     return response.body().asUtf8String();
   }
 
@@ -719,7 +764,9 @@ Respond with ONLY a JSON object in this exact format, no other text:
       final String contentText = extractModelContentText(root);
 
       if (contentText == null || contentText.isBlank()) {
-        log.warn("Empty content from Bedrock for channel: {}", channel);
+        if (log.isWarnEnabled()) {
+          log.warn("Empty content from Bedrock for channel: {}", channel);
+        }
         return SentimentResult.neutral(channel, callId, "Empty response");
       }
 
@@ -809,7 +856,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
 
     if (contentNode.isArray()) {
       final StringBuilder sb = new StringBuilder();
-      for (JsonNode item : contentNode) {
+      for (final JsonNode item : contentNode) {
         if (item == null || item.isNull() || item.isMissingNode()) {
           continue;
         }
@@ -940,14 +987,14 @@ Respond with ONLY a JSON object in this exact format, no other text:
 
       final String cleaned = stripCodeFences(contentText);
       try {
-        JsonNode parsed = objectMapper.readTree(cleaned);
+        final JsonNode parsed = objectMapper.readTree(cleaned);
         return parsed.has("score") && parsed.has("label");
       } catch (Exception firstEx) {
         final String embeddedJson = extractSentimentJsonObject(cleaned);
         if (embeddedJson == null || embeddedJson.isBlank()) {
           return false;
         }
-        JsonNode parsed = objectMapper.readTree(embeddedJson);
+        final JsonNode parsed = objectMapper.readTree(embeddedJson);
         return parsed.has("score") && parsed.has("label");
       }
     } catch (Exception ignored) {
@@ -1011,8 +1058,8 @@ Respond with ONLY a JSON object in this exact format, no other text:
       return List.of();
     }
 
-    final java.util.ArrayList<String> out = new java.util.ArrayList<>();
-    for (JsonNode item : node) {
+    final ArrayList<String> out = new ArrayList<>();
+    for (final JsonNode item : node) {
       final String text = safeSummaryText(item.asText(""), SUMMARY_ITEM_MAX_LEN);
       if (!text.isBlank()) {
         out.add(text);
@@ -1028,7 +1075,7 @@ Respond with ONLY a JSON object in this exact format, no other text:
     if (text == null) {
       return "";
     }
-    String cleaned = text.replaceAll("\\s+", " ").trim();
+    final String cleaned = text.replaceAll("\\s+", " ").trim();
     if (cleaned.length() <= maxLen) {
       return cleaned;
     }
@@ -1077,7 +1124,8 @@ Respond with ONLY a JSON object in this exact format, no other text:
       long timestamp,
       boolean fallback) {
     /** Factory method for when analysis is unavailable. */
-    public static SentimentResult neutral(String channel, String callId, String reason) {
+    public static SentimentResult neutral(
+        final String channel, final String callId, final String reason) {
       return new SentimentResult(
           NEUTRAL_SCORE,
           DEFAULT_OVERALL_LABEL,

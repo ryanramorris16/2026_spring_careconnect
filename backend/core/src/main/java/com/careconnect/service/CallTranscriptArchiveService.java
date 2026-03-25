@@ -237,7 +237,8 @@ public class CallTranscriptArchiveService {
       final byte[] bytes = objectMapper.writeValueAsBytes(payload);
       final String storageKey = buildStorageKey(normalizedCallId);
       s3StorageService.upload(storageKey, bytes, "application/json");
-      archiveRepository.save(buildArchive(normalizedCallId, currentSegments, transcriptChars, storageKey, bytes));
+      archiveRepository.save(
+          buildArchive(normalizedCallId, currentSegments, transcriptChars, storageKey, bytes));
       if (deleteDbRows) {
         segmentRepository.deleteByCallId(normalizedCallId);
       }
@@ -401,7 +402,9 @@ public class CallTranscriptArchiveService {
       deletedCount = 0;
     } else {
       if (s3StorageService != null) {
-        archiveRepository.findByCallIdOrderByArchivedAtDesc(normalizedCallId).forEach(this::deleteArchiveObjectQuietly);
+        archiveRepository
+            .findByCallIdOrderByArchivedAtDesc(normalizedCallId)
+            .forEach(this::deleteArchiveObjectQuietly);
       }
       deletedCount = archiveRepository.deleteByCallId(normalizedCallId);
     }
