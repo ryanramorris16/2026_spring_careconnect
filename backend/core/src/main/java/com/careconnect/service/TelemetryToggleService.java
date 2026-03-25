@@ -6,18 +6,38 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
-public class TelemetryToggleService {
+public final class TelemetryToggleService {
+
+    /** Tracks whether telemetry capture is currently enabled. */
     private final AtomicBoolean enabled;
 
-    public TelemetryToggleService(@Value("${telemetry.enabled:true}") boolean defaultEnabled) {
+    /**
+     * Creates a new telemetry toggle service.
+     *
+     * @param defaultEnabled initial telemetry enabled state
+     */
+    public TelemetryToggleService(
+            @Value("${telemetry.enabled:true}") final boolean defaultEnabled
+    ) {
         this.enabled = new AtomicBoolean(defaultEnabled);
     }
 
+    /**
+     * Returns whether telemetry capture is currently enabled.
+     *
+     * @return {@code true} when telemetry capture is enabled
+     */
     public boolean isEnabled() {
         return enabled.get();
     }
 
-    public boolean setEnabled(boolean value) {
+    /**
+     * Updates telemetry capture state.
+     *
+     * @param value new telemetry enabled state
+     * @return stored telemetry enabled state
+     */
+    public boolean setEnabled(final boolean value) {
         enabled.set(value);
         return enabled.get();
     }

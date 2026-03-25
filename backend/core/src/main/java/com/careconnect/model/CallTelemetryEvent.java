@@ -7,203 +7,124 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "call_telemetry_events", indexes = {
-        @Index(name = "idx_call_telemetry_call_id", columnList = "call_id"),
-        @Index(name = "idx_call_telemetry_actor", columnList = "actor_user_id"),
-        @Index(name = "idx_call_telemetry_target", columnList = "target_user_id"),
-        @Index(name = "idx_call_telemetry_occurred_at", columnList = "occurred_at")
-})
+@Getter
+@Setter
+@NoArgsConstructor
+@Table(
+        name = "call_telemetry_events",
+        indexes = {
+                @Index(
+                        name = "idx_call_telemetry_call_id",
+                        columnList = "call_id"
+                ),
+                @Index(
+                        name = "idx_call_telemetry_actor",
+                        columnList = "actor_user_id"
+                ),
+                @Index(
+                        name = "idx_call_telemetry_target",
+                        columnList = "target_user_id"
+                ),
+                @Index(
+                        name = "idx_call_telemetry_occurred_at",
+                        columnList = "occurred_at"
+                )
+        }
+)
 public class CallTelemetryEvent extends Auditable {
 
+    /** Maximum length for call identifier columns. */
+    private static final int CALL_ID_LENGTH = 120;
+
+    /** Maximum length for event type values. */
+    private static final int EVENT_TYPE_LENGTH = 80;
+
+    /** Maximum length for event source values. */
+    private static final int EVENT_SOURCE_LENGTH = 40;
+
+    /** Maximum length for channel and capture mode values. */
+    private static final int CHANNEL_LENGTH = 40;
+
+    /** Maximum length for status values. */
+    private static final int STATUS_LENGTH = 20;
+
+    /** Database identifier for the telemetry event row. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "call_id", length = 120)
+    /** Call identifier associated with the telemetry event. */
+    @Column(name = "call_id", length = CALL_ID_LENGTH)
     private String callId;
 
-    @Column(name = "event_type", nullable = false, length = 80)
+    /** Event type captured for the call telemetry record. */
+    @Column(name = "event_type", nullable = false, length = EVENT_TYPE_LENGTH)
     private String eventType;
 
-    @Column(name = "event_source", nullable = false, length = 40)
+    /** Source subsystem that emitted the telemetry event. */
+    @Column(
+            name = "event_source",
+            nullable = false,
+            length = EVENT_SOURCE_LENGTH
+    )
     private String eventSource;
 
-    @Column(name = "channel", length = 40)
+    /** Sentiment or transport channel associated with the event. */
+    @Column(name = "channel", length = CHANNEL_LENGTH)
     private String channel;
 
+    /** User identifier of the actor associated with the event. */
     @Column(name = "actor_user_id")
     private Long actorUserId;
 
+    /** User identifier of the target associated with the event. */
     @Column(name = "target_user_id")
     private Long targetUserId;
 
-    @Column(name = "capture_mode", length = 40)
+    /** Capture mode recorded for the telemetry event. */
+    @Column(name = "capture_mode", length = CHANNEL_LENGTH)
     private String captureMode;
 
-    @Column(name = "status", length = 20)
+    /** Status value recorded for the telemetry event. */
+    @Column(name = "status", length = STATUS_LENGTH)
     private String status;
 
+    /** Numerical sentiment score associated with the event. */
     @Column(name = "sentiment_score")
     private Double sentimentScore;
 
-    @Column(name = "sentiment_label", length = 40)
+    /** Sentiment label associated with the event. */
+    @Column(name = "sentiment_label", length = CHANNEL_LENGTH)
     private String sentimentLabel;
 
+    /** Free-form notes associated with the sentiment result. */
     @Column(name = "sentiment_notes", columnDefinition = "TEXT")
     private String sentimentNotes;
 
+    /** Analysis timestamp returned by the sentiment subsystem. */
     @Column(name = "analysis_timestamp")
     private Long analysisTimestamp;
 
+    /** Serialized event payload captured as JSON text. */
     @Column(name = "payload_json", columnDefinition = "TEXT")
     private String payloadJson;
 
+    /** Serialized metadata captured as JSON text. */
     @Column(name = "metadata_json", columnDefinition = "TEXT")
     private String metadataJson;
 
+    /** Error details captured for the telemetry event. */
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    /** Timestamp when the telemetry event occurred. */
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getCallId() {
-        return callId;
-    }
-
-    public void setCallId(String callId) {
-        this.callId = callId;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public void setEventType(String eventType) {
-        this.eventType = eventType;
-    }
-
-    public String getEventSource() {
-        return eventSource;
-    }
-
-    public void setEventSource(String eventSource) {
-        this.eventSource = eventSource;
-    }
-
-    public String getChannel() {
-        return channel;
-    }
-
-    public void setChannel(String channel) {
-        this.channel = channel;
-    }
-
-    public Long getActorUserId() {
-        return actorUserId;
-    }
-
-    public void setActorUserId(Long actorUserId) {
-        this.actorUserId = actorUserId;
-    }
-
-    public Long getTargetUserId() {
-        return targetUserId;
-    }
-
-    public void setTargetUserId(Long targetUserId) {
-        this.targetUserId = targetUserId;
-    }
-
-    public String getCaptureMode() {
-        return captureMode;
-    }
-
-    public void setCaptureMode(String captureMode) {
-        this.captureMode = captureMode;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Double getSentimentScore() {
-        return sentimentScore;
-    }
-
-    public void setSentimentScore(Double sentimentScore) {
-        this.sentimentScore = sentimentScore;
-    }
-
-    public String getSentimentLabel() {
-        return sentimentLabel;
-    }
-
-    public void setSentimentLabel(String sentimentLabel) {
-        this.sentimentLabel = sentimentLabel;
-    }
-
-    public String getSentimentNotes() {
-        return sentimentNotes;
-    }
-
-    public void setSentimentNotes(String sentimentNotes) {
-        this.sentimentNotes = sentimentNotes;
-    }
-
-    public Long getAnalysisTimestamp() {
-        return analysisTimestamp;
-    }
-
-    public void setAnalysisTimestamp(Long analysisTimestamp) {
-        this.analysisTimestamp = analysisTimestamp;
-    }
-
-    public String getPayloadJson() {
-        return payloadJson;
-    }
-
-    public void setPayloadJson(String payloadJson) {
-        this.payloadJson = payloadJson;
-    }
-
-    public String getMetadataJson() {
-        return metadataJson;
-    }
-
-    public void setMetadataJson(String metadataJson) {
-        this.metadataJson = metadataJson;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public LocalDateTime getOccurredAt() {
-        return occurredAt;
-    }
-
-    public void setOccurredAt(LocalDateTime occurredAt) {
-        this.occurredAt = occurredAt;
-    }
 }

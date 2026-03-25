@@ -6,23 +6,22 @@ import com.careconnect.security.JwtTokenProvider;
 import com.careconnect.service.CaregiverPatientLinkService;
 import com.careconnect.service.CallTelemetryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-@RequiredArgsConstructor
 public class CallNotificationHandler extends TextWebSocketHandler {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CallNotificationHandler.class);
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(CallNotificationHandler.class);
     // Helper to get display name for a user
-    private String getUserDisplayName(User user, String preferredName) {
+    private String getUserDisplayName(final User user, final String preferredName) {
         if (preferredName != null) {
             String trimmed = preferredName.trim();
             if (!trimmed.isEmpty() && !looksLikeEmail(trimmed)) {
@@ -39,19 +38,40 @@ public class CallNotificationHandler extends TextWebSocketHandler {
         return "Participant";
     }
 
-    private String getUserDisplayName(User user) {
+    private String getUserDisplayName(final User user) {
         return getUserDisplayName(user, null);
     }
 
-    private boolean looksLikeEmail(String value) {
+    private boolean looksLikeEmail(final String value) {
         return value.contains("@") && value.contains(".");
     }
 
+    /** Repository used to look up users during websocket interactions. */
     private final UserRepository userRepository;
+
+    /** JWT provider used to authenticate websocket sessions. */
     private final JwtTokenProvider jwtTokenProvider;
+
+    /** Telemetry service used to record websocket call events. */
     private final CallTelemetryService callTelemetryService;
+
+    /** Service used to verify caregiver-patient link permissions. */
     private final CaregiverPatientLinkService caregiverPatientLinkService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** JSON mapper used to serialize websocket payloads. */
+    private final ObjectMapper objectMapper;
+
+    public CallNotificationHandler(
+            final UserRepository userRepository,
+            final JwtTokenProvider jwtTokenProvider,
+            final CallTelemetryService callTelemetryService,
+            final CaregiverPatientLinkService caregiverPatientLinkService) {
+        this.userRepository = userRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.callTelemetryService = callTelemetryService;
+        this.caregiverPatientLinkService = caregiverPatientLinkService;
+        this.objectMapper = new ObjectMapper();
+    }
 
     // Store active connections: userId -> WebSocketSession
     private final Map<String, WebSocketSession> userSessions = new ConcurrentHashMap<>();
@@ -127,25 +147,17 @@ public class CallNotificationHandler extends TextWebSocketHandler {
     }
 
     private void recordTelemetry(
-            String type,
-            WebSocketSession session,
-            Map<String, Object> payload,
-            String status,
-            String errorMessage
+            final String type,
+            final WebSocketSession session,
+            final Map<String, Object> payload,
+            final String status,
+            final String errorMessage
     ) {
-        User actor = sessionUsers.get(session.getId());
-        Long actorUserId = actor != null ? actor.getId() : null;
-        Long targetUserId = parseLong(payload.get("recipientId"));
-
-        if (targetUserId == null) {
-            targetUserId = parseLong(payload.get("senderId"));
-        }
-        if (targetUserId == null) {
-            targetUserId = parseLong(payload.get("otherPartyId"));
-        }
-
-        String eventType = "WS_" + type.replace('-', '_').toUpperCase();
-        String callId = payload.get("callId") == null ? null : String.valueOf(payload.get("callId"));
+        final User actor = sessionUsers.get(session.getId());
+        final Long actorUserId = actor != null ? actor.getId() : null;
+        final Long targetUserId = resolveTargetUserId(payload);
+        final String eventType = "WS_" + type.replace('-', '_').toUpperCase();
+        final String callId = payload.get("callId") == null ? null : String.valueOf(payload.get("callId"));
 
         callTelemetryService.recordWebSocketEvent(
                 callId,
@@ -158,7 +170,33 @@ public class CallNotificationHandler extends TextWebSocketHandler {
         );
     }
 
-    private Long parseLong(Object value) {
+
+    private Long resolveTargetUserId(final Map<String, Object> payload) {
+        Long targetUserId = parseLong(payload.get("recipientId"));
+        if (targetUserId == null) {
+            targetUserId = parseLong(payload.get("senderId"));
+        }
+        if (targetUserId == null) {
+            targetUserId = parseLong(payload.get("otherPartyId"));
+        }
+        return targetUserId;
+    }
+
+    private void sendJsonMessage(
+            final WebSocketSession session,
+            final Map<String, Object> payload
+    ) throws Exception {
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(payload)));
+    }
+
+    private Map<String, Object> errorResponse(final String type, final String message) {
+        final Map<String, Object> response = new HashMap<>();
+        response.put("type", type);
+        response.put("message", message);
+        return response;
+    }
+
+    private Long parseLong(final Object value) {
         if (value == null) {
             return null;
         }
