@@ -523,7 +523,9 @@ class _SubscriptionManagementPageState
           content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () async { Navigator.of(ctx).pop(); final session = await AuthTokenManager.getUserSession(); final customerId = session?['paymentCustomerId'] ?? session?['stripeCustomerId'] ?? ''; if (customerId.isNotEmpty) { await ApiService.createSubscription(customerId, 'free_monthly'); } if (context.mounted) context.go('/subscription'); }, child: const Text('Confirm')),
+            ElevatedButton(onPressed: () async { Navigator.of(ctx).pop(); 
+            final session = await AuthTokenManager.getUserSession(); final userId = session?['id']?.toString() ?? ''; if (userId.isNotEmpty) { await ApiService.createSubscriptionByUser(userId, 'plan_free'); }
+            if (context.mounted) context.go('/subscription'); }, child: const Text('Confirm')),
           ],
         ),
       );
