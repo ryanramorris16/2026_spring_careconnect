@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:care_connect_app/services/api_service.dart';
 import 'package:care_connect_app/services/auth_token_manager.dart';
 import 'package:http/http.dart' as http;
-import '../../models/client_activity_model.dart';
 
 /// Loads an image from [url] with auth headers and displays it, or [fallback] on error.
 class AuthNetworkImage extends StatelessWidget {

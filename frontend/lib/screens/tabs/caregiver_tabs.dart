@@ -189,7 +189,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
         ApiService.getMoodHistory(patientUserId),
       ]);
       final history = responses[0] as List<Map<String, dynamic>>;
-      final moodRaw = responses[1] as List<dynamic>;
+      final moodRaw = responses[1];
       final moods = moodRaw
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
@@ -646,7 +646,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<int>(
-                                value: _selectedPatientUserId,
+                                initialValue: _selectedPatientUserId,
                                 items: _patients
                                     .map(
                                       (patient) => DropdownMenuItem<int>(
@@ -705,7 +705,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
                                       SizedBox(
                                         width: 180,
                                         child: DropdownButtonFormField<_HistorySort>(
-                                          value: _historySort,
+                                          initialValue: _historySort,
                                           items: _HistorySort.values
                                               .map(
                                                 (sort) => DropdownMenuItem<_HistorySort>(
@@ -729,7 +729,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
                                       SizedBox(
                                         width: 160,
                                         child: DropdownButtonFormField<_HistoryLabelFilter>(
-                                          value: _historyLabelFilter,
+                                          initialValue: _historyLabelFilter,
                                           items: _HistoryLabelFilter.values
                                               .map(
                                                 (filter) => DropdownMenuItem<_HistoryLabelFilter>(
@@ -753,7 +753,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
                                       SizedBox(
                                         width: 150,
                                         child: DropdownButtonFormField<_AnalyticsPlotFilter>(
-                                          value: _plotFilter,
+                                          initialValue: _plotFilter,
                                           items: _AnalyticsPlotFilter.values
                                               .map(
                                                 (filter) => DropdownMenuItem<_AnalyticsPlotFilter>(
@@ -777,7 +777,7 @@ class _CaregiverAnalyticsTabState extends State<CaregiverAnalyticsTab> {
                                       SizedBox(
                                         width: 180,
                                         child: DropdownButtonFormField<_AnalyticsTimeframe>(
-                                          value: _timeframe,
+                                          initialValue: _timeframe,
                                           items: _AnalyticsTimeframe.values
                                               .map(
                                                 (tf) => DropdownMenuItem<_AnalyticsTimeframe>(

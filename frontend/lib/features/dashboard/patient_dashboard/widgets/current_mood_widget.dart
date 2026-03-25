@@ -408,7 +408,7 @@ class _CurrentMoodWidgetState extends State<CurrentMoodWidget> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withValues(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
                       alpha: 0.35,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -524,7 +524,7 @@ class _MoodSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.28),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: theme.colorScheme.outline.withValues(alpha: 0.2),

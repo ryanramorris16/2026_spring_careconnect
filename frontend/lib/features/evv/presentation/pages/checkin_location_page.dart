@@ -38,7 +38,7 @@ class _CheckinLocationPageState extends State<CheckinLocationPage> {
   bool _gpsAttemptFailed = false;
   String? _selectedNoGpsReason;
   final TextEditingController _manualAddressController = TextEditingController();
-  bool _showManualEntry = false;
+  final bool _showManualEntry = false;
 
   static const List<Map<String, String>> _noGpsReasons = [
     {'value': 'HOME_VISIT_ADDRESS_USED', 'label': 'Home visit – patient address used'},
@@ -250,7 +250,7 @@ class _CheckinLocationPageState extends State<CheckinLocationPage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selected,
+                initialValue: selected,
                 decoration: const InputDecoration(
                   labelText: 'Reason *',
                   border: OutlineInputBorder(),
@@ -587,7 +587,7 @@ class _CheckinLocationPageState extends State<CheckinLocationPage> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _selectedNoGpsReason,
+                  initialValue: _selectedNoGpsReason,
                   decoration: InputDecoration(
                     labelText: 'Reason GPS Not Used',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

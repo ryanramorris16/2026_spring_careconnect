@@ -17,12 +17,11 @@ import '../mock_user_provider.dart';
 /// Extended mock that exposes isDeviceOnline and offlineModeEnabled overrides.
 class _TestableUserProvider extends MockUserProvider {
   _TestableUserProvider({
-    UserSession? mockUser,
+    super.mockUser,
     bool isDeviceOnline = true,
     bool offlineModeEnabled = true,
   })  : _isDeviceOnline = isDeviceOnline,
-        _offlineModeEnabled = offlineModeEnabled,
-        super(mockUser: mockUser);
+        _offlineModeEnabled = offlineModeEnabled;
 
   bool _isDeviceOnline;
   bool _offlineModeEnabled;
@@ -389,7 +388,7 @@ void main() {
   // ---------------------------------------------------------------
 
   group('Bottom navigation', () {
-    MainScreenConfig _simpleConfig() {
+    MainScreenConfig simpleConfig() {
       return MainScreenConfig(
         userRole: 'PATIENT',
         userId: 1,
@@ -423,7 +422,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(_wrap(config: _simpleConfig()));
+      await tester.pumpWidget(_wrap(config: simpleConfig()));
       await tester.pump();
 
       // Initially on Screen A
@@ -440,7 +439,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(_wrap(config: _simpleConfig()));
+      await tester.pumpWidget(_wrap(config: simpleConfig()));
       await tester.pump();
 
       // Tap the already-selected tab
@@ -538,7 +537,7 @@ void main() {
   // ---------------------------------------------------------------
 
   group('Global banners', () {
-    MainScreenConfig _simpleBannerConfig() {
+    MainScreenConfig simpleBannerConfig() {
       return MainScreenConfig(
         userRole: 'PATIENT',
         userId: 1,
@@ -572,7 +571,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
 
@@ -592,7 +591,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
       expect(find.text('No Internet Connection.'), findsOneWidget);
@@ -616,7 +615,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
 
@@ -638,7 +637,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
 
@@ -666,7 +665,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
 
@@ -688,7 +687,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(config: _simpleBannerConfig(), provider: provider),
+        _wrap(config: simpleBannerConfig(), provider: provider),
       );
       await tester.pump();
 

@@ -221,9 +221,9 @@ class _SubscriptionTierSelectionPageState
       );
       if (confirm == true && mounted) {
         final session = await AuthTokenManager.getUserSession();
-        final customerId = session?['paymentCustomerId'] ?? session?['stripeCustomerId'] ?? '';
-        if (customerId.isNotEmpty) {
-          await ApiService.createSubscription(customerId, 'free_monthly');
+        final userId = session?['id']?.toString() ?? '';
+        if (userId.isNotEmpty) {
+          await ApiService.createSubscriptionByUser(userId, 'plan_free');
         }
         if (mounted) context.go('/subscription');
       }

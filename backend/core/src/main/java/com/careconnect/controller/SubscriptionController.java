@@ -136,4 +136,19 @@ public class SubscriptionController {
             return ResponseEntity.status(500).body(Map.of(ERROR_KEY, "Failed to create subscription: " + e.getMessage()));
         }
     }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @PostMapping("/create-by-user")
+    public ResponseEntity<Object> createSubscriptionByUser(
+            @RequestParam Long userId,
+            @RequestParam String priceId) {
+        try {
+            SubscriptionResponseDTO result = subscriptionService.createSubscriptionByUserId(userId, priceId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(ERROR_KEY, "Failed to create subscription: " + e.getMessage()));
+        }
+    }
 }

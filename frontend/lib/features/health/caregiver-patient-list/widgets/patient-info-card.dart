@@ -28,11 +28,11 @@ class PatientCard extends StatelessWidget {
   /// * [patient] - The patient data to display in the card
   /// * [onTap] - Optional callback function executed when card is tapped
   const PatientCard({
-    Key? key,
+    super.key,
     required this.patient,
     this.onTap,
     this.onMessageTap,
-  }) : super(key: key);
+  });
 
   /// Builds the patient card widget.
   ///

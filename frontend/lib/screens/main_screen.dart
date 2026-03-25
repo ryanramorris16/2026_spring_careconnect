@@ -11,8 +11,6 @@ import '../config/navigation/bottom_nav_config.dart';
 import '../config/navigation/main_screen_config.dart';
 import '../services/api_service.dart';
 import '../services/local_db/offline_sync_service.dart';
-import '../services/api_service.dart';
-import '../services/local_db/offline_sync_service.dart';
 import '../features/telemetry/telemetry.dart';
 import '../services/call_notification_service.dart';
 import '../widgets/hybrid_video_call_widget.dart';

@@ -1045,7 +1045,7 @@ class _PostCallTelemetrySummaryScreenState
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<_CallTimelineWindow>(
-                        value: _timelineWindow,
+                        initialValue: _timelineWindow,
                         items: _CallTimelineWindow.values
                             .map(
                               (w) => DropdownMenuItem<_CallTimelineWindow>(

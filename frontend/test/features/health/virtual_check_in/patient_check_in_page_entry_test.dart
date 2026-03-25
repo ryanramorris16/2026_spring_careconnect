@@ -12,7 +12,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 // Import through the entry point - should resolve to the non-web version
 // in the test environment (dart.library.html is false in VM tests).
-import 'package:care_connect_app/features/health/virtual_check_in/presentation/pages/patient_check_in_page_entry.dart';
 
 void main() {
   group('patient_check_in_page_entry – conditional export', () {

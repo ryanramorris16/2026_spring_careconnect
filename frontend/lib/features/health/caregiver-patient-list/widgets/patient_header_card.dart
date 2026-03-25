@@ -363,7 +363,7 @@ class _CallActions extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    Future<void> _dialNumber(String number) async {
+    Future<void> dialNumber(String number) async {
       final uri = Uri(scheme: 'tel', path: number);
       final ok = await launchUrl(uri);
       if (!ok) {
@@ -373,7 +373,7 @@ class _CallActions extends StatelessWidget {
       }
     }
 
-    Future<void> _callEmergencyConference() async {
+    Future<void> callEmergencyConference() async {
       if (emergencyPhones.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No emergency contacts configured')),
@@ -382,7 +382,7 @@ class _CallActions extends StatelessWidget {
       }
 
       // Dial the first contact
-      await _dialNumber(emergencyPhones.first);
+      await dialNumber(emergencyPhones.first);
 
       // If a second contact exists, guide the user to merge calls and dial the second
       if (emergencyPhones.length >= 2) {
@@ -397,7 +397,7 @@ class _CallActions extends StatelessWidget {
         );
 
         await Future.delayed(const Duration(seconds: 3));
-        await _dialNumber(emergencyPhones[1]);
+        await dialNumber(emergencyPhones[1]);
       }
     }
 
@@ -425,7 +425,7 @@ class _CallActions extends StatelessWidget {
     );
 
     final emergencyButton = ElevatedButton.icon(
-      onPressed: onCallEmergencyContacts ?? _callEmergencyConference,
+      onPressed: onCallEmergencyContacts ?? callEmergencyConference,
       style: ElevatedButton.styleFrom(
         backgroundColor: cs.primary,
         foregroundColor: cs.onPrimary,

@@ -395,11 +395,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           _scrollToBottom();
         }
       } else if (_initialLoading) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             isLoading = false;
             _initialLoading = false;
           });
+        }
       }
     } catch (e) {
       if (!silent && mounted) {
@@ -407,11 +408,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           SnackBar(content: Text('Failed to load conversation: $e')),
         );
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           isLoading = false;
           _initialLoading = false;
         });
+      }
     }
   }
 

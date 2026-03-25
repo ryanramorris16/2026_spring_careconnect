@@ -15,7 +15,7 @@ class AllergiesTab extends StatefulWidget {
 }
 
 class _AllergiesTabState extends State<AllergiesTab> {
-  List<Map<String, dynamic>> _allergies = [];
+  final List<Map<String, dynamic>> _allergies = [];
   bool _isLoading = false;
 
   @override

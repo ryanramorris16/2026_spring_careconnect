@@ -133,7 +133,7 @@ class _ImportIcsButtonState extends State<ImportIcsButton> {
           ? "Imported $createdCount task${createdCount == 1 ? '' : 's'}"
           : (queuedCount == createdCount
               ? "Imported tasks queued for sync when internet is restored"
-              : "Imported $createdCount task${createdCount == 1 ? '' : 's'} (${queuedCount} queued for sync)");
+              : "Imported $createdCount task${createdCount == 1 ? '' : 's'} ($queuedCount queued for sync)");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),

@@ -1,10 +1,7 @@
-import 'dart:io';
 
-import 'package:care_connect_app/widgets/app_bar_helper.dart';
 import 'package:care_connect_app/widgets/default_app_header.dart';
 import 'package:care_connect_app/widgets/video_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:care_connect_app/pages/patient_check_in.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
 
