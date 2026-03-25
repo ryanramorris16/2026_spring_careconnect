@@ -163,19 +163,6 @@ class _WebPayPageState extends State<WebPayPage> {
             if (_transactionId != null)
               Text('Transaction: $_transactionId', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
             const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => context.go('/dashboard'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00A7C8),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text('Go to Dashboard', style: TextStyle(fontSize: 16)),
-              ),
-            ),
           ],
         ),
       ),
