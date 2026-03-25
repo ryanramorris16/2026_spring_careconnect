@@ -329,16 +329,16 @@ class AuthService {
         final data = jsonDecode(response.body);
         print("Caregiver Registration: $data");
 
-        // Extract user ID and stripeCustomerId from the nested user object
+        // Extract user ID and paymentCustomerId from the nested user object
         String userId = '0';
-        String stripeCustomerId = '';
+        String paymentCustomerId = '';
         if (data.containsKey('user') && data['user'] is Map<String, dynamic>) {
           final userObj = data['user'] as Map<String, dynamic>;
           userId = userObj['id']?.toString() ?? '0';
-          stripeCustomerId = userObj['stripeCustomerId'] ?? '';
+          paymentCustomerId = userObj['paymentCustomerId'] ?? '';
           print("Extracted User ID: $userId from nested user object");
           print(
-            "Extracted Stripe Customer ID: $stripeCustomerId from nested user object",
+            "Extracted Payment Customer ID: $paymentCustomerId from nested user object",
           );
         } else {
           print(" Warning: User object not found in registration response");
@@ -350,7 +350,7 @@ class AuthService {
           'userId': userId, // Use the user ID from the nested user object
           'caregiverId':
               data['id']?.toString() ?? '0', // Also store the caregiver ID
-          'stripeCustomerId': stripeCustomerId, // Include Stripe customer ID
+          'paymentCustomerId': paymentCustomerId, // Include Payment customer ID
         };
       } else {
         final data = jsonDecode(response.body);
