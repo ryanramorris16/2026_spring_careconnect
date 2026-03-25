@@ -124,6 +124,7 @@ class _WebPayPageState extends State<WebPayPage> {
           _paymentSuccess = true;
           _transactionId = responseBody['transactionId']?.toString();
         });
+        Future.delayed(const Duration(seconds: 3), () { if (mounted) context.go('/subscription'); });
       }
     } catch (e) {
       if (mounted) {

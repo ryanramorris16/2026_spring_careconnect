@@ -108,4 +108,29 @@ public class SubscriptionService {
         Subscription saved = subscriptionRepository.save(sub);
         return new SubscriptionResponseDTO(saved);
     }
+
+    @Transactional
+    public SubscriptionResponseDTO createSubscriptionByUserId(Long userId, String priceId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        List<Subscription> active = subscriptionRepository.findByUserAndStatus(user, "ACTIVE");
+        if (!active.isEmpty()) {
+            return new SubscriptionResponseDTO(active.get(0));
+        }
+
+        Plan plan = planRepository.findByCode(priceId);
+
+        Subscription sub = new Subscription();
+        sub.setUser(user);
+        sub.setPriceId(priceId);
+        sub.setPlan(plan);
+        sub.setStatus("ACTIVE");
+        sub.setStartedAt(Instant.now());
+        sub.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
+        sub.setExternalSubscriptionId("direct_" + System.currentTimeMillis());
+
+        Subscription saved = subscriptionRepository.save(sub);
+        return new SubscriptionResponseDTO(saved);
+    }
 }
