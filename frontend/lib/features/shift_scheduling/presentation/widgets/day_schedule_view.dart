@@ -209,7 +209,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             );
           }),

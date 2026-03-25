@@ -38,7 +38,7 @@ Widget build(BuildContext context) {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: cs.surfaceVariant,
+              color: cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: theme.dividerColor.withOpacity(0.12)),
             ),
@@ -113,7 +113,7 @@ Widget build(BuildContext context) {
                           const SizedBox(width: 6),
                         Expanded(  
                                 child: Text(
-                                  '$timeAgo',
+                                  timeAgo,
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -336,7 +336,7 @@ Widget build(BuildContext context) {
                 const Text(
                   'If you cannot reach the patient, contact emergency services immediately.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
+                  style: TextStyle(color: Colors.white70),
                 ),
               ],
             ),
@@ -392,7 +392,7 @@ class _EmergencyTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       tileColor: cs.surface,
       leading: CircleAvatar(
-        backgroundColor: enabled ? cs.secondaryContainer : cs.surfaceVariant,
+        backgroundColor: enabled ? cs.secondaryContainer : cs.surfaceContainerHighest,
         child: Icon(icon, color: cs.onSecondaryContainer),
       ),
       title: Text(label, style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w600)),
@@ -411,7 +411,7 @@ class _ActionButton extends StatelessWidget {
   final Color background;
   final Color? border;
   final Color? textColor;
-  final IconData? trailing;
+  final IconData? trailing = null;
 
   const _ActionButton({
     required this.icon,
@@ -420,7 +420,6 @@ class _ActionButton extends StatelessWidget {
     required this.background,
     this.border,
     this.textColor,
-    this.trailing,
   });
 
   @override

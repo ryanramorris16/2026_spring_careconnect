@@ -24,11 +24,11 @@ class NotificationsPanel extends StatefulWidget {
   final bool initiallyExpanded;
 
   const NotificationsPanel({
-    Key? key,
+    super.key,
     required this.notifications,
     this.heading = 'Notifications',
     this.initiallyExpanded = true,
-  }) : super(key: key);
+  });
 
   @override
   State<NotificationsPanel> createState() => _NotificationsPanelState();

@@ -1,5 +1,4 @@
 import 'package:care_connect_app/services/api_service.dart';
-import 'package:care_connect_app/widgets/email_verification_dialog.dart';
 import 'package:care_connect_app/widgets/address_autocomplete_field.dart';
 import 'package:care_connect_app/services/google_places_service.dart';
 import 'package:care_connect_app/config/app_config.dart';

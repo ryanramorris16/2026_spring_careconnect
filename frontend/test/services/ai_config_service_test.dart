@@ -658,7 +658,7 @@ void main() {
   // UserAIConfigDTO, with fallback defaults for absent preference fields.
   // ──────────────────────────────────────────────────────────────────────────
   group('AIConfigService.saveUserAIConfig() — request body', () {
-    Future<Map<String, dynamic>> _captureBody({
+    Future<Map<String, dynamic>> captureBody({
       int userId = 10,
       Map<String, dynamic> preferences = const {},
     }) async {
@@ -768,80 +768,80 @@ void main() {
     });
 
     test('request body includes userId', () async {
-      final body = await _captureBody(userId: 99);
+      final body = await captureBody(userId: 99);
       expect(body['userId'], 99);
     });
 
     test('request body includes patientId', () async {
-      final body = await _captureBody();
+      final body = await captureBody();
       expect(body['patientId'], 5);
     });
 
     test('request body includes preferredAiProvider', () async {
-      final body = await _captureBody();
+      final body = await captureBody();
       expect(body['preferredAiProvider'], 'OPENAI');
     });
 
     test('request body includes maxTokens', () async {
-      final body = await _captureBody();
+      final body = await captureBody();
       expect(body['maxTokens'], 2048);
     });
 
     test('request body includes temperature', () async {
-      final body = await _captureBody();
+      final body = await captureBody();
       expect(body['temperature'], 0.5);
     });
 
     test('request body includes isActive', () async {
-      final body = await _captureBody();
+      final body = await captureBody();
       expect(body.containsKey('isActive'), isTrue);
     });
 
     test('openaiModel defaults to gpt-4 when absent from preferences',
         () async {
       // Backend requires this field; service must supply a default.
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['openaiModel'], 'gpt-4');
     });
 
     test('openaiModel uses value from preferences when present', () async {
-      final body = await _captureBody(
+      final body = await captureBody(
           preferences: {'openaiModel': 'gpt-3.5-turbo'});
       expect(body['openaiModel'], 'gpt-3.5-turbo');
     });
 
     test('deepseekModel defaults to deepseek-chat when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['deepseekModel'], 'deepseek-chat');
     });
 
     test('conversationHistoryLimit defaults to 20 when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['conversationHistoryLimit'], 20);
     });
 
     test('includeVitalsByDefault defaults to true when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['includeVitalsByDefault'], true);
     });
 
     test('includeMedicationsByDefault defaults to true when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['includeMedicationsByDefault'], true);
     });
 
     test('includeNotesByDefault defaults to true when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['includeNotesByDefault'], true);
     });
 
     test('includeAllergiesByDefault defaults to true when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['includeAllergiesByDefault'], true);
     });
 
     test('systemPrompt defaults to non-empty string when absent', () async {
-      final body = await _captureBody(preferences: {});
+      final body = await captureBody(preferences: {});
       expect(body['systemPrompt'], isA<String>());
       expect((body['systemPrompt'] as String), isNotEmpty);
     });
@@ -849,7 +849,7 @@ void main() {
     test('systemPrompt uses value from preferences when present', () async {
       const custom = 'You are a custom assistant.';
       final body =
-          await _captureBody(preferences: {'systemPrompt': custom});
+          await captureBody(preferences: {'systemPrompt': custom});
       expect(body['systemPrompt'], custom);
     });
   });
@@ -863,7 +863,7 @@ void main() {
   // ──────────────────────────────────────────────────────────────────────────
   group('AIConfigService.getUserAIConfig() — HTTP behaviour', () {
     // Minimal valid backend response for a found config.
-    final Map<String, dynamic> _configJson = {
+    final Map<String, dynamic> configJson = {
       'id': 10,
       'patientId': 3,
       'aiProvider': 'DEFAULT',
@@ -881,7 +881,7 @@ void main() {
 
     /// Pumps a minimal widget tree backed by [provider] and returns the
     /// BuildContext of the inner [SizedBox].
-    Future<BuildContext> _pumpContext(
+    Future<BuildContext> pumpContext(
         WidgetTester tester, MockUserProvider provider) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<UserProvider>.value(
@@ -893,20 +893,20 @@ void main() {
     }
 
     testWidgets('returns a PatientAIConfigDTO on HTTP 200', (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
-        () => _mockJson(200, _configJson),
+        () => _mockJson(200, configJson),
       );
       expect(result, isA<PatientAIConfigDTO>());
     });
 
     testWidgets('returned DTO has correct patientId from server response',
         (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
-        () => _mockJson(200, _configJson),
+        () => _mockJson(200, configJson),
       );
       expect(result!.patientId, 3);
     });
@@ -915,7 +915,7 @@ void main() {
         (tester) async {
       // A 404 means no config exists yet; the service must return defaults
       // rather than null, so the UI can display sensible starting values.
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => _mockRaw(404, 'Not Found'),
@@ -925,7 +925,7 @@ void main() {
 
     testWidgets('default config on 404 uses DEFAULT as aiProvider',
         (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => _mockRaw(404, 'Not Found'),
@@ -936,7 +936,7 @@ void main() {
     testWidgets('default config on 404 has expected default enabledFeatures',
         (tester) async {
       // The default config should include the standard set of features.
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => _mockRaw(404, 'Not Found'),
@@ -945,7 +945,7 @@ void main() {
     });
 
     testWidgets('returns null on HTTP 500', (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => _mockRaw(500, 'Server Error'),
@@ -954,7 +954,7 @@ void main() {
     });
 
     testWidgets('returns null on transport exception', (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
+      final ctx = await pumpContext(tester, MockUserProvider());
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => _mockThrows(http.ClientException('Network error')),
@@ -965,10 +965,10 @@ void main() {
     testWidgets('returns null when no user is logged in', (tester) async {
       // _NoUserProvider.user returns null, simulating a logged-out state.
       final noUserProvider = _NoUserProvider();
-      final ctx = await _pumpContext(tester, noUserProvider);
+      final ctx = await pumpContext(tester, noUserProvider);
       final result = await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
-        () => _mockJson(200, _configJson),
+        () => _mockJson(200, configJson),
       );
       expect(result, isNull);
     });
@@ -977,9 +977,9 @@ void main() {
       // The query must include the logged-in userId so the backend filters
       // the correct config record.
       final provider = MockUserProvider(mockUser: MockUser(id: 77));
-      final ctx = await _pumpContext(tester, provider);
+      final ctx = await pumpContext(tester, provider);
 
-      final (client, requests) = _capturingClient(200, _configJson);
+      final (client, requests) = _capturingClient(200, configJson);
       await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => client,
@@ -988,8 +988,8 @@ void main() {
     });
 
     testWidgets('uses GET method', (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
-      final (client, requests) = _capturingClient(200, _configJson);
+      final ctx = await pumpContext(tester, MockUserProvider());
+      final (client, requests) = _capturingClient(200, configJson);
       await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => client,
@@ -998,8 +998,8 @@ void main() {
     });
 
     testWidgets('hits the /v1/api/ai-chat/config endpoint', (tester) async {
-      final ctx = await _pumpContext(tester, MockUserProvider());
-      final (client, requests) = _capturingClient(200, _configJson);
+      final ctx = await pumpContext(tester, MockUserProvider());
+      final (client, requests) = _capturingClient(200, configJson);
       await http.runWithClient(
         () => AIConfigService.getUserAIConfig(ctx),
         () => client,

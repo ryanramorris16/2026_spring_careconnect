@@ -299,8 +299,8 @@ public Patient registerPatient(PatientRegistration reg) {
         }
         
         // Extract customer ID
-        String stripeCustomerId = (String) customerResult.get("id");
-        if (stripeCustomerId == null) {
+        String paymentCustomerId = (String) customerResult.get("id");
+        if (paymentCustomerId == null) {
             throw new AppException(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Invalid response from Stripe customer creation");
         }
@@ -311,7 +311,7 @@ public Patient registerPatient(PatientRegistration reg) {
         user.setPassword(encodedPassword);
         user.setPasswordHash(encodedPassword);
         user.setRole(Role.CAREGIVER);
-        user.setStripeCustomerId(stripeCustomerId);
+        user.setPaymentCustomerId(paymentCustomerId);
 
         Address addr = toAddress(reg.getAddress());
 
@@ -355,7 +355,7 @@ public Patient registerPatient(PatientRegistration reg) {
                     Map<String, Object> subscriptionResult;
                     if (stripeService != null) {
                         subscriptionResult = stripeService.createSubscription(
-                            stripeCustomerId, plan.getCode() // using plan.code as the Stripe price ID
+                            paymentCustomerId, plan.getCode() // using plan.code as the Stripe price ID
                         );
                     } else {
                         // Mock subscription result for development mode
@@ -369,8 +369,8 @@ public Patient registerPatient(PatientRegistration reg) {
                     // Save subscription information to database
                     if (subscriptionResult != null && subscriptionResult.get("id") != null) {
                         Subscription subscription = new Subscription();
-                        subscription.setStripeSubscriptionId((String) subscriptionResult.get("id"));
-                        subscription.setStripeCustomerId(stripeCustomerId);
+                        subscription.setPaymentSubscriptionId((String) subscriptionResult.get("id"));
+                        subscription.setPaymentCustomerId(paymentCustomerId);
                         subscription.setUser(user);
                         subscription.setPlan(plan);
                         subscription.setStatus("active");

@@ -62,7 +62,7 @@ class UserTest {
                 .role(Role.CAREGIVER)
                 .isVerified(true)
                 .verificationToken("tok123")
-                .stripeCustomerId("cus_abc")
+                .paymentCustomerId("cus_abc")
                 .createdAt(now)
                 .lastLogin(now)
                 .profileImageUrl("http://example.com/img.png")
@@ -80,7 +80,7 @@ class UserTest {
         assertThat(user.getRole()).isEqualTo(Role.CAREGIVER);
         assertThat(user.getIsVerified()).isTrue();
         assertThat(user.getVerificationToken()).isEqualTo("tok123");
-        assertThat(user.getStripeCustomerId()).isEqualTo("cus_abc");
+        assertThat(user.getPaymentCustomerId()).isEqualTo("cus_abc");
         assertThat(user.getStatus()).isEqualTo("ACTIVE");
     }
 
@@ -124,7 +124,7 @@ class UserTest {
         user.setVerificationToken("tok456");
         user.setStatus("ACTIVE");
         user.setProfileImageUrl("http://img.com/photo.jpg");
-        user.setStripeCustomerId("cus_xyz");
+        user.setPaymentCustomerId("cus_xyz");
         user.setLastLoginDate(LocalDate.now());
         user.setLoginStreak(3);
         user.setLeaderboardOptIn(true);
@@ -137,7 +137,7 @@ class UserTest {
         assertThat(user.getVerificationToken()).isEqualTo("tok456");
         assertThat(user.getStatus()).isEqualTo("ACTIVE");
         assertThat(user.getProfileImageUrl()).isEqualTo("http://img.com/photo.jpg");
-        assertThat(user.getStripeCustomerId()).isEqualTo("cus_xyz");
+        assertThat(user.getPaymentCustomerId()).isEqualTo("cus_xyz");
         assertThat(user.getLoginStreak()).isEqualTo(3);
         assertThat(user.getLeaderboardOptIn()).isTrue();
     }

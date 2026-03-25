@@ -60,8 +60,8 @@ public class User {
 
     private String verificationToken;
     
-    @Column(name = "stripe_customer_id")
-    private String stripeCustomerId;
+    @Column(name = "payment_customer_id")
+    private String paymentCustomerId;
 
     // Billing address fields (geocoded + standardized)
     @Column(name = "address_line1")
@@ -268,7 +268,7 @@ public class User {
     public String getVerificationToken() { return verificationToken; }
     public String getStatus() { return status; }
     public String getProfileImageUrl() { return profileImageUrl; }
-    public String getStripeCustomerId() { return stripeCustomerId; }
+    public String getPaymentCustomerId() { return paymentCustomerId; }
     public LocalDate getLastLoginDate() {
         return lastLoginDate;
     }
@@ -288,7 +288,7 @@ public class User {
     public void setVerificationToken(String verificationToken) { this.verificationToken = verificationToken; }
     public void setStatus(String status) { this.status = status; }
     public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
-    public void setStripeCustomerId(String stripeCustomerId) { this.stripeCustomerId = stripeCustomerId; }
+    public void setPaymentCustomerId(String paymentCustomerId) { this.paymentCustomerId = paymentCustomerId; }
     public void setLastLoginDate(LocalDate lastLoginDate) {
         this.lastLoginDate = lastLoginDate;
     }

@@ -36,7 +36,7 @@ class SubscriptionResponseDTOTest {
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isNull();
-        assertThat(dto.getStripeSubscriptionId()).isNull();
+        assertThat(dto.getPaymentSubscriptionId()).isNull();
         assertThat(dto.getUserId()).isNull();
         assertThat(dto.getPlanId()).isNull();
     }
@@ -46,8 +46,8 @@ class SubscriptionResponseDTOTest {
     @Test
     void subscriptionConstructor_withUserAndPlan_mapsAllFields() throws Exception {
         when(mockSubscription.getId()).thenReturn(1L);
-        when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_abc");
-        when(mockSubscription.getStripeCustomerId()).thenReturn("cus_xyz");
+        when(mockSubscription.getPaymentSubscriptionId()).thenReturn("sub_abc");
+        when(mockSubscription.getPaymentCustomerId()).thenReturn("cus_xyz");
         when(mockSubscription.getPriceId()).thenReturn("price_123");
         when(mockSubscription.getUser()).thenReturn(mockUser);
         when(mockUser.getId()).thenReturn(10L);
@@ -63,8 +63,8 @@ class SubscriptionResponseDTOTest {
         final SubscriptionResponseDTO dto = new SubscriptionResponseDTO(mockSubscription);
 
         assertThat(dto.getId()).isEqualTo(1L);
-        assertThat(dto.getStripeSubscriptionId()).isEqualTo("sub_abc");
-        assertThat(dto.getStripeCustomerId()).isEqualTo("cus_xyz");
+        assertThat(dto.getPaymentSubscriptionId()).isEqualTo("sub_abc");
+        assertThat(dto.getPaymentCustomerId()).isEqualTo("cus_xyz");
         assertThat(dto.getPriceId()).isEqualTo("price_123");
         assertThat(dto.getUserId()).isEqualTo(10L);
         assertThat(dto.getPlanId()).isEqualTo(5L);
@@ -81,8 +81,8 @@ class SubscriptionResponseDTOTest {
     @Test
     void subscriptionConstructor_userNull_userIdIsNull() throws Exception {
         when(mockSubscription.getId()).thenReturn(2L);
-        when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_def");
-        when(mockSubscription.getStripeCustomerId()).thenReturn(null);
+        when(mockSubscription.getPaymentSubscriptionId()).thenReturn("sub_def");
+        when(mockSubscription.getPaymentCustomerId()).thenReturn(null);
         when(mockSubscription.getPriceId()).thenReturn(null);
         when(mockSubscription.getUser()).thenReturn(null);
         when(mockSubscription.getPlan()).thenReturn(mockPlan);
@@ -105,8 +105,8 @@ class SubscriptionResponseDTOTest {
     @Test
     void subscriptionConstructor_planNull_planFieldsAreNull() throws Exception {
         when(mockSubscription.getId()).thenReturn(3L);
-        when(mockSubscription.getStripeSubscriptionId()).thenReturn("sub_ghi");
-        when(mockSubscription.getStripeCustomerId()).thenReturn(null);
+        when(mockSubscription.getPaymentSubscriptionId()).thenReturn("sub_ghi");
+        when(mockSubscription.getPaymentCustomerId()).thenReturn(null);
         when(mockSubscription.getPriceId()).thenReturn(null);
         when(mockSubscription.getUser()).thenReturn(mockUser);
         when(mockUser.getId()).thenReturn(20L);
@@ -131,8 +131,8 @@ class SubscriptionResponseDTOTest {
         final SubscriptionResponseDTO dto = new SubscriptionResponseDTO();
 
         dto.setId(99L);
-        dto.setStripeSubscriptionId("sub_new");
-        dto.setStripeCustomerId("cus_new");
+        dto.setPaymentSubscriptionId("sub_new");
+        dto.setPaymentCustomerId("cus_new");
         dto.setPriceId("price_new");
         dto.setUserId(7L);
         dto.setPlanId(8L);
@@ -144,8 +144,8 @@ class SubscriptionResponseDTOTest {
         dto.setCurrentPeriodEnd(END);
 
         assertThat(dto.getId()).isEqualTo(99L);
-        assertThat(dto.getStripeSubscriptionId()).isEqualTo("sub_new");
-        assertThat(dto.getStripeCustomerId()).isEqualTo("cus_new");
+        assertThat(dto.getPaymentSubscriptionId()).isEqualTo("sub_new");
+        assertThat(dto.getPaymentCustomerId()).isEqualTo("cus_new");
         assertThat(dto.getPriceId()).isEqualTo("price_new");
         assertThat(dto.getUserId()).isEqualTo(7L);
         assertThat(dto.getPlanId()).isEqualTo(8L);

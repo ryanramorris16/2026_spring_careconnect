@@ -33,6 +33,7 @@ public class InvoiceController {
 
     private final InvoiceService service;
     private final TextractService textractService;
+    @org.springframework.lang.Nullable
     private final LlmExtractionService llmExtractionService;
     private final ObjectMapper objectMapper;
     private final SecurityUtil securityUtil;
@@ -43,8 +44,9 @@ public class InvoiceController {
             SecurityUtil securityUtil,
             AuthorizationService authorizationService,
             TextractService textractService,
-            LlmExtractionService llmExtractionService
+            @org.springframework.lang.Nullable LlmExtractionService llmExtractionService
     ) {
+
         this.service = service;
         this.textractService = textractService;
         this.llmExtractionService = llmExtractionService;

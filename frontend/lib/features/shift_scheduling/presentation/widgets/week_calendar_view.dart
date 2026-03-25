@@ -102,7 +102,7 @@ class _WeekCalendarViewState extends State<WeekCalendarView> {
           color: isToday ? Colors.blue.shade50 : Colors.white,
           child: ListTile(
             title: Text(
-              '${DateFormat('EEE, MMM d').format(date)}',
+              DateFormat('EEE, MMM d').format(date),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isToday ? Colors.blue : Colors.black,

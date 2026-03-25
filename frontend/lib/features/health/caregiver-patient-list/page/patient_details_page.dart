@@ -739,7 +739,7 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
                     Expanded(
                       child: _isEditingPersonalization && canEdit
                           ? DropdownButtonFormField<String>(
-                              value: _preferredCommunicationMethod,
+                              initialValue: _preferredCommunicationMethod,
                               items: const [
                                 DropdownMenuItem(
                                   value: 'verbal',

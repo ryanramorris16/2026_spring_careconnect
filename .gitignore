@@ -45,3 +45,4 @@ __pycache__/
 .claude/startup_logs.json
 web-deploy.zip
 frontend-build.zip
+.vscode/

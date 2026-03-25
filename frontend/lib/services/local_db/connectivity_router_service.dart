@@ -78,10 +78,8 @@ class ConnectivityRouterService {
       return result != ConnectivityResult.none;
     }
 
-    if (result is List<ConnectivityResult>) {
-      return result.any((entry) => entry != ConnectivityResult.none);
-    }
-
+    return result.any((entry) => entry != ConnectivityResult.none);
+  
     return true;
   }
 

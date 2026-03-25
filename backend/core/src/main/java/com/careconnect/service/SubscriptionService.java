@@ -1,5 +1,6 @@
 package com.careconnect.service;
 
+import com.careconnect.dto.SubscriptionResponseDTO;
 import com.careconnect.model.Payment;
 import com.careconnect.model.Plan;
 import com.careconnect.model.Subscription;
@@ -77,8 +78,61 @@ public class SubscriptionService {
         subscription.setStatus("ACTIVE");
         subscription.setStartedAt(Instant.now());
         subscription.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
-        subscription.setStripeSubscriptionId(platform.toLowerCase() + "_" + System.currentTimeMillis());
+        subscription.setPaymentSubscriptionId(platform.toLowerCase() + "_" + System.currentTimeMillis());
 
         return subscriptionRepository.save(subscription);
+    }
+
+    @Transactional
+    public SubscriptionResponseDTO createDirectSubscription(String customerId, String priceId) {
+        User user = userRepository.findByPaymentCustomerId(customerId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found for customerId: " + customerId));
+
+        List<Subscription> active = subscriptionRepository.findByUserAndStatus(user, "ACTIVE");
+        if (!active.isEmpty()) {
+            return new SubscriptionResponseDTO(active.get(0));
+        }
+
+        Plan plan = planRepository.findByCode(priceId);
+
+        Subscription sub = new Subscription();
+        sub.setUser(user);
+        sub.setPaymentCustomerId(customerId);
+        sub.setPriceId(priceId);
+        sub.setPlan(plan);
+        sub.setStatus("ACTIVE");
+        sub.setStartedAt(Instant.now());
+        sub.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
+        sub.setExternalSubscriptionId("direct_" + System.currentTimeMillis());
+        sub.setPaymentSubscriptionId("direct_" + System.currentTimeMillis());
+
+        Subscription saved = subscriptionRepository.save(sub);
+        return new SubscriptionResponseDTO(saved);
+    }
+
+    @Transactional
+    public SubscriptionResponseDTO createSubscriptionByUserId(Long userId, String priceId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        List<Subscription> active = subscriptionRepository.findByUserAndStatus(user, "ACTIVE");
+        if (!active.isEmpty()) {
+            return new SubscriptionResponseDTO(active.get(0));
+        }
+
+        Plan plan = planRepository.findByCode(priceId);
+
+        Subscription sub = new Subscription();
+        sub.setUser(user);
+        sub.setPriceId(priceId);
+        sub.setPlan(plan);
+        sub.setStatus("ACTIVE");
+        sub.setStartedAt(Instant.now());
+        sub.setCurrentPeriodEnd(Instant.now().plus(30, ChronoUnit.DAYS));
+        sub.setExternalSubscriptionId("direct_" + System.currentTimeMillis());
+        sub.setPaymentSubscriptionId("direct_" + System.currentTimeMillis());
+
+        Subscription saved = subscriptionRepository.save(sub);
+        return new SubscriptionResponseDTO(saved);
     }
 }

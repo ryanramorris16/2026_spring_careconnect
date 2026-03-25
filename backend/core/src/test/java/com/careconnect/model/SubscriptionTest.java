@@ -16,8 +16,8 @@ class SubscriptionTest {
 
         assertThat(s).isNotNull();
         assertThat(s.getId()).isNull();
-        assertThat(s.getStripeSubscriptionId()).isNull();
-        assertThat(s.getStripeCustomerId()).isNull();
+        assertThat(s.getPaymentSubscriptionId()).isNull();
+        assertThat(s.getPaymentCustomerId()).isNull();
         assertThat(s.getPriceId()).isNull();
         assertThat(s.getUser()).isNull();
         assertThat(s.getPlan()).isNull();
@@ -36,8 +36,8 @@ class SubscriptionTest {
         final Instant now = Instant.now();
 
         s.setId(1L);
-        s.setStripeSubscriptionId("sub_abc123");
-        s.setStripeCustomerId("cus_abc123");
+        s.setPaymentSubscriptionId("sub_abc123");
+        s.setPaymentCustomerId("cus_abc123");
         s.setPriceId("price_abc123");
         s.setUser(user);
         s.setPlan(plan);
@@ -46,8 +46,8 @@ class SubscriptionTest {
         s.setCurrentPeriodEnd(now.plusSeconds(3600));
 
         assertThat(s.getId()).isEqualTo(1L);
-        assertThat(s.getStripeSubscriptionId()).isEqualTo("sub_abc123");
-        assertThat(s.getStripeCustomerId()).isEqualTo("cus_abc123");
+        assertThat(s.getPaymentSubscriptionId()).isEqualTo("sub_abc123");
+        assertThat(s.getPaymentCustomerId()).isEqualTo("cus_abc123");
         assertThat(s.getPriceId()).isEqualTo("price_abc123");
         assertThat(s.getUser()).isSameAs(user);
         assertThat(s.getPlan()).isSameAs(plan);

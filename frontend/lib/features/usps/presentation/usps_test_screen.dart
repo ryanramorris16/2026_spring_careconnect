@@ -861,10 +861,10 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
                           const Spacer(),
                           TextButton(
                             onPressed: () => _resetSearchToToday(),
-                            child: const Text('Clear Search'),
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.green,
                             ),
+                            child: const Text('Clear Search'),
                           ),
                         ],
                       ),
@@ -1112,7 +1112,7 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
                             return const SizedBox.shrink();
                           }
 
-                          final pkg = Map<String, dynamic>.from(p as Map);
+                          final pkg = Map<String, dynamic>.from(p);
                           final expectedIso = pkg['expectedDateIso'] as String?;
                           final expectedLabel =
                               expectedIso != null && expectedIso.isNotEmpty
@@ -1208,7 +1208,7 @@ class _UspsTestScreenState extends State<UspsTestScreen> {
                           if (m is! Map) {
                             return const SizedBox.shrink();
                           }
-                          final mailPiece = Map<String, dynamic>.from(m as Map);
+                          final mailPiece = Map<String, dynamic>.from(m);
                           final imageSource =
                               (mailPiece['imageDataUrl'] as String?) ??
                                   (mailPiece['thumbnailUrl'] as String?);
