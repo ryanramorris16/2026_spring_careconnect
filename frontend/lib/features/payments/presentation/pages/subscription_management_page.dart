@@ -516,6 +516,22 @@ class _SubscriptionManagementPageState
     final tierId = int.tryParse(plan.id) ?? 0;
     final userIdInt = userId != null ? int.tryParse(userId) : null;
 
+    // Free plan bypasses payment entirely
+    if (tierId == 1 || plan.amount == 0) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Confirm Free Plan'),
+          content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () { Navigator.of(ctx).pop(); context.go('/home'); }, child: const Text('Confirm')),
+          ],
+        ),
+      );
+      return;
+    }
+
     if (kIsWeb) {
       context.go('/web-pay', extra: {
         'tierId': tierId,
@@ -659,6 +675,10 @@ class _SubscriptionManagementPageState
         context,
         title: 'Subscription Management',
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/home'),
+        ),
       ),
       drawer: const CommonDrawer(currentRoute: '/select-package'),
       body: _isLoading
