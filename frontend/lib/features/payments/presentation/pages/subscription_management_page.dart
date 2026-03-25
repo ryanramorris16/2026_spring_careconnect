@@ -11,14 +11,14 @@ import 'package:care_connect_app/widgets/app_bar_helper.dart';
 import 'package:care_connect_app/widgets/common_drawer.dart';
 import 'package:care_connect_app/config/theme/app_theme.dart';
 import '../../models/subscription_model.dart';
-import '../../models/package_model.dart';
 
 class SubscriptionManagementPage extends StatefulWidget {
   const SubscriptionManagementPage({super.key});
 
   @override
-  _SubscriptionManagementPageState createState() =>
+  State<SubscriptionManagementPage> createState() =>
       _SubscriptionManagementPageState();
+
 }
 
 class _SubscriptionManagementPageState
@@ -38,8 +38,6 @@ class _SubscriptionManagementPageState
   }
 
   Future<void> _loadSubscriptionData() async {
-    final userSession = await AuthTokenManager.getUserSession();
-
     setState(() {
       _isLoading = true;
       _error = null;
@@ -308,12 +306,12 @@ class _SubscriptionManagementPageState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.error.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Theme.of(
                         context,
-                      ).colorScheme.error.withOpacity(0.3),
+                      ).colorScheme.error.withValues(alpha:0.3),
                     ),
                   ),
                   child: Column(
@@ -353,12 +351,12 @@ class _SubscriptionManagementPageState
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.1),
+                    ).colorScheme.primary.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Theme.of(
                         context,
-                      ).colorScheme.primary.withOpacity(0.3),
+                      ).colorScheme.primary.withValues(alpha:0.3),
                     ),
                   ),
                   child: Column(
@@ -397,7 +395,7 @@ class _SubscriptionManagementPageState
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
-                    ).colorScheme.secondary.withOpacity(0.1),
+                    ).colorScheme.secondary.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
@@ -525,7 +523,7 @@ class _SubscriptionManagementPageState
           content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () { Navigator.of(ctx).pop(); context.go('/home'); }, child: const Text('Confirm')),
+            ElevatedButton(onPressed: () async { Navigator.of(ctx).pop(); final session = await AuthTokenManager.getUserSession(); final customerId = session?['paymentCustomerId'] ?? session?['stripeCustomerId'] ?? ''; if (customerId.isNotEmpty) { await ApiService.createSubscription(customerId, 'free_monthly'); } if (context.mounted) context.go('/subscription'); }, child: const Text('Confirm')),
           ],
         ),
       );
@@ -779,7 +777,7 @@ class _SubscriptionManagementPageState
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.outline.withOpacity(0.3),
+                    ).colorScheme.outline.withValues(alpha:0.3),
                   ),
                 ),
                 child: Column(
@@ -815,15 +813,15 @@ class _SubscriptionManagementPageState
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.05),
+                      Theme.of(context).colorScheme.primary.withValues(alpha:0.1),
+                      Theme.of(context).colorScheme.secondary.withValues(alpha:0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: Theme.of(
                       context,
-                    ).colorScheme.primary.withOpacity(0.2),
+                    ).colorScheme.primary.withValues(alpha:0.2),
                   ),
                 ),
                 child: Column(
@@ -885,7 +883,7 @@ class _SubscriptionManagementPageState
                                     ?.copyWith(
                                       color: Theme.of(
                                         context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                      ).colorScheme.onSurface.withValues(alpha:0.7),
                                     ),
                               ),
                               const SizedBox(height: 4),
@@ -905,7 +903,7 @@ class _SubscriptionManagementPageState
                                     ?.copyWith(
                                       color: Theme.of(
                                         context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                      ).colorScheme.onSurface.withValues(alpha:0.7),
                                     ),
                               ),
                             ],
@@ -916,7 +914,7 @@ class _SubscriptionManagementPageState
                           width: 1,
                           color: Theme.of(
                             context,
-                          ).colorScheme.outline.withOpacity(0.3),
+                          ).colorScheme.outline.withValues(alpha:0.3),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -929,7 +927,7 @@ class _SubscriptionManagementPageState
                                     ?.copyWith(
                                       color: Theme.of(
                                         context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                      ).colorScheme.onSurface.withValues(alpha:0.7),
                                     ),
                               ),
                               const SizedBox(height: 4),
@@ -964,12 +962,12 @@ class _SubscriptionManagementPageState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.error.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: Theme.of(
                         context,
-                      ).colorScheme.error.withOpacity(0.3),
+                      ).colorScheme.error.withValues(alpha:0.3),
                     ),
                   ),
                   child: Row(
@@ -1208,7 +1206,7 @@ class _SubscriptionManagementPageState
                                                   .textTheme
                                                   .bodySmall
                                                   ?.color
-                                                  ?.withOpacity(0.7),
+                                                  ?.withValues(alpha:0.7),
                                             ),
                                       ),
                                     ],
