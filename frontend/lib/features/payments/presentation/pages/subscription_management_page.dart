@@ -480,6 +480,7 @@ class _SubscriptionManagementPageState
         // Now redirect to checkout flow with the new plan
         _redirectToCheckout(newPlan, userId, customerId);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -487,6 +488,7 @@ class _SubscriptionManagementPageState
           _processingAction = false;
         });
       }
+
     } else {
       // For new subscriptions or inactive subscriptions,
       // get the user ID and customer ID if available, then redirect to checkout
@@ -496,13 +498,15 @@ class _SubscriptionManagementPageState
             ? userSession['id']?.toString()
             : null;
 
-        // Redirect to checkout flow for a new subscription
-        _redirectToCheckout(newPlan, userId, _customerId);
+      // Redirect to checkout flow for a new subscription
+      _redirectToCheckout(newPlan, userId, _customerId);
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
+
     }
   }
 
@@ -523,9 +527,14 @@ class _SubscriptionManagementPageState
           content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () async { Navigator.of(ctx).pop(); 
-            final session = await AuthTokenManager.getUserSession(); final userId = session?['id']?.toString() ?? ''; if (userId.isNotEmpty) { await ApiService.createSubscriptionByUser(userId, 'plan_free'); }
-            if (context.mounted) context.go('/subscription'); }, child: const Text('Confirm')),
+            ElevatedButton(onPressed: () async {
+              Navigator.of(ctx).pop();
+              final router = GoRouter.of(context);
+              final session = await AuthTokenManager.getUserSession();
+              final userId = session?['id']?.toString() ?? '';
+              if (userId.isNotEmpty) { await ApiService.createSubscriptionByUser(userId, 'plan_free'); }
+              router.go('/subscription');
+            }, child: const Text('Confirm')),
           ],
         ),
       );
@@ -594,29 +603,32 @@ class _SubscriptionManagementPageState
     if (initialConfirm != true) return;
 
     // Second confirmation as an extra safety measure
-    final bool? finalConfirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Final Confirmation'),
-        content: const Text(
-          'This action cannot be undone. You will need to create a new subscription if you want to use the app again. Proceed with cancellation?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('NO, GO BACK'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Colors.white,
+    if (!mounted) return;
+
+        // Second confirmation as an extra safety measure
+        final bool? finalConfirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Final Confirmation'),
+            content: const Text(
+              'This action cannot be undone. You will need to create a new subscription if you want to use the app again. Proceed with cancellation?',
             ),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('YES, CANCEL MY SUBSCRIPTION'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('NO, GO BACK'),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('YES, CANCEL MY SUBSCRIPTION'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        );
 
     if (finalConfirm != true) return;
 
@@ -629,7 +641,7 @@ class _SubscriptionManagementPageState
         _currentSubscription!.paymentSubscriptionId,
       );
       if (response.statusCode == 200) {
-        // Show brief success message
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -638,19 +650,20 @@ class _SubscriptionManagementPageState
           ),
         );
 
+        // Capture all context-dependent references before any async gaps
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final navigator = GoRouter.of(context);
+
         // Small delay to show the message before logout
         await Future.delayed(const Duration(seconds: 1));
+        if (!mounted) return;
 
         // Force logout by clearing the user session
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
         await AuthTokenManager.clearAuthData();
         userProvider.clearUser();
 
-        // Navigate to login screen
-        if (!context.mounted) return;
-
         // Clear navigation history and go to login
-        context.go('/login');
+        navigator.go('/login');
 
       } else {
         final errorData = jsonDecode(response.body);
@@ -1124,7 +1137,6 @@ class _SubscriptionManagementPageState
           )
         else
           ..._plans.map((plan) {
-            // Check if this is the current plan using ID, name, and price as fallbacks
             final isCurrentPlan =
                 _currentSubscription != null &&
                 (_currentSubscription!.planId == plan.id ||
@@ -1136,8 +1148,7 @@ class _SubscriptionManagementPageState
                     ) ||
                     (_currentSubscription!.planAmount > 0 &&
                         plan.amount > 0 &&
-                        _currentSubscription!.planAmount ==
-                            plan.amount)); // Price equality as last resort
+                        _currentSubscription!.planAmount == plan.amount));
             final isSelectedPlan = _selectedPlan?.id == plan.id;
 
             return Card(
@@ -1166,23 +1177,26 @@ class _SubscriptionManagementPageState
                     children: [
                       Row(
                         children: [
-                          // Plan name and selection indicator
                           Expanded(
                             child: Row(
                               children: [
-                                Radio<String>(
-                                  value: plan.id,
-                                  groupValue: _selectedPlan?.id,
+                                RadioGroup<String>(
+                                  groupValue: _selectedPlan?.id ?? '',
                                   onChanged: (value) {
-                                    setState(() {
-                                      _selectedPlan = _plans.firstWhere(
-                                        (p) => p.id == value,
-                                      );
-                                    });
+                                    if (value != null) {
+                                      setState(() {
+                                        _selectedPlan = _plans.firstWhere(
+                                          (p) => p.id == value,
+                                        );
+                                      });
+                                    }
                                   },
-                                  activeColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
+                                  child: Radio<String>(
+                                    value: plan.id,
+                                    activeColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                  ),
                                 ),
                                 Expanded(
                                   child: Column(
@@ -1208,7 +1222,7 @@ class _SubscriptionManagementPageState
                                                   .textTheme
                                                   .bodySmall
                                                   ?.color
-                                                  ?.withValues(alpha:0.7),
+                                                  ?.withValues(alpha: 0.7),
                                             ),
                                       ),
                                     ],
@@ -1217,8 +1231,6 @@ class _SubscriptionManagementPageState
                               ],
                             ),
                           ),
-
-                          // Price
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -1245,7 +1257,6 @@ class _SubscriptionManagementPageState
                       const Divider(height: 1),
                       const SizedBox(height: 12),
 
-                      // Features
                       ...plan.features.map(
                         (feature) => Padding(
                           padding: const EdgeInsets.only(bottom: 6),
@@ -1265,13 +1276,11 @@ class _SubscriptionManagementPageState
 
                       const SizedBox(height: 16),
 
-                      // Action button
                       if (isCurrentPlan)
-                        // For current plan, show a different styled button indicating it's the current plan
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: null, // Always disabled for current plan
+                            onPressed: null,
                             style: OutlinedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
@@ -1297,12 +1306,11 @@ class _SubscriptionManagementPageState
                           ),
                         )
                       else
-                        // For other plans, show the regular action button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _processingAction
-                                ? null // Disable if processing
+                                ? null
                                 : () => _changePlan(plan),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(

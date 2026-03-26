@@ -103,7 +103,7 @@ class NativeBillingService {
           onPurchaseError?.call(purchase.error?.message ?? 'Purchase failed');
         }
       } catch (e) {
-        onPurchaseError?.call(e.toString());
+        onPurchaseError?.call('Verify failed: $e');
       }
     }
   }
