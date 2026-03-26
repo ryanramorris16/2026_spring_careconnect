@@ -65,6 +65,9 @@ public class CallRecording extends Auditable {
     /** Maximum length for concatenation status values. */
     private static final int CONCATENATION_STATUS_LENGTH = 30;
 
+    /** Maximum length for transcription status values. */
+    private static final int TRANSCRIPTION_STATUS_LENGTH = 20;
+
     /** Database identifier for the recording row. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -120,4 +123,8 @@ public class CallRecording extends Auditable {
     /** Error details captured while managing the recording. */
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
+
+    /** Post-call transcription lifecycle status value. */
+    @Column(name = "transcription_status", length = TRANSCRIPTION_STATUS_LENGTH)
+    private String transcriptionStatus;
 }

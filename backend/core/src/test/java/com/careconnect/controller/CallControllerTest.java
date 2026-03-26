@@ -110,7 +110,7 @@ class CallControllerTest {
                 "joinToken", "token-abc",
                 "mediaRegion", "us-east-1"
         );
-        when(chimeService.joinMeeting(anyString(), anyString())).thenReturn(chimeCreds);
+        when(chimeService.joinMeeting(anyString(), anyString(), anyString(), anyString())).thenReturn(chimeCreds);
         when(chimeService.isMeetingActive(anyString())).thenReturn(true);
 
         // Default sentiment stub
@@ -200,7 +200,7 @@ class CallControllerTest {
                             .content("{}"))
                     .andExpect(status().isOk());
 
-            verify(chimeService).joinMeeting(CALL_ID, "2");
+            verify(chimeService).joinMeeting(eq(CALL_ID), eq("2"), anyString(), anyString());
         }
 
         @Test
@@ -249,7 +249,7 @@ class CallControllerTest {
         @WithMockUser(username = "caregiver@test.com", roles = {"CAREGIVER"})
         void chime005_joinMeetingRuntimeExceptionReturns500() throws Exception {
             mockCurrentCaregiver();
-            when(chimeService.joinMeeting(anyString(), anyString()))
+            when(chimeService.joinMeeting(anyString(), anyString(), anyString(), anyString()))
                     .thenThrow(new RuntimeException("AWS connection failure"));
 
             mockMvc.perform(post(BASE_URL + "/" + CALL_ID + "/join")
@@ -295,7 +295,7 @@ class CallControllerTest {
         void chime009_secondJoinIdempotentReturns200() throws Exception {
             mockCurrentPatient();
             // Simulate already-active meeting still returns credentials
-            when(chimeService.joinMeeting(CALL_ID, "1"))
+            when(chimeService.joinMeeting(eq(CALL_ID), eq("1"), anyString(), anyString()))
                     .thenReturn(Map.of(
                             "meetingId", "mtg-123",
                             "attendeeId", "att-789",

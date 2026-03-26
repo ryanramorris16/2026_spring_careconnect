@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.chimesdkmeetings.model.StartMeetingTransc
 import software.amazon.awssdk.services.chimesdkmeetings.model.TranscriptionConfiguration;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -161,7 +162,9 @@ public class ChimeService {
 
             ensureMeetingTranscriptionStarted(callId, meeting, "createMeeting");
 
-            log.info("Chime meeting created: {} for callId: {}", meeting.meetingId(), callId);
+            if (log.isInfoEnabled()) {
+                log.info("Chime meeting created: {} for callId: {}", meeting.meetingId(), callId);
+            }
             return buildMeetingResponse(meeting);
 
         } catch (Exception e) {
@@ -184,7 +187,7 @@ public class ChimeService {
      * @param userId the user to add as an attendee
      * @return attendee credentials map
      */
-    public final Map<String, Object> createAttendee(final String callId, final String userId) {
+    public final Map<String, Object> createAttendee(final String callId, final String userId, final String role, final String displayName) {
         log.info("Creating Chime attendee for userId: {} in callId: {}", userId, callId);
 
         final Meeting meeting = activeMeetings.get(callId);
@@ -194,7 +197,7 @@ public class ChimeService {
         }
 
         if (!isAwsChimeAvailable()) {
-            final String externalUserId = toChimeExternalUserId(userId);
+            final String externalUserId = toChimeExternalUserId(userId, role, displayName);
             final String mediaRegion = meeting.mediaRegion() == null
                     ? DEFAULT_MEDIA_REGION : meeting.mediaRegion();
             return Map.of(
@@ -218,7 +221,7 @@ public class ChimeService {
         }
 
         try {
-            final String externalUserId = toChimeExternalUserId(userId);
+            final String externalUserId = toChimeExternalUserId(userId, role, displayName);
             final CreateAttendeeRequest request = CreateAttendeeRequest.builder()
                     .meetingId(meeting.meetingId())
                     .externalUserId(externalUserId)
@@ -227,7 +230,9 @@ public class ChimeService {
             final CreateAttendeeResponse response = chimeSdkMeetingsClient.createAttendee(request);
             final Attendee attendee = response.attendee();
 
-            log.info("Chime attendee created: {} for userId: {}", attendee.attendeeId(), userId);
+            if (log.isInfoEnabled()) {
+                log.info("Chime attendee created: {} for userId: {}", attendee.attendeeId(), userId);
+            }
 
             // Retry transcription startup after attendee creation in case createMeeting
             // happened before media signaling was fully ready.
@@ -277,13 +282,13 @@ public class ChimeService {
      * @param userId the user joining the meeting
      * @return attendee credentials map
      */
-    public final Map<String, Object> joinMeeting(final String callId, final String userId) {
+    public final Map<String, Object> joinMeeting(final String callId, final String userId, final String role, final String displayName) {
         // Ensure meeting exists
         if (!activeMeetings.containsKey(callId)) {
             createMeeting(callId);
         }
         // Add user as attendee and return join credentials
-        return createAttendee(callId, userId);
+        return createAttendee(callId, userId, role, displayName);
     }
 
     // ================================================================
@@ -322,12 +327,16 @@ public class ChimeService {
                     .build();
 
             chimeSdkMeetingsClient.deleteMeeting(request);
-            log.info("Chime meeting deleted: {} for callId: {}", meeting.meetingId(), callId);
+            if (log.isInfoEnabled()) {
+                log.info("Chime meeting deleted: {} for callId: {}", meeting.meetingId(), callId);
+            }
 
         } catch (Exception e) {
             // Log but don't throw — if Chime already cleaned it up, that's fine
-            log.warn("Could not delete Chime meeting {} — may have already expired: {}",
-                meeting.meetingId(), e.getMessage());
+            if (log.isWarnEnabled()) {
+                log.warn("Could not delete Chime meeting {} — may have already expired: {}",
+                    meeting.meetingId(), e.getMessage());
+            }
         }
     }
 
@@ -408,19 +417,63 @@ public class ChimeService {
         );
     }
 
-    private String toChimeExternalUserId(final String userId) {
-        String normalized = userId == null ? "u0" : userId.trim();
-        if (normalized.isEmpty()) {
-            normalized = "u0";
+    private String toChimeExternalUserId(final String userId, final String role, final String displayName) {
+        // Sanitize the numeric/string user-id portion
+        String normalizedId = userId == null ? "u0" : userId.trim();
+        if (normalizedId.isEmpty()) {
+            normalizedId = "u0";
         }
-        normalized = normalized.replaceAll("[^A-Za-z0-9_-]", "_");
-        if (normalized.length() < CHIME_USER_ID_MIN_LENGTH) {
-            normalized = "u" + normalized;
+        normalizedId = normalizedId.replaceAll("[^A-Za-z0-9_-]", "_");
+        if (normalizedId.length() < CHIME_USER_ID_MIN_LENGTH) {
+            normalizedId = "u" + normalizedId;
         }
-        if (normalized.length() > CHIME_USER_ID_MAX_LENGTH) {
-            normalized = normalized.substring(0, CHIME_USER_ID_MAX_LENGTH);
+
+        // Build a name segment encoded as "First-LAST" (hyphen-delimited, no spaces).
+        // Transcript events carry externalUserId back to the frontend, so the Flutter
+        // client can decode it into a human-readable label like "John DOE".
+        final String nameSeg = buildNameSegment(displayName);
+        final String safeRole = role != null
+                ? role.trim().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "")
+                : "";
+
+        final String combined;
+        if (!safeRole.isEmpty() && !nameSeg.isEmpty()) {
+            combined = safeRole + "_" + nameSeg + "_" + normalizedId;
+        } else if (!safeRole.isEmpty()) {
+            combined = safeRole + "_" + normalizedId;
+        } else {
+            combined = normalizedId;
         }
-        return normalized;
+
+        return combined.length() > CHIME_USER_ID_MAX_LENGTH
+                ? combined.substring(0, CHIME_USER_ID_MAX_LENGTH)
+                : combined;
+    }
+
+    /**
+     * Builds a hyphen-delimited name segment for embedding in externalUserId.
+     * "John Doe" → "John-DOE"; "John" → "John"; null/blank → ""
+     */
+    private String buildNameSegment(final String displayName) {
+        if (displayName == null || displayName.isBlank()) {
+            return "";
+        }
+        final String[] parts = displayName.trim().split("\\s+");
+        if (parts.length == 0) {
+            return "";
+        }
+        // Keep only alphanumeric chars per part; first name title-case, last name upper-case
+        final String firstName = parts[0].replaceAll("[^A-Za-z0-9]", "");
+        if (firstName.isEmpty()) {
+            return "";
+        }
+        final String firstCased = firstName.substring(0, 1).toUpperCase(Locale.ROOT)
+                + (firstName.length() > 1 ? firstName.substring(1).toLowerCase(Locale.ROOT) : "");
+        if (parts.length == 1) {
+            return firstCased;
+        }
+        final String lastName = parts[parts.length - 1].replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT);
+        return lastName.isEmpty() ? firstCased : firstCased + "-" + lastName;
     }
 
     private boolean isAwsChimeAvailable() {
@@ -462,28 +515,32 @@ public class ChimeService {
             transcriptionStarted.put(callId, true);
             recordTranscriptionAttempt(callId, source, "STARTED", responseSummary);
             recordTranscriptionStartAttempt(callId, source, "STARTED", responseSummary);
-            log.info(
-                "Started Chime transcription for callId={} meetingId={} "
-                    + "language={} region={} source={} response={}",
-                callId,
-                meeting.meetingId(),
-                transcriptionLanguageCode,
-                transcriptionRegion,
-                source,
-                responseSummary);
+            if (log.isInfoEnabled()) {
+                log.info(
+                    "Started Chime transcription for callId={} meetingId={} "
+                        + "language={} region={} source={} response={}",
+                    callId,
+                    meeting.meetingId(),
+                    transcriptionLanguageCode,
+                    transcriptionRegion,
+                    source,
+                    responseSummary);
+            }
             logMeetingTranscriptionStatus(callId, meeting.meetingId(), source + ":post-start");
         } catch (Exception e) {
             final String detail = e.getClass().getSimpleName() + ": " + e.getMessage();
             recordTranscriptionAttempt(callId, source, "START_FAILED", detail);
             recordTranscriptionStartAttempt(callId, source, "START_FAILED", detail);
-            log.warn(
-                "Could not start Chime transcription for callId={} meetingId={} source={}: {}. "
-                    + "Verify Chime StartMeetingTranscription permission and "
-                    + "Transcribe service-linked role.",
-                callId,
-                meeting.meetingId(),
-                source,
-                detail);
+            if (log.isWarnEnabled()) {
+                log.warn(
+                    "Could not start Chime transcription for callId={} meetingId={} source={}: {}. "
+                        + "Verify Chime StartMeetingTranscription permission and "
+                        + "Transcribe service-linked role.",
+                    callId,
+                    meeting.meetingId(),
+                    source,
+                    detail);
+            }
         }
     }
 

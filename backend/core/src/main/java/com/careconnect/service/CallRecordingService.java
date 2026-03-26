@@ -28,9 +28,11 @@ import software.amazon.awssdk.services.chimesdkmediapipelines.model.AudioArtifac
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.AudioArtifactsConfiguration;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.AudioMuxType;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.ChimeSdkMeetingConfiguration;
+import software.amazon.awssdk.services.chimesdkmediapipelines.model.CompositedVideoArtifactsConfiguration;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.ConcatenationSinkType;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.ConcatenationSourceType;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.ContentArtifactsConfiguration;
+import software.amazon.awssdk.services.chimesdkmediapipelines.model.ContentShareLayoutOption;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.CreateMediaCapturePipelineRequest;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.CreateMediaCapturePipelineResponse;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.CreateMediaConcatenationPipelineRequest;
@@ -40,9 +42,12 @@ import software.amazon.awssdk.services.chimesdkmediapipelines.model.GetMediaCapt
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.GetMediaCapturePipelineResponse;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.GetMediaPipelineRequest;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.GetMediaPipelineResponse;
+import software.amazon.awssdk.services.chimesdkmediapipelines.model.GridViewConfiguration;
+import software.amazon.awssdk.services.chimesdkmediapipelines.model.LayoutOption;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.MediaPipelineSinkType;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.MediaPipelineSourceType;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.MediaPipelineStatus;
+import software.amazon.awssdk.services.chimesdkmediapipelines.model.ResolutionOption;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.VideoArtifactsConfiguration;
 import software.amazon.awssdk.services.chimesdkmediapipelines.model.VideoMuxType;
 import software.amazon.awssdk.services.iam.IamClient;
@@ -122,6 +127,8 @@ public class CallRecordingService {
 
   @Autowired private CallRecordingRepository recordingRepository;
 
+  @Autowired private PostCallTranscriptionService postCallTranscriptionService;
+
   @Value("${careconnect.recording.enabled:false}")
   private boolean recordingEnabled;
 
@@ -140,11 +147,6 @@ public class CallRecordingService {
   // ================================================================
   // STARTUP INITIALISATION
   // ================================================================
-
-  /** Default constructor required by Spring and static analysis. */
-  public CallRecordingService() {
-    // default
-  }
 
   /**
    * Eagerly provisions the two AWS prerequisites for Chime Media Capture Pipelines at application
@@ -191,6 +193,26 @@ public class CallRecordingService {
     }
 
     if (activePipelineIds.containsKey(callId)) {
+      // If a user explicitly toggles recording while the system recording is already running,
+      // claim the system recording for playback by setting initiatedByUserId on it.
+      if (initiatedByUserId != null) {
+        recordingRepository
+            .findTopByCallIdAndInitiatedByUserIdIsNullOrderByStartedAtDesc(callId)
+            .ifPresent(
+                sys -> {
+                  sys.setInitiatedByUserId(initiatedByUserId);
+                  recordingRepository.save(sys);
+                  if (log.isInfoEnabled()) {
+                    log.info(
+                        "System recording {} claimed for playback by user {} on call {}",
+                        sys.getId(), initiatedByUserId, callId);
+                  }
+                });
+        return Map.of(
+            "status", "RECORDING_CLAIMED",
+            "pipelineId", activePipelineIds.get(callId),
+            "message", "Recording claimed for playback");
+      }
       return Map.of(
           "status", "ALREADY_RECORDING",
           "pipelineId", activePipelineIds.get(callId),
@@ -236,16 +258,28 @@ public class CallRecordingService {
                           ArtifactsConfiguration.builder()
                               .audio(
                                   AudioArtifactsConfiguration.builder()
-                                      .muxType(AudioMuxType.AUDIO_WITH_ACTIVE_SPEAKER_VIDEO)
+                                      .muxType(AudioMuxType.AUDIO_ONLY)
                                       .build())
+                              // Individual video tiles not needed — composited view captures all
+                              // participants; concatenation merges this with audio into one MP4.
                               .video(
                                   VideoArtifactsConfiguration.builder()
-                                      .state(ArtifactsState.ENABLED)
+                                      .state(ArtifactsState.DISABLED)
                                       .muxType(VideoMuxType.VIDEO_ONLY)
                                       .build())
                               .content(
                                   ContentArtifactsConfiguration.builder()
                                       .state(ArtifactsState.DISABLED)
+                                      .build())
+                              .compositedVideo(
+                                  CompositedVideoArtifactsConfiguration.builder()
+                                      .layout(LayoutOption.GRID_VIEW)
+                                      .resolution(ResolutionOption.FHD)
+                                      .gridViewConfiguration(
+                                          GridViewConfiguration.builder()
+                                              .contentShareLayout(
+                                                  ContentShareLayoutOption.ACTIVE_SPEAKER_ONLY)
+                                              .build())
                                       .build())
                               .build())
                       .build())
@@ -495,6 +529,7 @@ public class CallRecordingService {
         processing.put("message", playbackPendingMessage(rec));
         processing.put("recordingStatus", rec.getStatus());
         processing.put("concatenationStatus", rec.getConcatenationStatus());
+        processing.put("transcriptionStatus", rec.getTranscriptionStatus());
         processing.put("playbackReady", false);
         return processing;
       }
@@ -518,7 +553,9 @@ public class CallRecordingService {
       playbackResult.put("expiresInMinutes", presignedUrlTtlMinutes);
       playbackResult.put("recordingStatus", rec.getStatus());
       playbackResult.put("concatenationStatus", rec.getConcatenationStatus());
-      playbackResult.put("playbackReady", true);
+      playbackResult.put("transcriptionStatus", rec.getTranscriptionStatus());
+      // System recordings (initiatedByUserId == null) are transcription-only; never allow playback
+      playbackResult.put("playbackReady", rec.getInitiatedByUserId() != null);
       return playbackResult;
 
     } catch (Exception e) {
@@ -562,7 +599,10 @@ public class CallRecordingService {
     m.put("status", rec.getStatus());
     m.put("concatenationPipelineId", rec.getConcatenationPipelineId());
     m.put("concatenationStatus", rec.getConcatenationStatus());
-    m.put("playbackReady", resolvePlayableVideoKey(rec) != null);
+    m.put("transcriptionStatus", rec.getTranscriptionStatus());
+    // System recordings (initiatedByUserId == null) are transcription-only; never allow playback
+    m.put("playbackReady",
+        rec.getInitiatedByUserId() != null && resolvePlayableVideoKey(rec) != null);
     m.put("initiatedByUserId", rec.getInitiatedByUserId());
     m.put("startedAt", rec.getStartedAt() != null ? rec.getStartedAt().toString() : null);
     m.put("endedAt", rec.getEndedAt() != null ? rec.getEndedAt().toString() : null);
@@ -594,11 +634,13 @@ public class CallRecordingService {
                                                                 audio.state(
                                                                     AudioArtifactsConcatenationState
                                                                         .ENABLED))
+                                                        // Individual tiles disabled in capture;
+                                                        // only compositedVideo is written to S3.
                                                         .video(
                                                             video ->
                                                                 video.state(
                                                                     ArtifactsConcatenationState
-                                                                        .ENABLED))
+                                                                        .DISABLED))
                                                         .content(
                                                             content ->
                                                                 content.state(
@@ -667,6 +709,12 @@ public class CallRecordingService {
         nextErrorMessage = null;
       }
       cleanupRawArtifactsAfterConcatenation(rec, playableKey);
+      // Trigger post-call transcription for all recordings.
+      // For system recordings (initiatedByUserId == null) the service also deletes the
+      // concatenated file after transcription; user recordings are kept for playback.
+      if (!CONCATENATION_STATUS_READY.equals(existingStatus)) {
+        postCallTranscriptionService.transcribeAndCleanup(rec.getCallId(), rec, playableKey);
+      }
     } else if (rec.getConcatenationPipelineId() != null
         && !rec.getConcatenationPipelineId().isBlank()) {
       nextStatus =
@@ -766,7 +814,9 @@ public class CallRecordingService {
         return CONCATENATION_STATUS_FAILED;
       }
       if (status == MediaPipelineStatus.STOPPED) {
-        return CONCATENATION_STATUS_FAILED;
+        // STOPPED means the concatenation pipeline finished successfully.
+        // Return PROCESSING so the next refresh finds the output file in S3.
+        return CONCATENATION_STATUS_PROCESSING;
       }
       return CONCATENATION_STATUS_PROCESSING;
     } catch (Exception e) {
@@ -1505,3 +1555,4 @@ public class CallRecordingService {
     return trimmed.isEmpty() ? null : trimmed;
   }
 }
+
