@@ -533,8 +533,9 @@ class _SubscriptionManagementPageState
               final session = await AuthTokenManager.getUserSession();
               final userId = session?['id']?.toString() ?? '';
               if (userId.isNotEmpty) { await ApiService.createSubscriptionByUser(userId, 'plan_free'); }
-              router.go('/subscription');
-            }, child: const Text('Confirm')),
+              await Future.delayed(const Duration(milliseconds: 500));
+              router.pushReplacement('/subscription');
+              }, child: const Text('Confirm')),
           ],
         ),
       );
@@ -1040,14 +1041,18 @@ class _SubscriptionManagementPageState
 
   String _formatDate(String timestamp) {
     if (timestamp.isEmpty) return 'N/A';
-
     try {
-      final date = DateTime.fromMillisecondsSinceEpoch(
-        int.parse(timestamp) * 1000,
-      );
+      final date = DateTime.parse(timestamp).toLocal();
       return DateFormat.yMMMd().format(date);
-    } catch (e) {
-      return timestamp;
+    } catch (_) {
+      try {
+        final date = DateTime.fromMillisecondsSinceEpoch(
+          int.parse(timestamp) * 1000,
+        );
+        return DateFormat.yMMMd().format(date);
+      } catch (_) {
+        return timestamp;
+      }
     }
   }
 
