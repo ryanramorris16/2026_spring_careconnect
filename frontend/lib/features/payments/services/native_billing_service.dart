@@ -73,6 +73,6 @@ class NativeBillingService {
   }
 
   String _androidPackageName() {
-    return const String.fromEnvironment('ANDROID_PACKAGE_NAME', defaultValue: 'com.careconnect.app');
+    return const String.fromEnvironment('ANDROID_PACKAGE_NAME', defaultValue: 'edu.umgc.careconnect');
   }
 }
