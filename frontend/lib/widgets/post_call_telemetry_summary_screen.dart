@@ -793,20 +793,19 @@ class _PostCallTelemetrySummaryScreenState
     final status = (rec['status'] as String? ?? '').toUpperCase();
     final concatenationStatus =
         (rec['concatenationStatus'] as String? ?? '').toUpperCase();
-    final durationSec = rec['durationSeconds'] as int?;
     final startedAt = rec['startedAt'] as String?;
     final playbackReady = rec['playbackReady'] == true;
     final errorMessage = (rec['errorMessage'] as String?)?.trim();
+    final transcriptionStatus =
+        (rec['transcriptionStatus'] as String? ?? '').toUpperCase();
 
-    String durationText = '--';
-    if (durationSec != null) {
-      final m = durationSec ~/ 60;
-      final s = (durationSec % 60).toString().padLeft(2, '0');
-      durationText = '$m:$s';
-    }
 
-    String startedText = '--';
-    if (startedAt != null) {
+    // A system-initiated recording (initiatedByUserId == null) is for transcription only —
+    // the S3 file is deleted after transcription so playback is never available for it.
+    final isSystemRecording = rec['initiatedByUserId'] == null;
+
+    String startedText = '—';
+    if (!isSystemRecording && startedAt != null) {
       final dt = DateTime.tryParse(startedAt)?.toLocal();
       if (dt != null) {
         startedText =
@@ -818,7 +817,8 @@ class _PostCallTelemetrySummaryScreenState
     final hasNoRecording =
         status == 'NO_RECORDING' ||
         status == 'NOT_FOUND' ||
-        status.isEmpty;
+        status.isEmpty ||
+        isSystemRecording;
     final isCapturing = status == 'STARTED' || status == 'CAPTURING';
     final isReady = status == 'STOPPED';
     final statusColor = hasNoRecording
@@ -852,8 +852,9 @@ class _PostCallTelemetrySummaryScreenState
           : 'Video stitching did not complete successfully.',
       'STITCHING' || 'PROCESSING' =>
         'The final video is still processing. Pull to refresh in about 1-2 minutes.',
-      'NOT RECORDED' =>
-        'Recording was not started for this call, so no playback is available.',
+      'NOT RECORDED' => isSystemRecording
+        ? 'The Record button was not pressed during this call. Toggle recording next time to enable playback.'
+        : 'Recording was not started for this call, so no playback is available.',
       'UNAVAILABLE' =>
         'Recording is not available for this call.',
       _ => 'Recording is still in progress.',
@@ -898,21 +899,16 @@ class _PostCallTelemetrySummaryScreenState
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                _RecordingMetaChip(
-                  icon: Icons.access_time,
-                  label: 'Duration',
-                  value: durationText,
-                ),
-                const SizedBox(width: 12),
-                _RecordingMetaChip(
-                  icon: Icons.calendar_today,
-                  label: 'Recorded',
-                  value: startedText,
-                ),
-              ],
-            ),
+            if (!isSystemRecording)
+              Row(
+                children: [
+                  _RecordingMetaChip(
+                    icon: Icons.calendar_today,
+                    label: 'Recorded',
+                    value: startedText,
+                  ),
+                ],
+              ),
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
@@ -941,6 +937,30 @@ class _PostCallTelemetrySummaryScreenState
                 ],
               ),
             ),
+            if (transcriptionStatus == 'FAILED') ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Automatic transcript generation did not complete for this call.',
+                        style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -1182,6 +1202,52 @@ class _PostCallTelemetrySummaryScreenState
   Widget _buildTranscriptCard(bool isDark) {
     final segments = _transcriptSegments;
     if (segments.isEmpty) {
+      final transcriptionStatus =
+          ((_recording ?? const {})['transcriptionStatus'] as String? ?? '')
+              .toUpperCase();
+      if (transcriptionStatus == 'PROCESSING') {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.blue.shade600,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Generating Transcript…',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'The call transcript is being processed. Check back in a few minutes.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white54 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       return const SizedBox.shrink();
     }
     final anchorOccurredAt = _safeDate(segments.first['occurredAt']);

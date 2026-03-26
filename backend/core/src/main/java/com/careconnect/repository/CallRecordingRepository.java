@@ -58,6 +58,16 @@ public interface CallRecordingRepository
     List<CallRecording> findTop100ByStatusOrderByStartedAtDesc(String status);
 
     /**
+     * Returns the most recent system-initiated (auto) recording for a call.
+     * System recordings have a null initiatedByUserId.
+     *
+     * @param callId call identifier
+     * @return most recent system recording, when present
+     */
+    Optional<CallRecording> findTopByCallIdAndInitiatedByUserIdIsNullOrderByStartedAtDesc(
+            String callId);
+
+    /**
      * Deletes recordings for a call.
      *
      * @param callId call identifier
