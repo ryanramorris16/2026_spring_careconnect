@@ -30,15 +30,6 @@ class NativeBillingService {
     }, onError: (error) {
       onPurchaseError?.call(error.toString());
     });
-    _restoreExistingPurchases();
-  }
-
-  Future<void> _restoreExistingPurchases() async {
-    try {
-      await _iap.restorePurchases();
-    } catch (e) {
-      // ignore restore errors on init
-    }
   }
 
   Future<void> dispose() async {
