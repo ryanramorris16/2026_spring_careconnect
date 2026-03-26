@@ -78,8 +78,17 @@ public class BillingController {
     private void cancelOtherActiveSubscriptions(com.careconnect.model.User user, String externalSubscriptionId) {
         subscriptionRepository.findByUserAndStatus(user, "ACTIVE").stream()
             .filter(s -> s.getExternalSubscriptionId() == null ||
-                         !s.getExternalSubscriptionId().equals(externalSubscriptionId))
-            .forEach(s -> { s.setStatus("CANCELLED"); subscriptionRepository.save(s); });
+                        !s.getExternalSubscriptionId().equals(externalSubscriptionId))
+            .forEach(s -> {
+                // Cancel on Google Play if this was a Google subscription
+                if (com.careconnect.model.BillingPlatform.GOOGLE.equals(s.getPlatform())
+                        && s.getPriceId() != null
+                        && s.getPaymentSubscriptionId() != null) {
+                    googleBillingService.cancelSubscription(s.getPriceId(), s.getPaymentSubscriptionId());
+                }
+                s.setStatus("CANCELLED");
+                subscriptionRepository.save(s);
+            });
     }
 
     private com.careconnect.model.Subscription findOrCreateSubscription(String externalSubscriptionId) {
