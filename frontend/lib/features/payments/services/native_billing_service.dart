@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../config/app_config.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+
 
 class NativeBillingService {
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -12,6 +14,8 @@ class NativeBillingService {
   final int userId;
   final void Function()? onPurchaseSuccess;
   final void Function(String error)? onPurchaseError;
+
+  GooglePlayPurchaseDetails? _activePurchase;
 
   NativeBillingService({
     required this.userId,
@@ -26,6 +30,15 @@ class NativeBillingService {
     }, onError: (error) {
       onPurchaseError?.call(error.toString());
     });
+    _restoreExistingPurchases();
+  }
+
+  Future<void> _restoreExistingPurchases() async {
+    try {
+      await _iap.restorePurchases();
+    } catch (e) {
+      // ignore restore errors on init
+    }
   }
 
   Future<void> dispose() async {
@@ -36,26 +49,40 @@ class NativeBillingService {
     final available = await _iap.isAvailable();
     if (!available) throw Exception('In-app purchases not available');
 
-    final ProductDetailsResponse response = await _iap.queryProductDetails({productId}.toSet());
-    if (response.notFoundIDs.isNotEmpty) throw Exception('Product not found: $productId');
+    final ProductDetailsResponse response =
+        await _iap.queryProductDetails({productId}.toSet());
+    if (response.notFoundIDs.isNotEmpty) {
+      throw Exception('Product not found: $productId');
+    }
 
     final product = response.productDetails.first;
 
-    GooglePlayPurchaseParam? googleParam;
     if (product is GooglePlayProductDetails) {
       final offerToken = product.offerToken;
-      if (offerToken != null) {
+      if (offerToken == null) throw Exception('No offer token found for $productId');
+
+      GooglePlayPurchaseParam googleParam;
+
+      if (_activePurchase != null && _activePurchase!.productID != productId) {
+        googleParam = GooglePlayPurchaseParam(
+          productDetails: product,
+          offerToken: offerToken,
+          changeSubscriptionParam: ChangeSubscriptionParam(
+            oldPurchaseDetails: _activePurchase!,
+            replacementMode: ReplacementMode.withTimeProration,
+          ),
+        );
+      } else {
         googleParam = GooglePlayPurchaseParam(
           productDetails: product,
           offerToken: offerToken,
         );
       }
-    }
 
-    if (googleParam != null) {
       await _iap.buyNonConsumable(purchaseParam: googleParam);
     } else {
-      await _iap.buyNonConsumable(purchaseParam: PurchaseParam(productDetails: product));
+      await _iap.buyNonConsumable(
+          purchaseParam: PurchaseParam(productDetails: product));
     }
   }
 
@@ -64,6 +91,9 @@ class NativeBillingService {
       try {
         if (purchase.status == PurchaseStatus.purchased ||
             purchase.status == PurchaseStatus.restored) {
+          if (purchase is GooglePlayPurchaseDetails) {
+            _activePurchase = purchase;
+          }
           await _verifyPurchaseWithServer(purchase);
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
@@ -83,7 +113,6 @@ class NativeBillingService {
     final backendBase = AppConfig.getBackendBaseUrl();
     final uri = Uri.parse('$backendBase/v1/api/billing/pay/$source');
 
-    // Map product ID to tier ID
     final tierMap = {
       'standard_monthly': 2,
       'premium_monthly': 3,
@@ -99,11 +128,11 @@ class NativeBillingService {
     };
 
     final headers = <String, String>{'Content-Type': 'application/json'};
-    final resp = await http.post(uri, headers: headers, body: jsonEncode(body));
+    final resp =
+        await http.post(uri, headers: headers, body: jsonEncode(body));
 
     if (resp.statusCode != 200) {
       throw Exception('Payment processing failed: ${resp.body}');
     }
   }
-
 }
