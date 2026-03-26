@@ -535,6 +535,7 @@ class _SubscriptionManagementPageState
               await Future.delayed(const Duration(milliseconds: 500));
               if (mounted) {
                 await _loadSubscriptionData();
+                setState(() => _processingAction = false);
               }
             }, child: const Text('Confirm')),
           ],
@@ -1011,7 +1012,8 @@ class _SubscriptionManagementPageState
 
               // Action buttons
               if (!_currentSubscription!.cancelAtPeriodEnd &&
-                  _currentSubscription!.isActive) ...[
+                  _currentSubscription!.isActive &&
+                  _currentSubscription!.planAmount > 0) ...[
                 const SizedBox(height: 24),
                 Row(
                   children: [
