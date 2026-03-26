@@ -529,13 +529,14 @@ class _SubscriptionManagementPageState
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
             ElevatedButton(onPressed: () async {
               Navigator.of(ctx).pop();
-              final router = GoRouter.of(context);
               final session = await AuthTokenManager.getUserSession();
               final userId = session?['id']?.toString() ?? '';
               if (userId.isNotEmpty) { await ApiService.createSubscriptionByUser(userId, 'plan_free'); }
               await Future.delayed(const Duration(milliseconds: 500));
-              router.pushReplacement('/subscription');
-              }, child: const Text('Confirm')),
+              if (mounted) {
+                await _loadSubscriptionData();
+              }
+            }, child: const Text('Confirm')),
           ],
         ),
       );
