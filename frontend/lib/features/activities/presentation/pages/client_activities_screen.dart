@@ -276,7 +276,7 @@ class _LogActivitySheetState extends State<LogActivitySheet> {
   bool _loadingScale = true;
   String? _scaleError;
   int? _selectedScore;
-  int? _satisfaction; // 1 = 😞, 2 = 😐, 3 = 😊
+  int? _satisfaction; // 1..5 Likert emoji scale
   final _notesController = TextEditingController();
   bool _submitting = false;
 
@@ -465,24 +465,38 @@ class _LogActivitySheetState extends State<LogActivitySheet> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _SatisfactionButton(
-                    emoji: '😞',
+                    emoji: '😫',
                     value: 1,
                     selected: _satisfaction == 1,
                     onTap: () => setState(() => _satisfaction = 1),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 10),
                   _SatisfactionButton(
-                    emoji: '😐',
+                    emoji: '😕',
                     value: 2,
                     selected: _satisfaction == 2,
                     onTap: () => setState(() => _satisfaction = 2),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 10),
                   _SatisfactionButton(
-                    emoji: '😊',
+                    emoji: '😐',
                     value: 3,
                     selected: _satisfaction == 3,
                     onTap: () => setState(() => _satisfaction = 3),
+                  ),
+                  const SizedBox(width: 10),
+                  _SatisfactionButton(
+                    emoji: '🙂',
+                    value: 4,
+                    selected: _satisfaction == 4,
+                    onTap: () => setState(() => _satisfaction = 4),
+                  ),
+                  const SizedBox(width: 10),
+                  _SatisfactionButton(
+                    emoji: '😄',
+                    value: 5,
+                    selected: _satisfaction == 5,
+                    onTap: () => setState(() => _satisfaction = 5),
                   ),
                 ],
               ),

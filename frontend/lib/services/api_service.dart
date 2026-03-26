@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 // import 'dart:typed_data';
 
@@ -1521,7 +1521,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .put(
-          Uri.parse('${ApiConstants.patients}/$patientId'),
+          Uri.parse('${ApiConstants.patients}/$patientId/profile'),
           headers: headers,
           body: jsonEncode(updatedProfile),
         )
