@@ -79,29 +79,31 @@ class NativeBillingService {
   }
 
   Future<void> _verifyPurchaseWithServer(PurchaseDetails purchase) async {
-    final receipt = purchase.verificationData.serverVerificationData;
-    final source = Platform.isIOS ? 'apple' : (Platform.isAndroid ? 'google' : 'web');
+    final source = Platform.isIOS ? 'apple' : 'google';
     final backendBase = AppConfig.getBackendBaseUrl();
-    final uri = Uri.parse('$backendBase/v1/api/billing/verify/$source');
+    final uri = Uri.parse('$backendBase/v1/api/billing/pay/$source');
+
+    // Map product ID to tier ID
+    final tierMap = {
+      'standard_monthly': 2,
+      'premium_monthly': 3,
+      'free_monthly': 1,
+    };
+    final tierId = tierMap[purchase.productID] ?? 2;
 
     final body = {
+      'token': purchase.verificationData.serverVerificationData,
+      'tierId': tierId,
+      'state': 'CA',
       'userId': userId,
-      'platform': source.toUpperCase(),
-      'receipt': receipt,
-      'productId': purchase.productID,
-      'packageName': Platform.isAndroid ? _androidPackageName() : null,
     };
 
-    final resp = await http.post(uri,
-        headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    final resp = await http.post(uri, headers: headers, body: jsonEncode(body));
 
     if (resp.statusCode != 200) {
-      throw Exception('Receipt verification failed: ${resp.body}');
+      throw Exception('Payment processing failed: ${resp.body}');
     }
   }
 
-  String _androidPackageName() {
-    return const String.fromEnvironment('ANDROID_PACKAGE_NAME',
-        defaultValue: 'edu.umgc.careconnect');
-  }
 }
