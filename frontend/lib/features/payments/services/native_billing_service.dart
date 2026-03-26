@@ -6,20 +6,25 @@ import 'dart:convert';
 import '../../../config/app_config.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
-
 class NativeBillingService {
   final InAppPurchase _iap = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
   final int userId;
+  final void Function()? onPurchaseSuccess;
+  final void Function(String error)? onPurchaseError;
 
-  NativeBillingService({required this.userId});
+  NativeBillingService({
+    required this.userId,
+    this.onPurchaseSuccess,
+    this.onPurchaseError,
+  });
 
   void init() {
     final purchaseUpdated = _iap.purchaseStream;
     _subscription = purchaseUpdated.listen(_onPurchaseUpdated, onDone: () {
       _subscription?.cancel();
     }, onError: (error) {
-      // handle error
+      onPurchaseError?.call(error.toString());
     });
   }
 
@@ -35,8 +40,7 @@ class NativeBillingService {
     if (response.notFoundIDs.isNotEmpty) throw Exception('Product not found: $productId');
 
     final product = response.productDetails.first;
-    
-    // Google Play requires offerToken for subscriptions
+
     GooglePlayPurchaseParam? googleParam;
     if (product is GooglePlayProductDetails) {
       final offerToken = product.offerToken;
@@ -58,12 +62,18 @@ class NativeBillingService {
   Future<void> _onPurchaseUpdated(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
       try {
-        if (purchase.status == PurchaseStatus.purchased || purchase.status == PurchaseStatus.restored) {
+        if (purchase.status == PurchaseStatus.purchased ||
+            purchase.status == PurchaseStatus.restored) {
           await _verifyPurchaseWithServer(purchase);
-          if (purchase.pendingCompletePurchase) await _iap.completePurchase(purchase);
+          if (purchase.pendingCompletePurchase) {
+            await _iap.completePurchase(purchase);
+          }
+          onPurchaseSuccess?.call();
+        } else if (purchase.status == PurchaseStatus.error) {
+          onPurchaseError?.call(purchase.error?.message ?? 'Purchase failed');
         }
       } catch (e) {
-        // log error
+        onPurchaseError?.call(e.toString());
       }
     }
   }
@@ -91,6 +101,7 @@ class NativeBillingService {
   }
 
   String _androidPackageName() {
-    return const String.fromEnvironment('ANDROID_PACKAGE_NAME', defaultValue: 'edu.umgc.careconnect');
+    return const String.fromEnvironment('ANDROID_PACKAGE_NAME',
+        defaultValue: 'edu.umgc.careconnect');
   }
 }

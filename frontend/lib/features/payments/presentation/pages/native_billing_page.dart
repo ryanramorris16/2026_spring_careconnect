@@ -33,14 +33,29 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
   @override
   void initState() {
     super.initState();
-    // Free tier bypasses billing entirely
     if (widget.tierId == 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go('/home');
       });
       return;
     }
-    _billing = NativeBillingService(userId: widget.userId ?? 0);
+    _billing = NativeBillingService(
+      userId: widget.userId ?? 0,
+      onPurchaseSuccess: () {
+        if (mounted) context.go('/subscription');
+      },
+      onPurchaseError: (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Purchase failed: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() => _isPurchasing = false);
+        }
+      },
+    );
     _billing.init();
     _fetchBillingQuote();
   }
@@ -87,20 +102,11 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
   Future<void> _startPurchase() async {
     if (_isPurchasing) return;
     setState(() => _isPurchasing = true);
-
     try {
       await _billing.buySubscription(
         _productIdForTier(),
         userId: widget.userId ?? 0,
       );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Purchase initiated. Completing...')),
-        );
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) context.go('/payment-success');
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -109,9 +115,8 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
             backgroundColor: Colors.red,
           ),
         );
+        setState(() => _isPurchasing = false);
       }
-    } finally {
-      if (mounted) setState(() => _isPurchasing = false);
     }
   }
 
@@ -167,7 +172,10 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
                 : Platform.isIOS
                     ? 'Purchase via App Store'
                     : 'Purchase via Google Play',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8)),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF00A7C8)),
           ),
           const SizedBox(height: 8),
           Text(
@@ -187,14 +195,18 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
                 backgroundColor: const Color(0xFF00A7C8),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               child: _isPurchasing
                   ? const SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Subscribe Now', style: TextStyle(fontSize: 16)),
+                  : const Text('Subscribe Now',
+                      style: TextStyle(fontSize: 16)),
             ),
           ),
           const SizedBox(height: 12),
@@ -202,7 +214,8 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
             width: double.infinity,
             child: TextButton(
               onPressed: () => context.go('/subscription'),
-              child: const Text('Cancel', style: TextStyle(fontSize: 16, color: Colors.grey)),
+              child: const Text('Cancel',
+                  style: TextStyle(fontSize: 16, color: Colors.grey)),
             ),
           ),
         ],
@@ -221,29 +234,53 @@ class _NativeBillingPageState extends State<NativeBillingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Order Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
+          const Text('Order Summary',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF00A7C8))),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(quote.tierName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-              Text(quote.subtotalDisplay, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Text(quote.tierName,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500)),
+              Text(quote.subtotalDisplay,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w500)),
             ],
           ),
-          Container(height: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(vertical: 12)),
+          Container(
+              height: 1,
+              color: Colors.grey[300],
+              margin: const EdgeInsets.symmetric(vertical: 12)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Taxes (${quote.taxPercentageDisplay})', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-              Text(quote.taxDisplay, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              Text('Taxes (${quote.taxPercentageDisplay})',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+              Text(quote.taxDisplay,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600])),
             ],
           ),
-          Container(height: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(vertical: 12)),
+          Container(
+              height: 1,
+              color: Colors.grey[300],
+              margin: const EdgeInsets.symmetric(vertical: 12)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
-              Text(quote.totalDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF00A7C8))),
+              const Text('Total',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00A7C8))),
+              Text(quote.totalDisplay,
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00A7C8))),
             ],
           ),
         ],
