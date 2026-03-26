@@ -39,65 +39,90 @@ public class BillingController {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
+    private com.careconnect.model.User resolveUserFromToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+        try {
+            String token = authHeader.substring(7);
+            if (jwtTokenProvider.validateToken(token)) {
+                String email = jwtTokenProvider.getEmailFromToken(token);
+                return userRepository.findByEmail(email).orElse(null);
+            }
+        } catch (Exception ignored) {
+            // ignore invalid token
+        }
+        return null;
+    }
+
+    private com.careconnect.model.User resolveUser(String authHeader, Long requestUserId) {
+        com.careconnect.model.User user = resolveUserFromToken(authHeader);
+        if (user == null && requestUserId != null) {
+            user = userRepository.findById(requestUserId).orElse(null);
+        }
+        return user;
+    }
+
+    private void cancelOtherActiveSubscriptions(com.careconnect.model.User user, String externalSubscriptionId) {
+        subscriptionRepository.findByUserAndStatus(user, "ACTIVE").stream()
+            .filter(s -> s.getExternalSubscriptionId() == null ||
+                         !s.getExternalSubscriptionId().equals(externalSubscriptionId))
+            .forEach(s -> { s.setStatus("CANCELLED"); subscriptionRepository.save(s); });
+    }
+
+    private com.careconnect.model.Subscription findOrCreateSubscription(String externalSubscriptionId) {
+        if (externalSubscriptionId != null) {
+            return subscriptionRepository.findAll().stream()
+                .filter(s -> externalSubscriptionId.equals(s.getExternalSubscriptionId()))
+                .findFirst()
+                .orElse(new com.careconnect.model.Subscription());
+        }
+        return new com.careconnect.model.Subscription();
+    }
+
+    private void saveSubscription(com.careconnect.model.User user,
+                                   com.careconnect.model.BillingPlatform platform,
+                                   BillingVerifyRequest request,
+                                   BillingVerifyResponse resp,
+                                   com.careconnect.model.Payment payment) {
+        cancelOtherActiveSubscriptions(user, resp.getExternalSubscriptionId());
+        com.careconnect.model.Subscription sub = findOrCreateSubscription(resp.getExternalSubscriptionId());
+        sub.setUser(user);
+        sub.setPlatform(platform);
+        sub.setExternalSubscriptionId(resp.getExternalSubscriptionId());
+        sub.setPaymentSubscriptionId(resp.getExternalSubscriptionId() != null ?
+            resp.getExternalSubscriptionId() : platform.name().toLowerCase() + "_" + System.currentTimeMillis());
+        sub.setPriceId(request.getProductId());
+        sub.setStatus(resp.getStatus());
+        sub.setStartedAt(resp.getPurchaseDate());
+        sub.setCurrentPeriodEnd(resp.getExpiryDate());
+        sub.setLastValidatedAt(java.time.Instant.now());
+        subscriptionRepository.save(sub);
+        payment.setSubscription(sub);
+        paymentService.savePayment(payment);
+    }
+
+    private com.careconnect.model.Payment buildPayment(com.careconnect.model.BillingPlatform platform,
+                                                        BillingVerifyRequest request,
+                                                        BillingVerifyResponse resp) {
+        return com.careconnect.model.Payment.builder()
+            .platform(platform)
+            .platformPurchaseToken(request.getReceipt())
+            .platformPayerId(resp.getExternalTransactionId())
+            .externalTransactionId(resp.getExternalTransactionId())
+            .status(resp.isSuccess() ? "SUCCEEDED" : "FAILED")
+            .amountCents(null)
+            .attemptedAt(resp.getPurchaseDate())
+            .build();
+    }
+
     @PostMapping("/verify/apple")
     public ResponseEntity<?> verifyApple(@RequestBody BillingVerifyRequest request,
                                          @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            com.careconnect.model.User resolvedUser = null;
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                try {
-                    if (jwtTokenProvider.validateToken(token)) {
-                        String email = jwtTokenProvider.getEmailFromToken(token);
-                        resolvedUser = userRepository.findByEmail(email).orElse(null);
-                    }
-                } catch (Exception ex) {
-                    // ignore and proceed without resolved user
-                }
-            }
-
             BillingVerifyResponse resp = appleBillingService.verifyReceipt(request);
-
-            com.careconnect.model.Payment p = com.careconnect.model.Payment.builder()
-                    .platform(com.careconnect.model.BillingPlatform.APPLE)
-                    .platformPurchaseToken(request.getReceipt())
-                    .platformPayerId(resp.getExternalTransactionId())
-                    .externalTransactionId(resp.getExternalTransactionId())
-                    .status(resp.isSuccess() ? "SUCCEEDED" : "FAILED")
-                    .amountCents(null)
-                    .attemptedAt(resp.getPurchaseDate())
-                    .build();
-
+            com.careconnect.model.Payment p = buildPayment(com.careconnect.model.BillingPlatform.APPLE, request, resp);
             paymentService.savePayment(p);
-
-            com.careconnect.model.User user = resolvedUser;
-            if (user == null && request.getUserId() != null) {
-                user = userRepository.findById(request.getUserId()).orElse(null);
-            }
-
-            if (user != null) {
-                com.careconnect.model.Subscription sub = null;
-                if (resp.getExternalSubscriptionId() != null) {
-                    java.util.Optional<com.careconnect.model.Subscription> existing = subscriptionRepository.findAll().stream()
-                            .filter(s -> resp.getExternalSubscriptionId().equals(s.getExternalSubscriptionId()))
-                            .findFirst();
-                    if (existing.isPresent()) {
-                        sub = existing.get();
-                    }
-                }
-                if (sub == null) sub = new com.careconnect.model.Subscription();
-                sub.setUser(user);
-                sub.setPlatform(com.careconnect.model.BillingPlatform.APPLE);
-                sub.setExternalSubscriptionId(resp.getExternalSubscriptionId());
-                sub.setStatus(resp.getStatus());
-                sub.setStartedAt(resp.getPurchaseDate());
-                sub.setCurrentPeriodEnd(resp.getExpiryDate());
-                sub.setLastValidatedAt(java.time.Instant.now());
-                subscriptionRepository.save(sub);
-                p.setSubscription(sub);
-                paymentService.savePayment(p);
-            }
-
+            com.careconnect.model.User user = resolveUser(authHeader, request.getUserId());
+            if (user != null) saveSubscription(user, com.careconnect.model.BillingPlatform.APPLE, request, resp, p);
             return ResponseEntity.ok(resp);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
@@ -108,77 +133,24 @@ public class BillingController {
     public ResponseEntity<?> verifyGoogle(@RequestBody BillingVerifyRequest request,
                                           @RequestHeader(value = "Authorization", required = false) String authHeader) {
         try {
-            com.careconnect.model.User resolvedUser = null;
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                try {
-                    if (jwtTokenProvider.validateToken(token)) {
-                        String email = jwtTokenProvider.getEmailFromToken(token);
-                        resolvedUser = userRepository.findByEmail(email).orElse(null);
-                    }
-                } catch (Exception ex) {
-                    // ignore and continue
-                }
-            }
-
             BillingVerifyResponse resp = googleBillingService.verifyReceipt(request);
-
-            com.careconnect.model.Payment p = com.careconnect.model.Payment.builder()
-                    .platform(com.careconnect.model.BillingPlatform.GOOGLE)
-                    .platformPurchaseToken(request.getReceipt())
-                    .platformPayerId(resp.getExternalTransactionId())
-                    .externalTransactionId(resp.getExternalTransactionId())
-                    .status(resp.isSuccess() ? "SUCCEEDED" : "FAILED")
-                    .amountCents(null)
-                    .attemptedAt(resp.getPurchaseDate())
-                    .build();
-
+            com.careconnect.model.Payment p = buildPayment(com.careconnect.model.BillingPlatform.GOOGLE, request, resp);
             paymentService.savePayment(p);
-
-            com.careconnect.model.User user = resolvedUser;
-            if (user == null && request.getUserId() != null) {
-                user = userRepository.findById(request.getUserId()).orElse(null);
-            }
-
-            if (user != null) {
-                com.careconnect.model.Subscription sub = null;
-                if (resp.getExternalSubscriptionId() != null) {
-                    java.util.Optional<com.careconnect.model.Subscription> existing = subscriptionRepository.findAll().stream()
-                            .filter(s -> resp.getExternalSubscriptionId().equals(s.getExternalSubscriptionId()))
-                            .findFirst();
-                    if (existing.isPresent()) {
-                        sub = existing.get();
-                    }
-                }
-                if (sub == null) sub = new com.careconnect.model.Subscription();
-                sub.setUser(user);
-                sub.setPlatform(com.careconnect.model.BillingPlatform.GOOGLE);
-                sub.setExternalSubscriptionId(resp.getExternalSubscriptionId());
-                sub.setStatus(resp.getStatus());
-                sub.setStartedAt(resp.getPurchaseDate());
-                sub.setCurrentPeriodEnd(resp.getExpiryDate());
-                sub.setLastValidatedAt(java.time.Instant.now());
-                subscriptionRepository.save(sub);
-                p.setSubscription(sub);
-                paymentService.savePayment(p);
-            }
-
+            com.careconnect.model.User user = resolveUser(authHeader, request.getUserId());
+            if (user != null) saveSubscription(user, com.careconnect.model.BillingPlatform.GOOGLE, request, resp, p);
             return ResponseEntity.ok(resp);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }
     }
 
-    // Webhook endpoints (platform server-to-server notifications)
     @PostMapping("/webhook/apple")
     public ResponseEntity<?> appleWebhook(@RequestBody String body, @RequestHeader(value = "Authorization", required = false) String auth) {
-        // For production: validate signature and process notification types
         return ResponseEntity.ok(java.util.Map.of("message", "apple webhook received"));
     }
 
     @PostMapping("/webhook/google")
     public ResponseEntity<?> googleWebhook(@RequestBody String body, @RequestHeader(value = "Authorization", required = false) String auth) {
-        // For production: validate signature and process notification types
         return ResponseEntity.ok(java.util.Map.of("message", "google webhook received"));
     }
 }
