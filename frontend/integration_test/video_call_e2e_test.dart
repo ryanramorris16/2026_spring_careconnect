@@ -3,15 +3,26 @@
 // TDD coverage: CALL-001, CHIME-004, SENT-002, CHIME-006.
 //
 // RUNNING THESE TESTS:
-//   flutter test integration_test/video_call_e2e_test.dart \
-//     --dart-define=CC_BASE_URL_WEB=http://localhost:8081 \
-//     -d <device-id>
 //
-// Or via the drive command (real device / emulator):
+// Chrome / Edge (web):
 //   flutter drive \
 //     --driver=test_driver/integration_test.dart \
 //     --target=integration_test/video_call_e2e_test.dart \
-//     --dart-define=CC_BASE_URL_WEB=http://localhost:8081
+//     --dart-define=CC_BASE_URL_WEB=http://localhost:8081 \
+//     -d chrome
+//
+// Android emulator (launch first: flutter emulators --launch <id>):
+//   flutter test integration_test/video_call_e2e_test.dart \
+//     --dart-define=CC_BASE_URL_WEB=http://localhost:8081 \
+//     -d emulator-5554
+//
+// Windows desktop:
+//   flutter test integration_test/video_call_e2e_test.dart \
+//     --dart-define=CC_BASE_URL_WEB=http://localhost:8081 \
+//     -d windows
+//
+// NOTE: `flutter test -d chrome` is NOT supported for integration tests.
+//       Web targets require `flutter drive` with the driver shim above.
 //
 // REQUIREMENTS:
 //   • Backend running at localhost:8081 (Spring Boot dev profile)  [REQUIRES: backend]
