@@ -10,6 +10,7 @@ import com.careconnect.dto.BillingVerifyRequest;
 import com.careconnect.dto.BillingVerifyResponse;
 import com.careconnect.service.AppleBillingService;
 import com.careconnect.service.GoogleBillingService;
+import com.careconnect.repository.PlanRepository;
 import org.springframework.web.bind.annotation.RequestHeader;
 import com.careconnect.security.JwtTokenProvider;
 
@@ -22,6 +23,7 @@ public class BillingController {
     private final com.careconnect.service.PaymentService paymentService;
     private final com.careconnect.repository.SubscriptionRepository subscriptionRepository;
     private final com.careconnect.repository.UserRepository userRepository;
+    private final PlanRepository planRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -30,12 +32,14 @@ public class BillingController {
                              com.careconnect.service.PaymentService paymentService,
                              com.careconnect.repository.SubscriptionRepository subscriptionRepository,
                              com.careconnect.repository.UserRepository userRepository,
+                             PlanRepository planRepository,
                              JwtTokenProvider jwtTokenProvider) {
         this.appleBillingService = appleBillingService;
         this.googleBillingService = googleBillingService;
         this.paymentService = paymentService;
         this.subscriptionRepository = subscriptionRepository;
         this.userRepository = userRepository;
+        this.planRepository = planRepository;
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
@@ -59,6 +63,16 @@ public class BillingController {
             user = userRepository.findById(requestUserId).orElse(null);
         }
         return user;
+    }
+
+    private String mapProductIdToPlanCode(String productId) {
+        if (productId == null) return null;
+        switch (productId) {
+            case "standard_monthly": return "plan_standard_monthly";
+            case "premium_monthly": return "plan_premium_monthly";
+            case "free_monthly": return "plan_free";
+            default: return productId;
+        }
     }
 
     private void cancelOtherActiveSubscriptions(com.careconnect.model.User user, String externalSubscriptionId) {
@@ -85,12 +99,15 @@ public class BillingController {
                                    com.careconnect.model.Payment payment) {
         cancelOtherActiveSubscriptions(user, resp.getExternalSubscriptionId());
         com.careconnect.model.Subscription sub = findOrCreateSubscription(resp.getExternalSubscriptionId());
+        String planCode = mapProductIdToPlanCode(request.getProductId());
+        com.careconnect.model.Plan plan = planCode != null ? planRepository.findByCode(planCode) : null;
         sub.setUser(user);
         sub.setPlatform(platform);
         sub.setExternalSubscriptionId(resp.getExternalSubscriptionId());
         sub.setPaymentSubscriptionId(resp.getExternalSubscriptionId() != null ?
             resp.getExternalSubscriptionId() : platform.name().toLowerCase() + "_" + System.currentTimeMillis());
-        sub.setPriceId(request.getProductId());
+        sub.setPriceId(planCode);
+        sub.setPlan(plan);
         sub.setStatus(resp.getStatus());
         sub.setStartedAt(resp.getPurchaseDate());
         sub.setCurrentPeriodEnd(resp.getExpiryDate());
