@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelResponse;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -510,7 +511,7 @@ class BedrockSentimentServiceTest {
 
             assertThat(result).containsEntry("headline", "Follow-up check");
             assertThat(result).containsEntry("overallAssessment", "Patient appears stable. Continue monitoring.");
-            assertThat(result.get("keyConcerns")).asList().contains("Fatigue");
+            assertThat(asList(result.get("keyConcerns"))).contains("Fatigue");
         }
 
         @Test
@@ -527,8 +528,17 @@ class BedrockSentimentServiceTest {
             );
 
             assertThat(result).containsEntry("headline", "Call Summary");
-            assertThat(result.get("keyConcerns")).asList().contains("Overall sentiment: ANXIOUS");
+            assertThat(asList(result.get("keyConcerns")))
+                    .contains("Overall sentiment: ANXIOUS");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> asList(final Object value) {
+        if (value instanceof List<?> rawList) {
+            return (List<Object>) rawList;
+        }
+        throw new AssertionError("Expected a list but found: " + value);
     }
 
     @Nested
@@ -605,8 +615,8 @@ class BedrockSentimentServiceTest {
 
             assertThat(result.get("headline").toString().length()).isLessThanOrEqualTo(80);
             assertThat(result.get("overallAssessment").toString().length()).isLessThanOrEqualTo(280);
-            assertThat(result.get("keyConcerns")).asList().hasSize(6);
-            assertThat(result.get("recommendedActions")).asList().contains("a");
+            assertThat(asList(result.get("keyConcerns"))).hasSize(6);
+            assertThat(asList(result.get("recommendedActions"))).contains("a");
         }
 
         @Test
@@ -615,7 +625,8 @@ class BedrockSentimentServiceTest {
             Map<String, Object> result = service.summarizeTranscript(CALL_ID, "   ", null);
 
             assertThat(result).containsEntry("headline", "Call Summary");
-            assertThat(result.get("keyConcerns")).asList().contains("Overall sentiment: ANXIOUS");
+            assertThat(asList(result.get("keyConcerns")))
+                    .contains("Overall sentiment: ANXIOUS");
         }
 
         @Test
