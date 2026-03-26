@@ -4,6 +4,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../config/app_config.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+
 
 class NativeBillingService {
   final InAppPurchase _iap = InAppPurchase.instance;
@@ -33,8 +35,24 @@ class NativeBillingService {
     if (response.notFoundIDs.isNotEmpty) throw Exception('Product not found: $productId');
 
     final product = response.productDetails.first;
-    final purchaseParam = PurchaseParam(productDetails: product);
-    await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+    
+    // Google Play requires offerToken for subscriptions
+    GooglePlayPurchaseParam? googleParam;
+    if (product is GooglePlayProductDetails) {
+      final offerToken = product.offerToken;
+      if (offerToken != null) {
+        googleParam = GooglePlayPurchaseParam(
+          productDetails: product,
+          offerToken: offerToken,
+        );
+      }
+    }
+
+    if (googleParam != null) {
+      await _iap.buyNonConsumable(purchaseParam: googleParam);
+    } else {
+      await _iap.buyNonConsumable(purchaseParam: PurchaseParam(productDetails: product));
+    }
   }
 
   Future<void> _onPurchaseUpdated(List<PurchaseDetails> purchases) async {
