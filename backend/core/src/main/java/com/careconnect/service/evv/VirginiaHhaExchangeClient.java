@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -83,9 +84,22 @@ public class VirginiaHhaExchangeClient implements EvvIntegrationClient {
      * Useful for payload preview and download before submission.
      */
     public HhaExchangeVisitRequest buildRequest(List<EvvRecord> records) {
+        log.info("[VA-HHAExchange] Building request for {} record(s)", records.size());
         List<HhaExchangeVisit> visits = records.stream()
-                .map(this::mapToHhaVisit)
+                .map(record -> {
+                    try {
+                        HhaExchangeVisit visit = mapToHhaVisit(record);
+                        log.debug("[VA-HHAExchange] Successfully mapped record {}", record.getId());
+                        return visit;
+                    } catch (Exception e) {
+                        log.error("[VA-HHAExchange] Error mapping record {}: {}", 
+                                record.getId(), e.getMessage(), e);
+                        throw new RuntimeException("Error mapping record " + record.getId() + 
+                                ": " + e.getMessage(), e);
+                    }
+                })
                 .collect(Collectors.toList());
+        log.info("[VA-HHAExchange] Successfully mapped {} record(s) to HhaExchangeVisit", visits.size());
         return HhaExchangeVisitRequest.builder().visits(visits).build();
     }
 
@@ -108,7 +122,23 @@ public class VirginiaHhaExchangeClient implements EvvIntegrationClient {
                             + " | body: " + response.getBody());
         }
         log.info("[VA-HHAExchange] Batch of {} visit(s) accepted, status={}",
-                visits.size(), response.getStatusCode());
+                request.getVisits().size(), response.getStatusCode());
+    }
+
+    /**
+     * Returns the JSON payload that would be sent to HHAExchange for the given visits.
+     * This is used for debugging and payload download functionality.
+     */
+    public String getPayloadJson(List<EvvRecord> records) {
+        try {
+            HhaExchangeVisitRequest request = buildRequest(records);
+            return new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(request);
+        } catch (Exception e) {
+            log.error("[VA-HHAExchange] Failed to serialize payload to JSON", e);
+            return "{\"error\": \"Failed to serialize payload: " + e.getMessage() + "\"}";
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -180,7 +210,9 @@ public class VirginiaHhaExchangeClient implements EvvIntegrationClient {
                 .residingCaregiver("No")
                 .payerId(props.getPayer().getId())
                 .externalVisitId(String.valueOf(record.getId()))
+                .evvmsid(UUID.randomUUID().toString())
                 .procedureCode(mapServiceTypeToCode(record.getServiceType()))
+                .procedureModifierCode(List.of()) // Empty list as per HHAExchange spec
                 .timezone("US/Eastern")
                 .scheduleStartTime(record.getTimeIn().format(VISIT_DT_FMT))
                 .scheduleEndTime(record.getTimeOut().format(VISIT_DT_FMT))
@@ -199,6 +231,8 @@ public class VirginiaHhaExchangeClient implements EvvIntegrationClient {
                         .notes("")
                         .build())
                 .editVisit(editVisit)
+                .billing(buildBilling(record))
+                .billSecondaryPayer(List.of()) // Empty list as per HHAExchange spec
                 .shiftSignOff(HhaExchangeVisit.ShiftSignOff.builder()
                         .employerInternalNumber("")
                         .employerName(props.getProvider().getName())
@@ -223,6 +257,45 @@ public class VirginiaHhaExchangeClient implements EvvIntegrationClient {
                 .state("VA")
                 .zipcode("00000")
                 .build();
+    }
+
+    private HhaExchangeVisit.Billing buildBilling(EvvRecord record) {
+        try {
+            // Calculate visit duration in minutes with null safety
+            long minutes = 0;
+            if (record.getTimeIn() != null && record.getTimeOut() != null) {
+                minutes = java.time.Duration.between(record.getTimeIn(), record.getTimeOut()).toMinutes();
+            }
+            
+            // Ensure we have at least 1 minute for billing purposes
+            if (minutes <= 0) {
+                minutes = 1;
+            }
+
+            // For now, use a default contract rate of $20/hour (0.3333/minute)
+            // This should be configurable based on service type and payer agreements
+            double contractRate = 20.0 / 60.0; // $20 per hour
+            double totalBilledAmount = minutes * contractRate;
+
+            return HhaExchangeVisit.Billing.builder()
+                    .externalInvoiceNumber("INV-" + record.getId())
+                    .totalBilledAmount(totalBilledAmount)
+                    .totalUnitsBilled((int) minutes) // Units in minutes
+                    .contractRate(contractRate)
+                    .diagnosisCodes(List.of()) // Empty list - would need patient diagnosis data
+                    .build();
+        } catch (Exception e) {
+            log.warn("[VA-HHAExchange] Error building billing section for record {}: {}", 
+                    record.getId(), e.getMessage());
+            // Return empty billing if calculation fails
+            return HhaExchangeVisit.Billing.builder()
+                    .externalInvoiceNumber("INV-" + record.getId())
+                    .totalBilledAmount(0.0)
+                    .totalUnitsBilled(0)
+                    .contractRate(0.0)
+                    .diagnosisCodes(List.of())
+                    .build();
+        }
     }
 
     /**

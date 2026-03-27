@@ -32,7 +32,7 @@ class HhaExchangeBatchSubmissionServiceTest {
     @Test
     void submitBatch_eligibleRecord_callsHhaClientAndAudit() throws Exception {
         EvvRecord rec = approvedVaRecord(1L, false);
-        when(evvRecordRepository.findAllById(List.of(1L))).thenReturn(List.of(rec));
+        when(evvRecordRepository.findAllByIdWithPatient(List.of(1L))).thenReturn(List.of(rec));
 
         service.submitBatch(List.of(1L), 99L);
 
@@ -44,7 +44,7 @@ class HhaExchangeBatchSubmissionServiceTest {
     void submitBatch_nonVaRecord_isExcluded() {
         EvvRecord mdRecord = approvedVaRecord(2L, false);
         mdRecord.setStateCode("MD");
-        when(evvRecordRepository.findAllById(List.of(2L))).thenReturn(List.of(mdRecord));
+        when(evvRecordRepository.findAllByIdWithPatient(List.of(2L))).thenReturn(List.of(mdRecord));
 
         assertThatThrownBy(() -> service.submitBatch(List.of(2L), 99L))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -55,7 +55,7 @@ class HhaExchangeBatchSubmissionServiceTest {
     void submitBatch_notApprovedRecord_isExcluded() {
         EvvRecord rec = approvedVaRecord(3L, false);
         rec.setStatus("UNDER_REVIEW");
-        when(evvRecordRepository.findAllById(List.of(3L))).thenReturn(List.of(rec));
+        when(evvRecordRepository.findAllByIdWithPatient(List.of(3L))).thenReturn(List.of(rec));
 
         assertThatThrownBy(() -> service.submitBatch(List.of(3L), 99L))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -64,7 +64,7 @@ class HhaExchangeBatchSubmissionServiceTest {
 
     @Test
     void submitBatch_emptyIdList_throwsIllegalArgument() {
-        when(evvRecordRepository.findAllById(List.of())).thenReturn(List.of());
+        when(evvRecordRepository.findAllByIdWithPatient(List.of())).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.submitBatch(List.of(), 99L))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -73,7 +73,7 @@ class HhaExchangeBatchSubmissionServiceTest {
     @Test
     void submitBatch_hhaClientThrows_auditLogsFailureAndRethrows() throws Exception {
         EvvRecord rec = approvedVaRecord(4L, false);
-        when(evvRecordRepository.findAllById(List.of(4L))).thenReturn(List.of(rec));
+        when(evvRecordRepository.findAllByIdWithPatient(List.of(4L))).thenReturn(List.of(rec));
         doThrow(new RuntimeException("timeout")).when(hhaClient).submitBatch(anyList());
 
         assertThatThrownBy(() -> service.submitBatch(List.of(4L), 99L))

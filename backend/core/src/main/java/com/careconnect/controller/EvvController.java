@@ -19,6 +19,7 @@ import com.careconnect.service.evv.EvvOfflineSyncService;
 import com.careconnect.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -187,9 +188,35 @@ public class EvvController {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdminOrCaregiver(currentUser);
         try {
-            return ResponseEntity.ok(hhaExchangeSubmitter.buildPayload(recordIds));
+            Object payload = hhaExchangeSubmitter.buildPayload(recordIds);
+            return ResponseEntity.ok(payload);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to build payload: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Returns the HHAExchange JSON payload as a downloadable string for the supplied record IDs.
+     * Used by the UI to download the payload for audit / debugging purposes.
+     */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @PostMapping("/records/hhaexchange-payload-json")
+    public ResponseEntity<String> getHhaExchangePayloadJson(
+            @RequestBody List<Long> recordIds) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+        try {
+            String jsonPayload = hhaExchangeSubmitter.getPayloadJson(recordIds);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"hhaexchange-payload.json\"")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(jsonPayload);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
 

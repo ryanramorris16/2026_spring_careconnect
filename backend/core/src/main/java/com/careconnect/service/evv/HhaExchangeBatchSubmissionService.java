@@ -54,20 +54,70 @@ public class HhaExchangeBatchSubmissionService {
      * @throws IllegalArgumentException if no eligible records are found
      */
     public Object buildPayload(List<Long> recordIds) {
-        List<EvvRecord> eligible = evvRecordRepository.findAllById(recordIds).stream()
-                .filter(r -> "VA".equalsIgnoreCase(r.getStateCode()))
-                .filter(r -> "APPROVED".equalsIgnoreCase(r.getStatus()))
+        log.info("[HHAExchange] Building payload for record IDs: {}", recordIds);
+        
+        // Fetch records with Patient eagerly loaded to avoid lazy-loading errors
+        List<EvvRecord> records = evvRecordRepository.findAllByIdWithPatient(recordIds);
+        log.info("[HHAExchange] Fetched {} records with Patient data eagerly loaded", records.size());
+        
+        List<EvvRecord> eligible = records.stream()
+                .filter(r -> {
+                    boolean isVA = "VA".equalsIgnoreCase(r.getStateCode());
+                    boolean isApproved = "APPROVED".equalsIgnoreCase(r.getStatus());
+                    if (!isVA || !isApproved) {
+                        log.debug("[HHAExchange] Filtering out record {} - VA: {}, APPROVED: {}", 
+                                r.getId(), isVA, isApproved);
+                    }
+                    return isVA && isApproved;
+                })
                 .collect(java.util.stream.Collectors.toList());
+        
+        log.info("[HHAExchange] Found {} eligible records from {} requested", 
+                eligible.size(), recordIds.size());
+        
         if (eligible.isEmpty()) {
             throw new IllegalArgumentException(
                     "No eligible VA/APPROVED records found in: " + recordIds);
         }
-        return hhaClient.buildRequest(eligible);
+        
+        try {
+            Object request = hhaClient.buildRequest(eligible);
+            log.info("[HHAExchange] Successfully built request for {} records", eligible.size());
+            return request;
+        } catch (Exception e) {
+            log.error("[HHAExchange] Error building request for {} records: {}", 
+                    eligible.size(), e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Returns the JSON payload that would be sent to HHAExchange for the given record IDs.
+     * This is used for debugging and payload download functionality.
+     *
+     * @param recordIds IDs of the EVV records to include in payload
+     * @return JSON string representation of the HHAExchange payload
+     * @throws IllegalArgumentException if no eligible records are found
+     */
+    public String getPayloadJson(List<Long> recordIds) {
+        // Fetch records with Patient eagerly loaded to avoid lazy-loading errors
+        List<EvvRecord> records = evvRecordRepository.findAllByIdWithPatient(recordIds);
+        List<EvvRecord> eligible = records.stream()
+                .filter(r -> "VA".equalsIgnoreCase(r.getStateCode()))
+                .filter(r -> "APPROVED".equalsIgnoreCase(r.getStatus()))
+                .collect(Collectors.toList());
+        if (eligible.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No eligible VA/APPROVED records found in the provided IDs: " + recordIds);
+        }
+        return hhaClient.getPayloadJson(eligible);
     }
 
     @Transactional
     public void submitBatch(List<Long> recordIds, Long actorId) throws Exception {
-        List<EvvRecord> eligible = evvRecordRepository.findAllById(recordIds).stream()
+        // Fetch records with Patient eagerly loaded to avoid lazy-loading errors
+        List<EvvRecord> records = evvRecordRepository.findAllByIdWithPatient(recordIds);
+        List<EvvRecord> eligible = records.stream()
                 .filter(r -> "VA".equalsIgnoreCase(r.getStateCode()))
                 .filter(r -> "APPROVED".equalsIgnoreCase(r.getStatus()))
                 .collect(Collectors.toList());

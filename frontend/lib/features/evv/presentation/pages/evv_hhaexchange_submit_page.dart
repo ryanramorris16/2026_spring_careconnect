@@ -1,10 +1,10 @@
 import 'dart:convert';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../../services/evv_service.dart';
 import '../../../../widgets/app_bar_helper.dart';
 import '../../../../widgets/common_drawer.dart';
+import '../../../../utils/file_handler_web.dart';
 
 /// Allows a caregiver to review their APPROVED EVV visit records and
 /// manually trigger submission to HHAExchange
@@ -72,11 +72,27 @@ class _EvvHhaExchangeSubmitPageState extends State<EvvHhaExchangeSubmitPage> {
 
     // Step 1: Download the payload JSON before attempting submission.
     try {
+      debugPrint('[HHAExchange] Starting payload fetch for ${ids.length} records');
+      setState(() {
+        _resultMessage = 'Fetching payload for download...';
+        _resultSuccess = true; // Show as success while fetching
+      });
       final payloadJson = await _evvService.getHhaExchangePayload(ids);
-      _downloadPayloadFile(payloadJson, ids);
+      debugPrint('[HHAExchange] Payload fetched successfully, length: ${payloadJson.length}');
+      await _downloadPayloadFile(payloadJson, ids);
+      setState(() {
+        _resultMessage = 'Payload downloaded. Submitting to HHAExchange...';
+        _resultSuccess = true;
+      });
     } catch (e) {
       // Non-fatal – log the issue but proceed with submission attempt.
       debugPrint('[HHAExchange] Could not fetch payload for download: $e');
+      setState(() {
+        _resultMessage = 'Warning: Could not download payload ($e). Continuing with submission...';
+        _resultSuccess = false;
+      });
+      // Wait a moment to show the warning
+      await Future.delayed(const Duration(seconds: 3));
     }
 
     // Step 2: Submit to HHAExchange.
@@ -104,8 +120,17 @@ class _EvvHhaExchangeSubmitPageState extends State<EvvHhaExchangeSubmitPage> {
   }
 
   /// Triggers a browser download of [payloadJson] as a timestamped JSON file.
-  void _downloadPayloadFile(String payloadJson, List<int> ids) {
+  Future<void> _downloadPayloadFile(String payloadJson, List<int> ids) async {
     try {
+      debugPrint('[HHAExchange] Starting payload download for ${ids.length} records');
+
+      // Show download started notification
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Downloading HHAExchange payload...')),
+        );
+      }
+
       // Pretty-print the JSON for readability.
       final pretty = const JsonEncoder.withIndent('  ')
           .convert(jsonDecode(payloadJson));
@@ -114,14 +139,32 @@ class _EvvHhaExchangeSubmitPageState extends State<EvvHhaExchangeSubmitPage> {
           .replaceAll(':', '-')
           .replaceAll('.', '-');
       final filename = 'hhaexchange_payload_$ts.json';
-      final blob = html.Blob([pretty], 'application/json');
-      final url = html.Url.createObjectUrl(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', filename)
-        ..click();
-      html.Url.revokeObjectUrl(url);
+
+      debugPrint('[HHAExchange] Creating file with filename: $filename');
+
+      // Convert JSON string to bytes
+      final bytes = utf8.encode(pretty) as Uint8List;
+
+      // Use the proper web file handler
+      final fileHandler = WebFileHandler();
+      await fileHandler.downloadFile(filename, bytes, 'application/json');
+
+      debugPrint('[HHAExchange] Payload download completed successfully');
+
+      // Show download completed notification
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payload downloaded as $filename')),
+        );
+      }
     } catch (e) {
       debugPrint('[HHAExchange] Payload download failed: $e');
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download payload: $e')),
+        );
+      }
     }
   }
 
