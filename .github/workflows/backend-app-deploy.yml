@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
-      - dev_gjurado_cloudformation
     paths:
       - "backend/**"
       - "cloudformation-fargate/templates/04-service.yaml"
