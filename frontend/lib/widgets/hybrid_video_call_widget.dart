@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as uh;
 import 'package:go_router/go_router.dart';
 import '../services/video_call_service.dart';
 import '../services/auth_token_manager.dart';
@@ -99,6 +100,9 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
   bool _isEndingCall = false;
   bool _isExitingCall = false;
 
+  // Conference invite
+  bool _isLoadingInvitees = false;
+
   // Recording
   bool _isRecording = false;
   bool _isTogglingRecording = false;
@@ -121,7 +125,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
   DateTime? _lastTranscriptSentAt;
   String? _lastTranscriptSample;
   String _transcriptCaptureStatus = 'AWAITING';
-  String _transcriptCaptureDetail = 'Waiting for transcript';
 
   // Latest sentiment data — updated via WebSocket push
   Map<String, dynamic> _sentimentData = {};
@@ -221,7 +224,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
       if (mounted) {
         setState(() {
           _transcriptCaptureStatus = 'AWAITING';
-          _transcriptCaptureDetail = 'Waiting for transcript';
         });
       }
 
@@ -427,12 +429,11 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     return null;
   }
 
-  Future<void> _handleTranscriptSample(String transcript) async {
+  Future<void> _handleTranscriptSample(Map<String, dynamic> sample) async {
     if (_isCareTeamCall) {
       if (mounted && _transcriptCaptureStatus != 'DISABLED') {
         setState(() {
           _transcriptCaptureStatus = 'DISABLED';
-          _transcriptCaptureDetail = 'Sentiment disabled for care-team calls';
         });
       }
       return;
@@ -442,14 +443,13 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
       return;
     }
 
-    final trimmed = transcript.trim();
+    final trimmed = (sample['text'] ?? '').toString().trim();
     if (trimmed.length < 2) {
       return;
     }
     if (mounted && _transcriptCaptureStatus != 'CONNECTED') {
       setState(() {
         _transcriptCaptureStatus = 'CONNECTED';
-        _transcriptCaptureDetail = 'Live transcript';
       });
     }
     debugPrint(
@@ -465,16 +465,87 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
 
     final uploaded = await _videoCallService.sendTranscriptSegment(
       text: trimmed,
-      speakerLabel: _isPatientView
-          ? 'PATIENT'
-          : (_isCaregiverView ? 'CAREGIVER' : 'PARTICIPANT'),
-      source: 'chime-transcript',
+      speakerLabel: _resolveTranscriptSpeakerLabel(sample),
+      startMs: _safeTranscriptMs(sample['startMs']),
+      endMs: _safeTranscriptMs(sample['endMs']),
+      source: (sample['source'] ?? 'chime-transcript').toString(),
     );
 
     if (uploaded) {
       _lastTranscriptSentAt = now;
       _lastTranscriptSample = trimmed;
     }
+  }
+
+  int? _safeTranscriptMs(dynamic value) {
+    if (value is int) {
+      return value >= 0 ? value : null;
+    }
+    if (value is num) {
+      final rounded = value.round();
+      return rounded >= 0 ? rounded : null;
+    }
+    final parsed = int.tryParse(value?.toString() ?? '');
+    return parsed != null && parsed >= 0 ? parsed : null;
+  }
+
+  /// Decodes the speaker label from the Chime externalUserId encoded by the backend.
+  ///
+  /// Backend format: `{ROLE}_{First-LAST}_{userId}` e.g. `CAREGIVER_John-DOE_42`
+  /// Display format: `John DOE`  (first name title-case, last name upper-case)
+  /// Falls back to role name if no name segment is present.
+  String _resolveTranscriptSpeakerLabel(Map<String, dynamic> sample) {
+    final raw = (sample['speakerLabel'] ?? '').toString().trim();
+    if (raw.isNotEmpty) {
+      return _decodeExternalUserIdLabel(raw);
+    }
+    if (_isPatientView) return 'PATIENT';
+    if (_isCaregiverView) return 'CAREGIVER';
+    return 'PARTICIPANT';
+  }
+
+  static const _knownRoles = ['CAREGIVER', 'PATIENT', 'ADMIN', 'FAMILYMEMBER'];
+
+  String _decodeExternalUserIdLabel(String raw) {
+    // Format: ROLE_First-LAST_userId  (3 parts separated by underscores)
+    // Also handles legacy ROLE_userId (2 parts) and plain ROLE (1 part).
+    final parts = raw.split('_');
+    final roleCandidate = parts[0].toUpperCase();
+    final isKnownRole = _knownRoles.any((r) => roleCandidate.startsWith(r));
+
+    if (!isKnownRole) return raw; // unknown format — return as-is
+
+    // Try to extract the name segment (middle part when there are 3 parts)
+    if (parts.length >= 3) {
+      final nameSeg = parts[1]; // e.g. "John-DOE"
+      if (nameSeg.isNotEmpty && nameSeg.contains(RegExp(r'[A-Za-z]'))) {
+        return _formatNameSegment(nameSeg);
+      }
+    }
+
+    // Fall back to role label
+    if (roleCandidate.startsWith('CAREGIVER') || roleCandidate.startsWith('ADMIN')) {
+      return 'CAREGIVER';
+    }
+    if (roleCandidate.startsWith('PATIENT')) return 'PATIENT';
+    if (roleCandidate.startsWith('FAMILYMEMBER')) return 'FAMILY';
+    return roleCandidate;
+  }
+
+  /// Converts "John-DOE" → "John DOE"
+  String _formatNameSegment(String nameSeg) {
+    final hyphenParts = nameSeg.split('-');
+    if (hyphenParts.length == 1) {
+      // Only first name
+      final n = hyphenParts[0];
+      return n.isEmpty ? nameSeg : n[0].toUpperCase() + n.substring(1).toLowerCase();
+    }
+    final first = hyphenParts[0];
+    final last = hyphenParts.sublist(1).join(' ');
+    final firstFormatted = first.isEmpty
+        ? ''
+        : first[0].toUpperCase() + first.substring(1).toLowerCase();
+    return '$firstFormatted ${last.toUpperCase()}'.trim();
   }
 
   void _handleTranscriptStatus(String status, String? detail) {
@@ -484,9 +555,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     }
     setState(() {
       _transcriptCaptureStatus = normalized;
-      if (detail != null && detail.trim().isNotEmpty) {
-        _transcriptCaptureDetail = detail.trim();
-      }
     });
   }
 
@@ -769,6 +837,138 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     }
   }
 
+  // ================================================================
+  // CONFERENCE — add participant to active call
+  // ================================================================
+
+  Future<void> _showAddParticipantDialog() async {
+    if (_callSession == null) return;
+    setState(() => _isLoadingInvitees = true);
+
+    List<Map<String, dynamic>> invitees = [];
+    try {
+      invitees = await _videoCallService.getEligibleInvitees(widget.callId);
+    } catch (_) {
+      invitees = [];
+    } finally {
+      if (mounted) setState(() => _isLoadingInvitees = false);
+    }
+
+    if (!mounted) return;
+
+    if (invitees.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No available care-circle members to add.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Disable iframe pointer events so the Flutter dialog receives taps on web
+    if (kIsWeb) {
+      for (final el in uh.document.querySelectorAll('iframe')) {
+        (el as uh.IFrameElement).style.pointerEvents = 'none';
+      }
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Participant'),
+        content: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select a care-circle member to join this call:',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              ...invitees.map((person) {
+                final name = (person['name'] ?? '').toString();
+                final role = (person['role'] ?? '').toString();
+                final relationship = (person['relationship'] as String?);
+                final subtitle = role == 'FAMILY_MEMBER'
+                    ? 'Family Member${relationship != null && relationship.isNotEmpty ? ' · $relationship' : ''}'
+                    : 'Caregiver';
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: role == 'FAMILY_MEMBER'
+                        ? Colors.teal.shade100
+                        : Colors.blue.shade100,
+                    child: Icon(
+                      role == 'FAMILY_MEMBER' ? Icons.people : Icons.medical_services,
+                      size: 18,
+                      color: role == 'FAMILY_MEMBER'
+                          ? Colors.teal.shade700
+                          : Colors.blue.shade700,
+                    ),
+                  ),
+                  title: Text(name, style: const TextStyle(fontSize: 14)),
+                  subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _inviteParticipant(
+                      userId: person['userId'].toString(),
+                      name: name,
+                    );
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    // Restore iframe pointer events after dialog closes
+    if (kIsWeb) {
+      for (final el in uh.document.querySelectorAll('iframe')) {
+        (el as uh.IFrameElement).style.pointerEvents = '';
+      }
+    }
+  }
+
+  Future<void> _inviteParticipant({
+    required String userId,
+    required String name,
+  }) async {
+    final status = await _videoCallService.inviteParticipant(widget.callId, userId);
+    if (!mounted) return;
+    final String message;
+    final Color bgColor;
+    switch (status) {
+      case 'invited':
+        message = 'Invitation sent to $name.';
+        bgColor = Colors.green.shade700;
+        break;
+      case 'offline':
+        message = '$name is not available right now.';
+        bgColor = Colors.orange.shade700;
+        break;
+      default:
+        message = 'Could not invite $name. Please try again.';
+        bgColor = Colors.red.shade700;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: bgColor,
+      ),
+    );
+  }
+
   Future<void> _exitCallScreen() async {
     if (_isExitingCall || !mounted) return;
     _isExitingCall = true;
@@ -778,6 +978,11 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
         widget.forcePatientDetailsOnExit &&
         returnPatientId != null &&
         returnPatientId.isNotEmpty;
+
+    if (shouldForcePatientDetails && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+      return;
+    }
 
     if (shouldForcePatientDetails) {
       Navigator.of(context).pushReplacement(
@@ -875,11 +1080,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
           child: Stack(
             children: [
               Positioned.fill(child: _buildChimeView()),
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: _buildTranscriptStatusBadge(),
-              ),
             ],
           ),
         ),
@@ -1163,69 +1363,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     );
   }
 
-  Widget _buildTranscriptStatusBadge() {
-    Color badgeColor;
-    IconData icon;
-    String label;
-
-    switch (_transcriptCaptureStatus) {
-      case 'CONNECTED':
-        badgeColor = Colors.green.shade700;
-        icon = Icons.subtitles;
-        label = 'Transcript connected';
-        break;
-      case 'FALLBACK':
-        badgeColor = Colors.orange.shade700;
-        icon = Icons.settings_backup_restore;
-        label = 'Transcript fallback';
-        break;
-      case 'BLOCKED':
-        badgeColor = Colors.red.shade700;
-        icon = Icons.block;
-        label = 'Transcript blocked';
-        break;
-      default:
-        badgeColor = Colors.blueGrey.shade600;
-        icon = Icons.hourglass_bottom;
-        label = 'Transcript waiting';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: badgeColor.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 14),
-          const SizedBox(width: 6),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                _transcriptCaptureDetail,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRecordingConsentBanner() {
     return Container(
@@ -1286,6 +1423,24 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
             icon: const Icon(Icons.cameraswitch, color: Colors.white),
           ),
           const SizedBox(width: 8),
+          // Add participant button (caregiver only)
+          if (_isCaregiverView) ...[
+            _isLoadingInvitees
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : IconButton(
+                    tooltip: 'Add participant',
+                    onPressed: _showAddParticipantDialog,
+                    icon: const Icon(Icons.person_add, color: Colors.white),
+                  ),
+            const SizedBox(width: 8),
+          ],
           // Record / stop-recording button (caregiver only)
           if (_isCaregiverView) ...[
             _isTogglingRecording
@@ -1478,3 +1633,5 @@ class _BlinkingDotState extends State<_BlinkingDot>
     );
   }
 }
+
+

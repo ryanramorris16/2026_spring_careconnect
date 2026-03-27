@@ -758,7 +758,7 @@ class EvvServiceTest {
                 .sortDirection("DESC")
                 .build();
 
-        when(recordRepository.searchRecords(any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(recordRepository.searchRecords(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
         when(locationService.getLocationsForRecord(anyLong())).thenReturn(List.of());
 
@@ -780,7 +780,7 @@ class EvvServiceTest {
                 .sortDirection("DESC")
                 .build();
 
-        when(recordRepository.searchRecords(any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(recordRepository.searchRecords(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
         // locationService throws → populateLocationFields swallows it
         when(locationService.getLocationsForRecord(anyLong()))

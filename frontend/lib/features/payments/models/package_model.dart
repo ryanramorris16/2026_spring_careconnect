@@ -1,7 +1,7 @@
 class PackageModel {
   final String name;
   final String description;
-  final int priceCents; // Stripe uses cents
+  final int priceCents; // Stored in cents
   final String id;
 
   PackageModel({

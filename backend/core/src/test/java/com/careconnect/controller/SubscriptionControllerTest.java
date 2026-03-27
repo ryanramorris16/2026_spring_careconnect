@@ -111,7 +111,7 @@ class SubscriptionControllerTest {
     void cancelSubscription_stripeId_resolvesViaFindAllAndCancels() throws Exception {
         Subscription sub = new Subscription();
         sub.setId(10L);
-        sub.setStripeSubscriptionId("sub_abc");
+        sub.setPaymentSubscriptionId("sub_abc");
         sub.setStatus("ACTIVE");
         when(subscriptionRepository.findAll()).thenReturn(List.of(sub));
         when(subscriptionRepository.findById(10L)).thenReturn(Optional.of(sub));

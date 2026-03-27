@@ -52,6 +52,12 @@ public class ConfigController {
         List<CompetencyScaleDtos.CompetencyScaleItem> items = new ArrayList<>();
         for (int v = min; v <= max; v++) {
             String label = configService.getValue(KEY_LABEL_PREFIX + v).orElse("");
+            if (label != null) {
+                label = label.trim();
+            }
+            if (label == null || label.isEmpty()) {
+                label = defaultCompetencyLabel(v);
+            }
             labels.put(v, label);
             items.add(new CompetencyScaleDtos.CompetencyScaleItem(v, label));
         }
@@ -106,6 +112,23 @@ public class ConfigController {
             return Integer.parseInt(raw.trim());
         } catch (Exception e) {
             return def;
+        }
+    }
+
+    private static String defaultCompetencyLabel(int value) {
+        switch (value) {
+            case 1:
+                return "Total Assistance";
+            case 2:
+                return "Maximum Assistance";
+            case 3:
+                return "Moderate Assistance";
+            case 4:
+                return "Minimal Assistance";
+            case 5:
+                return "Independent";
+            default:
+                return "";
         }
     }
 }

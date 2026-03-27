@@ -1,6 +1,6 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+// import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -53,10 +53,14 @@ class ApiConstants {
 
   // EVV endpoints
   static final String evv = '$_host/v1/api/evv';
+
+  // Telemetry endpoints
+  static final String telemetryV3 = '$_host/v1/api/dev/telemetry';
 }
 
 class ApiService {
-  static const storage = FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
+  static const storage =
+      FlutterSecureStorage(webOptions: WebOptions.defaultOptions);
   static http.Client _httpClient = ApiServiceOffline.httpClient;
 
   static void configureOfflineQueue({
@@ -123,11 +127,11 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
 
     // Debug: Check if JWT token is included
-    print('≡ƒöì registerPatient headers: $headers');
+    debugPrint('registerPatient headers: $headers');
     final hasAuth = headers.containsKey('Authorization');
-    print('≡ƒöì Authorization header present: $hasAuth');
+    debugPrint('Authorization header present: $hasAuth');
     if (hasAuth) {
-      print('≡ƒöì Auth header value: ${headers['Authorization']}');
+      debugPrint('Auth header value: ${headers['Authorization']}');
     }
 
     return await _httpClient
@@ -537,8 +541,8 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 15));
 
-      print(
-        '≡ƒöì Check email response: ${response.statusCode} - ${response.body}',
+      debugPrint(
+        'Check email response: ${response.statusCode} - ${response.body}',
       );
 
       if (response.statusCode == 200) {
@@ -550,7 +554,7 @@ class ApiService {
         };
       }
     } catch (e) {
-      print('Γ¥î Error checking email: $e');
+      debugPrint('Error checking email: $e');
       return {'exists': false, 'error': e.toString()};
     }
   }
@@ -565,7 +569,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json';
 
-    print('≡ƒöì Sending connection request to $patientEmail');
+    debugPrint('Sending connection request to $patientEmail');
 
     return await _httpClient
         .post(
@@ -602,16 +606,16 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json'; // Add content type header
 
-    print('≡ƒöì Calling suspendCaregiverPatientLink for linkId: $linkId');
+    debugPrint('Calling suspendCaregiverPatientLink for linkId: $linkId');
 
     // Try both formats to determine which one works with the backend
     final url1 =
         '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/suspend';
     final url2 = '${ApiConstants.baseUrl}caregivers/links/$linkId/suspend';
 
-    print('≡ƒöì URL Option 1: $url1');
-    print('≡ƒöì URL Option 2: $url2');
-    print('≡ƒöì Headers: $headers');
+    debugPrint('URL Option 1: $url1');
+    debugPrint('URL Option 2: $url2');
+    debugPrint('Headers: $headers');
 
     // Use the first URL format by default
     final String finalUrl = url1;
@@ -631,16 +635,16 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json'; // Add content type header
 
-    print('≡ƒöì Calling reactivateCaregiverPatientLink for linkId: $linkId');
+    debugPrint(' Calling reactivateCaregiverPatientLink for linkId: $linkId');
 
     // Try both formats to determine which one works with the backend
     final url1 =
         '${ApiConstants.baseUrl}caregiver-patient-links/$linkId/reactivate';
     final url2 = '${ApiConstants.baseUrl}caregivers/links/$linkId/reactivate';
 
-    print('≡ƒöì URL Option 1: $url1');
-    print('≡ƒöì URL Option 2: $url2');
-    print('≡ƒöì Headers: $headers');
+    debugPrint(' URL Option 1: $url1');
+    debugPrint(' URL Option 2: $url2');
+    debugPrint(' Headers: $headers');
 
     // Use the first URL format by default
     final String finalUrl = url1;
@@ -670,11 +674,12 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        print('ΓÜá∩╕Å getCaregiverMoodSummaries failed: ${response.statusCode}');
+        debugPrint(
+            'ΓÜá∩╕Å getCaregiverMoodSummaries failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
-      print('Γ¥î getCaregiverMoodSummaries error: $e');
+      debugPrint('Γ¥î getCaregiverMoodSummaries error: $e');
       return {};
     }
   }
@@ -695,11 +700,11 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getActiveMedications error: $e');
+      debugPrint('Γ¥î getActiveMedications error: $e');
       return [];
     }
   }
@@ -721,11 +726,11 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getTodaysMedications error: $e');
+      debugPrint('Γ¥î getTodaysMedications error: $e');
       return [];
     }
   }
@@ -751,11 +756,11 @@ class ApiService {
           .post(url, headers: headers, body: body)
           .timeout(const Duration(seconds: 30));
 
-      print(
-          '≡ƒöì saveMoodScore response: ${response.statusCode} - ${response.body}');
+      debugPrint(
+          ' saveMoodScore response: ${response.statusCode} - ${response.body}');
       return response;
     } catch (e) {
-      print('Γ¥î saveMoodScore error: $e');
+      debugPrint('Γ¥î saveMoodScore error: $e');
       rethrow;
     }
   }
@@ -774,13 +779,29 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        print('ΓÜá∩╕Å getMoodHistory failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getMoodHistory failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('Γ¥î getMoodHistory error: $e');
+      debugPrint('Γ¥î getMoodHistory error: $e');
       return [];
     }
+  }
+
+  // ========================
+  // TELEMETRY METHODS
+  // ========================
+
+  static Future<http.Response> sendTelemetryEventV3({
+    required Map<String, dynamic> payload,
+  }) async {
+    return await _httpClient
+        .post(
+          Uri.parse(ApiConstants.telemetryV3),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        )
+        .timeout(const Duration(seconds: 15));
   }
 
   // ========================
@@ -834,7 +855,7 @@ class ApiService {
   // Save JWT token from Set-Cookie header or response body
   static Future<void> saveJWTToken(String token) async {
     // This method is now deprecated - use AuthTokenManager.saveAuthData instead
-    print(
+    debugPrint(
       'Warning: saveJWTToken is deprecated. Use AuthTokenManager.saveAuthData instead.',
     );
   }
@@ -994,7 +1015,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -1023,6 +1044,19 @@ class ApiService {
     // Create form data as required by the API
     final formData = {'customerId': customerId, 'priceId': priceId};
 
+    return await _httpClient
+        .post(uri, headers: headers, body: formData)
+        .timeout(const Duration(seconds: 30));
+  }
+
+  static Future<http.Response> createSubscriptionByUser(
+    String userId,
+    String priceId,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    final uri = Uri.parse('${ApiConstants.subscriptions}/create-by-user');
+    final formData = {'userId': userId, 'priceId': priceId};
     return await _httpClient
         .post(uri, headers: headers, body: formData)
         .timeout(const Duration(seconds: 30));
@@ -1101,7 +1135,7 @@ class ApiService {
 
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.subscriptions}/user/$userId'),
+          Uri.parse('${ApiConstants.subscriptions}/user/$userId/active'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 30));
@@ -1328,7 +1362,6 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-
   static Future<http.Response> getPatientDetails(int patientId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final url = Uri.parse('${ApiConstants._host}/v1/api/patients/$patientId');
@@ -1378,8 +1411,9 @@ class ApiService {
   }) async {
     final headers = await AuthTokenManager.getAuthHeaders();
 
-    print('≡ƒöì registerPatientForCaregiver caregiverId: $caregiverId');
-    print('≡ƒöì patientData with structured address: ${jsonEncode(patientData)}');
+    debugPrint(' registerPatientForCaregiver caregiverId: $caregiverId');
+    debugPrint(
+        ' patientData with structured address: ${jsonEncode(patientData)}');
 
     return await _httpClient
         .post(
@@ -1396,7 +1430,7 @@ class ApiService {
     required String patientEmail,
   }) async {
     final headers = await AuthTokenManager.getAuthHeaders();
-    print('addExistingPatientToCaregiver caregiverId: $caregiverId');
+    debugPrint('addExistingPatientToCaregiver caregiverId: $caregiverId');
     final url = '${ApiConstants.baseUrl}caregivers/$caregiverId/patients/add';
 
     return await _httpClient
@@ -1474,7 +1508,9 @@ class ApiService {
     }
     final uri = Uri.parse('${ApiConstants.clients}/$clientId/audit-log')
         .replace(queryParameters: query.isEmpty ? null : query);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 30));
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 30));
   }
 
   /// Update patient profile
@@ -1485,7 +1521,7 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .put(
-          Uri.parse('${ApiConstants.patients}/$patientId'),
+          Uri.parse('${ApiConstants.patients}/$patientId/profile'),
           headers: headers,
           body: jsonEncode(updatedProfile),
         )
@@ -1510,7 +1546,8 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-  static Future<http.Response> flagPatientRisk(int patientId, int riskTypeId) async {
+  static Future<http.Response> flagPatientRisk(
+      int patientId, int riskTypeId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     headers['Content-Type'] = 'application/json';
     return await _httpClient
@@ -1522,7 +1559,8 @@ class ApiService {
         .timeout(const Duration(seconds: 15));
   }
 
-  static Future<http.Response> unflagPatientRisk(int patientId, int riskId) async {
+  static Future<http.Response> unflagPatientRisk(
+      int patientId, int riskId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .delete(
@@ -1574,7 +1612,8 @@ class ApiService {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .put(
-          Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId'),
+          Uri.parse(
+              '${ApiConstants.clients}/$clientId/activity-config/$activityId'),
           headers: headers,
           body: jsonEncode({'isEnabled': isEnabled}),
         )
@@ -1591,7 +1630,8 @@ class ApiService {
     headers.remove('Content-Type');
     var request = http.MultipartRequest(
       'POST',
-      Uri.parse('${ApiConstants.clients}/$clientId/activity-config/$activityId/icon'),
+      Uri.parse(
+          '${ApiConstants.clients}/$clientId/activity-config/$activityId/icon'),
     );
     request.headers.addAll(headers);
     request.files.add(await http.MultipartFile.fromPath(
@@ -1627,9 +1667,13 @@ class ApiService {
       'activityId': activityId,
       'competencyScore': competencyScore,
     };
-    if (satisfactionRating != null) body['satisfactionRating'] = satisfactionRating;
+    if (satisfactionRating != null) {
+      body['satisfactionRating'] = satisfactionRating;
+    }
     if (notes != null && notes.trim().isNotEmpty) body['notes'] = notes.trim();
-    if (activityName != null && activityName.trim().isNotEmpty) body['activityName'] = activityName.trim();
+    if (activityName != null && activityName.trim().isNotEmpty) {
+      body['activityName'] = activityName.trim();
+    }
     return await _httpClient
         .post(
           Uri.parse(ApiConstants.activityLogs),
@@ -1640,10 +1684,14 @@ class ApiService {
   }
 
   /// GET /activity-logs?clientId=X&limit=N ΓÇö list activity logs for a client.
-  static Future<http.Response> getActivityLogs(int clientId, {int limit = 100}) async {
+  static Future<http.Response> getActivityLogs(int clientId,
+      {int limit = 100}) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     final uri = Uri.parse(ApiConstants.activityLogs).replace(
-      queryParameters: {'clientId': clientId.toString(), 'limit': limit.toString()},
+      queryParameters: {
+        'clientId': clientId.toString(),
+        'limit': limit.toString()
+      },
     );
     return await _httpClient
         .get(uri, headers: headers)
@@ -1743,11 +1791,13 @@ class ApiService {
   }
 
   /// GET /clients/{id}/incident-reports/{reportId}` ΓÇö single report with actions.
-  static Future<http.Response> getIncidentReport(int clientId, int reportId) async {
+  static Future<http.Response> getIncidentReport(
+      int clientId, int reportId) async {
     final headers = await AuthTokenManager.getAuthHeaders();
     return await _httpClient
         .get(
-          Uri.parse('${ApiConstants.clients}/$clientId/incident-reports/$reportId'),
+          Uri.parse(
+              '${ApiConstants.clients}/$clientId/incident-reports/$reportId'),
           headers: headers,
         )
         .timeout(const Duration(seconds: 15));
@@ -1764,9 +1814,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/competency-trends')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/competency-trends')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   static String _formatDate(DateTime d) {
@@ -1783,9 +1837,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/behavioral-trends')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/behavioral-trends')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   /// GET /clients/{id}/reports/participation ΓÇö activity log counts and last logged per activity.
@@ -1798,9 +1856,13 @@ class ApiService {
     final queryParams = <String, String>{};
     if (startDate != null) queryParams['startDate'] = _formatDate(startDate);
     if (endDate != null) queryParams['endDate'] = _formatDate(endDate);
-    final uri = Uri.parse('${ApiConstants.clients}/$clientId/reports/participation')
-        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
-    return await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+    final uri =
+        Uri.parse('${ApiConstants.clients}/$clientId/reports/participation')
+            .replace(
+                queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    return await _httpClient
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
   }
 
   /// Upload profile picture or other files
@@ -1875,7 +1937,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Error getting profile picture URL: $e');
+      debugPrint('Error getting profile picture URL: $e');
       return null;
     }
   }
@@ -1896,11 +1958,11 @@ class ApiService {
         if (data is Map<String, dynamic>) return data;
         return {};
       } else {
-        print('ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
+        debugPrint('ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
-      print('Γ¥î getPrimaryCareProvider error: $e');
+      debugPrint('Γ¥î getPrimaryCareProvider error: $e');
       return {};
     }
   }
@@ -2156,11 +2218,11 @@ class ApiService {
           return decoded as Map<String, dynamic>?;
         }
       } else {
-        print('Failed to fetch enhanced profile: ${response.statusCode}');
+        debugPrint('Failed to fetch enhanced profile: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Error fetching enhanced patient profile: ${e.toString()}');
+      debugPrint('Error fetching enhanced patient profile: ${e.toString()}');
       return null;
     }
   }

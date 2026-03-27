@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:care_connect_app/services/api_service.dart';
+import 'package:care_connect_app/services/auth_token_manager.dart';
 
 class SubscriptionTierSelectionPage extends StatefulWidget {
   final String? email;
@@ -201,11 +203,43 @@ class _SubscriptionTierSelectionPageState
     setState(() { _selectedTier = tierId; });
   }
 
-  void _continueToPayment() {
+  void _continueToPayment() async {
     if (_selectedTier == null) return;
 
+    // Free tier bypasses payment entirely
+    if (_selectedTier == 'free') {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Confirm Free Plan'),
+          content: const Text('You have selected the Free Plan. You can upgrade at any time.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Confirm')),
+          ],
+        ),
+      );
+      if (confirm == true && mounted) {
+        final session = await AuthTokenManager.getUserSession();
+        final userId = session?['id']?.toString() ?? '';
+        if (userId.isNotEmpty) {
+          try {
+            final response = await ApiService.createSubscriptionByUser(userId, 'plan_free');
+            print('Free plan response: ${response.statusCode} ${response.body}');
+          } catch (e) {
+            print('Free plan error: $e');
+          }
+        } else {
+          print('Free plan: userId is empty, session: $session');
+        }
+        if (mounted) context.go('/subscription');
+
+      }
+      return;
+    }
+
+
     final tierIdMap = {
-      'free': 1,
       'standard_monthly': 2,
       'premium_monthly': 3,
     };
@@ -240,9 +274,9 @@ class _SubscriptionTierSelectionPageState
             width: isSelected ? 2.5 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
-          color: isSelected ? color.withOpacity(0.05) : Colors.white,
+          color: isSelected ? color.withValues(alpha:0.05) : Colors.white,
           boxShadow: isSelected
-              ? [BoxShadow(color: color.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: color.withValues(alpha:0.2), blurRadius: 8, offset: const Offset(0, 2))]
               : null,
         ),
         padding: const EdgeInsets.all(20),

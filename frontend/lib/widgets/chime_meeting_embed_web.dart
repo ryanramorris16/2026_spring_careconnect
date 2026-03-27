@@ -154,7 +154,7 @@ Widget buildChimeMeetingEmbed({
   bool enableAutoSentimentCapture = false,
   int sentimentCaptureIntervalMs = 15000,
   VoidCallback? onEndCallRequested,
-  void Function(String transcript)? onTranscriptSample,
+  void Function(Map<String, dynamic> transcriptSample)? onTranscriptSample,
   void Function(String status, String? detail)? onTranscriptStatus,
   void Function(double averageLevel, double speechRatio, double variability)?
   onVoiceMetricsSample,
@@ -193,7 +193,7 @@ class _ChimeMeetingEmbedWeb extends StatefulWidget {
   final bool enableAutoSentimentCapture;
   final int sentimentCaptureIntervalMs;
   final VoidCallback? onEndCallRequested;
-  final void Function(String transcript)? onTranscriptSample;
+  final void Function(Map<String, dynamic> transcriptSample)? onTranscriptSample;
   final void Function(String status, String? detail)? onTranscriptStatus;
   final void Function(double averageLevel, double speechRatio, double variability)?
   onVoiceMetricsSample;
@@ -308,7 +308,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
             } else {
               widget.onTranscriptStatus?.call('CONNECTED', 'Live transcript');
             }
-            widget.onTranscriptSample?.call(transcript);
+            widget.onTranscriptSample?.call(Map<String, dynamic>.from(payload));
           }
           return;
         }
@@ -540,11 +540,22 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
     <style>
       html, body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
       #stage { position:relative; width:100%; height:100%; background:#000; }
-      #remoteVideo { width:100%; height:100%; object-fit:cover; background:#000; }
+      #videoGrid {
+        position:absolute; top:0; left:0; right:0; bottom:0;
+        display:grid; background:#000; gap:2px;
+        grid-template-columns:1fr; grid-template-rows:1fr;
+      }
+      #videoGrid.count-2 { grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
+      #videoGrid.count-3 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      #videoGrid.count-4 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+      .remote-video { width:100%; height:100%; object-fit:contain; background:#111; min-height:0; }
       #localVideo {
         position:absolute; right:16px; top:16px; width:22%; max-width:260px;
         aspect-ratio:16/9; object-fit:cover; border-radius:12px;
         border:2px solid rgba(255,255,255,0.75); background:#111;
+      }
+      @media (max-width: 768px) {
+        #localVideo { width:18%; max-width:110px; aspect-ratio:9/16; }
       }
       #status {
         position:absolute; left:16px; bottom:88px; padding:6px 10px;
@@ -617,7 +628,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
   </head>
   <body>
     <div id="stage">
-      <video id="remoteVideo" autoplay playsinline muted></video>
+      <div id="videoGrid" class="count-0"></div>
       <video id="localVideo" autoplay playsinline muted></video>
       <audio id="remoteAudio" autoplay></audio>
       <div id="status">Connecting media...</div>
@@ -673,7 +684,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
         const config = $configJson;
         const statusEl = document.getElementById('status');
         const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
+        const videoGrid = document.getElementById('videoGrid');
         const remoteAudio = document.getElementById('remoteAudio');
         const micBtn = document.getElementById('micBtn');
         const switchCamBtn = document.getElementById('switchCamBtn');
@@ -710,6 +721,9 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
         let lastTranscriptAt = 0;
         let chimeTranscriptHandler = null;
         let chimeTranscriptActive = false;
+        // Roster built from presence events: attendeeId → externalUserId.
+        // Transcript items often omit externalUserId, so we look it up here.
+        const attendeeRoster = {};
         let voiceMetricsTimer = null;
         let voiceFrames = 0;
         let voiceSpeechFrames = 0;
@@ -771,11 +785,91 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           }
         }
 
+        function normalizeTranscriptSpeakerLabel(rawSpeaker, rawAttendeeId) {
+          const source = String(rawSpeaker || rawAttendeeId || '').trim();
+          if (!source) {
+            return 'PARTICIPANT';
+          }
+          let normalized = source.replace(/#content/i, '').trim();
+          if (!normalized) {
+            return 'PARTICIPANT';
+          }
+          if (!Number.isNaN(Number(normalized)) && normalized.trim().length > 0) {
+            normalized = 'participant-' + normalized;
+          }
+          normalized = normalized.replace(/[^A-Za-z0-9_-]+/g, '-');
+          while (normalized.startsWith('-')) { normalized = normalized.substring(1); }
+          while (normalized.endsWith('-')) { normalized = normalized.substring(0, normalized.length - 1); }
+          return normalized || 'PARTICIPANT';
+        }
+
+        function resolveTranscriptMillis(value) {
+          if (value === null || value === undefined) {
+            return null;
+          }
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            return Math.max(0, Math.round(value));
+          }
+          const direct = Number(String(value).trim());
+          return Number.isFinite(direct) ? Math.max(0, Math.round(direct)) : null;
+        }
+
+        function extractTranscriptPayloadsFromChimeEvent(transcriptEvent) {
+          try {
+            // transcriptionController fires Transcript objects directly (results at top level).
+            // Guard against TranscriptionStatus events which have no results.
+            const results = transcriptEvent && transcriptEvent.results
+              ? transcriptEvent.results
+              : (transcriptEvent && transcriptEvent.transcript && transcriptEvent.transcript.results
+                  ? transcriptEvent.transcript.results : []);
+            if (!Array.isArray(results) || results.length === 0) {
+              return [];
+            }
+            const payloads = [];
+            for (const result of results) {
+              if (!result || result.isPartial === true) {
+                continue;
+              }
+              const alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
+              if (alternatives.length === 0) {
+                continue;
+              }
+              const firstAlternative = alternatives[0] || {};
+              const items = Array.isArray(firstAlternative.items) ? firstAlternative.items : [];
+              const text = items.map((item) => (item && item.content ? String(item.content) : '')).join(' ').replace(/\\s+/g, ' ').replace(/\\s+([.,?!:;])/g, '').trim();
+              if (!text) {
+                continue;
+              }
+              const attendee = result.attendee || firstAlternative.attendee || {};
+              const firstItem = items.length > 0 ? items[0] : null;
+              const lastItem = items.length > 0 ? items[items.length - 1] : null;
+              const itemAttendee = firstItem && firstItem.attendee ? firstItem.attendee : {};
+              // Resolve attendeeId from any available source, then look up externalUserId
+              // from the roster built via realtimeSubscribeToAttendeeIdPresence (most reliable).
+              const speakerAttendeeId = attendee.attendeeId || result.attendeeId || itemAttendee.attendeeId || '';
+              const rosterExternalId = speakerAttendeeId ? (attendeeRoster[speakerAttendeeId] || '') : '';
+              const speakerExternalId = rosterExternalId
+                || attendee.externalUserId || firstAlternative.externalUserId || itemAttendee.externalUserId || '';
+              console.log('[CC-Transcript] Speaker resolve: attendeeId='+speakerAttendeeId+' roster='+rosterExternalId+' itemExt='+String(itemAttendee.externalUserId||'') +' final='+speakerExternalId);
+              payloads.push({
+                text: text,
+                speakerLabel: normalizeTranscriptSpeakerLabel(speakerExternalId, speakerAttendeeId),
+                startMs: resolveTranscriptMillis(result.startTimeMs || (firstItem && firstItem.startTimeMs) || result.startTime),
+                endMs: resolveTranscriptMillis(result.endTimeMs || (lastItem && lastItem.endTimeMs) || result.endTime),
+              });
+            }
+            return payloads;
+          } catch (_) {
+            return [];
+          }
+        }
+
         function extractTranscriptTextFromChimeEvent(transcriptEvent) {
           try {
-            const results = transcriptEvent && transcriptEvent.transcript && transcriptEvent.transcript.results
-              ? transcriptEvent.transcript.results
-              : [];
+            const results = transcriptEvent && transcriptEvent.results
+              ? transcriptEvent.results
+              : (transcriptEvent && transcriptEvent.transcript && transcriptEvent.transcript.results
+                  ? transcriptEvent.transcript.results : []);
             if (!Array.isArray(results) || results.length === 0) {
               return '';
             }
@@ -793,7 +887,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
               const text = items
                 .map((item) => (item && item.content ? String(item.content) : ''))
                 .join(' ')
-                .replace(/\s+/g, ' ')
+                .replace(/s+/g, ' ')
                 .trim();
               if (text.length > 0) {
                 lines.push(text);
@@ -813,8 +907,9 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           }
 
           try {
-            if (typeof audioVideo.realtimeUnsubscribeFromTranscriptEvent === 'function') {
-              audioVideo.realtimeUnsubscribeFromTranscriptEvent(chimeTranscriptHandler);
+            if (audioVideo.transcriptionController &&
+                typeof audioVideo.transcriptionController.unsubscribeFromTranscriptEvent === 'function') {
+              audioVideo.transcriptionController.unsubscribeFromTranscriptEvent(chimeTranscriptHandler);
             }
           } catch (_) {}
 
@@ -826,20 +921,21 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           if (!shouldAutoSentimentCapture) {
             return false;
           }
-          if (!audioVideo || typeof audioVideo.realtimeSubscribeToTranscriptEvent !== 'function') {
+          if (!audioVideo || !audioVideo.transcriptionController ||
+              typeof audioVideo.transcriptionController.subscribeToTranscriptEvent !== 'function') {
             return false;
           }
 
           stopChimeTranscriptCapture();
           chimeTranscriptHandler = (transcriptEvent) => {
-            const text = extractTranscriptTextFromChimeEvent(transcriptEvent);
-            if (text.length > 0) {
-              emitTranscriptSample(text, 'chime-transcript');
+            const payloads = extractTranscriptPayloadsFromChimeEvent(transcriptEvent);
+            for (const payload of payloads) {
+              emitTranscriptSample(payload, 'chime-transcript');
             }
           };
 
           try {
-            audioVideo.realtimeSubscribeToTranscriptEvent(chimeTranscriptHandler);
+            audioVideo.transcriptionController.subscribeToTranscriptEvent(chimeTranscriptHandler);
             chimeTranscriptActive = true;
             report('info', 'Chime transcript capture subscribed');
             return true;
@@ -998,9 +1094,8 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           if (localVideo) {
             localVideo.srcObject = null;
           }
-          if (remoteVideo) {
-            remoteVideo.srcObject = null;
-          }
+          remoteTiles.forEach((tileId, el) => { el.srcObject = null; });
+          remoteTiles.clear();
 
           if (flutterMessageHandler) {
             try {
@@ -1309,8 +1404,11 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           return { audioBase64: '', audioFormat: 'wav' };
         }
 
-        function emitTranscriptSample(rawText, source) {
-          const text = String(rawText || '').trim();
+        function emitTranscriptSample(rawSample, source) {
+          const sample = rawSample && typeof rawSample === 'object'
+            ? rawSample
+            : { text: rawSample };
+          const text = String(sample.text || '').trim();
           if (text.length < 8) {
             return;
           }
@@ -1325,6 +1423,9 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           lastTranscriptAt = now;
           emitAction('sentiment-transcript', {
             text,
+            speakerLabel: normalizeTranscriptSpeakerLabel(sample.speakerLabel, sample.attendeeId),
+            startMs: resolveTranscriptMillis(sample.startMs),
+            endMs: resolveTranscriptMillis(sample.endMs),
             source: source || 'speech-recognition',
             capturedAt: new Date().toISOString(),
           });
@@ -1479,7 +1580,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
               }
             }
             if (transcript.trim()) {
-              emitTranscriptSample(transcript.trim(), 'speech-recognition');
+              emitTranscriptSample({ text: transcript.trim(), speakerLabel: config.externalUserId || '' }, 'speech-recognition');
             }
           };
 
@@ -1919,20 +2020,23 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
           const meetingConfig = new ChimeSDK.MeetingSessionConfiguration(meetingResponse, attendeeResponse);
           const meetingSession = new ChimeSDK.DefaultMeetingSession(meetingConfig, logger, deviceController);
           audioVideo = meetingSession.audioVideo;
+          // Seed roster with local attendee so own speech is also labelled correctly.
+          attendeeRoster[config.attendeeId] = config.externalUserId || '';
+          console.log('[CC-Transcript] Roster seeded local:', config.attendeeId, '->', config.externalUserId);
           let localVideoBound = false;
           let localVideoStartAttempts = 0;
           let localVideoRetryTimer = null;
           let videoPublishRecoveryAttempts = 0;
           let localTileId = null;
-          let remoteTileId = null;
+          const remoteTiles = new Map(); // tileId -> HTMLVideoElement
           let remoteParticipantPresent = false;
           availableVideoInputs = [];
           let activeVideoDeviceId = null;
           let localVideoHealthTimer = null;
 
           function updateParticipantStatus() {
-            if (remoteTileId !== null) {
-              setStatus('Connected with participant');
+            if (remoteTiles.size > 0) {
+              setStatus(remoteTiles.size === 1 ? 'Connected with participant' : 'Connected with ' + remoteTiles.size + ' participants');
               return;
             }
 
@@ -2278,12 +2382,19 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 report('info', 'Local video tile bound');
               } else {
                 remoteParticipantPresent = true;
-                if (remoteTileId !== tileState.tileId) {
-                  remoteTileId = tileState.tileId;
-                  bindAndPlayVideo(tileState.tileId, remoteVideo, 'remote');
+                if (!remoteTiles.has(tileState.tileId)) {
+                  const el = document.createElement('video');
+                  el.autoplay = true;
+                  el.playsInline = true;
+                  el.muted = true;
+                  el.className = 'remote-video';
+                  videoGrid.appendChild(el);
+                  remoteTiles.set(tileState.tileId, el);
+                  videoGrid.className = 'count-' + Math.min(remoteTiles.size, 4);
                 }
+                bindAndPlayVideo(tileState.tileId, remoteTiles.get(tileState.tileId), 'remote');
                 updateParticipantStatus();
-                report('info', 'Remote video tile bound');
+                report('info', 'Remote video tile bound: ' + tileState.tileId + ' (total=' + remoteTiles.size + ')');
               }
             },
             videoTileWasRemoved: (tileId) => {
@@ -2291,8 +2402,13 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 localTileId = null;
                 localVideoBound = false;
               }
-              if (tileId === remoteTileId) {
-                remoteTileId = null;
+              const remoteEl = remoteTiles.get(tileId);
+              if (remoteEl) {
+                remoteEl.srcObject = null;
+                remoteEl.remove();
+                remoteTiles.delete(tileId);
+                videoGrid.className = 'count-' + Math.min(remoteTiles.size, 4);
+                remoteParticipantPresent = remoteTiles.size > 0;
                 updateParticipantStatus();
               }
             }
@@ -2306,9 +2422,16 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
                 return;
               }
 
-              remoteParticipantPresent = !!present;
-              if (!remoteParticipantPresent) {
-                remoteTileId = null;
+              // Keep roster up-to-date so transcript events can resolve speaker names.
+              if (present && externalUserId) {
+                attendeeRoster[attendeeId] = externalUserId;
+              }
+              console.log('[CC-Transcript] Presence:', attendeeId, 'present='+present, 'externalUserId='+String(externalUserId||'(none)'));
+
+              if (present) {
+                remoteParticipantPresent = true;
+              } else {
+                remoteParticipantPresent = remoteTiles.size > 0;
               }
 
               updateParticipantStatus();
@@ -2402,3 +2525,7 @@ class _ChimeMeetingEmbedWebState extends State<_ChimeMeetingEmbedWeb> {
 ''';
   }
 }
+
+
+
+

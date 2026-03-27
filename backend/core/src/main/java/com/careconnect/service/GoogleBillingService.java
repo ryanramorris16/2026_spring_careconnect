@@ -25,9 +25,50 @@ public class GoogleBillingService implements BillingService {
     @Value("${google.service-account-file:}")
     private String googleServiceAccountFile;
 
+    @Value("${google.package-name:edu.umgc.careconnect}")
+    private String packageName;
+
+    private String getAccessToken() throws Exception {
+        if (googleAccessToken != null && !googleAccessToken.isEmpty()) {
+            return googleAccessToken;
+        }
+        if (googleServiceAccountFile != null && !googleServiceAccountFile.isEmpty()) {
+            try (FileInputStream fis = new FileInputStream(googleServiceAccountFile)) {
+                GoogleCredentials creds = GoogleCredentials.fromStream(fis)
+                    .createScoped(List.of("https://www.googleapis.com/auth/androidpublisher"));
+                creds.refreshIfExpired();
+                return creds.getAccessToken().getTokenValue();
+            }
+        }
+        return null;
+    }
+
+    public void cancelSubscription(String productId, String purchaseToken) {
+        try {
+            String accessToken = getAccessToken();
+            if (accessToken == null || accessToken.isEmpty()) {
+                return;
+            }
+
+            String url = String.format(
+                "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/%s/purchases/subscriptions/%s/tokens/%s:cancel",
+                packageName, productId, purchaseToken
+            );
+
+            RestTemplate rest = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<String> entity = new HttpEntity<>(null, headers);
+            rest.exchange(url, org.springframework.http.HttpMethod.POST, entity, String.class);
+        } catch (Exception e) {
+            System.err.println("Google Play subscription cancellation failed: " + e.getMessage());
+        }
+    }
+
     @Override
     public BillingVerifyResponse verifyReceipt(BillingVerifyRequest request) throws Exception {
-        // Expecting request.packageName, request.productId (subscriptionId), request.receipt (token)
         if (request.getPackageName() == null || request.getProductId() == null || request.getReceipt() == null) {
             throw new IllegalArgumentException("packageName, productId and receipt token are required for Google verification");
         }
@@ -40,16 +81,11 @@ public class GoogleBillingService implements BillingService {
         RestTemplate rest = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String accessToken = googleAccessToken;
-        if ((accessToken == null || accessToken.isEmpty()) && googleServiceAccountFile != null && !googleServiceAccountFile.isEmpty()) {
-            // Load service account and obtain short-lived access token
-            try (FileInputStream fis = new FileInputStream(googleServiceAccountFile)) {
-                GoogleCredentials creds = GoogleCredentials.fromStream(fis).createScoped(List.of("https://www.googleapis.com/auth/androidpublisher"));
-                creds.refreshIfExpired();
-                accessToken = creds.getAccessToken().getTokenValue();
-            }
+
+        String accessToken = getAccessToken();
+        if (accessToken != null && !accessToken.isEmpty()) {
+            headers.setBearerAuth(accessToken);
         }
-        if (accessToken != null && !accessToken.isEmpty()) headers.setBearerAuth(accessToken);
 
         HttpEntity<String> entity = new HttpEntity<>(null, headers);
         ResponseEntity<String> resp = rest.exchange(url, org.springframework.http.HttpMethod.GET, entity, String.class);
@@ -62,8 +98,10 @@ public class GoogleBillingService implements BillingService {
         out.setPlatform("GOOGLE");
 
         if (root != null) {
-            long purchaseTime = root.has("startTimeMillis") ? root.get("startTimeMillis").asLong() : (root.has("purchaseTimeMillis") ? root.get("purchaseTimeMillis").asLong() : Instant.now().toEpochMilli());
-            long expiryTime = root.has("expiryTimeMillis") ? root.get("expiryTimeMillis").asLong() : (purchaseTime + 30L * 24L * 3600L * 1000L);
+            long purchaseTime = root.has("startTimeMillis") ? root.get("startTimeMillis").asLong() :
+                (root.has("purchaseTimeMillis") ? root.get("purchaseTimeMillis").asLong() : Instant.now().toEpochMilli());
+            long expiryTime = root.has("expiryTimeMillis") ? root.get("expiryTimeMillis").asLong() :
+                (purchaseTime + 30L * 24L * 3600L * 1000L);
             String orderId = root.has("orderId") ? root.get("orderId").asText() : null;
             String purchaseState = root.has("paymentState") ? String.valueOf(root.get("paymentState").asInt()) : "UNKNOWN";
             out.setSuccess(true);
@@ -82,6 +120,3 @@ public class GoogleBillingService implements BillingService {
         return out;
     }
 }
-
-
-

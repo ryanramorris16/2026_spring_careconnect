@@ -335,6 +335,15 @@ class _CommonDrawerState extends State<CommonDrawer> {
             isActive: widget.currentRoute == '/wearables',
           ),
 
+          // EVV - visible to all roles
+          _buildDrawerItem(
+            context,
+            icon: Icons.verified_user_outlined,
+            title: 'EVV Visits',
+            route: '/evv',
+            isActive: widget.currentRoute.startsWith('/evv'),
+          ),
+
           // Caregiver-specific menu items
           if (isCaregiver) ...[
             const Divider(),

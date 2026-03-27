@@ -24,8 +24,9 @@ public class TextractTestController {
 
     private final TextractClient textractClient;
 
-    @Autowired
+    @Autowired(required = false)
     private ChatModel chatModel;
+
 
     public TextractTestController(TextractClient textractClient) {
         this.textractClient = textractClient;
@@ -76,8 +77,12 @@ Rules:
 Invoice Text:
 """ + invoiceText;
 
+    if (chatModel == null) {
+    return "{\"error\": \"LLM features are disabled\"}";
+    }
     ChatResponse response = chatModel.chat(UserMessage.from(prompt));
 
     return response.aiMessage().text();
-}
+
+    }
 }

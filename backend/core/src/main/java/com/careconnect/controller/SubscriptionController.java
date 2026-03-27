@@ -9,6 +9,7 @@ import com.careconnect.repository.SubscriptionRepository;
 import com.careconnect.dto.PlanDTO;
 import com.careconnect.dto.SubscriptionResponseDTO;
 import com.careconnect.service.SubscriptionEnrichmentService;
+import com.careconnect.service.SubscriptionService;
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
 import com.careconnect.security.UnauthorizedException;
@@ -23,17 +24,20 @@ public class SubscriptionController {
     private static final String ERROR_KEY = "error";
 
     private final SubscriptionEnrichmentService subscriptionEnrichmentService;
+    private final SubscriptionService subscriptionService;
     private final PlanRepository planRepository;
     private final SubscriptionRepository subscriptionRepository;
 
     public SubscriptionController(
         SubscriptionEnrichmentService subscriptionEnrichmentService,
         PlanRepository planRepository,
-        SubscriptionRepository subscriptionRepository
+        SubscriptionRepository subscriptionRepository,
+        SubscriptionService subscriptionService
     ) {
         this.subscriptionEnrichmentService = subscriptionEnrichmentService;
         this.planRepository = planRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     /**
@@ -45,7 +49,7 @@ public class SubscriptionController {
             return Long.parseLong(id);
         } catch (NumberFormatException e) {
             Subscription sub = subscriptionRepository.findAll().stream()
-                .filter(s -> id.equals(s.getExternalSubscriptionId()) || id.equals(s.getStripeSubscriptionId()))
+                .filter(s -> id.equals(s.getExternalSubscriptionId()) || id.equals(s.getPaymentSubscriptionId()))
                 .findFirst()
                 .orElse(null);
             return sub != null ? sub.getId() : null;
@@ -115,6 +119,36 @@ public class SubscriptionController {
             return ResponseEntity.ok(subscriptionDTOs);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
+        }
+    }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @PostMapping("/create-direct")
+    public ResponseEntity<Object> createDirectSubscription(
+            @RequestParam String customerId,
+            @RequestParam String priceId) {
+        try {
+            SubscriptionResponseDTO result = subscriptionService.createDirectSubscription(customerId, priceId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(ERROR_KEY, "Failed to create subscription: " + e.getMessage()));
+        }
+    }
+
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @PostMapping("/create-by-user")
+    public ResponseEntity<Object> createSubscriptionByUser(
+            @RequestParam Long userId,
+            @RequestParam String priceId) {
+        try {
+            SubscriptionResponseDTO result = subscriptionService.createSubscriptionByUserId(userId, priceId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(ERROR_KEY, "Failed to create subscription: " + e.getMessage()));
         }
     }
 }

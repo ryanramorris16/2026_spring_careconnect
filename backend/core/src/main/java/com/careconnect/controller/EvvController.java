@@ -1,5 +1,7 @@
 package com.careconnect.controller;
 
+import com.careconnect.model.Patient;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
 import com.careconnect.security.Role;
@@ -36,6 +38,7 @@ public class EvvController {
     private final EvvRecordRepository evvRecordRepository;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+    private final PatientRepository patientRepository;
 
     private static final Long DEFAULT_USER_ID = 1L;
 
@@ -92,13 +95,19 @@ public class EvvController {
         return ResponseEntity.ok(evvService.approveEor(req, DEFAULT_USER_ID));
     }
 
-    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @RequirePermission(Permission.VIEW_TASKS)
 
 
     @GetMapping("/records/search")
     public ResponseEntity<Page<EvvRecord>> searchRecords(EvvSearchRequestDto searchRequest) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdminOrCaregiver(currentUser);
+        if (currentUser.isPatient()) {
+            Patient patient = patientRepository.findByUser(currentUser)
+                .orElseThrow(() -> new UnauthorizedException("Patient record not found"));
+            searchRequest.setPatientId(patient.getId());
+        } else {
+            authorizationService.requireAdminOrCaregiver(currentUser);
+        }
         return ResponseEntity.ok(evvService.searchRecords(searchRequest));
     }
 

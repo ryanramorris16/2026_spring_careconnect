@@ -61,9 +61,9 @@ class CallTranscriptArchiveServiceTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "s3StorageService", s3StorageService);
         ReflectionTestUtils.setField(service, "archiveEnabled", true);
-        ReflectionTestUtils.setField(service, "minSegmentsForArchive", 600);
-        ReflectionTestUtils.setField(service, "minCharsForArchive", 120000);
-        ReflectionTestUtils.setField(service, "deleteDbAfterArchive", true);
+        ReflectionTestUtils.setField(service, "minArchiveSegments", 600);
+        ReflectionTestUtils.setField(service, "minArchiveChars", 120000);
+        ReflectionTestUtils.setField(service, "deleteDbRows", true);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -488,7 +488,7 @@ class CallTranscriptArchiveServiceTest {
         @Test
         @DisplayName("Does not delete DB segments when deleteDbAfterArchive is false")
         void doesNotDeleteDbSegmentsWhenNotConfigured() throws Exception {
-            ReflectionTestUtils.setField(service, "deleteDbAfterArchive", false);
+            ReflectionTestUtils.setField(service, "deleteDbRows", false);
             when(archiveRepository.existsByCallId(CALL_ID)).thenReturn(false);
             when(callRecordingRepository.findTopByCallIdOrderByStartedAtDesc(anyString()))
                     .thenReturn(Optional.empty());
@@ -703,9 +703,6 @@ class CallTranscriptArchiveServiceTest {
         @DisplayName("Handles purge when s3StorageService is null")
         void handlesPurgeWhenS3Null() {
             ReflectionTestUtils.setField(service, "s3StorageService", null);
-            CallTranscriptArchive archive = buildArchive(CALL_ID, "key.json", "1");
-            when(archiveRepository.findByCallIdOrderByArchivedAtDesc(CALL_ID))
-                    .thenReturn(List.of(archive));
             when(archiveRepository.deleteByCallId(CALL_ID)).thenReturn(1L);
 
             long result = service.purgeArchiveForCall(CALL_ID);

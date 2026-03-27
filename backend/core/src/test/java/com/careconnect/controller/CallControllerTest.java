@@ -14,6 +14,8 @@ import com.careconnect.service.CallTelemetryService;
 import com.careconnect.service.CallTranscriptService;
 import com.careconnect.service.CaregiverPatientLinkService;
 import com.careconnect.service.ChimeService;
+import com.careconnect.service.FamilyMemberService;
+import com.careconnect.dto.FamilyMemberLinkResponse;
 import com.careconnect.websocket.CallNotificationHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -32,6 +34,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,6 +83,7 @@ class CallControllerTest {
     @MockitoBean private CallSummaryService callSummaryService;
     @MockitoBean private CallRecordingService callRecordingService;
     @MockitoBean private CaregiverPatientLinkService caregiverPatientLinkService;
+    @MockitoBean private FamilyMemberService familyMemberService;
     @MockitoBean private UserRepository userRepository;
     @MockitoBean private CallNotificationHandler callNotificationHandler;
 
@@ -106,7 +110,7 @@ class CallControllerTest {
                 "joinToken", "token-abc",
                 "mediaRegion", "us-east-1"
         );
-        when(chimeService.joinMeeting(anyString(), anyString())).thenReturn(chimeCreds);
+        when(chimeService.joinMeeting(anyString(), anyString(), anyString(), anyString())).thenReturn(chimeCreds);
         when(chimeService.isMeetingActive(anyString())).thenReturn(true);
 
         // Default sentiment stub
@@ -145,7 +149,7 @@ class CallControllerTest {
         when(callTranscriptService.getSegmentsForCall(anyString())).thenReturn(Collections.emptyList());
     }
 
-    // ─── Helpers ─────────────────────────────────────────────────────────────
+    // Helpers
 
     private User buildUser(Long id, String email, Role role) {
         User u = new User();
@@ -167,9 +171,18 @@ class CallControllerTest {
         when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    private CallTelemetryEvent callEvent(String eventType, Long actorUserId, LocalDateTime occurredAt) {
+        CallTelemetryEvent event = new CallTelemetryEvent();
+        event.setCallId(CALL_ID);
+        event.setEventType(eventType);
+        event.setActorUserId(actorUserId);
+        event.setOccurredAt(occurredAt);
+        return event;
+    }
+
+    // 
     //  CHIME TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Chime Meeting Join/End")
@@ -187,7 +200,7 @@ class CallControllerTest {
                             .content("{}"))
                     .andExpect(status().isOk());
 
-            verify(chimeService).joinMeeting(CALL_ID, "2");
+            verify(chimeService).joinMeeting(eq(CALL_ID), eq("2"), anyString(), anyString());
         }
 
         @Test
@@ -232,11 +245,11 @@ class CallControllerTest {
         }
 
         @Test
-        @DisplayName("CHIME-005: chimeService.joinMeeting throws RuntimeException → 500")
+        @DisplayName("CHIME-005: chimeService.joinMeeting throws RuntimeException  500")
         @WithMockUser(username = "caregiver@test.com", roles = {"CAREGIVER"})
         void chime005_joinMeetingRuntimeExceptionReturns500() throws Exception {
             mockCurrentCaregiver();
-            when(chimeService.joinMeeting(anyString(), anyString()))
+            when(chimeService.joinMeeting(anyString(), anyString(), anyString(), anyString()))
                     .thenThrow(new RuntimeException("AWS connection failure"));
 
             mockMvc.perform(post(BASE_URL + "/" + CALL_ID + "/join")
@@ -262,7 +275,7 @@ class CallControllerTest {
         }
 
         @Test
-        @DisplayName("CHIME-008: chimeService.endMeeting throws AppException → re-throws 4xx")
+        @DisplayName("CHIME-008: chimeService.endMeeting throws AppException  re-throws 4xx")
         @WithMockUser(username = "caregiver@test.com", roles = {"CAREGIVER"})
         void chime008_endMeetingAppExceptionRethrown() throws Exception {
             mockCurrentCaregiver();
@@ -282,7 +295,7 @@ class CallControllerTest {
         void chime009_secondJoinIdempotentReturns200() throws Exception {
             mockCurrentPatient();
             // Simulate already-active meeting still returns credentials
-            when(chimeService.joinMeeting(CALL_ID, "1"))
+            when(chimeService.joinMeeting(eq(CALL_ID), eq("1"), anyString(), anyString()))
                     .thenReturn(Map.of(
                             "meetingId", "mtg-123",
                             "attendeeId", "att-789",
@@ -297,11 +310,79 @@ class CallControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.meetingId").exists());
         }
+        @Test
+        @DisplayName("CHIME-010: conference eligible invitees exclude only active participants, not users who already left")
+        @WithMockUser(username = "caregiver@test.com", roles = {"CAREGIVER"})
+        void chime010_eligibleInviteesAllowsReinviteAfterLeave() throws Exception {
+            mockCurrentCaregiver();
+
+            User familyUser = buildUser(4L, "family@test.com", Role.FAMILY_MEMBER);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(patientUser));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(caregiverUser));
+            when(userRepository.findById(4L)).thenReturn(Optional.of(familyUser));
+
+            when(callTelemetryService.getTelemetryForCall(CALL_ID)).thenReturn(List.of(
+                    callEvent("CALL_JOIN", 1L, LocalDateTime.of(2026, 3, 23, 10, 0, 0)),
+                    callEvent("CALL_JOIN", 2L, LocalDateTime.of(2026, 3, 23, 10, 0, 5)),
+                    callEvent("CALL_JOIN", 4L, LocalDateTime.of(2026, 3, 23, 10, 0, 10)),
+                    callEvent("CALL_LEAVE", 4L, LocalDateTime.of(2026, 3, 23, 10, 5, 0))
+            ));
+            when(caregiverPatientLinkService.getCaregiversByPatient(1L)).thenReturn(Collections.emptyList());
+            when(familyMemberService.getFamilyMembersByPatient(1L)).thenReturn(List.of(
+                    new FamilyMemberLinkResponse(
+                            10L,
+                            4L,
+                            "Maria Family",
+                            "family@test.com",
+                            1L,
+                            "Patient",
+                            "Daughter",
+                            "ACTIVE",
+                            LocalDateTime.of(2026, 3, 23, 9, 0, 0),
+                            "Caregiver")
+            ));
+
+            mockMvc.perform(get(BASE_URL + "/" + CALL_ID + "/eligible-invitees"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].userId").value(4))
+                    .andExpect(jsonPath("$[0].role").value("FAMILY_MEMBER"));
+        }
+
+        @Test
+        @DisplayName("CHIME-011: POST /end leaves conference active when two participants remain")
+        @WithMockUser(username = "caregiver@test.com", roles = {"CAREGIVER"})
+        void chime011_endCallReturnsLeftWhenConferenceParticipantsRemain() throws Exception {
+            mockCurrentCaregiver();
+
+            User patient = buildUser(1L, "patient@test.com", Role.PATIENT);
+            User invitee = buildUser(4L, "family@test.com", Role.FAMILY_MEMBER);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(patient));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(caregiverUser));
+            when(userRepository.findById(4L)).thenReturn(Optional.of(invitee));
+
+            when(callTelemetryService.getTelemetryForCall(CALL_ID)).thenReturn(List.of(
+                    callEvent("CALL_JOIN", 1L, LocalDateTime.of(2026, 3, 23, 10, 0, 0)),
+                    callEvent("CALL_JOIN", 2L, LocalDateTime.of(2026, 3, 23, 10, 0, 5)),
+                    callEvent("CALL_JOIN", 4L, LocalDateTime.of(2026, 3, 23, 10, 0, 10))
+            ));
+
+            mockMvc.perform(post(BASE_URL + "/" + CALL_ID + "/end")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"otherPartyId\":\"1\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("left"));
+
+            verify(chimeService, never()).endMeeting(CALL_ID);
+            verify(callNotificationHandler).sendNotificationToUser(eq("1"), any());
+            verify(callNotificationHandler).sendNotificationToUser(eq("4"), any());
+        }
+
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  CALL PERMISSION TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Call Permission Tests")
@@ -334,9 +415,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  SENTIMENT TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Sentiment Analysis Tests")
@@ -486,9 +567,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  TELEMETRY / SENTIMENT HISTORY TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Telemetry and Sentiment History Tests")
@@ -547,9 +628,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  RECORDING TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Recording Tests")
@@ -729,9 +810,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  VOICE SENTIMENT (PATIENT) TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Voice Sentiment as Patient Tests")
@@ -810,9 +891,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  VIDEO SENTIMENT (PATIENT) TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Video Sentiment as Patient Tests")
@@ -871,9 +952,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  COMBINED SENTIMENT TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Combined Sentiment Tests")
@@ -949,9 +1030,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  TRANSCRIPTION DEBUG TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Transcription Debug Tests")
@@ -976,9 +1057,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  TRANSCRIPT SEGMENT TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Transcript Segment Tests")
@@ -1091,9 +1172,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  CALL SUMMARY TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Call Summary Tests")
@@ -1176,9 +1257,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  TELEMETRY DELETION TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Telemetry Deletion Tests")
@@ -1230,9 +1311,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  END CALL WITH OTHER PARTY TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("End Call With OtherPartyId Tests")
@@ -1288,9 +1369,9 @@ class CallControllerTest {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════════════
+    // 
     //  TELEMETRY ACCESS CONTROL TESTS
-    // ════════════════════════════════════════════════════════════════════════
+    // 
 
     @Nested
     @DisplayName("Telemetry Access Control Tests")

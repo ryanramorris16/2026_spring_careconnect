@@ -12,9 +12,9 @@ class SkeletonPlaybackWidget extends StatefulWidget {
   final Map<String, dynamic> sampleResponse;
 
   const SkeletonPlaybackWidget({
-    Key? key,
+    super.key,
     required this.sampleResponse,
-  }) : super(key: key);
+  });
 
   @override
   State<SkeletonPlaybackWidget> createState() => _SkeletonPlaybackWidgetState();

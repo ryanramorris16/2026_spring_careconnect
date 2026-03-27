@@ -52,7 +52,7 @@ void main() {
     });
 
     test('stores long html content', () {
-      final longHtml = '<html>' + 'x' * 1000 + '</html>';
+      final longHtml = '<html>${'x' * 1000}</html>';
       final raw = DigestRaw(html: longHtml, cids: {}, receivedAt: DateTime(2025));
       expect(raw.html.length, greaterThan(1000));
       expect(raw.html, startsWith('<html>'));

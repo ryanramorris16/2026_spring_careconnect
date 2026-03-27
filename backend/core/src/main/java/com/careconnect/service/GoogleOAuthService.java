@@ -25,11 +25,26 @@ public class GoogleOAuthService {
     private final EmailCredentialRepository credRepo;
     private final TokenCryptor tokenCryptor;
 
-    @Value("${google.oauth.client-id}")     String clientId;
-    @Value("${google.oauth.client-secret}") String clientSecret;
-    @Value("${google.oauth.redirect-uri}")  String redirectUri;
+    @Value("${google.oauth.client-id:}")     
+    String clientId;
+
+    @Value("${google.oauth.client-secret:}") 
+    String clientSecret;
+
+    @Value("${google.oauth.redirect-uri:}")  
+    String redirectUri;
 
     public void exchange(String userId, String code) {
+
+        if (clientId == null || clientId.isBlank() ||
+            clientSecret == null || clientSecret.isBlank() ||
+            redirectUri == null || redirectUri.isBlank()) {
+
+            throw new IllegalStateException(
+                "Google OAuth not configured (missing clientId/clientSecret/redirectUri)"
+            );
+        }
+
         try {
             System.out.println("[GoogleOAuth] Starting token exchange for userId: " + userId);
             System.out.println("[GoogleOAuth] Using clientId: " + safeId(clientId));

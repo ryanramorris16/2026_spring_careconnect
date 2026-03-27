@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import '../../../../providers/user_provider.dart';
 import '../../../../config/theme/app_theme.dart';
 import '../../../../services/api_service.dart';
+import '../../../../services/api_service_offline.dart';
 import '../../../../services/auth_token_manager.dart';
 import '../../../dashboard/models/patient_model.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../widgets/evv_month_calendar_view.dart';
@@ -50,6 +50,11 @@ class _SchedulePageState extends State<SchedulePage> {
   @override
   void initState() {
     super.initState();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final isPatient =
+        (userProvider.user?.role.toUpperCase() ?? '') == 'PATIENT';
+    _perspective =
+        isPatient ? _SchedulePerspective.patient : _SchedulePerspective.caregiver;
     _loadScheduledVisits();
     _loadUpcomingVisits();
     _loadAndSetSummaryData();
@@ -79,7 +84,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final caregiverId = userProvider.user?.caregiverId ?? 1;
+      final isPatient =
+          (userProvider.user?.role.toUpperCase() ?? '') == 'PATIENT';
 
       final headers = await AuthTokenManager.getAuthHeaders();
       final baseUrl = ApiConstants.baseUrl;
@@ -89,12 +95,22 @@ class _SchedulePageState extends State<SchedulePage> {
       final weekAgo = now.subtract(const Duration(days: 7));
       final startStr = DateFormat('yyyy-MM-dd').format(weekAgo);
       final endStr = DateFormat('yyyy-MM-dd').format(now);
-      final url = Uri.parse(
-        '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
-      );
+
+      final Uri url;
+      if (isPatient) {
+        final patientId = userProvider.user?.patientId ?? 0;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/patient/$patientId/range?startDate=$startStr&endDate=$endStr',
+        );
+      } else {
+        final caregiverId = userProvider.user?.caregiverId ?? 1;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
+        );
+      }
 
       print('🔍 Fetching scheduled visits (week range) from: $url');
-      final response = await http.get(url, headers: headers);
+      final response = await ApiServiceOffline.httpClient.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -137,7 +153,8 @@ class _SchedulePageState extends State<SchedulePage> {
   Future<void> _loadUpcomingVisits() async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final caregiverId = userProvider.user?.caregiverId ?? 1;
+      final isPatient =
+          (userProvider.user?.role.toUpperCase() ?? '') == 'PATIENT';
 
       final headers = await AuthTokenManager.getAuthHeaders();
       final baseUrl = ApiConstants.baseUrl;
@@ -149,11 +166,20 @@ class _SchedulePageState extends State<SchedulePage> {
       final startDateStr = DateFormat('yyyy-MM-dd').format(tomorrow);
       final endDateStr = DateFormat('yyyy-MM-dd').format(endDate);
 
-      final url = Uri.parse(
-        '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startDateStr&endDate=$endDateStr',
-      );
+      final Uri url;
+      if (isPatient) {
+        final patientId = userProvider.user?.patientId ?? 0;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/patient/$patientId/range?startDate=$startDateStr&endDate=$endDateStr',
+        );
+      } else {
+        final caregiverId = userProvider.user?.caregiverId ?? 1;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startDateStr&endDate=$endDateStr',
+        );
+      }
 
-      final response = await http.get(url, headers: headers);
+      final response = await ApiServiceOffline.httpClient.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -183,7 +209,8 @@ class _SchedulePageState extends State<SchedulePage> {
   Future<Map<String, int>> _loadSummaryDataClientSide() async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final caregiverId = userProvider.user?.caregiverId ?? 1;
+      final isPatient =
+          (userProvider.user?.role.toUpperCase() ?? '') == 'PATIENT';
       final headers = await AuthTokenManager.getAuthHeaders();
       final baseUrl = ApiConstants.baseUrl;
 
@@ -192,12 +219,24 @@ class _SchedulePageState extends State<SchedulePage> {
       final end = now.add(const Duration(days: 30));
       final startStr = DateFormat('yyyy-MM-dd').format(start);
       final endStr = DateFormat('yyyy-MM-dd').format(end);
-      final url = Uri.parse(
-        '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
-      );
-      final response = await http.get(url, headers: headers);
-      if (response.statusCode != 200)
+
+      final Uri url;
+      if (isPatient) {
+        final patientId = userProvider.user?.patientId ?? 0;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/patient/$patientId/range?startDate=$startStr&endDate=$endStr',
+        );
+      } else {
+        final caregiverId = userProvider.user?.caregiverId ?? 1;
+        url = Uri.parse(
+          '${baseUrl}scheduled-visits/caregiver/$caregiverId/range?startDate=$startStr&endDate=$endStr',
+        );
+      }
+
+      final response = await ApiServiceOffline.httpClient.get(url, headers: headers);
+      if (response.statusCode != 200) {
         throw Exception('summary range fetch failed');
+      }
       final List<dynamic> data = jsonDecode(response.body);
       _summaryPool = data.map((json) => ScheduledVisit.fromJson(json)).toList();
 
@@ -659,7 +698,7 @@ class _SchedulePageState extends State<SchedulePage> {
     final cs = theme.colorScheme;
 
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
@@ -1183,7 +1222,7 @@ class _SchedulePageState extends State<SchedulePage> {
     final cappedScale = MediaQuery.of(context).textScaleFactor.clamp(1.0, 1.2);
 
     return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaleFactor: cappedScale),
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(cappedScale)),
       child: Container(
         // Allow it to grow if needed, but ensure a comfortable minimum
         constraints: const BoxConstraints(minHeight: 98),
@@ -1590,7 +1629,7 @@ class _SchedulePageState extends State<SchedulePage> {
               final formattedDate = DateFormat('EEEE, MMMM d').format(date);
 
               return _buildDateGroup(formattedDate, visits);
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -1620,7 +1659,7 @@ class _SchedulePageState extends State<SchedulePage> {
           final isLast = index == visits.length - 1;
 
           return _buildUpcomingVisitEntry(visit, isLast);
-        }).toList(),
+        }),
       ],
     );
   }
@@ -1853,7 +1892,7 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
       final baseUrl = ApiConstants.baseUrl;
       final url = Uri.parse('${baseUrl}caregivers/$caregiverId/patients');
 
-      final response = await http.get(url, headers: headers);
+      final response = await ApiServiceOffline.httpClient.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -1945,7 +1984,7 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
 
       print('📤 Scheduling visit: $requestBody');
 
-      final response = await http.post(
+      final response = await ApiServiceOffline.httpClient.post(
         url,
         headers: headers,
         body: jsonEncode(requestBody),
@@ -2164,7 +2203,7 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : DropdownButtonFormField<Patient>(
-                              value: _selectedPatient,
+                              initialValue: _selectedPatient,
                               decoration: InputDecoration(
                                 hintText: 'Select a patient',
                                 border: OutlineInputBorder(
@@ -2195,7 +2234,7 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
                       _buildLabel('Service Type *'),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        value: _selectedServiceType,
+                        initialValue: _selectedServiceType,
                         decoration: InputDecoration(
                           hintText: 'Select service type',
                           border: OutlineInputBorder(
@@ -2361,7 +2400,7 @@ class _ScheduleVisitDialogState extends State<_ScheduleVisitDialog> {
                                 _buildLabel('Priority'),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
-                                  value: _priority,
+                                  initialValue: _priority,
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),

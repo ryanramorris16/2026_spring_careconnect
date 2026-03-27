@@ -3,6 +3,7 @@ package com.careconnect.controller;
 import com.careconnect.dto.schedule.ScheduledVisitRequest;
 import com.careconnect.dto.schedule.ScheduledVisitResponse;
 import com.careconnect.dto.schedule.ScheduledVisitSummary;
+import com.careconnect.repository.PatientRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.service.schedule.ScheduledVisitService;
 import com.careconnect.util.SecurityUtil;
@@ -55,6 +56,9 @@ class ScheduledVisitControllerTest {
 
     @MockitoBean
     private AuthorizationService authorizationService;
+
+    @MockitoBean
+    private PatientRepository patientRepository;
 
     private ScheduledVisitRequest validRequest;
     private ScheduledVisitResponse sampleVisit;

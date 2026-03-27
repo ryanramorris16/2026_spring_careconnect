@@ -435,6 +435,7 @@ public class EvvService {
         Page<EvvRecord> records = recordRepository.searchRecords(
             searchRequest.getPatientName(),
             searchRequest.getServiceType(),
+            searchRequest.getPatientId(),
             searchRequest.getCaregiverId(),
             searchRequest.getStartDate(),
             searchRequest.getEndDate(),

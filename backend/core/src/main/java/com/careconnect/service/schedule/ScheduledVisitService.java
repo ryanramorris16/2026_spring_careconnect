@@ -140,6 +140,18 @@ public class ScheduledVisitService {
     }
 
     @Transactional(readOnly = true)
+    public List<ScheduledVisitResponse> getScheduledVisitsBetweenDatesForPatient(
+            Long patientId,
+            LocalDate startDate,
+            LocalDate endDate) {
+        List<ScheduledVisit> visits = scheduledVisitRepository
+                .findByPatientIdAndScheduledDateBetween(patientId, startDate, endDate);
+        return visits.stream()
+                .map(visit -> new ScheduledVisitResponse(visit, getPatientName(visit.getPatientId())))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public ScheduledVisitSummary getVisitSummary(Long caregiverId) {
         LocalDate today = LocalDate.now();
         LocalTime currentTime = LocalTime.now();

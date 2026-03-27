@@ -64,7 +64,7 @@ class PatientHeaderCard extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isNarrow = screenWidth < 430;
 
-    final borderColor = cs.outlineVariant.withOpacity(0.35);
+    final borderColor = cs.outlineVariant.withValues(alpha: 0.35);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -87,7 +87,7 @@ class PatientHeaderCard extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: cs.primary.withOpacity(.12),
+                      backgroundColor: cs.primary.withValues(alpha: .12),
                       child: Text(
                         (fullName.isNotEmpty ? fullName[0] : '?').toUpperCase(),
                         style: TextStyle(
@@ -117,7 +117,7 @@ class PatientHeaderCard extends StatelessWidget {
                             'Age $age • $sex',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontSize: 14,
-                              color: cs.onSurface.withOpacity(.7),
+                              color: cs.onSurface.withValues(alpha: .7),
                             ),
                           ),
                         ],
@@ -141,7 +141,7 @@ class PatientHeaderCard extends StatelessWidget {
                       'Last Check-in: Today, 10:30 AM',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: cs.onSurface.withOpacity(.75),
+                        color: cs.onSurface.withValues(alpha: .75),
                       ),
                     ),
                     Text(
@@ -166,7 +166,7 @@ class PatientHeaderCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 32,
-                        backgroundColor: cs.primary.withOpacity(.12),
+                        backgroundColor: cs.primary.withValues(alpha: .12),
                         child: Text(
                           (fullName.isNotEmpty ? fullName[0] : '?').toUpperCase(),
                           style: TextStyle(
@@ -196,7 +196,7 @@ class PatientHeaderCard extends StatelessWidget {
                               'Age $age • $sex',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontSize: 16,
-                                color: cs.onSurface.withOpacity(.7),
+                                color: cs.onSurface.withValues(alpha: .7),
                               ),
                             ),
                           ],
@@ -227,7 +227,7 @@ class PatientHeaderCard extends StatelessWidget {
                             textAlign: TextAlign.right,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: cs.onSurface.withOpacity(.75),
+                              color: cs.onSurface.withValues(alpha: .75),
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -254,7 +254,7 @@ class PatientHeaderCard extends StatelessWidget {
             Text(
               'Primary Diagnoses',
               style: theme.textTheme.titleSmall?.copyWith(
-                color: cs.onSurface.withOpacity(0.9),
+                color: cs.onSurface.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -363,17 +363,20 @@ class _CallActions extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    Future<void> _dialNumber(String number) async {
+    Future<void> dialNumber(String number) async {
       final uri = Uri(scheme: 'tel', path: number);
       final ok = await launchUrl(uri);
       if (!ok) {
+        if (!context.mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Could not launch dialer for $number')),
         );
       }
     }
 
-    Future<void> _callEmergencyConference() async {
+    Future<void> callEmergencyConference() async {
       if (emergencyPhones.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No emergency contacts configured')),
@@ -382,11 +385,14 @@ class _CallActions extends StatelessWidget {
       }
 
       // Dial the first contact
-      await _dialNumber(emergencyPhones.first);
+      await dialNumber(emergencyPhones.first);
 
       // If a second contact exists, guide the user to merge calls and dial the second
       if (emergencyPhones.length >= 2) {
         await Future.delayed(const Duration(milliseconds: 600));
+        if (!context.mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             duration: Duration(seconds: 4),
@@ -397,7 +403,7 @@ class _CallActions extends StatelessWidget {
         );
 
         await Future.delayed(const Duration(seconds: 3));
-        await _dialNumber(emergencyPhones[1]);
+        await dialNumber(emergencyPhones[1]);
       }
     }
 
@@ -425,7 +431,7 @@ class _CallActions extends StatelessWidget {
     );
 
     final emergencyButton = ElevatedButton.icon(
-      onPressed: onCallEmergencyContacts ?? _callEmergencyConference,
+      onPressed: onCallEmergencyContacts ?? callEmergencyConference,
       style: ElevatedButton.styleFrom(
         backgroundColor: cs.primary,
         foregroundColor: cs.onPrimary,
@@ -586,7 +592,7 @@ class _VitalBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withOpacity(.4)),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: .4)),
       ),
       // Compact, but grows if needed to avoid overflow stripes
       constraints: const BoxConstraints(minHeight: 88),
@@ -605,7 +611,7 @@ class _VitalBox extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: cs.onSurface.withOpacity(.75),
+                    color: cs.onSurface.withValues(alpha: .75),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

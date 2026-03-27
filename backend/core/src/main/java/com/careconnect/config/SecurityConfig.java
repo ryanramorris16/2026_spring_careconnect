@@ -1,8 +1,7 @@
 package com.careconnect.config;
 
-import com.careconnect.security.JwtAuthenticationFilter;
-import com.careconnect.security.JwtTokenProvider;
-import jakarta.servlet.http.HttpServletResponse;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -17,7 +16,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.concurrent.TimeUnit;
+import com.careconnect.security.JwtAuthenticationFilter;
+import com.careconnect.security.JwtTokenProvider;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableMethodSecurity
@@ -88,6 +90,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
+                        /* =======================================================
+                           ACTUATOR HEALTH ENDPOINT (CI/CD + AWS HEALTH CHECKS)
+                           =======================================================
+                           - Must be public (no auth)
+                           - Used by:
+                             • CI/CD pipeline gating
+                             • AWS ALB / ECS / Fargate health checks
+                             • Monitoring tools
+                        */
+                       .requestMatchers("/actuator/health").permitAll()
+                        
                         /* ---------- Swagger / API docs ------------------------ */
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -116,8 +129,12 @@ public class SecurityConfig {
                                 "/v1/api/billing/pay/**",
                                 "/v1/api/address/**",
                                 "/oauth/**",
-                                "/ws/**"
+                                "/ws/**",
+                                "/api/notifications/demo/**"
                         ).permitAll()
+
+                        /* ---------- Actuator / health checks ------------------- */
+                        .requestMatchers("/actuator/**").permitAll()
 
                         /* ---------- Public static assets ---------------------- */
                         .requestMatchers("/", "/index.html", "/favicon.ico", "/static/**").permitAll()

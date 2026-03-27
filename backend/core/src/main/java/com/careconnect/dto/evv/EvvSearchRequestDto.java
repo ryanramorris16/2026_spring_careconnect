@@ -10,6 +10,7 @@ public class EvvSearchRequestDto {
     private String patientName;
     private String serviceType;
     private Long caregiverId;
+    private Long patientId;
     private LocalDate startDate;
     private LocalDate endDate;
     private String stateCode;
