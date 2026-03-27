@@ -316,13 +316,8 @@ class InvoiceControllerTest {
 
         final String json = "{\"invoiceNumber\":\"INV-001\"}";
 
-        AIService mockAiService = mock(AIService.class);
-        when(aiServiceFactory.getService()).thenReturn(mockAiService);
-
-        ChatResponse chatResponse = new ChatResponse();
-        chatResponse.setAiResponse(json);
-
-        when(mockAiService.processChat(any())).thenReturn(chatResponse);        when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
+        when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 
@@ -345,13 +340,7 @@ class InvoiceControllerTest {
 
         final String json = "{\"invoiceNumber\":\"INV-001\",\"provider\":{\"name\":\"Acme\"},\"amounts\":{\"total\":100.0}}";
 
-        AIService mockAiService = mock(AIService.class);
-        when(aiServiceFactory.getService()).thenReturn(mockAiService);
-
-        ChatResponse chatResponse = new ChatResponse();
-        chatResponse.setAiResponse(json);
-
-        when(mockAiService.processChat(any())).thenReturn(chatResponse);
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
         final Invoice existing = new Invoice();
         existing.setId("existing-id");
@@ -378,15 +367,8 @@ class InvoiceControllerTest {
 
         // JSON with no provider or amounts — they'll be null in InvoiceDto
         final String json = "{\"invoiceNumber\":\"INV-002\"}";
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
-        AIService mockAiService = mock(AIService.class);
-        when(aiServiceFactory.getService()).thenReturn(mockAiService);
-
-        ChatResponse chatResponse = new ChatResponse();
-        chatResponse.setAiResponse(json);
-
-        when(mockAiService.processChat(any())).thenReturn(chatResponse);
-        
         final Invoice existing = new Invoice();
         existing.setId("dup-id");
         existing.setInvoiceNumber("INV-002");
@@ -421,14 +403,8 @@ class InvoiceControllerTest {
 
         final String fencedJson = "```json\n{\"invoiceNumber\":\"INV-FENCED\"}\n```";
 
-        AIService mockAiService = mock(AIService.class);
-        when(aiServiceFactory.getService()).thenReturn(mockAiService);
-
-        ChatResponse chatResponse = new ChatResponse();
-        String json = "{\"invoiceNumber\":\"INV-001\"}";
-        chatResponse.setAiResponse(json);
-
-        when(mockAiService.processChat(any())).thenReturn(chatResponse);        when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(fencedJson);
+        when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
 

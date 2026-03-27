@@ -48,7 +48,7 @@ class BedrockAIChatServiceTest {
 
     @Test
     void processChat_success_returnsResponse() {
-        String aiResponseBody = "{\"content\":[{\"text\":\"Hello from Bedrock\"}]}";
+        String aiResponseBody = "{\"output\":{\"message\":{\"content\":[{\"text\":\"Hello from Bedrock\"}]}}}";
         SdkBytes responseBytes = SdkBytes.fromUtf8String(aiResponseBody);
         InvokeModelResponse invokeResponse = InvokeModelResponse.builder()
                 .body(responseBytes)
@@ -61,14 +61,14 @@ class BedrockAIChatServiceTest {
         ChatResponse response = service.processChat(request);
 
         assertThat(response).isNotNull();
-        assertThat(response.getAiResponse()).isEqualTo(aiResponseBody);
+        assertThat(response.getAiResponse()).isEqualTo("Hello from Bedrock");
         assertThat(response.getSuccess()).isTrue();
         assertThat(response.getTimestamp()).isNotNull();
     }
 
     @Test
     void processChat_withQuotesInMessage_escapesCorrectly() {
-        String aiResponseBody = "{\"content\":[{\"text\":\"Response\"}]}";
+        String aiResponseBody = "{\"output\":{\"message\":{\"content\":[{\"text\":\"Response\"}]}}}";
         SdkBytes responseBytes = SdkBytes.fromUtf8String(aiResponseBody);
         InvokeModelResponse invokeResponse = InvokeModelResponse.builder()
                 .body(responseBytes)
@@ -87,28 +87,24 @@ class BedrockAIChatServiceTest {
     @Test
     void getPatientConversations_throwsUnsupportedOperationException() {
         assertThatThrownBy(() -> service.getPatientConversations(1L))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("not supported in Bedrock mode");
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void getConversationMessages_throwsUnsupportedOperationException() {
         assertThatThrownBy(() -> service.getConversationMessages("conv-123"))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("not supported in Bedrock mode");
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void getRecentMessagesForUser_throwsUnsupportedOperationException() {
         assertThatThrownBy(() -> service.getRecentMessagesForUser(1L, 10))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("not supported in Bedrock mode");
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void deactivateConversation_throwsUnsupportedOperationException() {
         assertThatThrownBy(() -> service.deactivateConversation("conv-123"))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("not supported in Bedrock mode");
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

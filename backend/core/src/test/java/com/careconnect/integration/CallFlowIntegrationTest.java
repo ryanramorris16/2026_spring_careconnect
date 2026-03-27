@@ -126,7 +126,7 @@ class CallFlowIntegrationTest {
     @MockitoBean
     private dev.langchain4j.model.chat.ChatModel chatModel;
 
-    @MockitoBean
+    @MockitoBean(name = "mockAIChatService")
     private com.careconnect.service.AIChatService aiChatService;
 
     // Conditional services whose @ConditionalOnProperty excludes them under test profile,

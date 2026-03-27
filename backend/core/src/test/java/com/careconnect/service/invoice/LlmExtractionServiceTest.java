@@ -43,8 +43,11 @@ class LlmExtractionServiceTest {
     @Test
     void extractInvoiceData_nullResponse_returnsEmpty() {
 
+        ChatResponse chatResponse = new ChatResponse();
+        chatResponse.setAiResponse(null);
+
         when(aiServiceFactory.getService()).thenReturn(aiService);
-        when(aiService.processChat(any())).thenReturn(null);
+        when(aiService.processChat(any())).thenReturn(chatResponse);
 
         String result = llmExtractionService.extractInvoiceData("Raw invoice text");
 
