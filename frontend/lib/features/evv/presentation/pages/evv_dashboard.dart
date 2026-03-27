@@ -384,6 +384,15 @@ class _MainActions extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const EvvRecordReviewPage()),
           ),
         ),
+      if (isCaregiver || isSupervisor || isAdmin)
+        _ActionSpec(
+          title: 'Submit to HHAExchange',
+          icon: Icons.upload_rounded,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EvvHhaExchangeSubmitPage()),
+          ),
+        ),
       if (isAdmin || isSupervisor || isPatient)
         _ActionSpec(
           title: 'Visit History',
