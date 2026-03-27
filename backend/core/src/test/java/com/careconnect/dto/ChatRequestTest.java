@@ -273,7 +273,7 @@ class ChatRequestTest {
                 .patientId(2L)
                 .userId(3L)
                 .chatType(ChatConversation.ChatType.MEDICATION_INQUIRY)
-                .preferredModel("claude-3")
+                .preferredModel("amazon.nova-lite-v1:0")
                 .title("Test Chat")
                 .temperature(0.5)
                 .maxTokens(512)
@@ -285,7 +285,7 @@ class ChatRequestTest {
         assertThat(req.getPatientId()).isEqualTo(2L);
         assertThat(req.getUserId()).isEqualTo(3L);
         assertThat(req.getChatType()).isEqualTo(ChatConversation.ChatType.MEDICATION_INQUIRY);
-        assertThat(req.getPreferredModel()).isEqualTo("claude-3");
+        assertThat(req.getPreferredModel()).isEqualTo("amazon.nova-lite-v1:0");
         assertThat(req.getTitle()).isEqualTo("Test Chat");
         assertThat(req.getTemperature()).isEqualTo(0.5);
         assertThat(req.getMaxTokens()).isEqualTo(512);
