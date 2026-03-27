@@ -736,6 +736,76 @@ if (PermissionHelper.hasPermission(currentRole, Permission.MANAGE_SCHEDULES)) {
 }
 ```
 
+### Starting Bedrock ###
+1. **Enter credentials** 
+  Need to install AWS CLI and run:
+       aws configure
+  
+  You will need to enter the following data:
+  AWS Access Key ID: YOUR_KEY
+  AWS Secret Access Key: YOUR_SECRET
+  Default region name: us-east-1
+  Default output format: json
+
+  If you have a student account after the aws secret access key
+  you will need to enter an AWS session token. You know you have
+  a student account if your AWS access key ID starts with ASIA. 
+  FOr the student account you will need to put the new keys in 
+  every day. For a regular account the AWS access key starts
+  with AZIA.
+
+2. **Set S3 Bucket**
+  In your AWS account you will need to create a S3 bucket and
+  remember the name you give it.
+
+  On windows in powershell enter the command:
+        $env:AWS_S3_BUCKET="name_of_bucket"
+  
+  Alternatively you can go to your application-dev.properties
+  and enter the bucket name in: 
+        aws.s3.bucket="enter bucket name here"
+
+3. **Request access to the model**
+  In your AWS account go amazon bedrock, go to playground, select
+  model. In section 1 click amazon, in section 2 click Nova Lite 1.0
+  then click apply. Write anythng in the prompt at the bottom and
+  make sure you get a response. This means you have access to it. If
+  not you will need to request access to it.
+
+4. **Enable LLM and AWS**
+  In application-dev.properties make sure you have:
+    careconnect.aws.enabled=true
+    careconnect.llm.enabled=true
+    careconnect.ai.provider=bedrock
+
+5. **Run Backend**
+  In a terminal/powershell/visual studio code go togi the /backend/core
+  directory and run the command:
+      .\mvnw,cmd clean install
+      .\mvnw.cmd spring-boot: run "-Dspring-boot.run.profiles=dev"
+
+6. **Test via Swagger UI**
+  Open in a browser:
+      http://localhost:8080/swagger-ui/index.html
+  
+  Find the endpoint:
+      POST /v1/api/invoices/extract-llm
+  
+  You will need an image of an invoice as a JPEG or PNG. Click on
+  the execute button and you should see:
+      {
+        "invoice": {
+        "invoiceNumber": 
+        "provider": {
+          "name": 
+        },
+        "amounts": {
+          "total":
+        },
+        "aiSummary": "{ ... AI extracted JSON ... }"
+        }
+      }  
+
 ### Add a New Role
 
 > Adding a new role is a significant change. Follow these steps carefully.

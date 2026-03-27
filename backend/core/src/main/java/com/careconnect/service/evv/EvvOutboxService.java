@@ -81,8 +81,22 @@ public class EvvOutboxService {
     public void markSent(Long id) {
         jdbc.update("UPDATE evv_outbox SET status='SENT' WHERE id=:id", new MapSqlParameterSource("id", id));
     }
+
     public void markFailed(Long id, String err) {
         jdbc.update("UPDATE evv_outbox SET status='FAILED', last_error=:e, attempts=attempts+1 WHERE id=:id",
                 new MapSqlParameterSource().addValue("id", id).addValue("e", err));
+    }
+
+    /**
+     * Fetch up to {@code limit} outbox rows that are ready to be processed.
+     * Rows with {@code status = 'READY'} and fewer than 3 attempts are returned
+     * ordered by insertion ID (oldest first).
+     */
+    public java.util.List<java.util.Map<String, Object>> fetchPending(int limit) {
+        return jdbc.queryForList(
+                "SELECT id, evv_record_id, destination, attempts " +
+                "FROM evv_outbox WHERE status = 'READY' AND attempts < 3 " +
+                "ORDER BY id ASC LIMIT :limit",
+                new MapSqlParameterSource("limit", limit));
     }
 }

@@ -318,7 +318,7 @@ void main() {
     });
 
     test('video-call route exists', () {
-      expect(allPaths, contains('/video-call'));
+      expect(allPaths, contains('/video-call-chime'));
     });
 
     test('wearables route exists', () {
@@ -565,8 +565,8 @@ void main() {
       expect(allPaths, contains('/notetaker/detail/:noteId'));
     });
 
-    test('video-call-test route exists', () {
-      expect(allPaths, contains('/video-call-test'));
+    test('video-call-chime route exists', () {
+      expect(allPaths, contains('/video-call-chime'));
     });
 
     test('usps-test route exists', () {
@@ -722,7 +722,7 @@ void main() {
 
     test('video-call route has a builder', () {
       final route =
-          _findRoute(appRouter.configuration.routes, '/video-call');
+          _findRoute(appRouter.configuration.routes, '/video-call-chime');
       expect(route, isNotNull);
       expect(route!.builder, isNotNull);
     });
@@ -1281,41 +1281,41 @@ void main() {
       _tearDownPlatformChannels();
     });
 
-    testWidgets('shows Redirecting when no params', (tester) async {
-      final router = _createFullTestRouter('/video-call');
+    testWidgets('renders video call widget with no params', (tester) async {
+      final router = _createFullTestRouter('/video-call-chime');
       await _pumpRouterApp(tester, router);
       await tester.pump();
 
-      expect(find.text('Redirecting...'), findsOneWidget);
+      expect(find.byType(Scaffold), findsWidgets);
     });
 
-    testWidgets('shows Redirecting when only patientId provided',
+    testWidgets('renders video call widget with userId and callId',
         (tester) async {
-      final router = _createFullTestRouter('/video-call?patientId=1');
+      final router = _createFullTestRouter('/video-call-chime?userId=1&callId=call-123');
       await _pumpRouterApp(tester, router);
       await tester.pump();
 
-      expect(find.text('Redirecting...'), findsOneWidget);
+      expect(find.byType(Scaffold), findsWidgets);
     });
 
-    testWidgets('shows Redirecting when only patientName provided',
+    testWidgets('renders video call widget with recipientName',
         (tester) async {
       final router =
-          _createFullTestRouter('/video-call?patientName=John');
+          _createFullTestRouter('/video-call-chime?userId=1&callId=call-123&recipientName=John');
       await _pumpRouterApp(tester, router);
       await tester.pump();
 
-      expect(find.text('Redirecting...'), findsOneWidget);
+      expect(find.byType(Scaffold), findsWidgets);
     });
 
-    testWidgets('shows Redirecting when patientId is non-numeric',
+    testWidgets('renders video call widget with non-numeric userId uses default',
         (tester) async {
       final router = _createFullTestRouter(
-          '/video-call?patientId=abc&patientName=John');
+          '/video-call-chime?userId=abc&callId=call-123');
       await _pumpRouterApp(tester, router);
       await tester.pump();
 
-      expect(find.text('Redirecting...'), findsOneWidget);
+      expect(find.byType(Scaffold), findsWidgets);
     });
   });
 

@@ -2,11 +2,7 @@
 
 ## Overview
 
-This directory contains the CI Quality Gate Engine for CareConnect. The gate engine
-runs automatically on every push and pull request to `team_d` and `team_d-*` branches.
-It executes 13 static analysis, security, and vulnerability scanning tools, evaluates
-results against a centralized policy, and enforces merge decisions via GitHub Actions
-exit codes. No manual intervention is required to trigger the pipeline.
+his directory contains the CI Quality Gate Engine for CareConnect. The gate engine runs automatically on every push and pull request to team_d and team_d-* branches. It executes 13 static analysis, security, and vulnerability scanning tools, evaluates results against a centralized policy, and enforces merge decisions via GitHub Actions exit codes. No manual intervention is required to trigger the pipeline.
 
 ---
 
