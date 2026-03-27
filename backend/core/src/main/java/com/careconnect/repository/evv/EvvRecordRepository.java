@@ -20,6 +20,9 @@ public interface EvvRecordRepository extends JpaRepository<EvvRecord,Long> {
     
     @Query("SELECT e FROM EvvRecord e JOIN FETCH e.patient WHERE e.status = :status")
     List<EvvRecord> findByStatus(@Param("status") String status);
+
+    @Query("SELECT e FROM EvvRecord e JOIN FETCH e.patient WHERE e.status = :status AND e.stateCode = :stateCode")
+    List<EvvRecord> findByStatusAndStateCode(@Param("status") String status, @Param("stateCode") String stateCode);
     
     @Query("SELECT e FROM EvvRecord e JOIN FETCH e.patient WHERE e.id = :id")
     java.util.Optional<EvvRecord> findByIdWithPatient(@Param("id") Long id);
@@ -73,4 +76,7 @@ public interface EvvRecordRepository extends JpaRepository<EvvRecord,Long> {
 
     @Query("SELECT e FROM EvvRecord e WHERE e.caregiverId = :caregiverId AND e.createdAt >= :since")
     List<EvvRecord> findByCaregiverSince(@Param("caregiverId") Long caregiverId, @Param("since") OffsetDateTime since);
+    
+    @Query("SELECT e FROM EvvRecord e JOIN FETCH e.patient WHERE e.id IN :ids")
+    List<EvvRecord> findAllByIdWithPatient(@Param("ids") java.util.List<Long> ids);
 }
