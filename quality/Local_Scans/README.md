@@ -1,9 +1,12 @@
 # CareConnect Local Quality Gate
 
 A local pre-commit quality gate that runs static analysis tools against
-the CareConnect codebase before every commit. If any enforced tool finds
-violations, the commit is blocked. A timestamped HTML report and raw tool
-outputs are zipped and saved to `~/Downloads/` on every run.
+the CareConnect codebase before every commit. The gate identifies code
+quality, security, and maintainability issues and generates a report for
+developer review, but does not block the commit.
+
+A timestamped HTML report and raw tool outputs are zipped and saved to
+`~/Downloads/` on every run.
 
 ---
 
@@ -16,7 +19,9 @@ outputs are zipped and saved to `~/Downloads/` on every run.
 | PMD | Java | SAST — Java | Enforced |
 | SpotBugs | Java | SAST — Java | Enforced |
 
-All four tools are enforced. A violation in any tool will block the commit.
+All four tools are executed on every run. Findings are reported for
+developer visibility and remediation, while enforcement of blocking
+behavior occurs in the CI Quality Gate.
 
 ---
 
@@ -165,6 +170,6 @@ systems are complementary:
 | When | Before commit | On push |
 | Tools | Flutter, Checkstyle, PMD, SpotBugs | 13 tools (SAST, SCA, Secrets) |
 | Output | HTML report + ZIP | Artifact bundle + PR comment |
-| Enforcement | Blocks commit | Blocks merge |
+| Enforcement | Advisory | Blocks merge |
 
 ---
