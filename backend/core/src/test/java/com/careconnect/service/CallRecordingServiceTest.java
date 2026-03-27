@@ -2,6 +2,7 @@ package com.careconnect.service;
 
 import com.careconnect.model.CallRecording;
 import com.careconnect.repository.CallRecordingRepository;
+import com.careconnect.service.PostCallTranscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +74,7 @@ class CallRecordingServiceTest {
     @Mock private IamClient iamClient;
     @Mock private ChimeService chimeService;
     @Mock private CallRecordingRepository recordingRepository;
+    @Mock private PostCallTranscriptionService postCallTranscriptionService;
 
     @InjectMocks
     private CallRecordingService service;
@@ -158,8 +160,8 @@ class CallRecordingServiceTest {
 
             service.startRecording(CALL_ID, USER_ID); // first call registers pipeline
 
-            // Second call — should hit ALREADY_RECORDING branch
-            Map<String, Object> result = service.startRecording(CALL_ID, USER_ID);
+            // Second call with null userId — skips the "claim" path and hits ALREADY_RECORDING
+            Map<String, Object> result = service.startRecording(CALL_ID, null);
 
             assertThat(result).containsEntry("status", "ALREADY_RECORDING");
             assertThat(result).containsKey("pipelineId");
