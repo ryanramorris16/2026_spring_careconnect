@@ -125,7 +125,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
   DateTime? _lastTranscriptSentAt;
   String? _lastTranscriptSample;
   String _transcriptCaptureStatus = 'AWAITING';
-  String _transcriptCaptureDetail = 'Waiting for transcript';
 
   // Latest sentiment data — updated via WebSocket push
   Map<String, dynamic> _sentimentData = {};
@@ -225,7 +224,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
       if (mounted) {
         setState(() {
           _transcriptCaptureStatus = 'AWAITING';
-          _transcriptCaptureDetail = 'Waiting for transcript';
         });
       }
 
@@ -431,12 +429,11 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     return null;
   }
 
-  Future<void> _handleTranscriptSample(String transcript) async {
+  Future<void> _handleTranscriptSample(Map<String, dynamic> sample) async {
     if (_isCareTeamCall) {
       if (mounted && _transcriptCaptureStatus != 'DISABLED') {
         setState(() {
           _transcriptCaptureStatus = 'DISABLED';
-          _transcriptCaptureDetail = 'Sentiment disabled for care-team calls';
         });
       }
       return;
@@ -446,14 +443,13 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
       return;
     }
 
-    final trimmed = transcript.trim();
+    final trimmed = (sample['text'] ?? '').toString().trim();
     if (trimmed.length < 2) {
       return;
     }
     if (mounted && _transcriptCaptureStatus != 'CONNECTED') {
       setState(() {
         _transcriptCaptureStatus = 'CONNECTED';
-        _transcriptCaptureDetail = 'Live transcript';
       });
     }
     debugPrint(
@@ -469,16 +465,87 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
 
     final uploaded = await _videoCallService.sendTranscriptSegment(
       text: trimmed,
-      speakerLabel: _isPatientView
-          ? 'PATIENT'
-          : (_isCaregiverView ? 'CAREGIVER' : 'PARTICIPANT'),
-      source: 'chime-transcript',
+      speakerLabel: _resolveTranscriptSpeakerLabel(sample),
+      startMs: _safeTranscriptMs(sample['startMs']),
+      endMs: _safeTranscriptMs(sample['endMs']),
+      source: (sample['source'] ?? 'chime-transcript').toString(),
     );
 
     if (uploaded) {
       _lastTranscriptSentAt = now;
       _lastTranscriptSample = trimmed;
     }
+  }
+
+  int? _safeTranscriptMs(dynamic value) {
+    if (value is int) {
+      return value >= 0 ? value : null;
+    }
+    if (value is num) {
+      final rounded = value.round();
+      return rounded >= 0 ? rounded : null;
+    }
+    final parsed = int.tryParse(value?.toString() ?? '');
+    return parsed != null && parsed >= 0 ? parsed : null;
+  }
+
+  /// Decodes the speaker label from the Chime externalUserId encoded by the backend.
+  ///
+  /// Backend format: `{ROLE}_{First-LAST}_{userId}` e.g. `CAREGIVER_John-DOE_42`
+  /// Display format: `John DOE`  (first name title-case, last name upper-case)
+  /// Falls back to role name if no name segment is present.
+  String _resolveTranscriptSpeakerLabel(Map<String, dynamic> sample) {
+    final raw = (sample['speakerLabel'] ?? '').toString().trim();
+    if (raw.isNotEmpty) {
+      return _decodeExternalUserIdLabel(raw);
+    }
+    if (_isPatientView) return 'PATIENT';
+    if (_isCaregiverView) return 'CAREGIVER';
+    return 'PARTICIPANT';
+  }
+
+  static const _knownRoles = ['CAREGIVER', 'PATIENT', 'ADMIN', 'FAMILYMEMBER'];
+
+  String _decodeExternalUserIdLabel(String raw) {
+    // Format: ROLE_First-LAST_userId  (3 parts separated by underscores)
+    // Also handles legacy ROLE_userId (2 parts) and plain ROLE (1 part).
+    final parts = raw.split('_');
+    final roleCandidate = parts[0].toUpperCase();
+    final isKnownRole = _knownRoles.any((r) => roleCandidate.startsWith(r));
+
+    if (!isKnownRole) return raw; // unknown format — return as-is
+
+    // Try to extract the name segment (middle part when there are 3 parts)
+    if (parts.length >= 3) {
+      final nameSeg = parts[1]; // e.g. "John-DOE"
+      if (nameSeg.isNotEmpty && nameSeg.contains(RegExp(r'[A-Za-z]'))) {
+        return _formatNameSegment(nameSeg);
+      }
+    }
+
+    // Fall back to role label
+    if (roleCandidate.startsWith('CAREGIVER') || roleCandidate.startsWith('ADMIN')) {
+      return 'CAREGIVER';
+    }
+    if (roleCandidate.startsWith('PATIENT')) return 'PATIENT';
+    if (roleCandidate.startsWith('FAMILYMEMBER')) return 'FAMILY';
+    return roleCandidate;
+  }
+
+  /// Converts "John-DOE" → "John DOE"
+  String _formatNameSegment(String nameSeg) {
+    final hyphenParts = nameSeg.split('-');
+    if (hyphenParts.length == 1) {
+      // Only first name
+      final n = hyphenParts[0];
+      return n.isEmpty ? nameSeg : n[0].toUpperCase() + n.substring(1).toLowerCase();
+    }
+    final first = hyphenParts[0];
+    final last = hyphenParts.sublist(1).join(' ');
+    final firstFormatted = first.isEmpty
+        ? ''
+        : first[0].toUpperCase() + first.substring(1).toLowerCase();
+    return '$firstFormatted ${last.toUpperCase()}'.trim();
   }
 
   void _handleTranscriptStatus(String status, String? detail) {
@@ -488,9 +555,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     }
     setState(() {
       _transcriptCaptureStatus = normalized;
-      if (detail != null && detail.trim().isNotEmpty) {
-        _transcriptCaptureDetail = detail.trim();
-      }
     });
   }
 
@@ -915,6 +979,11 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
         returnPatientId != null &&
         returnPatientId.isNotEmpty;
 
+    if (shouldForcePatientDetails && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+
     if (shouldForcePatientDetails) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -1011,11 +1080,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
           child: Stack(
             children: [
               Positioned.fill(child: _buildChimeView()),
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: _buildTranscriptStatusBadge(),
-              ),
             ],
           ),
         ),
@@ -1299,69 +1363,6 @@ class _HybridVideoCallWidgetState extends State<HybridVideoCallWidget> {
     );
   }
 
-  Widget _buildTranscriptStatusBadge() {
-    Color badgeColor;
-    IconData icon;
-    String label;
-
-    switch (_transcriptCaptureStatus) {
-      case 'CONNECTED':
-        badgeColor = Colors.green.shade700;
-        icon = Icons.subtitles;
-        label = 'Transcript connected';
-        break;
-      case 'FALLBACK':
-        badgeColor = Colors.orange.shade700;
-        icon = Icons.settings_backup_restore;
-        label = 'Transcript fallback';
-        break;
-      case 'BLOCKED':
-        badgeColor = Colors.red.shade700;
-        icon = Icons.block;
-        label = 'Transcript blocked';
-        break;
-      default:
-        badgeColor = Colors.blueGrey.shade600;
-        icon = Icons.hourglass_bottom;
-        label = 'Transcript waiting';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: badgeColor.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 14),
-          const SizedBox(width: 6),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                _transcriptCaptureDetail,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRecordingConsentBanner() {
     return Container(
@@ -1632,3 +1633,5 @@ class _BlinkingDotState extends State<_BlinkingDot>
     );
   }
 }
+
+

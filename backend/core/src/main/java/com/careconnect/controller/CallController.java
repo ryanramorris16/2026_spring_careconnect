@@ -90,11 +90,6 @@ public class CallController {
   @Autowired private UserRepository userRepository;
   @Autowired private Environment environment;
 
-  /** Default constructor. */
-  public CallController() {
-    // Spring will inject dependencies via @Autowired fields
-  }
-
   private User getCurrentUser() {
     final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     final String userEmail = authentication.getName();
@@ -139,8 +134,9 @@ public class CallController {
       @RequestBody(required = false) final Map<String, Object> body) {
     try {
       final User currentUser = getCurrentUser();
+      final boolean meetingAlreadyActive = chimeService.isMeetingActive(callId);
       final Map<String, Object> response =
-          chimeService.joinMeeting(callId, currentUser.getId().toString());
+          chimeService.joinMeeting(callId, currentUser.getId().toString(), currentUser.getRole().name(), getCallUserDisplayName(currentUser));
       final Map<String, Object> contextMetadata = extractCallContextMetadata(body);
       callTelemetryService.recordCallEvent(
           callId,
@@ -153,6 +149,17 @@ public class CallController {
           null);
       if (log.isInfoEnabled()) {
         log.info("User {} joined call {}", currentUser.getId(), callId);
+      }
+      // Auto-start a system-initiated recording when the 2nd participant joins.
+      // The recording will be transcribed and deleted from S3 after the call ends.
+      if (meetingAlreadyActive) {
+        try {
+          callRecordingService.startRecording(callId, null);
+        } catch (Exception e) {
+          if (log.isWarnEnabled()) {
+            log.warn("Auto-recording start failed for call {}: {}", callId, e.getMessage());
+          }
+        }
       }
       return ResponseEntity.ok(response);
     } catch (AppException e) {
@@ -281,7 +288,7 @@ public class CallController {
     }
 
     // Add attendee to the existing Chime meeting (meeting already exists)
-    chimeService.createAttendee(callId, targetUserId.toString());
+    chimeService.createAttendee(callId, targetUserId.toString(), target.getRole().name(), getCallUserDisplayName(target));
 
     // Notify target via WebSocket if online
     final Map<String, Object> invite = new HashMap<>();
@@ -506,7 +513,7 @@ public class CallController {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
       final User currentUser = getCurrentUser();
-      ensureSentimentAllowedForCall(callId, currentUser);
+      ensureSentimentAllowedForCall(currentUser);
       final String text = body.get("text");
       if (text == null || text.isBlank()) {
         throw new AppException(HttpStatus.BAD_REQUEST, "text field is required");
@@ -582,7 +589,7 @@ public class CallController {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
       final User currentUser = getCurrentUser();
-      ensureSentimentAllowedForCall(callId, currentUser);
+      ensureSentimentAllowedForCall(currentUser);
       final Long otherPartyUserId = parseUserId(body.get("otherPartyId"));
       final Double averageLevel = parseDouble(body.get("averageLevel"));
       final Double speechRatio = parseDouble(body.get("speechRatio"));
@@ -727,7 +734,7 @@ public class CallController {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
       final User currentUser = getCurrentUser();
-      ensureSentimentAllowedForCall(callId, currentUser);
+      ensureSentimentAllowedForCall(currentUser);
       final String imageBase64 = body.get("imageBase64");
       if (imageBase64 == null || imageBase64.isBlank()) {
         throw new AppException(HttpStatus.BAD_REQUEST, "imageBase64 field is required");
@@ -803,7 +810,7 @@ public class CallController {
     final Map<String, Object> telemetryPayload = sanitizeTelemetryPayload(body);
     try {
       final User currentUser = getCurrentUser();
-      ensureSentimentAllowedForCall(callId, currentUser);
+      ensureSentimentAllowedForCall(currentUser);
       final String text = body.getOrDefault("text", "");
       final String imageBase64 = body.getOrDefault("imageBase64", "");
       final String imageFormat = body.getOrDefault("imageFormat", "jpeg");
@@ -1195,28 +1202,10 @@ public class CallController {
     }
   }
 
-  private void ensureSentimentAllowedForCall(final String callId, final User currentUser) {
+  private void ensureSentimentAllowedForCall(final User currentUser) {
     ensurePatientSource(currentUser);
     // Care-team calls still allow sentiment analysis when the source is the patient.
     // Non-patient participants are already blocked by ensurePatientSource.
-  }
-
-  private boolean isCareTeamCall(final String callId) {
-    if (callId == null || callId.isBlank()) {
-      return false;
-    }
-
-    return callTelemetryService.getTelemetryForCall(callId).stream()
-        .anyMatch(
-            event -> {
-              final String metadataJson = event.getMetadataJson();
-              if (metadataJson == null || metadataJson.isBlank()) {
-                return false;
-              }
-              final String normalized = metadataJson.toUpperCase(Locale.ROOT);
-              return normalized.contains("\"CALLKIND\":\"CARE_TEAM\"")
-                  || normalized.contains("\"CALLKIND\": \"CARE_TEAM\"");
-            });
   }
 
   private AppException internalServerError(final String message, final Exception cause) {

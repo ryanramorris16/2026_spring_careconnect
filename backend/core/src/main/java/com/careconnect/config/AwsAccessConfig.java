@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.textract.TextractClient;
+import software.amazon.awssdk.services.transcribe.TranscribeClient;
 import org.springframework.beans.factory.annotation.Value;
 
 
@@ -103,6 +104,14 @@ public class AwsAccessConfig {
         // IAM is a global service — must use us-east-1 regardless of deployment region
         return IamClient.builder()
                 .region(Region.US_EAST_1)
+                .credentialsProvider(awsCredentialsProvider())
+                .build();
+    }
+
+    @Bean
+    public TranscribeClient transcribeClient() {
+        return TranscribeClient.builder()
+                .region(defaultAwsRegion())
                 .credentialsProvider(awsCredentialsProvider())
                 .build();
     }
