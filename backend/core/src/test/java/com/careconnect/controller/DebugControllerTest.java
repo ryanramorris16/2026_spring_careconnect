@@ -106,15 +106,15 @@ class DebugControllerTest {
     void matchPlanToPrice_shouldReturnMatchingInfo() throws Exception {
 
         final Plan premium = new Plan();
-        premium.setName("Premium Plan");
+        premium.setName("Premium Monthly");
 
         when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
                 .thenReturn(null);
 
-        when(planRepository.findByName("Premium Plan"))
+        when(planRepository.findByName("Premium Monthly"))
                 .thenReturn(List.of(premium));
 
-        when(planRepository.findByName("Standard Plan"))
+        when(planRepository.findByName("Standard Monthly"))
                 .thenReturn(List.of());
 
         mockMvc.perform(get("/v1/api/debug/plans/match"))
@@ -152,11 +152,11 @@ class DebugControllerTest {
                 .thenReturn(null);
 
         final Plan premium = new Plan();
-        premium.setName("Premium Plan");
+        premium.setName("Premium Monthly");
         premium.setPriceCents(3000);
         premium.setBillingPeriod("MONTH");
 
-        when(planRepository.findByName("Premium Plan"))
+        when(planRepository.findByName("Premium Monthly"))
                 .thenReturn(List.of(premium));
 
         when(planRepository.save(any()))
@@ -165,7 +165,7 @@ class DebugControllerTest {
         mockMvc.perform(get("/v1/api/debug/plans/create-mapping"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message")
-                        .value("Created new plan mapping based on existing Premium Plan"));
+                        .value("Created new plan mapping based on existing Premium Monthly"));
         /*
          * Ensures:
          * - Existing Premium Plan is cloned
@@ -179,7 +179,7 @@ class DebugControllerTest {
         when(planRepository.findByCode("price_1RmqWxELoozGI1YxQql5rsvN"))
                 .thenReturn(null);
 
-        when(planRepository.findByName("Premium Plan"))
+        when(planRepository.findByName("Premium Monthly"))
                 .thenReturn(List.of());
 
         when(planRepository.save(any()))
@@ -188,7 +188,7 @@ class DebugControllerTest {
         mockMvc.perform(get("/v1/api/debug/plans/create-mapping"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message")
-                        .value("Created new Premium Plan"));
+                        .value("Created new Premium Monthly plan"));
         /*
          * Ensures:
          * - A brand-new Premium Plan is created when none exists

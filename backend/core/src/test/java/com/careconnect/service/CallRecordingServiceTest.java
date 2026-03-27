@@ -158,9 +158,9 @@ class CallRecordingServiceTest {
                     software.amazon.awssdk.services.s3.model.PutBucketPolicyRequest.class)))
                     .thenReturn(software.amazon.awssdk.services.s3.model.PutBucketPolicyResponse.builder().build());
 
-            service.startRecording(CALL_ID, USER_ID); // first call registers pipeline
+            service.startRecording(CALL_ID, null); // first call registers pipeline (null userId avoids RECORDING_CLAIMED)
 
-            // Second call with null userId — skips the "claim" path and hits ALREADY_RECORDING
+            // Second call — should hit ALREADY_RECORDING branch (null userId skips claim logic)
             Map<String, Object> result = service.startRecording(CALL_ID, null);
 
             assertThat(result).containsEntry("status", "ALREADY_RECORDING");

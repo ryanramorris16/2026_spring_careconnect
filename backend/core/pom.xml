@@ -436,6 +436,9 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>test</spring.profiles.active>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <!-- JaCoCo Code Coverage -->
