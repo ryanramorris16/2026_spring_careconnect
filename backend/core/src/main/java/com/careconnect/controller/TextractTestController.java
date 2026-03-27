@@ -1,44 +1,32 @@
 package com.careconnect.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.careconnect.ai.AIServiceFactory;
+import com.careconnect.dto.ChatRequest;
+import com.careconnect.dto.ChatResponse;
 import org.springframework.web.bind.annotation.*;
-import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.textract.TextractClient;
-import software.amazon.awssdk.services.textract.model.*;
-
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.response.ChatResponse;
-
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
+import java.util.List;
+import java.util.Map;
 
 @ConditionalOnProperty(name = "careconnect.aws.enabled", havingValue = "true", matchIfMissing = false)
 @RestController
 @RequestMapping("/v1/api/test")
 public class TextractTestController {
 
-    private final TextractClient textractClient;
+    private final AIServiceFactory aiServiceFactory;
 
-    @Autowired(required = false)
-    private ChatModel chatModel;
-
-
-    public TextractTestController(TextractClient textractClient) {
-        this.textractClient = textractClient;
+    public TextractTestController(AIServiceFactory aiServiceFactory) {
+        this.aiServiceFactory = aiServiceFactory;
     }
 
-@PostMapping("/extract-invoice")
-public String extractInvoice(@RequestBody Map<String, Object> body) {
+    @PostMapping("/extract-invoice")
+    public String extractInvoice(@RequestBody Map<String, Object> body) {
 
-    List<String> lines = (List<String>) body.get("lines");
-    String invoiceText = String.join("\n", lines);
+        List<String> lines = (List<String>) body.get("lines");
+        String invoiceText = String.join("\n", lines);
 
-    String prompt = """
+        String prompt = """
 You are an invoice data extraction engine.
 
 Extract structured invoice data from the text below.
@@ -76,13 +64,14 @@ Rules:
 
 Invoice Text:
 """ + invoiceText;
+ 
+        ChatRequest request = new ChatRequest();
+        request.setMessage(prompt);
 
-    if (chatModel == null) {
-    return "{\"error\": \"LLM features are disabled\"}";
-    }
-    ChatResponse response = chatModel.chat(UserMessage.from(prompt));
+        ChatResponse response = aiServiceFactory
+                .getService()
+                .processChat(request);
 
-    return response.aiMessage().text();
-
+        return response.getAiResponse();
     }
 }

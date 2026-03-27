@@ -61,7 +61,7 @@ class BedrockAIChatServiceTest {
         ChatResponse response = service.processChat(request);
 
         assertThat(response).isNotNull();
-        assertThat(response.getAiResponse()).isEqualTo(aiResponseBody);
+        assertThat(response.getAiResponse()).isEqualTo("Hello from Bedrock");
         assertThat(response.getSuccess()).isTrue();
         assertThat(response.getTimestamp()).isNotNull();
     }

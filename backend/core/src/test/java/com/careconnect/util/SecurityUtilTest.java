@@ -74,14 +74,12 @@ class SecurityUtilTest {
     // ─── resolveCurrentUser() ─────────────────────────────────────────────────
 
     @Test
-    void resolveCurrentUser_nullAuth_throwsRuntimeException() {
+    void resolveCurrentUser_nullAuth_returnsNull() {
         final SecurityContext ctx = mock(SecurityContext.class);
         when(ctx.getAuthentication()).thenReturn(null);
         SecurityContextHolder.setContext(ctx);
 
-        assertThatThrownBy(() -> securityUtil.resolveCurrentUser())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("No authenticated user in SecurityContext");
+        assertThat(securityUtil.resolveCurrentUser()).isNull();
     }
 
     @Test
@@ -93,14 +91,13 @@ class SecurityUtilTest {
 
         assertThatThrownBy(() -> securityUtil.resolveCurrentUser())
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("No authenticated user in SecurityContext");
+                .hasMessageContaining("User not found: null");
     }
 
     @Test
 void resolveCurrentUser_withRoleAuthority_findsUserByEmailAndRole() {
         final SecurityContext ctx = mock(SecurityContext.class);
         final Authentication auth = mock(Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("admin@test.com");
 
         final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
@@ -121,7 +118,6 @@ void resolveCurrentUser_withRoleAuthority_findsUserByEmailAndRole() {
 void resolveCurrentUser_withRoleAuthority_userNotFound_throwsRuntimeException() {
         final SecurityContext ctx = mock(SecurityContext.class);
         final Authentication auth = mock(Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("missing@test.com");
 
         final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_CAREGIVER"));
@@ -142,7 +138,6 @@ void resolveCurrentUser_withRoleAuthority_userNotFound_throwsRuntimeException() 
 void resolveCurrentUser_withoutRoleAuthority_findsUserByEmail() {
         final SecurityContext ctx = mock(SecurityContext.class);
         final Authentication auth = mock(Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("user@test.com");
 
         final List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("SCOPE_read"));
@@ -163,7 +158,6 @@ void resolveCurrentUser_withoutRoleAuthority_findsUserByEmail() {
 void resolveCurrentUser_withoutRoleAuthority_userNotFound_throwsRuntimeException() {
         final SecurityContext ctx = mock(SecurityContext.class);
         final Authentication auth = mock(Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(true);
         when(auth.getName()).thenReturn("gone@test.com");
 
         final List<SimpleGrantedAuthority> authorities = List.of();

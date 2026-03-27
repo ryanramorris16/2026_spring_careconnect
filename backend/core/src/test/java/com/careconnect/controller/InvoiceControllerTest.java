@@ -1,6 +1,9 @@
 package com.careconnect.controller;
 
+import com.careconnect.ai.AIService;
+import com.careconnect.ai.AIServiceFactory;
 import com.careconnect.dto.chat.AiRequest;
+import com.careconnect.dto.ChatResponse;
 import com.careconnect.dto.invoice.InvoiceDto;
 import com.careconnect.dto.invoice.InvoiceResponseDto;
 import com.careconnect.dto.invoice.PaymentDto;
@@ -39,17 +42,34 @@ class InvoiceControllerTest {
     @Mock private LlmExtractionService llmExtractionService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
+    @Mock private AIServiceFactory aiServiceFactory;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Helper: controller with all services wired
-    private InvoiceController controller() throws Exception {
-        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
+    private InvoiceController controller() {
+        return new InvoiceController(
+            invoiceService, 
+            textractService,
+            llmExtractionService,
+            objectMapper, 
+            securityUtil, 
+            authorizationService,
+            aiServiceFactory            
+        );
     }
 
     // Helper: controller with textract=null (AWS disabled)
-    private InvoiceController controllerNoTextract() throws Exception {
-        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
+    private InvoiceController controllerNoTextract() {
+        return new InvoiceController(
+            invoiceService,
+            textractService,
+            llmExtractionService, 
+            objectMapper, 
+            securityUtil, 
+            authorizationService, 
+            aiServiceFactory           
+        );
     }
 
     // ─── list ─────────────────────────────────────────────────────────────────

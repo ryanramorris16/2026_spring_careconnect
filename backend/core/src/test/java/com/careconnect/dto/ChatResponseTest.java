@@ -38,7 +38,7 @@ class ChatResponseTest {
                 .aiResponse("AI reply")
                 .messageId(7L)
                 .aiProvider("Anthropic")
-                .modelUsed("claude-3-sonnet")
+                .modelUsed("amazon.nova-lite-v1:0")
                 .tokensUsed(150)
                 .processingTimeMs(200L)
                 .temperatureUsed(0.7)
@@ -59,7 +59,7 @@ class ChatResponseTest {
         assertThat(response.getAiResponse()).isEqualTo("AI reply");
         assertThat(response.getMessageId()).isEqualTo(7L);
         assertThat(response.getAiProvider()).isEqualTo("Anthropic");
-        assertThat(response.getModelUsed()).isEqualTo("claude-3-sonnet");
+        assertThat(response.getModelUsed()).isEqualTo("amazon.nova-lite-v1:0");
         assertThat(response.getTokensUsed()).isEqualTo(150);
         assertThat(response.getProcessingTimeMs()).isEqualTo(200L);
         assertThat(response.getTemperatureUsed()).isEqualTo(0.7);
