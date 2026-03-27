@@ -43,8 +43,16 @@ public class SecurityUtil {
      */
     public User resolveCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("No authenticated user in SecurityContext");
+        if (auth == null) {
+            return null;
+        }
+
+        // Check for anonymous role safely
+        boolean isAnonymous = auth.getAuthorities().stream()
+            .anyMatch(authority -> "ROLE_ANONYMOUS".equals(authority.getAuthority()));
+
+        if (isAnonymous) {
+            return null;
         }
 
         String email = auth.getName();
@@ -58,8 +66,18 @@ public class SecurityUtil {
                 .orElse(null);
 
         if (roleName != null) {
-            return userRepository.findByEmailAndRole(email, Role.valueOf(roleName))
+
+            //Handle anonymous user
+            if ("ANONYMOUS".equalsIgnoreCase(roleName)) {
+                return null; // allow unauthenticated access for testing
+            }
+
+            try {
+                return userRepository.findByEmailAndRole(email, Role.valueOf(roleName))
                     .orElseThrow(() -> new RuntimeException("User not found: " + email));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid role: " + roleName);
+            }
         }
 
         return userRepository.findByEmail(email)

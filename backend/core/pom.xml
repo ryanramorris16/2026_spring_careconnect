@@ -200,6 +200,11 @@
             <version>2.7.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- Tomcat - compile scope for Lambda (needed for WebSocket support) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -48,7 +48,7 @@ class BedrockAIChatServiceTest {
 
     @Test
     void processChat_success_returnsResponse() {
-        String aiResponseBody = "{\"content\":[{\"text\":\"Hello from Claude\"}]}";
+        String aiResponseBody = "{\"content\":[{\"text\":\"Hello from Bedrock\"}]}";
         SdkBytes responseBytes = SdkBytes.fromUtf8String(aiResponseBody);
         InvokeModelResponse invokeResponse = InvokeModelResponse.builder()
                 .body(responseBytes)

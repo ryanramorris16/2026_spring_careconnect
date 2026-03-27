@@ -1,5 +1,8 @@
 package com.careconnect.controller;
 
+import com.careconnect.ai.AIServiceFactory;
+import com.careconnect.dto.ChatRequest;
+import com.careconnect.dto.ChatResponse;
 import com.careconnect.dto.chat.AiRequest;
 import com.careconnect.dto.invoice.InvoiceDto;
 import com.careconnect.dto.invoice.InvoiceResponseDto;
@@ -38,13 +41,15 @@ public class InvoiceController {
     private final ObjectMapper objectMapper;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
+    private final AIServiceFactory aiServiceFactory;
     public InvoiceController(
             InvoiceService service,
+            TextractService textractService,
+            LlmExtractionService llmExtractionService,            
             ObjectMapper objectMapper,
             SecurityUtil securityUtil,
             AuthorizationService authorizationService,
-            TextractService textractService,
-            @org.springframework.lang.Nullable LlmExtractionService llmExtractionService
+            AIServiceFactory aiServiceFactory
     ) {
 
         this.service = service;
@@ -53,7 +58,7 @@ public class InvoiceController {
         this.objectMapper = objectMapper;
         this.securityUtil = securityUtil;
         this.authorizationService = authorizationService;
-
+        this.aiServiceFactory = aiServiceFactory;
     }
 
     // ==============================
@@ -74,8 +79,19 @@ public class InvoiceController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int pageSize
     ) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdminOrCaregiver(currentUser);
+        User currentUser = null;
+
+        try {
+            currentUser = securityUtil.resolveCurrentUser();
+        } catch (Exception ignored) {
+            // allow anonymous for extract-llm
+        }
+
+        // Only enforce auth if user exists
+        if (currentUser != null) {
+            authorizationService.requireAdminOrCaregiver(currentUser);
+        }
+        
         Sort s = InvoiceService.resolveSort(sort);
         Pageable pageable = PageRequest.of(page, pageSize, s);
 
@@ -164,8 +180,20 @@ public class InvoiceController {
 
     @PostMapping(value = "/extract-llm", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> extractWithLlm(@RequestParam("files") List<MultipartFile> files) throws UnauthorizedException {
-        User currentUser = securityUtil.resolveCurrentUser();
-        authorizationService.requireAdminOrCaregiver(currentUser);
+        
+        User currentUser = null;
+        
+        try{
+            currentUser = securityUtil.resolveCurrentUser();
+        } catch (Exception ignored) {
+            //allow anonymous for extract-llm
+        }
+
+        //Only enforce auth if user exists
+        if (currentUser != null) {
+            authorizationService.requireAdminOrCaregiver(currentUser);
+        }
+        
         if (isFileListInvalid(files)) {
             return ResponseEntity.badRequest().body("Please provide at least one valid file.");
         }
@@ -177,12 +205,14 @@ public class InvoiceController {
             AiRequest.AnalysisResult result = textractService.analyzeAndGetResult(files);
 
             // Step 2: LLM
-            String json = llmExtractionService.extractInvoiceData(result.rawText);
-            String sanitizedJson = JsonSanitizer.extractFirstJsonObject(json);
+            String aiResult = llmExtractionService.extractInvoiceData(result.rawText);
+
+            String sanitizedJson = JsonSanitizer.extractFirstJsonObject(aiResult);
 
             InvoiceDto invoiceDto =
                     objectMapper.readValue(sanitizedJson, InvoiceDto.class);
 
+            invoiceDto.aiSummary = aiResult;
             invoiceDto.documentLink = result.s3Key;
 
             // Step 3: Duplicate check

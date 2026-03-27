@@ -118,7 +118,7 @@ class BedrockChatModelTest {
         }
 
         ReflectionTestUtils.setField(model, "client", mockClient);
-        ReflectionTestUtils.setField(model, "modelId", "amazon.titan-text-express-v1");
+        ReflectionTestUtils.setField(model, "modelId", "amazon.nova-lite-v1:0");
         ReflectionTestUtils.setField(model, "temperature", 0.7);
         return model;
     }
