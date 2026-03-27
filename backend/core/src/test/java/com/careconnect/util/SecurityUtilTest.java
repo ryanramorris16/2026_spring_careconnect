@@ -88,7 +88,6 @@ class SecurityUtilTest {
     void resolveCurrentUser_notAuthenticated_throwsRuntimeException() {
         final SecurityContext ctx = mock(SecurityContext.class);
         final Authentication auth = mock(Authentication.class);
-        when(auth.isAuthenticated()).thenReturn(false);
         when(ctx.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(ctx);
 

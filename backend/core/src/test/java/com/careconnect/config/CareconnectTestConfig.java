@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 
 import com.careconnect.security.JwtTokenProvider;
+import com.careconnect.service.AIChatService;
 import com.careconnect.websocket.CallNotificationHandler;
 
 import static org.mockito.Mockito.mock;
@@ -48,5 +49,17 @@ public class CareconnectTestConfig {
     @Primary
     public CallNotificationHandler mockCallNotificationHandler() {
         return mock(CallNotificationHandler.class);
+    }
+
+    /**
+     * Provides a primary mock for {@link AIChatService} so that beans requiring it
+     * (e.g. PatientNotetakerService) always receive a single unambiguous candidate,
+     * even when multiple implementations (BedrockAIChatAdapter, MockAIChatService)
+     * are on the classpath.
+     */
+    @Bean
+    @Primary
+    public AIChatService primaryMockAIChatService() {
+        return mock(AIChatService.class);
     }
 }

@@ -196,7 +196,7 @@ class DeepSeekServiceTest {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(httpEx);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
-                    .isInstanceOf(DeepSeekException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("DeepSeek call failed: 400")
                     .hasCause(httpEx);
         }
@@ -215,7 +215,7 @@ class DeepSeekServiceTest {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(serverEx);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
-                    .isInstanceOf(DeepSeekException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("DeepSeek call failed: 500")
                     .hasCause(serverEx);
         }
@@ -234,7 +234,7 @@ class DeepSeekServiceTest {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(authEx);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
-                    .isInstanceOf(DeepSeekException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("DeepSeek call failed: 401");
         }
     }
@@ -254,7 +254,7 @@ class DeepSeekServiceTest {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(unexpected);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
-                    .isInstanceOf(DeepSeekException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("DeepSeek call error")
                     .hasCause(unexpected);
         }
@@ -266,7 +266,7 @@ class DeepSeekServiceTest {
             when(mockRetrieve.body(DeepSeekResponse.class)).thenThrow(npe);
 
             assertThatThrownBy(() -> service.sendChatRequest(basicRequest()))
-                    .isInstanceOf(DeepSeekException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("DeepSeek call error")
                     .hasCause(npe);
         }

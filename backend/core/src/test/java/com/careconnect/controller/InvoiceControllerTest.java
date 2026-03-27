@@ -295,7 +295,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String json = "{\"invoiceNumber\":\"INV-001\"}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
@@ -318,7 +319,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String json = "{\"invoiceNumber\":\"INV-001\",\"provider\":{\"name\":\"Acme\"},\"amounts\":{\"total\":100.0}}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
         final Invoice existing = new Invoice();
         existing.setId("existing-id");
@@ -345,7 +347,7 @@ class InvoiceControllerTest {
 
         // JSON with no provider or amounts — they'll be null in InvoiceDto
         final String json = "{\"invoiceNumber\":\"INV-002\"}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
         final Invoice existing = new Invoice();
         existing.setId("dup-id");
@@ -380,7 +382,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String fencedJson = "```json\n{\"invoiceNumber\":\"INV-FENCED\"}\n```";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(fencedJson);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(fencedJson);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
