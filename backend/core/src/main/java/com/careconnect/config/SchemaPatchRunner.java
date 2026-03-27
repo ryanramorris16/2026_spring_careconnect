@@ -51,6 +51,23 @@ public class SchemaPatchRunner implements CommandLineRunner {
             "V55c – index on evv_outbox(status)",
             "CREATE INDEX IF NOT EXISTS idx_outbox_status ON evv_outbox(status)"
         );
+        applyPatch(
+            "V62a – create risk_types table",
+            "CREATE TABLE IF NOT EXISTS risk_types (" +
+            "  id BIGSERIAL PRIMARY KEY," +
+            "  name VARCHAR(100) NOT NULL UNIQUE" +
+            ")"
+        );
+        applyPatch(
+            "V62b – seed predefined risk types",
+            "INSERT INTO risk_types (name) VALUES " +
+            "('Aspiration Pneumonia')," +
+            "('Elopement')," +
+            "('Fall with Injury')," +
+            "('Self-Harm')," +
+            "('Seizures') " +
+            "ON CONFLICT (name) DO NOTHING"
+        );
         seedDemoScheduledVisits();
     }
 
