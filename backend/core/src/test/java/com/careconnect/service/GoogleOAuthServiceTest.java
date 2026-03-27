@@ -443,25 +443,14 @@ class GoogleOAuthServiceTest {
         }
 
         @Test
-        @DisplayName("safeId handles null client ID")
-        void safeIdHandlesNullId() throws Exception {
+        @DisplayName("safeId handles null client ID - exchange throws when clientId is null")
+        void safeIdHandlesNullId() {
             service.clientId = null;
 
-            final String json =
-                    "{" +
-                      "\"access_token\": \"token-null-id\"," +
-                      "\"refresh_token\": \"refresh-null-id\"," +
-                      "\"expires_in\": 3600" +
-                    "}";
-
-            server.expect(requestTo("https://oauth2.googleapis.com/token"))
-                    .andExpect(method(HttpMethod.POST))
-                    .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
-
-            service.exchange("user-null-id", "code-null-id");
-
-            assertNotNull(savedRef.get());
-            server.verify();
+            // The service guards against null clientId before reaching safeId(),
+            // so exchange() throws RuntimeException wrapping IllegalStateException.
+            assertThrows(RuntimeException.class,
+                    () -> service.exchange("user-null-id", "code-null-id"));
         }
 
         @Test
