@@ -5,6 +5,7 @@ import '../../../../providers/user_provider.dart';
 import '../../../../services/evv_service.dart';
 import '../../../../widgets/common_drawer.dart';
 import '../../../../widgets/app_bar_helper.dart';
+import 'evv_hhaexchange_submit_page.dart';
 import 'evv_record_review.dart';
 import 'evv_visit_history.dart';
 import 'evv_corrections.dart';
@@ -364,6 +365,15 @@ class _MainActions extends StatelessWidget {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const EvvRecordReviewPage()),
+          ),
+        ),
+      if (isCaregiver)
+        _ActionSpec(
+          title: 'Submit to HHAExchange',
+          icon: Icons.upload_rounded,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EvvHhaExchangeSubmitPage()),
           ),
         ),
       if (isAdmin || isSupervisor)

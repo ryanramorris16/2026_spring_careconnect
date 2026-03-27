@@ -2,16 +2,19 @@ package com.careconnect.controller;
 
 import com.careconnect.security.Permission;
 import com.careconnect.security.RequirePermission;
+import com.careconnect.security.Role;
 
 import com.careconnect.dto.evv.*;
 import com.careconnect.model.User;
 import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.model.evv.EvvCorrection;
 import com.careconnect.model.evv.EvvOfflineQueue;
+import com.careconnect.repository.evv.EvvRecordRepository;
 import com.careconnect.security.AuthorizationService;
 import com.careconnect.security.UnauthorizedException;
 import com.careconnect.service.evv.EvvService;
 import com.careconnect.service.evv.EvvSubmissionService;
+import com.careconnect.service.evv.HhaExchangeBatchSubmissionService;
 import com.careconnect.service.evv.EvvOfflineSyncService;
 import com.careconnect.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +23,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController @RequestMapping("/v1/api/evv") @RequiredArgsConstructor
 public class EvvController {
     private final EvvService evvService;
     private final EvvSubmissionService submitter;
+    private final HhaExchangeBatchSubmissionService hhaExchangeSubmitter;
     private final EvvOfflineSyncService offlineSyncService;
+    private final EvvRecordRepository evvRecordRepository;
     private final SecurityUtil securityUtil;
     private final AuthorizationService authorizationService;
 
@@ -154,5 +161,58 @@ public class EvvController {
         User currentUser = securityUtil.resolveCurrentUser();
         authorizationService.requireAdminOrCaregiver(currentUser);
         return ResponseEntity.ok(offlineSyncService.getOfflineQueueStatus(DEFAULT_USER_ID));
+    }
+
+    /**
+     * Returns approved EVV records eligible for manual HHAExchange submission.
+     * Caregivers see only their own records; admins/supervisors see all approved records.
+     */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @GetMapping("/records/hhaexchange-eligible")
+    public ResponseEntity<List<EvvRecord>> getHhaExchangeEligibleRecords() throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+        // Only VA-state APPROVED records are eligible for HHAExchange submission.
+        return ResponseEntity.ok(evvRecordRepository.findByStatusAndStateCode("APPROVED", "VA"));
+    }
+
+    /**
+     * Returns the HHAExchange JSON payload for the supplied record IDs without submitting.
+     * Used by the UI to download the payload for audit / debugging purposes.
+     */
+    @RequirePermission(Permission.VIEW_ASSIGNED_PATIENTS)
+    @PostMapping("/records/hhaexchange-payload")
+    public ResponseEntity<?> getHhaExchangePayload(
+            @RequestBody List<Long> recordIds) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+        try {
+            return ResponseEntity.ok(hhaExchangeSubmitter.buildPayload(recordIds));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Triggers manual HHAExchange submission for the supplied record IDs.
+     * Only VA-state APPROVED records are actually forwarded to the aggregator;
+     * others are silently excluded (see {@link HhaExchangeBatchSubmissionService#submitBatch}).
+     */
+    @RequirePermission(Permission.CREATE_TASKS)
+    @PostMapping("/records/submit-to-hhaexchange")
+    public ResponseEntity<Map<String, Object>> submitToHhaExchange(
+            @RequestBody List<Long> recordIds) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requireAdminOrCaregiver(currentUser);
+        try {
+            hhaExchangeSubmitter.submitBatch(recordIds, currentUser.getId());
+            return ResponseEntity.ok(Map.of("success", true, "submitted", recordIds.size()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "error", e.getMessage()));
+        }
     }
 }

@@ -21,6 +21,7 @@ import com.careconnect.repository.evv.EvvRecordRepository;
 import com.careconnect.repository.schedule.ScheduledVisitRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,6 +34,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -468,6 +470,31 @@ class EvvServiceTest {
         assertThat(result.getCheckoutLocationLat()).isEqualTo(38.91);
     }
 
+    @Test
+    void review_recordNotFound_throwsNoSuchElementException() {
+        when(recordRepository.findByIdWithPatient(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> evvService.review(99L, true, 1L, null))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void review_nullComment_doesNotAddCommentKeyToAuditDetails() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord rec = buildSavedRecord(1L, patient);
+
+        when(recordRepository.findByIdWithPatient(1L)).thenReturn(Optional.of(rec));
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(rec);
+        when(locationService.getLocationsForRecord(anyLong())).thenReturn(List.of());
+
+        evvService.review(1L, true, 99L, null);
+
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(audit).log(any(), eq(99L), eq("APPROVED"), captor.capture());
+        assertThat(captor.getValue()).doesNotContainKey("comment");
+    }
+
     // ─── createOfflineRecord ───────────────────────────────────────────────────
 
     @Test
@@ -610,6 +637,55 @@ class EvvServiceTest {
         assertThat(result.getServiceType()).isEqualTo("PERSONAL_CARE");
     }
 
+    @Test
+    void correctRecord_marksOriginalRecordAsRejected() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord original = buildSavedRecord(1L, patient);
+
+        final EvvCorrectionRequestDto req = EvvCorrectionRequestDto.builder()
+                .originalRecordId(1L)
+                .reasonCode("WRONG_TIME")
+                .explanation("Time was incorrect")
+                .build();
+
+        final EvvRecord savedCorrected = buildSavedRecord(2L, patient);
+        savedCorrected.setIsCorrected(true);
+
+        when(recordRepository.findByIdWithPatient(1L)).thenReturn(Optional.of(original));
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(savedCorrected);
+        when(correctionRepository.save(any(EvvCorrection.class))).thenReturn(null);
+        doNothing().when(audit).log(any(), any(), any(), any());
+
+        evvService.correctRecord(req, 1L);
+
+        // The original record must be rejected after a correction is submitted
+        assertThat(original.getStatus()).isEqualTo("REJECTED");
+    }
+
+    @Test
+    void correctRecord_logsCorrectAuditEventType() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord original = buildSavedRecord(1L, patient);
+
+        final EvvCorrectionRequestDto req = EvvCorrectionRequestDto.builder()
+                .originalRecordId(1L)
+                .reasonCode("WRONG_TIME")
+                .explanation("Correcting the time")
+                .build();
+
+        final EvvRecord savedCorrected = buildSavedRecord(2L, patient);
+        savedCorrected.setIsCorrected(true);
+
+        when(recordRepository.findByIdWithPatient(1L)).thenReturn(Optional.of(original));
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(savedCorrected);
+        when(correctionRepository.save(any(EvvCorrection.class))).thenReturn(null);
+        doNothing().when(audit).log(any(), any(), any(), any());
+
+        evvService.correctRecord(req, 1L);
+
+        verify(audit).log(any(EvvRecord.class), eq(1L), eq("CORRECTED"), any(Map.class));
+    }
+
     // ─── approveEor ────────────────────────────────────────────────────────────
 
     @Test
@@ -644,6 +720,27 @@ class EvvServiceTest {
 
         assertThat(result.getEorApprovedBy()).isEqualTo(99L);
         verify(audit).log(any(), eq(99L), eq("EOR_APPROVED"), any());
+    }
+
+    @Test
+    void approveEor_nullComment_doesNotAddCommentKeyToAuditDetails() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord rec = buildSavedRecord(1L, patient);
+
+        final EorApprovalRequestDto req = EorApprovalRequestDto.builder()
+                .recordId(1L)
+                .comment(null)
+                .build();
+
+        when(recordRepository.findByIdWithPatient(1L)).thenReturn(Optional.of(rec));
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(rec);
+
+        evvService.approveEor(req, 99L);
+
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(audit).log(any(), eq(99L), eq("EOR_APPROVED"), captor.capture());
+        assertThat(captor.getValue()).doesNotContainKey("comment");
     }
 
     // ─── searchRecords ─────────────────────────────────────────────────────────
@@ -801,6 +898,56 @@ class EvvServiceTest {
 
         assertThat(result.getApprovalRequired()).isFalse();
         assertThat(correctedRec.getStatus()).isEqualTo("REJECTED");
+        verify(audit).log(any(), eq(99L), eq("CORRECTION_REJECTED"), any());
+    }
+
+    @Test
+    void approveCorrection_withNullComment_doesNotThrow() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord correctedRec = buildSavedRecord(2L, patient);
+
+        final EvvCorrection correction = EvvCorrection.builder()
+                .id(1L)
+                .reasonCode("WRONG_TIME")
+                .explanation("Fixing")
+                .correctedBy(1L)
+                .correctedAt(OffsetDateTime.now())
+                .approvalRequired(true)
+                .correctedRecord(correctedRec)
+                .build();
+
+        when(correctionRepository.findById(1L)).thenReturn(Optional.of(correction));
+        when(correctionRepository.save(any(EvvCorrection.class))).thenReturn(correction);
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(correctedRec);
+
+        final EvvCorrection result = evvService.approveCorrection(1L, 99L, null);
+
+        assertThat(result).isNotNull();
+        verify(audit).log(any(), eq(99L), eq("CORRECTION_APPROVED"), any());
+    }
+
+    @Test
+    void rejectCorrection_withNullComment_doesNotThrow() throws Exception {
+        final Patient patient = buildPatient(5L);
+        final EvvRecord correctedRec = buildSavedRecord(2L, patient);
+
+        final EvvCorrection correction = EvvCorrection.builder()
+                .id(1L)
+                .reasonCode("WRONG_TIME")
+                .explanation("Fixing")
+                .correctedBy(1L)
+                .correctedAt(OffsetDateTime.now())
+                .approvalRequired(true)
+                .correctedRecord(correctedRec)
+                .build();
+
+        when(correctionRepository.findById(1L)).thenReturn(Optional.of(correction));
+        when(correctionRepository.save(any(EvvCorrection.class))).thenReturn(correction);
+        when(recordRepository.save(any(EvvRecord.class))).thenReturn(correctedRec);
+
+        final EvvCorrection result = evvService.rejectCorrection(1L, 99L, null);
+
+        assertThat(result).isNotNull();
         verify(audit).log(any(), eq(99L), eq("CORRECTION_REJECTED"), any());
     }
 

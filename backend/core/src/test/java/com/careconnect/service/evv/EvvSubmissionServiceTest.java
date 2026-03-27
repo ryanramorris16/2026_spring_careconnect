@@ -4,6 +4,7 @@ import com.careconnect.model.evv.EvvRecord;
 import com.careconnect.repository.evv.EvvRecordRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -74,5 +75,98 @@ class EvvSubmissionServiceTest {
 
         verify(outbox).enqueue(record, "maryland-info-only");
         verify(audit).log(eq(record), eq(7L), eq("SUBMISSION_QUEUED"), any(Map.class));
+    }
+
+    // ─── submitRecord() ───────────────────────────────────────────────────────
+
+    @Test
+    void submitRecord_success_callsClientAndLogsSubmitted() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("DC");
+
+        final EvvSubmissionService svc = serviceWithClients();
+        svc.submitRecord(record, 5L);
+
+        verify(client1).submit(record);
+        verify(audit).log(eq(record), eq(5L), eq("SUBMITTED"), any(Map.class));
+    }
+
+    @Test
+    void submitRecord_success_auditDetailsContainDestinationAndSuccessFlag() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("DC");
+
+        final EvvSubmissionService svc = serviceWithClients();
+        svc.submitRecord(record, 5L);
+
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(audit).log(eq(record), eq(5L), eq("SUBMITTED"), captor.capture());
+        assertThat(captor.getValue()).containsEntry("destination", "dc-sandata");
+        assertThat(captor.getValue()).containsEntry("success", true);
+    }
+
+    @Test
+    void submitRecord_success_doesNotThrow() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("VA");
+
+        final EvvSubmissionService svc = serviceWithClients();
+        svc.submitRecord(record, 5L); // should complete without exception
+    }
+
+    @Test
+    void submitRecord_noMatchingClient_throwsRuntimeException() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("VA");
+
+        final EvvSubmissionService svc = new EvvSubmissionService(List.of(), outbox, evvRecordRepository, audit);
+
+        assertThatThrownBy(() -> svc.submitRecord(record, 5L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to submit EVV record");
+    }
+
+    @Test
+    void submitRecord_noMatchingClient_logsSubmissionFailed() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("MD");
+
+        final EvvSubmissionService svc = new EvvSubmissionService(List.of(), outbox, evvRecordRepository, audit);
+
+        assertThatThrownBy(() -> svc.submitRecord(record, 5L)).isInstanceOf(RuntimeException.class);
+
+        // The service logs SUBMISSION_FAILED both in the inner block and the outer catch
+        verify(audit, atLeast(1)).log(eq(record), eq(5L), eq("SUBMISSION_FAILED"), any(Map.class));
+    }
+
+    @Test
+    void submitRecord_clientThrowsException_throwsRuntimeExceptionAndLogsFailure() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("VA");
+        doThrow(new RuntimeException("Downstream API error")).when(client1).submit(record);
+
+        final EvvSubmissionService svc = serviceWithClients();
+
+        assertThatThrownBy(() -> svc.submitRecord(record, 5L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to submit EVV record");
+
+        verify(audit, atLeast(1)).log(eq(record), eq(5L), eq("SUBMISSION_FAILED"), any(Map.class));
+    }
+
+    @Test
+    void submitRecord_unsupportedState_throwsIllegalArgumentBeforeCallingClient() throws Exception {
+        final EvvRecord record = mock(EvvRecord.class);
+        when(record.getStateCode()).thenReturn("TX");
+
+        final EvvSubmissionService svc = serviceWithClients();
+
+        assertThatThrownBy(() -> svc.submitRecord(record, 5L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported state code: TX");
+
+        verify(client1, never()).submit(any());
+        verify(audit, never()).log(eq(record), any(), eq("SUBMITTED"), any());
     }
 }

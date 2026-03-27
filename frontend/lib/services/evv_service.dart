@@ -437,6 +437,56 @@ class EvvService {
     }
   }
 
+  // Get HHAExchange-eligible records (status = APPROVED, stateCode = VA)
+  Future<List<EvvRecord>> getHhaExchangeEligibleRecords() async {
+    final headers = await _getHeaders();
+
+    final response = await _client.get(
+      Uri.parse('$_baseUrl/records/hhaexchange-eligible'),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;
+      return data.map((item) => EvvRecord.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to get HHAExchange eligible records: ${response.body}');
+    }
+  }
+
+  // Submit selected records to HHAExchange
+  Future<Map<String, dynamic>> submitToHhaExchange(List<int> recordIds) async {
+    final headers = await _getHeaders();
+
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/records/submit-to-hhaexchange'),
+      headers: headers,
+      body: jsonEncode(recordIds),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      final body = jsonDecode(response.body);
+      throw Exception(body['error'] ?? 'Submission failed: ${response.body}');
+    }
+  }
+
+  // Fetch the HHAExchange payload JSON without submitting (for local download/audit)
+  Future<String> getHhaExchangePayload(List<int> recordIds) async {
+    final headers = await _getHeaders();
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/records/hhaexchange-payload'),
+      headers: headers,
+      body: jsonEncode(recordIds),
+    );
+    if (response.statusCode == 200) {
+      return response.body; // raw JSON string
+    } else {
+      throw Exception('Failed to get payload: ${response.body}');
+    }
+  }
+
   // Sync Offline Data
   Future<String> syncOfflineData() async {
     final headers = await _getHeaders();
