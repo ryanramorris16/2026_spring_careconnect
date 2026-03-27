@@ -68,9 +68,11 @@ class _ActivityLogHistoryScreenState extends State<ActivityLogHistoryScreen> {
 
   static String _satisfactionEmoji(int? r) {
     if (r == null) return '';
-    if (r == 1) return '😞';
-    if (r == 2) return '😐';
-    if (r == 3) return '😊';
+    if (r == 1) return '😫';
+    if (r == 2) return '😕';
+    if (r == 3) return '😐';
+    if (r == 4) return '🙂';
+    if (r == 5) return '😄';
     return '';
   }
 
@@ -87,7 +89,7 @@ class _ActivityLogHistoryScreenState extends State<ActivityLogHistoryScreen> {
             Text(
               widget.clientName,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],

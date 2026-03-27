@@ -237,7 +237,7 @@ public class CallTranscriptService {
     segment.setStartMs(input.startMs());
     segment.setEndMs(input.endMs());
     segment.setSource(normalizeSource(input.source()));
-    segment.setOccurredAt(LocalDateTime.now());
+    segment.setOccurredAt(input.occurredAt() != null ? input.occurredAt() : LocalDateTime.now());
     return segment;
   }
 
@@ -357,7 +357,18 @@ public class CallTranscriptService {
     return trimmedValue;
   }
 
-  /** Input payload for storing transcript segments from the client. */
+  /**
+   * Input payload for storing transcript segments.
+   * {@code occurredAt} is optional; when null the segment is timestamped to the current time.
+   */
   public record TranscriptSegmentInput(
-      String speakerLabel, String text, Long startMs, Long endMs, String source) {}
+      String speakerLabel, String text, Long startMs, Long endMs, String source,
+      LocalDateTime occurredAt) {
+
+    /** Convenience constructor that leaves occurredAt null (defaults to now on persist). */
+    public TranscriptSegmentInput(
+        String speakerLabel, String text, Long startMs, Long endMs, String source) {
+      this(speakerLabel, text, startMs, endMs, source, null);
+    }
+  }
 }

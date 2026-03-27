@@ -119,7 +119,7 @@ class ChimeServiceTest {
         @Test
         @DisplayName("joinMeeting creates meeting and returns attendee credentials")
         void joinMeeting_localMode_returnsCredentials() {
-            Map<String, Object> result = service.joinMeeting(CALL_ID, USER_ID);
+            Map<String, Object> result = service.joinMeeting(CALL_ID, USER_ID, "CAREGIVER", "John Doe");
 
             assertThat(result).containsKey("meetingId");
             assertThat(result).containsKey("attendeeId");
@@ -259,7 +259,7 @@ class ChimeServiceTest {
                     .thenReturn(CreateAttendeeResponse.builder().attendee(attendee).build());
 
             service.createMeeting(CALL_ID); // set up the meeting first
-            Map<String, Object> result = service.createAttendee(CALL_ID, USER_ID);
+            Map<String, Object> result = service.createAttendee(CALL_ID, USER_ID, "CAREGIVER", "John Doe");
 
             assertThat(result.get("attendeeId")).isEqualTo("attendee-xyz");
             assertThat(result.get("joinToken")).isEqualTo("join-token-abc");
@@ -268,7 +268,7 @@ class ChimeServiceTest {
         @Test
         @DisplayName("createAttendee throws when no meeting exists")
         void createAttendee_noMeeting_throwsRuntimeException() {
-            assertThatThrownBy(() -> service.createAttendee(CALL_ID, USER_ID))
+            assertThatThrownBy(() -> service.createAttendee(CALL_ID, USER_ID, "CAREGIVER", "John Doe"))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("No active meeting found");
         }
@@ -284,7 +284,7 @@ class ChimeServiceTest {
             when(chimeSdkMeetingsClient.createAttendee(any(CreateAttendeeRequest.class)))
                     .thenReturn(CreateAttendeeResponse.builder().attendee(attendee).build());
 
-            Map<String, Object> result = service.joinMeeting(CALL_ID, USER_ID);
+            Map<String, Object> result = service.joinMeeting(CALL_ID, USER_ID, "CAREGIVER", "John Doe");
 
             assertThat(result).containsKey("meetingId");
             assertThat(result).containsKey("attendeeId");
@@ -389,7 +389,7 @@ class ChimeServiceTest {
                             .attendee(buildAttendee()).build());
 
             service.createMeeting(CALL_ID);
-            service.createAttendee(CALL_ID, USER_ID); // triggers second transcription attempt
+            service.createAttendee(CALL_ID, USER_ID, "CAREGIVER", "John Doe"); // triggers second transcription attempt
 
             // startMeetingTranscription called exactly once (second attempt sees ALREADY_STARTED)
             verify(chimeSdkMeetingsClient).startMeetingTranscription(

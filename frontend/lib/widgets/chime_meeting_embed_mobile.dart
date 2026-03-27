@@ -38,7 +38,7 @@ Widget buildChimeMeetingEmbed({
   bool enableAutoSentimentCapture = false,
   int sentimentCaptureIntervalMs = 15000,
   VoidCallback? onEndCallRequested,
-  void Function(String transcript)? onTranscriptSample,
+  void Function(Map<String, dynamic> transcriptSample)? onTranscriptSample,
   void Function(String status, String? detail)? onTranscriptStatus,
   void Function(double averageLevel, double speechRatio, double variability)? onVoiceMetricsSample,
   void Function(String imageBase64)? onVideoSample,
@@ -152,7 +152,7 @@ class _ChimeMeetingEmbedMobile extends StatefulWidget {
   final bool enableAutoSentimentCapture;
   final int sentimentCaptureIntervalMs;
   final VoidCallback? onEndCallRequested;
-  final void Function(String transcript)? onTranscriptSample;
+  final void Function(Map<String, dynamic> transcriptSample)? onTranscriptSample;
   final void Function(String status, String? detail)? onTranscriptStatus;
   final void Function(double averageLevel, double speechRatio, double variability)?
   onVoiceMetricsSample;
@@ -432,7 +432,10 @@ class _ChimeMeetingEmbedMobileState extends State<_ChimeMeetingEmbedMobile> {
         } else {
           widget.onTranscriptStatus?.call('CONNECTED', 'Live transcript');
         }
-        widget.onTranscriptSample?.call(transcript);
+        if (!payloadMap.containsKey('speakerLabel')) {
+          payloadMap['speakerLabel'] = 'PARTICIPANT';
+        }
+        widget.onTranscriptSample?.call(Map<String, dynamic>.from(payloadMap));
       }
       return;
     }
@@ -609,8 +612,8 @@ String _buildMobileMeetingHtml(String configJson) {
       #stage { position:relative; width:100%; height:100%; background:#000; }
       #remoteVideo { width:100%; height:100%; object-fit:cover; background:#000; }
       #localVideo {
-        position:absolute; right:14px; top:14px; width:28%; max-width:180px;
-        aspect-ratio:16/9; object-fit:cover; border-radius:10px;
+        position:absolute; right:14px; top:14px; width:18%; max-width:110px;
+        aspect-ratio:9/16; object-fit:cover; border-radius:10px;
         border:2px solid rgba(255,255,255,0.72); background:#111;
       }
     </style>
@@ -839,8 +842,11 @@ String _buildMobileMeetingHtml(String configJson) {
           }
         }
 
-        function emitTranscriptSample(rawText, source) {
-          const text = String(rawText || '').trim();
+        function emitTranscriptSample(rawSample, source) {
+          const sample = rawSample && typeof rawSample === 'object'
+            ? rawSample
+            : { text: rawSample };
+          const text = String(sample.text || '').trim();
           if (text.length < 3) {
             return;
           }
@@ -857,6 +863,9 @@ String _buildMobileMeetingHtml(String configJson) {
           report('info', 'Transcript sample emitted via ' + String(source || 'unknown'));
           emitAction('sentiment-transcript', {
             text: text,
+            speakerLabel: (sample.speakerLabel || 'PARTICIPANT'),
+            startMs: sample.startMs ?? null,
+            endMs: sample.endMs ?? null,
             source: source || 'chime-transcript',
             capturedAt: new Date().toISOString(),
           });
@@ -2406,3 +2415,5 @@ String _buildMobileMeetingHtml(String configJson) {
 </html>
 ''';
 }
+
+

@@ -87,7 +87,7 @@ public class ActivityLogController {
             throw new AppException(HttpStatus.BAD_REQUEST, "competencyScore out of range");
         }
         if (req.getSatisfactionRating() != null
-                && (req.getSatisfactionRating() < 1 || req.getSatisfactionRating() > 3)) {
+                && (req.getSatisfactionRating() < 1 || req.getSatisfactionRating() > 5)) {
             throw new AppException(HttpStatus.BAD_REQUEST, "satisfactionRating out of range");
         }
 
