@@ -273,9 +273,9 @@ class SubscriptionEnrichmentServiceTest {
     }
 
     @Test
-    @DisplayName("enrichSubscriptions: falls back to Premium Plan when priceId does not match any plan code")
+    @DisplayName("enrichSubscriptions: falls back to Premium Monthly when priceId does not match any plan code")
     void testEnrichSubscriptions_unknownPriceId_fallsToPremiumPlan() {
-        final Plan premiumPlan = buildPlan(5L, "premium_code", "Premium Plan", 3000);
+        final Plan premiumPlan = buildPlan(5L, "premium_code", "Premium Monthly", 3000);
         final Subscription sub = new Subscription();
         sub.setId(32L);
         sub.setStatus("ACTIVE");
@@ -286,15 +286,15 @@ class SubscriptionEnrichmentServiceTest {
         final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
-        assertEquals("Premium Plan", result.get(0).getPlanName());
+        assertEquals("Premium Monthly", result.get(0).getPlanName());
         assertEquals(5L, result.get(0).getPlanId());
         assertEquals(3000, result.get(0).getPriceCents());
     }
 
     @Test
-    @DisplayName("enrichSubscriptions: falls back to Standard Plan when no Premium Plan exists and priceId is unmatched")
+    @DisplayName("enrichSubscriptions: falls back to Standard Monthly when no Premium Monthly exists and priceId is unmatched")
     void testEnrichSubscriptions_unknownPriceId_fallsToStandardPlan() {
-        final Plan standardPlan = buildPlan(6L, "std_code", "Standard Plan", 2000);
+        final Plan standardPlan = buildPlan(6L, "std_code", "Standard Monthly", 2000);
         final Subscription sub = new Subscription();
         sub.setId(33L);
         sub.setStatus("ACTIVE");
@@ -305,13 +305,13 @@ class SubscriptionEnrichmentServiceTest {
         final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
-        assertEquals("Standard Plan", result.get(0).getPlanName());
+        assertEquals("Standard Monthly", result.get(0).getPlanName());
         assertEquals(6L, result.get(0).getPlanId());
         assertEquals(2000, result.get(0).getPriceCents());
     }
 
     @Test
-    @DisplayName("enrichSubscriptions: uses hardcoded Premium Plan defaults when no plans exist in DB and priceId is unmatched")
+    @DisplayName("enrichSubscriptions: uses hardcoded Premium Monthly defaults when no plans exist in DB and priceId is unmatched")
     void testEnrichSubscriptions_noPlanInDb_usesHardcodedDefaults() {
         final Subscription sub = new Subscription();
         sub.setId(34L);
@@ -323,13 +323,13 @@ class SubscriptionEnrichmentServiceTest {
         final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
-        assertEquals("Premium Plan", result.get(0).getPlanName());
-        assertEquals(3000, result.get(0).getPriceCents());
+        assertEquals("Premium Monthly", result.get(0).getPlanName());
+        assertEquals(2999, result.get(0).getPriceCents());
         assertNull(result.get(0).getPlanId(), "No DB plan means planId should be null");
     }
 
     @Test
-    @DisplayName("enrichSubscriptions: uses hardcoded Premium Plan defaults when priceId is null and no plans exist")
+    @DisplayName("enrichSubscriptions: uses hardcoded Premium Monthly defaults when priceId is null and no plans exist")
     void testEnrichSubscriptions_nullPriceId_noPlanInDb_usesHardcodedDefaults() {
         final Subscription sub = new Subscription();
         sub.setId(35L);
@@ -341,15 +341,15 @@ class SubscriptionEnrichmentServiceTest {
         final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
-        assertEquals("Premium Plan", result.get(0).getPlanName());
-        assertEquals(3000, result.get(0).getPriceCents());
+        assertEquals("Premium Monthly", result.get(0).getPlanName());
+        assertEquals(2999, result.get(0).getPriceCents());
         assertNull(result.get(0).getPlanId());
     }
 
     @Test
-    @DisplayName("enrichSubscriptions: falls back to Premium Plan when priceId is null but a Premium Plan exists in DB")
+    @DisplayName("enrichSubscriptions: falls back to Premium Monthly when priceId is null but a Premium Monthly exists in DB")
     void testEnrichSubscriptions_nullPriceId_premiumPlanExists_usesPremiumPlan() {
-        final Plan premiumPlan = buildPlan(7L, "premium_code", "Premium Plan", 3000);
+        final Plan premiumPlan = buildPlan(7L, "premium_code", "Premium Monthly", 3000);
         final Subscription sub = new Subscription();
         sub.setId(36L);
         sub.setStatus("ACTIVE");
@@ -360,7 +360,7 @@ class SubscriptionEnrichmentServiceTest {
         final List<SubscriptionResponseDTO> result = service.enrichSubscriptions(List.of(sub));
 
         assertEquals(1, result.size());
-        assertEquals("Premium Plan", result.get(0).getPlanName());
+        assertEquals("Premium Monthly", result.get(0).getPlanName());
         assertEquals(7L, result.get(0).getPlanId());
         assertEquals(3000, result.get(0).getPriceCents());
     }
