@@ -628,6 +628,10 @@ class DocumentProcessingServiceTest {
     @Test
     @DisplayName("extractGenericContent_plainText_extractedViaTika")
     void extractGenericContent_plainText_extractedViaTika() throws Exception {
+        final Tika mockTika = mock(Tika.class);
+        when(mockTika.parseToString(any(InputStream.class))).thenReturn("Some readable text");
+        ReflectionTestUtils.setField(service, "tika", mockTika);
+
         final UploadedFileDTO dto = file("file.xyz", "application/octet", "Some readable text");
         final String result = service.extractTextContent(dto);
         assertThat(result).contains("Some readable text");
@@ -637,6 +641,10 @@ class DocumentProcessingServiceTest {
     @DisplayName("extractGenericContent_longContent_truncated")
     void extractGenericContent_longContent_truncated() throws Exception {
         final String longText = longPlain(10000);
+        final Tika mockTika = mock(Tika.class);
+        when(mockTika.parseToString(any(InputStream.class))).thenReturn(longText);
+        ReflectionTestUtils.setField(service, "tika", mockTika);
+
         final UploadedFileDTO dto = file("file.xyz", "application/octet", longText);
         final String result = service.extractTextContent(dto);
         assertThat(result).contains("... [Content truncated for processing]");
@@ -699,7 +707,12 @@ class DocumentProcessingServiceTest {
         while (raw.length() < 200) {
             raw.append("Readable generic text content here. ");
         }
-        final String encoded = base64(raw.toString());
+        final String rawContent = raw.toString();
+        final Tika mockTika = mock(Tika.class);
+        when(mockTika.parseToString(any(InputStream.class))).thenReturn(rawContent);
+        ReflectionTestUtils.setField(service, "tika", mockTika);
+
+        final String encoded = base64(rawContent);
         final UploadedFileDTO dto = file("file.xyz", "application/octet", encoded);
         final String result = service.extractTextContent(dto);
         assertThat(result).contains("Readable generic text");
@@ -837,6 +850,10 @@ class DocumentProcessingServiceTest {
     void extractTextContent_imageFileType_routesToDefaultGenericHandler() throws Exception {
         // When filename is null and contentType is "image/png", getFileType returns "image"
         // which doesn't match any switch case, falling through to default (generic handler)
+        final Tika mockTika = mock(Tika.class);
+        when(mockTika.parseToString(any(InputStream.class))).thenReturn("image data here");
+        ReflectionTestUtils.setField(service, "tika", mockTika);
+
         final UploadedFileDTO dto = file(null, "image/png", "image data here");
         final String result = service.extractTextContent(dto);
         // "image" type goes to default -> extractGenericContent

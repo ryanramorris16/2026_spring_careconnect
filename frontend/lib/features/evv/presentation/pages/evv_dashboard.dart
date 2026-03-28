@@ -5,6 +5,7 @@ import '../../../../providers/user_provider.dart';
 import '../../../../services/evv_service.dart';
 import '../../../../widgets/common_drawer.dart';
 import '../../../../widgets/app_bar_helper.dart';
+import 'evv_hhaexchange_submit_page.dart';
 import 'evv_record_review.dart';
 import 'evv_visit_history.dart';
 import 'evv_corrections.dart';
@@ -18,7 +19,8 @@ class EvvDashboard extends StatefulWidget {
   State<EvvDashboard> createState() => _EvvDashboardState();
 }
 
-class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMixin {
+class _EvvDashboardState extends State<EvvDashboard>
+    with TickerProviderStateMixin {
   final EvvService _evvService = EvvService();
   bool _isLoading = true;
   List<EvvOfflineQueue> _offlineQueue = [];
@@ -93,7 +95,8 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const EvvOfflineSyncPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const EvvOfflineSyncPage()),
                 );
               },
               tooltip: 'Offline Sync',
@@ -110,8 +113,10 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
             children: [
               _QuickStats(
                 offlineCount: _offlineQueue.length,
-                pendingApprovals: (isAdmin || isSupervisor) ? _pendingApprovals : null,
-                pendingCorrections: (isAdmin || isSupervisor) ? _pendingCorrections : null,
+                pendingApprovals:
+                    (isAdmin || isSupervisor) ? _pendingApprovals : null,
+                pendingCorrections:
+                    (isAdmin || isSupervisor) ? _pendingCorrections : null,
               ),
               const SizedBox(height: 16),
               _MainActions(
@@ -128,7 +133,8 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
                   onOpenCorrections: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const EvvCorrectionsPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const EvvCorrectionsPage()),
                     );
                   },
                 ),
@@ -140,7 +146,8 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
                   onSync: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const EvvOfflineSyncPage()),
+                      MaterialPageRoute(
+                          builder: (context) => const EvvOfflineSyncPage()),
                     );
                   },
                 ),
@@ -156,7 +163,8 @@ class _EvvDashboardState extends State<EvvDashboard> with TickerProviderStateMix
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PatientSelectionPage()),
+                  MaterialPageRoute(
+                      builder: (context) => const PatientSelectionPage()),
                 );
               },
               icon: const Icon(Icons.play_circle),
@@ -197,7 +205,8 @@ class _QuickStats extends StatelessWidget {
         title: 'Offline Records',
         value: '$offlineCount',
         icon: Icons.cloud_off,
-        tone: _Tone.warning, // maps to scheme.tertiary or scheme.secondaryContainer as background
+        tone: _Tone
+            .warning, // maps to scheme.tertiary or scheme.secondaryContainer as background
       ),
       if (pendingApprovals != null)
         _StatSpec(
@@ -221,7 +230,8 @@ class _QuickStats extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _SectionHeader(title: 'Quick Stats', icon: Icons.dashboard_outlined),
+            _SectionHeader(
+                title: 'Quick Stats', icon: Icons.dashboard_outlined),
             const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -231,7 +241,11 @@ class _QuickStats extends StatelessWidget {
                   runSpacing: 12,
                   children: items
                       .map((s) => SizedBox(
-                            width: isWide ? (constraints.maxWidth - 12 * (items.length - 1)) / items.length : (constraints.maxWidth),
+                            width: isWide
+                                ? (constraints.maxWidth -
+                                        12 * (items.length - 1)) /
+                                    items.length
+                                : (constraints.maxWidth),
                             child: _StatCard(spec: s, scheme: scheme),
                           ))
                       .toList(),
@@ -370,6 +384,15 @@ class _MainActions extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const EvvRecordReviewPage()),
           ),
         ),
+      if (isCaregiver || isSupervisor || isAdmin)
+        _ActionSpec(
+          title: 'Submit to HHAExchange',
+          icon: Icons.upload_rounded,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EvvHhaExchangeSubmitPage()),
+          ),
+        ),
       if (isAdmin || isSupervisor || isPatient)
         _ActionSpec(
           title: 'Visit History',
@@ -413,7 +436,8 @@ class _MainActions extends StatelessWidget {
         padding: const EdgeInsets.all(10),
         child: Column(
           children: [
-            _SectionHeader(title: 'Main Actions', icon: Icons.grid_view_rounded),
+            _SectionHeader(
+                title: 'Main Actions', icon: Icons.grid_view_rounded),
             const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -522,7 +546,8 @@ class _PendingItems extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _SectionHeader(title: 'Pending Items', icon: Icons.pending_actions_outlined),
+            _SectionHeader(
+                title: 'Pending Items', icon: Icons.pending_actions_outlined),
             const SizedBox(height: 8),
             if (pendingApprovals > 0)
               ListTile(
@@ -618,7 +643,9 @@ class _RecentActivity extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _SectionHeader(title: 'Recent Activities', icon: Icons.auto_awesome_motion_outlined),
+            _SectionHeader(
+                title: 'Recent Activities',
+                icon: Icons.auto_awesome_motion_outlined),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -644,7 +671,10 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
+    final textStyle = Theme.of(context)
+        .textTheme
+        .titleLarge
+        ?.copyWith(fontWeight: FontWeight.w700);
     final scheme = Theme.of(context).colorScheme;
 
     return Row(

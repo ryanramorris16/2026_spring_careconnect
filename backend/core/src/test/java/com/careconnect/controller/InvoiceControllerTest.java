@@ -1,6 +1,9 @@
 package com.careconnect.controller;
 
+import com.careconnect.ai.AIService;
+import com.careconnect.ai.AIServiceFactory;
 import com.careconnect.dto.chat.AiRequest;
+import com.careconnect.dto.ChatResponse;
 import com.careconnect.dto.invoice.InvoiceDto;
 import com.careconnect.dto.invoice.InvoiceResponseDto;
 import com.careconnect.dto.invoice.PaymentDto;
@@ -39,17 +42,34 @@ class InvoiceControllerTest {
     @Mock private LlmExtractionService llmExtractionService;
     @Mock private SecurityUtil securityUtil;
     @Mock private AuthorizationService authorizationService;
+    @Mock private AIServiceFactory aiServiceFactory;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Helper: controller with all services wired
-    private InvoiceController controller() throws Exception {
-        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
+    private InvoiceController controller() {
+        return new InvoiceController(
+            invoiceService, 
+            textractService,
+            llmExtractionService,
+            objectMapper, 
+            securityUtil, 
+            authorizationService,
+            aiServiceFactory            
+        );
     }
 
     // Helper: controller with textract=null (AWS disabled)
-    private InvoiceController controllerNoTextract() throws Exception {
-        return new InvoiceController(invoiceService, objectMapper, securityUtil, authorizationService, textractService, llmExtractionService);
+    private InvoiceController controllerNoTextract() {
+        return new InvoiceController(
+            invoiceService,
+            textractService,
+            llmExtractionService, 
+            objectMapper, 
+            securityUtil, 
+            authorizationService, 
+            aiServiceFactory           
+        );
     }
 
     // ─── list ─────────────────────────────────────────────────────────────────
@@ -295,7 +315,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String json = "{\"invoiceNumber\":\"INV-001\"}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));
@@ -318,7 +339,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String json = "{\"invoiceNumber\":\"INV-001\",\"provider\":{\"name\":\"Acme\"},\"amounts\":{\"total\":100.0}}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
         final Invoice existing = new Invoice();
         existing.setId("existing-id");
@@ -345,7 +367,7 @@ class InvoiceControllerTest {
 
         // JSON with no provider or amounts — they'll be null in InvoiceDto
         final String json = "{\"invoiceNumber\":\"INV-002\"}";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(json);
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(json);
 
         final Invoice existing = new Invoice();
         existing.setId("dup-id");
@@ -380,7 +402,8 @@ class InvoiceControllerTest {
         when(textractService.analyzeAndGetResult(anyList())).thenReturn(analysisResult);
 
         final String fencedJson = "```json\n{\"invoiceNumber\":\"INV-FENCED\"}\n```";
-        when(llmExtractionService.extractInvoiceData("raw text")).thenReturn(fencedJson);
+
+        when(llmExtractionService.extractInvoiceData(anyString())).thenReturn(fencedJson);
         when(invoiceService.findDuplicateByProviderAndTotal(any(), any(), any())).thenReturn(Optional.empty());
 
         final ResponseEntity<?> response = controller().extractWithLlm(List.of(file));

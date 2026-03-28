@@ -249,7 +249,7 @@ class ActivityLogControllerTest {
         req.setClientId(10L);
         req.setActivityId(5L);
         req.setCompetencyScore(5);
-        req.setSatisfactionRating(4);
+        req.setSatisfactionRating(6);
 
         assertThatThrownBy(() -> controller.createActivityLog(req))
                 .isInstanceOf(AppException.class)

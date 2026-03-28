@@ -53,7 +53,7 @@ Semgrep, Pylint, Bandit, HTMLHint, Stylelint, OWASP Dependency-Check,
 Trivy
 
 **Trigger:**
-Every push and pull request to `team_d` and `team_d-*` branches.
+Every push and pull request to the repository.
 
 **Artifact output:**
 

@@ -200,6 +200,11 @@
             <version>2.7.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- Tomcat - compile scope for Lambda (needed for WebSocket support) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -436,6 +441,9 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <systemPropertyVariables>
+                        <spring.profiles.active>test</spring.profiles.active>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <!-- JaCoCo Code Coverage -->
@@ -554,24 +562,6 @@
                     <nvdApiMaxRetries>10</nvdApiMaxRetries>
                     <nvdApiRetryDelay>12000</nvdApiRetryDelay>
                 </configuration>
-            </plugin>
-
-            <!-- JaCoCo code coverage -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <goals><goal>prepare-agent</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals><goal>report</goal></goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

@@ -2,6 +2,7 @@ package com.careconnect.service;
 
 import com.careconnect.model.CallRecording;
 import com.careconnect.repository.CallRecordingRepository;
+import com.careconnect.service.PostCallTranscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,6 +74,7 @@ class CallRecordingServiceTest {
     @Mock private IamClient iamClient;
     @Mock private ChimeService chimeService;
     @Mock private CallRecordingRepository recordingRepository;
+    @Mock private PostCallTranscriptionService postCallTranscriptionService;
 
     @InjectMocks
     private CallRecordingService service;
@@ -156,10 +158,10 @@ class CallRecordingServiceTest {
                     software.amazon.awssdk.services.s3.model.PutBucketPolicyRequest.class)))
                     .thenReturn(software.amazon.awssdk.services.s3.model.PutBucketPolicyResponse.builder().build());
 
-            service.startRecording(CALL_ID, USER_ID); // first call registers pipeline
+            service.startRecording(CALL_ID, null); // first call registers pipeline (null userId avoids RECORDING_CLAIMED)
 
-            // Second call — should hit ALREADY_RECORDING branch
-            Map<String, Object> result = service.startRecording(CALL_ID, USER_ID);
+            // Second call — should hit ALREADY_RECORDING branch (null userId skips claim logic)
+            Map<String, Object> result = service.startRecording(CALL_ID, null);
 
             assertThat(result).containsEntry("status", "ALREADY_RECORDING");
             assertThat(result).containsKey("pipelineId");
