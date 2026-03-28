@@ -700,7 +700,8 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        debugPrint('ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
+        debugPrint(
+            'ΓÜá∩╕Å getActiveMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -726,7 +727,8 @@ class ApiService {
         if (data is List) return data;
         return [];
       } else {
-        debugPrint('ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
+        debugPrint(
+            'ΓÜá∩╕Å getTodaysMedications failed: ${response.statusCode}');
         return [];
       }
     } catch (e) {
@@ -1958,7 +1960,8 @@ class ApiService {
         if (data is Map<String, dynamic>) return data;
         return {};
       } else {
-        debugPrint('ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
+        debugPrint(
+            'ΓÜá∩╕Å getPrimaryCareProvider failed: ${response.statusCode}');
         return {};
       }
     } catch (e) {
@@ -2185,6 +2188,24 @@ class ApiService {
     return await _httpClient
         .post(
           Uri.parse('${ApiConstants.tasksV2}/patient/$patientId'),
+          headers: headers,
+          body: taskJson,
+        )
+        .timeout(const Duration(seconds: 30));
+  }
+
+  // Preview notification content for a task without sending notifications
+  static Future<http.Response> previewTaskNotification(
+    int patientId,
+    String taskJson,
+  ) async {
+    final headers = await AuthTokenManager.getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+
+    return await _httpClient
+        .post(
+          Uri.parse(
+              '${ApiConstants.tasks}/patient/$patientId/preview-notification'),
           headers: headers,
           body: taskJson,
         )

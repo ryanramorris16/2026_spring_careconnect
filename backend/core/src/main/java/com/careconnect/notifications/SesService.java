@@ -185,9 +185,19 @@ public class SesService {
      * Send appointment reminder email
      */
     public String sendAppointmentReminder(String toEmail, String patientName, String appointmentType, String dateTime, String location) {
-        String subject = "Appointment Reminder - " + appointmentType;
+        String subject = buildAppointmentReminderSubject();
+        String htmlBody = buildAppointmentReminderHtmlBody(dateTime);
+        String textBody = buildAppointmentReminderTextBody(dateTime);
 
-        String htmlBody = String.format("""
+        return sendEmail(toEmail, subject, htmlBody, textBody);
+    }
+
+    public String buildAppointmentReminderSubject() {
+        return "Appointment Reminder";
+    }
+
+    public String buildAppointmentReminderHtmlBody(String dateTime) {
+        return String.format("""
             <!DOCTYPE html>
             <html>
             <head>
@@ -195,8 +205,6 @@ public class SesService {
                     body { font-family: Arial, sans-serif; margin: 20px; }
                     .header { background-color: #2196F3; color: white; padding: 10px; text-align: center; }
                     .content { margin: 20px 0; }
-                    .appointment { background-color: #E3F2FD; padding: 15px; border-left: 4px solid #2196F3; margin: 10px 0; }
-                    .footer { font-size: 12px; color: #666; margin-top: 30px; }
                 </style>
             </head>
             <body>
@@ -204,29 +212,18 @@ public class SesService {
                     <h1>Appointment Reminder</h1>
                 </div>
                 <div class="content">
-                    <p>Dear %s,</p>
-                    <p>This is a reminder for your upcoming appointment.</p>
-                    <div class="appointment">
-                        <h3>%s</h3>
-                        <p><strong>Date & Time:</strong> %s</p>
-                        <p><strong>Location:</strong> %s</p>
-                    </div>
-                    <p>Please arrive 15 minutes early. If you need to reschedule, contact your healthcare provider.</p>
-                    <p>Best regards,<br>The CareConnect Team</p>
-                </div>
-                <div class="footer">
-                    <p>This is an automated reminder from CareConnect.</p>
+                    <p>You have a scheduled appointment for %s. If you have any questions, contact your provider.</p>
                 </div>
             </body>
             </html>
-            """, patientName, appointmentType, dateTime, location);
+            """, dateTime);
+    }
 
-        String textBody = String.format(
-            "Dear %s,\n\nThis is a reminder for your upcoming appointment.\n\nAppointment: %s\nDate & Time: %s\nLocation: %s\n\nPlease arrive 15 minutes early.\n\nBest regards,\nThe CareConnect Team",
-            patientName, appointmentType, dateTime, location
+    public String buildAppointmentReminderTextBody(String dateTime) {
+        return String.format(
+            "You have a scheduled appointment for %s. If you have any questions, contact your provider.",
+            dateTime
         );
-
-        return sendEmail(toEmail, subject, htmlBody, textBody);
     }
 
     /**
