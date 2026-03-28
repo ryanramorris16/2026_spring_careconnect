@@ -46,3 +46,4 @@ __pycache__/
 web-deploy.zip
 frontend-build.zip
 .vscode/
+frontend/web-build.zip
