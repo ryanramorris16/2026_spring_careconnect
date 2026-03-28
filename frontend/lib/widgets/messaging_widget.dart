@@ -26,11 +26,17 @@ class _MessagingWidgetState extends State<MessagingWidget> {
   List<Map<String, dynamic>> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  int _charCount = 0;
+
+  static const int _maxChars = 2000;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+    _messageController.addListener(() {
+      setState(() => _charCount = _messageController.text.length);
+    });
   }
 
   @override
@@ -72,7 +78,7 @@ class _MessagingWidgetState extends State<MessagingWidget> {
 
   Future<void> _sendMessage() async {
     final message = _messageController.text.trim();
-    if (message.isEmpty || _isSending) return;
+    if (message.isEmpty || _isSending || _charCount > _maxChars) return;
 
     setState(() => _isSending = true);
     _messageController.clear();
@@ -292,8 +298,11 @@ class _MessagingWidgetState extends State<MessagingWidget> {
                 top: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                Row(
+                  children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -310,6 +319,8 @@ class _MessagingWidgetState extends State<MessagingWidget> {
                         vertical: 10,
                       ),
                     ),
+                    maxLength: _maxChars,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                     maxLines: null,
                     textCapitalization: TextCapitalization.sentences,
                     onSubmitted: (_) => _sendMessage(),
@@ -317,8 +328,10 @@ class _MessagingWidgetState extends State<MessagingWidget> {
                 ),
                 const SizedBox(width: 8),
                 FloatingActionButton.small(
-                  onPressed: _isSending ? null : _sendMessage,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  onPressed: (_isSending || _charCount > _maxChars) ? null : _sendMessage,
+                  backgroundColor: _charCount > _maxChars
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.primary,
                   child: _isSending
                       ? SizedBox(
                           width: 20,
@@ -335,6 +348,24 @@ class _MessagingWidgetState extends State<MessagingWidget> {
                           color: Theme.of(context).colorScheme.onPrimary,
                         ),
                 ),
+              ],
+                ),
+                if (_charCount >= 1800)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, right: 4),
+                    child: Text(
+                      '$_charCount / $_maxChars',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: _charCount >= _maxChars
+                            ? Theme.of(context).colorScheme.error
+                            : _charCount >= 1900
+                                ? Colors.orange
+                                : Theme.of(context).hintColor,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
