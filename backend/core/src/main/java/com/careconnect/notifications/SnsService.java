@@ -108,8 +108,12 @@ public class SnsService {
      * Send appointment reminder SMS
      */
     public String sendAppointmentReminderSms(String phoneNumber, String patientName, String appointmentType, String time) {
-        String message = String.format("Hi %s, reminder: You have a %s appointment at %s. Please arrive 15 min early.", patientName, appointmentType, time);
+        String message = buildAppointmentReminderSmsMessage(time);
         return publishSms(phoneNumber, message);
+    }
+
+    public String buildAppointmentReminderSmsMessage(String time) {
+        return String.format("You have a scheduled appointment for %s. If you have any questions, contact your provider.", time);
     }
 
     /**

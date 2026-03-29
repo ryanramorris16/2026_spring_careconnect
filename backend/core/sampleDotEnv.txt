@@ -21,6 +21,9 @@ CARECONNECT_EMAIL_PROVIDER=sendgrid
 CARECONNECT_EMAIL_SENDGRID_API_KEY=SG.your_sendgrid_api_key_here
 # From address
 CARECONNECT_EMAIL_FROM=donotreply@careconnect.me
+# Demo notification recipients for appointment notification testing
+DEMO_NOTIFICATIONS_EMAIL=
+DEMO_NOTIFICATIONS_PHONE=
 DEEPSEEK_API_KEY=sk-your-deepseek-api-key-here
 OPENAI_API_KEY=sk-your-openai-api-key-here
 S3_BUCKET_NAME=your-s3-bucket-name
