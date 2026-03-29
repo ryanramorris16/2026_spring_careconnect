@@ -60,7 +60,7 @@ def build_html(context: dict) -> str:
             <td>{context["generated_at"]}</td></tr>
         <tr><td><strong>User</strong></td>
             <td>{context["scan_user"]}</td></tr>
-        <tr><td><strong>Repository</strong></td>
+        <tr><td><strong>Scan Root</strong></td>
             <td><code>{context["repo_root"]}</code></td></tr>
     </table>
 </div>
