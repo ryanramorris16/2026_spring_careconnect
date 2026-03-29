@@ -13,7 +13,7 @@ def _build_banner(context: dict) -> tuple[str, str]:
     if context["failed"]:
         return (
             "#c0392b",
-            "BLOCKED — One or more required checks failed. "
+            "WARNING — One or more required checks failed. "
             "Fix the issues below before merging.",
         )
     return "#27ae60", "APPROVED — All required checks passed."
