@@ -9,8 +9,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +84,9 @@ public class PostCallTranscriptionService {
   private CallTranscriptService callTranscriptService;
 
   @Autowired
+  private CallTelemetryService callTelemetryService;
+
+  @Autowired
   private CallRecordingRepository recordingRepository;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -129,8 +134,8 @@ public class PostCallTranscriptionService {
         return;
       }
 
-      // Build speaker label map (spk_0/spk_1 → role names) from call JOIN events
-      final Map<String, String> speakerMap = buildSpeakerRoleMap();
+      // Build speaker label map using participant count from telemetry JOIN events
+      final Map<String, String> speakerMap = buildSpeakerRoleMap(callId);
       final List<TranscriptSegmentInput> segments =
           downloadAndParse(rec.getS3Bucket(), outputKey, rec.getStartedAt(), speakerMap);
       if (!segments.isEmpty()) {
@@ -334,21 +339,32 @@ public class PostCallTranscriptionService {
   }
 
   /**
-   * Returns a fixed speaker-label map from Transcribe's generic labels to
-   * "Speaker 1" / "Speaker 2".
+   * Builds a speaker-label map sized to the number of unique participants who joined the call.
+   * spk_0 → "Speaker 1", spk_1 → "Speaker 2", ..., spk_(N-1) → "Speaker N".
+   * Any Transcribe label beyond the known participant count is left unmapped so it falls
+   * through to "Unidentified Speaker" — indicating AWS Transcribe detected more voices
+   * than there were participants (e.g. background noise, echo).
    */
-  private Map<String, String> buildSpeakerRoleMap() {
+  private Map<String, String> buildSpeakerRoleMap(final String callId) {
+    final Set<Long> participantIds = new HashSet<>();
+    try {
+      callTelemetryService.getTelemetryForCall(callId).stream()
+          .filter(e -> "CALL_JOIN".equalsIgnoreCase(e.getEventType()) && e.getActorUserId() != null)
+          .forEach(e -> participantIds.add(e.getActorUserId()));
+    } catch (Exception e) {
+      log.warn("Could not resolve participant count for call {} — defaulting to 2 speakers: {}", callId, e.getMessage());
+    }
+    final int participantCount = Math.max(participantIds.size(), 2);
     final Map<String, String> map = new HashMap<>();
-    map.put("spk_0", "Speaker 1");
-    map.put("spk_1", "Speaker 2");
+    for (int i = 0; i < participantCount; i++) {
+      map.put("spk_" + i, "Speaker " + (i + 1));
+    }
     return map;
   }
 
   /**
-   * Converts a raw Transcribe speaker label to a human-readable label.
-   * {@code spk_0} and {@code spk_1} are mapped by the caller via {@code speakerMap}.
-   * Any additional label (e.g. {@code spk_2+}) means Transcribe could not confidently
-   * assign the segment to either known participant, so it is labelled "Unidentified Speaker".
+   * Fallback label when a Transcribe speaker tag has no entry in the speaker map —
+   * meaning AWS detected more distinct voices than known participants on the call.
    */
   private static String toSpeakerLabel() {
     return "Unidentified Speaker";

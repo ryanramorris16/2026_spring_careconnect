@@ -464,11 +464,32 @@ class _PostCallTelemetrySummaryScreenState
 
   // ── Duration ──────────────────────────────────────────────────────
 
-  DateTime? get _callStart =>
-      _callTelemetry.isEmpty ? null : _safeDate(_callTelemetry.first['occurredAt']);
+  // Anchor to CALL_JOIN / CALL_END events so pre-call and post-call telemetry
+  // (sentiment samples, summaries) don't inflate the displayed duration.
+  // Falls back to first/last event if the typed anchors are missing.
+  DateTime? get _callStart {
+    if (_callTelemetry.isEmpty) return null;
+    final joinEvent = _callTelemetry.firstWhere(
+      (e) {
+        final t = ((e['eventType'] ?? '') as String).toUpperCase();
+        return t == 'CALL_JOIN' || t == 'CALL_STARTED';
+      },
+      orElse: () => _callTelemetry.first,
+    );
+    return _safeDate(joinEvent['occurredAt']);
+  }
 
-  DateTime? get _callEnd =>
-      _callTelemetry.isEmpty ? null : _safeDate(_callTelemetry.last['occurredAt']);
+  DateTime? get _callEnd {
+    if (_callTelemetry.isEmpty) return null;
+    final endEvent = _callTelemetry.lastWhere(
+      (e) {
+        final t = ((e['eventType'] ?? '') as String).toUpperCase();
+        return t == 'CALL_END' || t == 'CALL_ENDED';
+      },
+      orElse: () => _callTelemetry.last,
+    );
+    return _safeDate(endEvent['occurredAt']);
+  }
 
   double get _callDurationMinutes {
     final start = _callStart;

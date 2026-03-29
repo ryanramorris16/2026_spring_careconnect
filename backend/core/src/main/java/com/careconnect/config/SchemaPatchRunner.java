@@ -68,6 +68,39 @@ public class SchemaPatchRunner implements CommandLineRunner {
             "('Seizures') " +
             "ON CONFLICT (name) DO NOTHING"
         );
+        applyPatch(
+            "V70a – rename stripe_customer_id → payment_customer_id on users",
+            "ALTER TABLE users RENAME COLUMN stripe_customer_id TO payment_customer_id"
+        );
+        applyPatch(
+            "V70b – rename stripe_customer_id → payment_customer_id on subscriptions",
+            "ALTER TABLE subscriptions RENAME COLUMN stripe_customer_id TO payment_customer_id"
+        );
+        applyPatch(
+            "V71 – rename stripe_subscription_id → payment_subscription_id on subscriptions",
+            "ALTER TABLE subscriptions RENAME COLUMN stripe_subscription_id TO payment_subscription_id"
+        );
+        applyPatch(
+            "V72 – drop NOT NULL on payment_subscription_id",
+            "ALTER TABLE subscriptions ALTER COLUMN payment_subscription_id DROP NOT NULL"
+        );
+        applyPatch(
+            "V72b – drop NOT NULL on stripe_subscription_id if column still exists",
+            "ALTER TABLE subscriptions ALTER COLUMN stripe_subscription_id DROP NOT NULL"
+        );
+        applyPatch(
+            "V73 – add transcription_status to call_recordings",
+            "ALTER TABLE call_recordings ADD COLUMN IF NOT EXISTS transcription_status VARCHAR(20) NULL"
+        );
+        applyPatch(
+            "V74 – update mock user addresses to Falls Church, VA",
+            "UPDATE patient SET city = 'Falls Church', state = 'VA', zip = '22046' " +
+            "WHERE user_id = (SELECT id FROM users WHERE email = 'patient@careconnect.com') " +
+            "AND city IN ('Springfield', 'Chicago');" +
+            "UPDATE caregiver SET city = 'Falls Church', state = 'VA', zip = '22046' " +
+            "WHERE user_id IN (SELECT id FROM users WHERE email IN ('caregiver@careconnect.com', 'sarah.mitchell@careconnect.com')) " +
+            "AND city IN ('Springfield', 'Chicago')"
+        );
         seedDemoScheduledVisits();
     }
 
