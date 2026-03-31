@@ -105,9 +105,8 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
         // Build their display name
         if (user.patientId != null) {
           final safeName = (user.name ?? "").trim();
-          patientNames[user.patientId!] = safeName.isNotEmpty
-              ? safeName
-              : "Unknown Patient";
+          patientNames[user.patientId!] =
+              safeName.isNotEmpty ? safeName : "Unknown Patient";
         }
         allTasks.addAll(await _fetchTasksForPatient(user.patientId!));
       } else if (user.isCaregiver) {
@@ -379,28 +378,27 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                             cellAspectRatio: 1.5,
                             cellBuilder:
                                 (date, events, isToday, isInMonth, isWeekend) {
-                                  return CalendarCell(
-                                    date: date,
-                                    events: events,
-                                    isToday: isToday,
-                                    isInMonth: isInMonth,
-                                    isWeekend: isWeekend,
-                                    isSelected: TaskUtils.isSameDay(
-                                      date,
-                                      _selectedDay,
-                                    ),
-                                  );
-                                },
+                              return CalendarCell(
+                                date: date,
+                                events: events,
+                                isToday: isToday,
+                                isInMonth: isInMonth,
+                                isWeekend: isWeekend,
+                                isSelected: TaskUtils.isSameDay(
+                                  date,
+                                  _selectedDay,
+                                ),
+                              );
+                            },
                             headerStyle: HeaderStyle(
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                               ),
-                              headerTextStyle:
-                                  (theme.textTheme.titleMedium ??
-                                          const TextStyle(fontSize: 16))
-                                      .copyWith(
-                                        color: theme.colorScheme.onSurface,
-                                      ),
+                              headerTextStyle: (theme.textTheme.titleMedium ??
+                                      const TextStyle(fontSize: 16))
+                                  .copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
                               leftIcon: Icon(
                                 Icons.chevron_left,
                                 color: theme.colorScheme.onSurface,
@@ -431,11 +429,11 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                                   // Month title
                                   Text(
                                     formatted,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          color: theme.colorScheme.onSurface,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                      color: theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
 
                                   // Right arrow (next month)
@@ -449,7 +447,6 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                                 ],
                               );
                             },
-
                             weekDayBuilder: (day) {
                               final labels = [
                                 "M",
@@ -509,12 +506,11 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                               ),
-                              headerTextStyle:
-                                  (theme.textTheme.titleMedium ??
-                                          const TextStyle(fontSize: 16))
-                                      .copyWith(
-                                        color: theme.colorScheme.onSurface,
-                                      ),
+                              headerTextStyle: (theme.textTheme.titleMedium ??
+                                      const TextStyle(fontSize: 16))
+                                  .copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
                               leftIcon: Icon(
                                 Icons.chevron_left,
                                 color: theme.colorScheme.onSurface,
@@ -562,8 +558,8 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                                       color: isSelected
                                           ? Colors.green
                                           : (isToday
-                                                ? theme.colorScheme.primary
-                                                : theme.dividerColor),
+                                              ? theme.colorScheme.primary
+                                              : theme.dividerColor),
                                       width: isSelected ? 2 : 1,
                                     ),
                                     borderRadius: BorderRadius.circular(6),
@@ -572,17 +568,16 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                                   child: Center(
                                     child: Text(
                                       labels[date.weekday - 1],
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: theme.colorScheme.onSurface,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurface,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
                               );
                             },
-
                             onEventTap: (events, date) {
                               if (events.isNotEmpty) {
                                 final task = events.first.event;
@@ -621,12 +616,11 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                               ),
-                              headerTextStyle:
-                                  (theme.textTheme.titleMedium ??
-                                          const TextStyle(fontSize: 16))
-                                      .copyWith(
-                                        color: theme.colorScheme.onSurface,
-                                      ),
+                              headerTextStyle: (theme.textTheme.titleMedium ??
+                                      const TextStyle(fontSize: 16))
+                                  .copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
                               leftIcon: Icon(
                                 Icons.chevron_left,
                                 color: theme.colorScheme.onSurface,
@@ -742,7 +736,7 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
   /// Add a new task to the CareConnect system
   /// - Opens the [TaskFormDialog] for user input
   /// - Preloads patient list if caregiver
-  /// - Submits new task to backend via [ApiService.createTaskV2]
+  /// - Submits new task to backend via [ApiService.createTask]
   /// - On success: refreshes tasks from DB and shows confirmation
   /// - On failure: shows error snackbar
   Future<void> _addTask() async {
@@ -795,7 +789,7 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
       var queuedCount = 0;
       var savedCount = 0;
       for (final Task newTask in expandedTasks) {
-        final response = await ApiService.createTaskV2(
+        final response = await ApiService.createTask(
           newTask.assignedPatientId!,
           jsonEncode(newTask.toJson()),
         );
@@ -826,22 +820,24 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
 
       await _loadTasksFromDb();
       if (!mounted) return;
-      final offlineQueueMessage =
-          queuedCount == 1
-              ? "Task queued for sync when internet is restored"
-              : "$queuedCount tasks queued for sync when internet is restored";
+      await _maybeShowAppointmentNotificationPreview(expandedTasks);
+      if (!mounted) return;
+      final offlineQueueMessage = queuedCount == 1
+          ? "Task queued for sync when internet is restored"
+          : "$queuedCount tasks queued for sync when internet is restored";
       final mixedMessage =
           "${savedCount - queuedCount} saved now, $queuedCount queued for sync";
-      final successMessage =
-          expandedTasks.length > 1
-              ? "${expandedTasks.length} tasks added successfully"
-              : "Task added successfully";
+      final successMessage = expandedTasks.length > 1
+          ? "${expandedTasks.length} tasks added successfully"
+          : "Task added successfully";
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             queuedCount == 0
                 ? successMessage
-                : (queuedCount == savedCount ? offlineQueueMessage : mixedMessage),
+                : (queuedCount == savedCount
+                    ? offlineQueueMessage
+                    : mixedMessage),
           ),
         ),
       );
@@ -850,6 +846,87 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error adding task: $e")));
+    }
+  }
+
+  Future<void> _maybeShowAppointmentNotificationPreview(
+      List<Task> tasks) async {
+    Task? appointmentTask;
+    for (final task in tasks) {
+      if ((task.taskType ?? '').toLowerCase() == 'appointment') {
+        appointmentTask = task;
+        break;
+      }
+    }
+
+    if (appointmentTask == null || appointmentTask.assignedPatientId == null) {
+      return;
+    }
+
+    try {
+      final response = await ApiService.previewTaskNotification(
+        appointmentTask.assignedPatientId!,
+        jsonEncode(appointmentTask.toJson()),
+      );
+
+      if (!mounted || response.statusCode != 200) {
+        return;
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        return;
+      }
+
+      final preview = decoded['notificationPreview'];
+      if (preview is! Map<String, dynamic>) {
+        return;
+      }
+
+      final emailRecipient =
+          preview['emailRecipient']?.toString() ?? 'Not configured';
+      final smsRecipient =
+          preview['smsRecipient']?.toString() ?? 'Not configured';
+      final emailSubject =
+          preview['emailSubject']?.toString() ?? 'Appointment Reminder';
+      final emailTextBody = preview['emailTextBody']?.toString() ?? '';
+      final smsBody = preview['smsBody']?.toString() ?? '';
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Appointment Notification Preview'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Email To: $emailRecipient'),
+                const SizedBox(height: 6),
+                Text('Email Subject: $emailSubject'),
+                const SizedBox(height: 6),
+                const Text('Email Body:'),
+                const SizedBox(height: 4),
+                SelectableText(emailTextBody),
+                const SizedBox(height: 16),
+                Text('SMS To: $smsRecipient'),
+                const SizedBox(height: 6),
+                const Text('SMS Body:'),
+                const SizedBox(height: 4),
+                SelectableText(smsBody),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      debugPrint('Failed to load notification preview: $e');
     }
   }
 
@@ -912,9 +989,8 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
         initialTask: task,
         isCaregiver: user.isCaregiver,
         patients: patients,
-        defaultPatientId: user.isPatient
-            ? user.patientId
-            : task.assignedPatientId,
+        defaultPatientId:
+            user.isPatient ? user.patientId : task.assignedPatientId,
         initialDate: _selectedDay,
         seriesAnchorDate: seriesAnchorDate,
       ),
@@ -988,24 +1064,24 @@ class _CalendarAssistantScreenState extends State<CalendarAssistantScreen> {
 
       await _loadTasksFromDb();
       if (!mounted) return;
-      final offlineQueueMessage =
-          queuedCount == 1
-              ? "Task update queued for sync when internet is restored"
-              : "$queuedCount task updates queued for sync when internet is restored";
+      final offlineQueueMessage = queuedCount == 1
+          ? "Task update queued for sync when internet is restored"
+          : "$queuedCount task updates queued for sync when internet is restored";
       final mixedMessage =
           "${updatedCount - queuedCount} updated now, $queuedCount queued for sync";
-      final successMessage =
-          applyToSeries
-              ? "Series updated successfully"
-              : (expandedTasks.length > 1
-                  ? "${expandedTasks.length} tasks updated successfully"
-                  : "Task updated successfully");
+      final successMessage = applyToSeries
+          ? "Series updated successfully"
+          : (expandedTasks.length > 1
+              ? "${expandedTasks.length} tasks updated successfully"
+              : "Task updated successfully");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             queuedCount == 0
                 ? successMessage
-                : (queuedCount == updatedCount ? offlineQueueMessage : mixedMessage),
+                : (queuedCount == updatedCount
+                    ? offlineQueueMessage
+                    : mixedMessage),
           ),
         ),
       );

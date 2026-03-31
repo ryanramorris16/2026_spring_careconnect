@@ -70,6 +70,13 @@ public class TaskController {
         return ResponseEntity.ok(toResponse(created));
     }
 
+    @PostMapping("/patient/{patientId}/preview-notification")
+    public ResponseEntity<Map<String, Object>> previewTaskNotification(@PathVariable Long patientId, @RequestBody TaskDto task) throws UnauthorizedException {
+        User currentUser = securityUtil.resolveCurrentUser();
+        authorizationService.requirePatientAccess(currentUser, patientId);
+        return ResponseEntity.ok(taskService.previewTaskNotification(patientId, task));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateTask(@PathVariable Long id, @RequestBody TaskDto task) throws UnauthorizedException {
         User currentUser = securityUtil.resolveCurrentUser();
