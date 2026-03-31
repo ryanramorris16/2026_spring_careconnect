@@ -36,7 +36,7 @@ LEGEND_BLOCK = """
             <td>Tool found one or more violations</td></tr>
         <tr><td>SKIPPED</td>
             <td>Tool did not run (project type not detected)</td></tr>
-        <tr><td>Enforced</td>
-            <td>Violations from this tool will block the merge</td></tr>
+        <tr><td>Advisory</td>
+            <td>Violations from this tool are advisory but do not block the merge</td></tr>
     </table>
 </div>"""

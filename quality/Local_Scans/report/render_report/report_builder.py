@@ -13,7 +13,7 @@ def _build_banner(context: dict) -> tuple[str, str]:
     if context["failed"]:
         return (
             "#c0392b",
-            "BLOCKED — One or more required checks failed. "
+            "WARNING — One or more required checks failed. "
             "Fix the issues below before merging.",
         )
     return "#27ae60", "APPROVED — All required checks passed."
@@ -60,7 +60,7 @@ def build_html(context: dict) -> str:
             <td>{context["generated_at"]}</td></tr>
         <tr><td><strong>User</strong></td>
             <td>{context["scan_user"]}</td></tr>
-        <tr><td><strong>Repository</strong></td>
+        <tr><td><strong>Scan Root</strong></td>
             <td><code>{context["repo_root"]}</code></td></tr>
     </table>
 </div>

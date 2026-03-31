@@ -30,14 +30,14 @@ INSERT INTO users (email, email_verified, password, password_hash, role, status,
 -- ============================================
 
 INSERT INTO patient (user_id, first_name, last_name, dob, email, phone, line1, line2, city, state, zip, gender) VALUES
-((SELECT id FROM users WHERE email = 'patient@careconnect.com'), 'Mary', 'Johnson', '1958-03-15', 'patient@careconnect.com', '555-0101', '123 Maple Street', 'Apt 4B', 'Springfield', 'IL', '62701', 'FEMALE');
+((SELECT id FROM users WHERE email = 'patient@careconnect.com'), 'Mary', 'Johnson', '1958-03-15', 'patient@careconnect.com', '555-0101', '123 Maple Street', 'Apt 4B', 'Falls Chrurch', 'VA', '22046', 'FEMALE');
 
 -- ============================================
 -- 3. CAREGIVER TABLE - Use embedded Address fields (line1, line2, not address_line1/2)
 -- ============================================
 
 INSERT INTO caregiver (user_id, first_name, last_name, dob, email, phone, line1, line2, city, state, zip, gender, caregiver_type) VALUES
-((SELECT id FROM users WHERE email = 'caregiver@careconnect.com'), 'Jennifer', 'Smith', '1985-09-12', 'caregiver@careconnect.com', '555-0200', '321 Healthcare Plaza', 'Suite 200', 'Chicago', 'IL', '60607', 'FEMALE', 'RN');
+((SELECT id FROM users WHERE email = 'caregiver@careconnect.com'), 'Jennifer', 'Smith', '1985-09-12', 'caregiver@careconnect.com', '555-0200', '321 Healthcare Plaza', 'Suite 200', 'Falls Chrurch', 'VA', '22046', 'FEMALE', 'RN');
 
 INSERT INTO caregiver (user_id, first_name, last_name, dob, email, phone, line1, line2, city, state, zip, gender, caregiver_type)
 SELECT
@@ -49,9 +49,9 @@ SELECT
     '(555) 123-4567',
     '400 Medical Center Drive',
     'Suite 120',
-    'Chicago',
-    'IL',
-    '60616',
+    'Falls Chrurch',
+    'VA',
+    '22046',
     'FEMALE',
     'MD'
 WHERE NOT EXISTS (
